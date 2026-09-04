@@ -48,12 +48,12 @@
 - [x] **3.2** `products` migration+model (পূর্ণ field list পর্ব ১ থেকে) + `stock_movements` migration+model
 - [x] **3.3** `StockService` class (`increase()`, `decrease()`)
 - [x] **3.4** Product accessor: `stockStatus`, `profitMargin` (পর্ব ১৭.৫)
-- [ ] **3.5** Product List Page (Datatable) + Add/Edit Page (৪ সেকশন ফর্ম)
-- [ ] **3.6** Stock Adjustment Modal + Action
-- [ ] **3.7** Opening Stock flow (একবারই সেট, `NoExistingMovementsRule` দিয়ে গার্ড করা)
-- [ ] **3.8** Category/Unit/Brand Modal CRUD + quick-add "+" পাশে
-- [ ] **3.9** Product image upload (`spatie/laravel-medialibrary`)
-- [ ] **3.10** Feature test: opening stock একবারের বেশি দেওয়া গেলে reject হয়
+- [x] **3.5** Product List Page (Datatable) + Add/Edit Page (৪ সেকশন ফর্ম)
+- [x] **3.6** Stock Adjustment Modal + Action
+- [x] **3.7** Opening Stock flow (একবারই সেট, `NoExistingMovementsRule` দিয়ে গার্ড করা)
+- [x] **3.8** Category/Unit/Brand Modal CRUD + quick-add "+" পাশে
+- [x] **3.9** Product image upload (`spatie/laravel-medialibrary`)
+- [x] **3.10** Feature test: opening stock একবারের বেশি দেওয়া গেলে reject হয়
 
 ---
 

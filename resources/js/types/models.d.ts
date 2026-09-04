@@ -82,3 +82,64 @@ export interface Paginated<T> {
     prev_page_url: string | null;
     next_page_url: string | null;
 }
+
+export interface Category {
+    id: number;
+    name: string;
+    parent_id: number | null;
+}
+
+export interface Unit {
+    id: number;
+    name: string;
+}
+
+export interface Brand {
+    id: number;
+    name: string;
+}
+
+export type StockStatus = 'in_stock' | 'low_stock' | 'out_of_stock';
+
+export interface ProductListItem {
+    id: number;
+    name: string;
+    sku: string;
+    barcode: string | null;
+    category: { id: number; name: string };
+    brand: { id: number; name: string } | null;
+    unit: { id: number; name: string };
+    avg_cost: number;
+    selling_price: number;
+    current_stock: number;
+    minimum_stock_level: number;
+    stock_status: StockStatus;
+    profit_margin: number;
+    manage_stock: boolean;
+    is_for_sale: boolean;
+    is_active: boolean;
+    can_set_opening_stock: boolean;
+    image_url: string | null;
+}
+
+export interface ProductDetail {
+    id: number;
+    name: string;
+    sku: string;
+    barcode: string | null;
+    category_id: number;
+    brand_id: number | null;
+    unit_id: number;
+    selling_price: number;
+    minimum_stock_level: number;
+    manage_stock: boolean;
+    is_for_sale: boolean;
+    is_active: boolean;
+    warranty_period_months: number | null;
+    has_installation_service: boolean;
+    emi_available: boolean;
+    track_serial_number: boolean;
+    current_stock: number;
+    can_set_opening_stock: boolean;
+    image_url: string | null;
+}

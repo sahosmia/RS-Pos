@@ -8,11 +8,15 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\InteractsWithMedia;
 
-class Product extends Model
+class Product extends Model implements HasMedia
 {
     /** @use HasFactory<ProductFactory> */
     use HasFactory;
+
+    use InteractsWithMedia;
 
     /**
      * `avg_cost` and `current_stock` are deliberately not fillable — they
@@ -129,5 +133,16 @@ class Product extends Model
     public function canSetOpeningStock(): bool
     {
         return ! $this->stockMovements()->exists();
+    }
+
+    /**
+     * A single product photo — no custom column, just the package's
+     * polymorphic `media` table.
+     */
+    public function registerMediaCollections(): void
+    {
+        $this->addMediaCollection('images')
+            ->singleFile()
+            ->acceptsMimeTypes(['image/jpeg', 'image/png', 'image/webp']);
     }
 }
