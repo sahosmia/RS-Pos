@@ -14,18 +14,18 @@
 
 ## Phase 0 — Setup (একবারই)
 
-- [ ] **0.1** `laravel new erp-app --react` দিয়ে project তৈরি, git init
-- [ ] **0.2** `docs/` ফোল্ডারে তিনটা ফাইল রাখা: `erp-master-reference.md`, `erp-database-schema.md`, `erp-design-decisions.md`
-- [ ] **0.3** Project root-এ `CLAUDE.md` রাখা
-- [ ] **0.4** Auth scaffold verify করা (starter kit-এই থাকে) — login/register কাজ করছে কিনা test
+- [x] **0.1** `laravel new erp-app --react` দিয়ে project তৈরি, git init
+- [x] **0.2** `docs/` ফোল্ডারে তিনটা ফাইল রাখা: `erp-master-reference.md`, `erp-database-schema.md`, `erp-design-decisions.md`
+- [x] **0.3** Project root-এ `CLAUDE.md` রাখা
+- [x] **0.4** Auth scaffold verify করা (starter kit-এই থাকে) — login/register কাজ করছে কিনা test
 
 ---
 
 ## Phase 1 — Settings (পর্ব ১৪)
 
-- [ ] **1.1** `settings` migration + model + `SettingsSeeder` (একটাই row, সব default value সহ)
-- [ ] **1.2** Settings Page (tab: Business/Invoice/Modules) + form
-- [ ] **1.3** Invoice numbering helper function (`generateInvoiceNumber()`)
+- [x] **1.1** `settings` migration + model + `SettingsSeeder` (একটাই row, সব default value সহ)
+- [x] **1.2** Settings Page (tab: Business/Invoice/Modules) + form
+- [x] **1.3** Invoice numbering helper function (`generateInvoiceNumber()`)
 
 ---
 
