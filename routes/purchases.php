@@ -6,14 +6,25 @@ use App\Http\Controllers\PurchasePaymentController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('auth')->group(function () {
-    Route::get('purchases', [PurchaseController::class, 'index'])->name('purchases.index');
-    Route::get('purchases/create', [PurchaseController::class, 'create'])->name('purchases.create');
-    Route::post('purchases', [PurchaseController::class, 'store'])->name('purchases.store');
-    Route::get('purchases/{purchase}', [PurchaseController::class, 'show'])->name('purchases.show');
-    Route::get('purchases/{purchase}/edit', [PurchaseController::class, 'edit'])->name('purchases.edit');
-    Route::patch('purchases/{purchase}', [PurchaseController::class, 'update'])->name('purchases.update');
-    Route::delete('purchases/{purchase}', [PurchaseController::class, 'destroy'])->name('purchases.destroy');
+    // 'create' must stay ahead of the {purchase} wildcard below, or it'd be
+    // swallowed as an id.
+    Route::prefix('purchases')
+        ->name('purchases.')
+        ->controller(PurchaseController::class)
+        ->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::get('/create', 'create')->name('create');
+            Route::post('/', 'store')->name('store');
+            Route::get('/{purchase}', 'show')->name('show');
+            Route::get('/{purchase}/edit', 'edit')->name('edit');
+            Route::patch('/{purchase}', 'update')->name('update');
+            Route::delete('/{purchase}', 'destroy')->name('destroy');
+        });
 
-    Route::post('purchases/{purchase}/confirm', [PurchaseConfirmController::class, 'store'])->name('purchases.confirm');
-    Route::post('purchases/{purchase}/payments', [PurchasePaymentController::class, 'store'])->name('purchases.payments.store');
+    Route::prefix('purchases/{purchase}')
+        ->name('purchases.')
+        ->group(function () {
+            Route::post('confirm', [PurchaseConfirmController::class, 'store'])->name('confirm');
+            Route::post('payments', [PurchasePaymentController::class, 'store'])->name('payments.store');
+        });
 });

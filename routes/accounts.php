@@ -7,14 +7,15 @@ use App\Http\Controllers\FundTransferController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('auth')->group(function () {
-    Route::get('accounts', [AccountController::class, 'index'])->name('accounts.index');
-    Route::post('accounts', [AccountController::class, 'store'])->name('accounts.store');
-    Route::patch('accounts/{account}', [AccountController::class, 'update'])->name('accounts.update');
-    Route::delete('accounts/{account}', [AccountController::class, 'destroy'])->name('accounts.destroy');
-    Route::get('accounts/{account}/statement', AccountStatementController::class)->name('accounts.statement');
+    Route::resource('accounts', AccountController::class)
+        ->only(['index', 'store', 'update', 'destroy']);
 
-    Route::post('fund-transfers', [FundTransferController::class, 'store'])->name('fund-transfers.store');
+    Route::get('accounts/{account}/statement', AccountStatementController::class)
+        ->name('accounts.statement');
 
-    Route::get('cash-book', [CashBookController::class, 'index'])->name('cash-book.index');
-    Route::post('cash-book', [CashBookController::class, 'store'])->name('cash-book.store');
+    Route::post('fund-transfers', [FundTransferController::class, 'store'])
+        ->name('fund-transfers.store');
+
+    Route::resource('cash-book', CashBookController::class)
+        ->only(['index', 'store']);
 });

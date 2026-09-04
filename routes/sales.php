@@ -7,15 +7,26 @@ use App\Http\Controllers\SalePaymentController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('auth')->group(function () {
-    Route::get('sales', [SaleController::class, 'index'])->name('sales.index');
-    Route::get('sales/create', [SaleController::class, 'create'])->name('sales.create');
-    Route::post('sales', [SaleController::class, 'store'])->name('sales.store');
-    Route::get('sales/{sale}', [SaleController::class, 'show'])->name('sales.show');
-    Route::get('sales/{sale}/edit', [SaleController::class, 'edit'])->name('sales.edit');
-    Route::patch('sales/{sale}', [SaleController::class, 'update'])->name('sales.update');
-    Route::delete('sales/{sale}', [SaleController::class, 'destroy'])->name('sales.destroy');
+    // 'create' must stay ahead of the {sale} wildcard below, or it'd be
+    // swallowed as an id.
+    Route::prefix('sales')
+        ->name('sales.')
+        ->controller(SaleController::class)
+        ->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::get('/create', 'create')->name('create');
+            Route::post('/', 'store')->name('store');
+            Route::get('/{sale}', 'show')->name('show');
+            Route::get('/{sale}/edit', 'edit')->name('edit');
+            Route::patch('/{sale}', 'update')->name('update');
+            Route::delete('/{sale}', 'destroy')->name('destroy');
+        });
 
-    Route::post('sales/{sale}/confirm', [SaleConfirmController::class, 'store'])->name('sales.confirm');
-    Route::post('sales/{sale}/cancel', [SaleCancelController::class, 'store'])->name('sales.cancel');
-    Route::post('sales/{sale}/payments', [SalePaymentController::class, 'store'])->name('sales.payments.store');
+    Route::prefix('sales/{sale}')
+        ->name('sales.')
+        ->group(function () {
+            Route::post('confirm', [SaleConfirmController::class, 'store'])->name('confirm');
+            Route::post('cancel', [SaleCancelController::class, 'store'])->name('cancel');
+            Route::post('payments', [SalePaymentController::class, 'store'])->name('payments.store');
+        });
 });
