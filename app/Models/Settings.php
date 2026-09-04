@@ -80,4 +80,21 @@ class Settings extends Model
             return $number;
         });
     }
+
+    /**
+     * Reserve and format the next purchase number (e.g. "PUR-0001").
+     * Locks the row so concurrent purchases never receive the same number.
+     */
+    public function generatePurchaseNumber(): string
+    {
+        return DB::transaction(function () {
+            $settings = static::query()->lockForUpdate()->findOrFail($this->id);
+
+            $number = $settings->purchase_prefix.str_pad((string) $settings->purchase_next_number, 4, '0', STR_PAD_LEFT);
+
+            $settings->increment('purchase_next_number');
+
+            return $number;
+        });
+    }
 }

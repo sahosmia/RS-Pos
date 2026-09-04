@@ -102,6 +102,14 @@ class Contact extends Model implements HasMedia
     }
 
     /**
+     * @return HasMany<Purchase, $this>
+     */
+    public function purchases(): HasMany
+    {
+        return $this->hasMany(Purchase::class, 'supplier_id');
+    }
+
+    /**
      * @param  Builder<Contact>  $query
      */
     public function scopeCustomers(Builder $query): void
