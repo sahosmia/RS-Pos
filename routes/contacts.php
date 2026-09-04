@@ -13,19 +13,13 @@ Route::middleware('auth')->group(function () {
         ->only(['index', 'store', 'update', 'destroy']);
 
     // Static/custom contact routes (export, bulk-delete) must stay ahead of
-    // the {contact} wildcard below, or they'd be swallowed as an id.
-    Route::prefix('contacts')
-        ->name('contacts.')
-        ->controller(ContactController::class)
-        ->group(function () {
-            Route::get('/', 'index')->name('index');
-            Route::get('/export', 'export')->name('export');
-            Route::post('/', 'store')->name('store');
-            Route::post('/bulk-delete', 'bulkDestroy')->name('bulk-delete');
-            Route::get('/{contact}', 'show')->name('show');
-            Route::patch('/{contact}', 'update')->name('update');
-            Route::delete('/{contact}', 'destroy')->name('destroy');
-        });
+    // the resource's {contact} show route below, or they'd be swallowed as
+    // an id.
+    Route::get('contacts/export', [ContactController::class, 'export'])->name('contacts.export');
+    Route::post('contacts/bulk-delete', [ContactController::class, 'bulkDestroy'])->name('contacts.bulk-delete');
+
+    Route::resource('contacts', ContactController::class)
+        ->only(['index', 'store', 'show', 'update', 'destroy']);
 
     Route::prefix('contacts/{contact}')
         ->name('contacts.')

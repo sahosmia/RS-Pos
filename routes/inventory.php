@@ -17,19 +17,9 @@ Route::middleware('auth')->group(function () {
     Route::resource('brands', BrandController::class)
         ->only(['index', 'store', 'update', 'destroy']);
 
-    // 'create' must stay ahead of the {product} wildcard below, or it'd be
-    // swallowed as an id.
-    Route::prefix('products')
-        ->name('products.')
-        ->controller(ProductController::class)
-        ->group(function () {
-            Route::get('/', 'index')->name('index');
-            Route::get('/create', 'create')->name('create');
-            Route::post('/', 'store')->name('store');
-            Route::get('/{product}/edit', 'edit')->name('edit');
-            Route::patch('/{product}', 'update')->name('update');
-            Route::delete('/{product}', 'destroy')->name('destroy');
-        });
+    // No product detail/show page yet — only the list, create and edit forms.
+    Route::resource('products', ProductController::class)
+        ->except(['show']);
 
     Route::post('products/{product}/stock-adjustments', [StockAdjustmentController::class, 'store'])
         ->name('stock-adjustments.store');
