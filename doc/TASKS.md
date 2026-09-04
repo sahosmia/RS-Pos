@@ -44,7 +44,7 @@
 
 ## Phase 3 — Inventory (পর্ব ১)
 
-- [ ] **3.1** `categories`, `units`, `brands` migration+model (সব ছোট lookup)
+- [x] **3.1** `categories`, `units`, `brands` migration+model (সব ছোট lookup)
 - [ ] **3.2** `products` migration+model (পূর্ণ field list পর্ব ১ থেকে) + `stock_movements` migration+model
 - [ ] **3.3** `StockService` class (`increase()`, `decrease()`)
 - [ ] **3.4** Product accessor: `stockStatus`, `profitMargin` (পর্ব ১৭.৫)
