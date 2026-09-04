@@ -3,9 +3,15 @@
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\ContactDocumentController;
 use App\Http\Controllers\ContactPaymentController;
+use App\Http\Controllers\CustomerGroupController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('auth')->group(function () {
+    Route::get('customer-groups', [CustomerGroupController::class, 'index'])->name('customer-groups.index');
+    Route::post('customer-groups', [CustomerGroupController::class, 'store'])->name('customer-groups.store');
+    Route::patch('customer-groups/{customer_group}', [CustomerGroupController::class, 'update'])->name('customer-groups.update');
+    Route::delete('customer-groups/{customer_group}', [CustomerGroupController::class, 'destroy'])->name('customer-groups.destroy');
+
     Route::get('contacts', [ContactController::class, 'index'])->name('contacts.index');
     Route::get('contacts/export', [ContactController::class, 'export'])->name('contacts.export');
     Route::post('contacts', [ContactController::class, 'store'])->name('contacts.store');

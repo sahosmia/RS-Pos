@@ -89,14 +89,37 @@ export interface Category {
     parent_id: number | null;
 }
 
+export interface CategoryListItem {
+    id: number;
+    name: string;
+    parent_id: number | null;
+    parent: { id: number; name: string } | null;
+    products_count: number;
+    can_delete: boolean;
+}
+
 export interface Unit {
     id: number;
     name: string;
 }
 
+export interface UnitListItem {
+    id: number;
+    name: string;
+    products_count: number;
+    can_delete: boolean;
+}
+
 export interface Brand {
     id: number;
     name: string;
+}
+
+export interface BrandListItem {
+    id: number;
+    name: string;
+    products_count: number;
+    can_delete: boolean;
 }
 
 export type StockStatus = 'in_stock' | 'low_stock' | 'out_of_stock';
@@ -150,6 +173,13 @@ export type ContactEntityType = 'individual' | 'business';
 export interface CustomerGroup {
     id: number;
     name: string;
+}
+
+export interface CustomerGroupListItem {
+    id: number;
+    name: string;
+    contacts_count: number;
+    can_delete: boolean;
 }
 
 export interface ContactListItem {

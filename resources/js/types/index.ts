@@ -19,6 +19,8 @@ export interface NavItem {
     url: string;
     icon?: LucideIcon | null;
     isActive?: boolean;
+    /** Sub-items — when present, this item renders as a collapsible group instead of a link. */
+    items?: NavItem[];
 }
 
 export interface SharedData {

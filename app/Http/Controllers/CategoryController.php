@@ -5,9 +5,28 @@ namespace App\Http\Controllers;
 use App\Http\Requests\Category\CategoryRequest;
 use App\Models\Category;
 use Illuminate\Http\RedirectResponse;
+use Inertia\Inertia;
+use Inertia\Response;
 
 class CategoryController extends Controller
 {
+    public function index(): Response
+    {
+        $categories = Category::query()->withCount('products')->with('parent:id,name')->orderBy('name')->get();
+
+        return Inertia::render('categories/index', [
+            'categories' => $categories->map(fn (Category $category) => [
+                'id' => $category->id,
+                'name' => $category->name,
+                'parent_id' => $category->parent_id,
+                'parent' => $category->parent?->only(['id', 'name']),
+                'products_count' => $category->products_count,
+                'can_delete' => $category->products_count === 0 && ! $category->children()->exists(),
+            ]),
+            'allCategories' => $categories->map->only(['id', 'name', 'parent_id']),
+        ]);
+    }
+
     public function store(CategoryRequest $request): RedirectResponse
     {
         Category::create($request->validated());

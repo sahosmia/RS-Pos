@@ -5,9 +5,25 @@ namespace App\Http\Controllers;
 use App\Http\Requests\Unit\UnitRequest;
 use App\Models\Unit;
 use Illuminate\Http\RedirectResponse;
+use Inertia\Inertia;
+use Inertia\Response;
 
 class UnitController extends Controller
 {
+    public function index(): Response
+    {
+        $units = Unit::query()->withCount('products')->orderBy('name')->get();
+
+        return Inertia::render('units/index', [
+            'units' => $units->map(fn (Unit $unit) => [
+                'id' => $unit->id,
+                'name' => $unit->name,
+                'products_count' => $unit->products_count,
+                'can_delete' => $unit->products_count === 0,
+            ]),
+        ]);
+    }
+
     public function store(UnitRequest $request): RedirectResponse
     {
         Unit::create($request->validated());

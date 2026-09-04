@@ -14,14 +14,25 @@ const mainNavItems: NavItem[] = [
         icon: LayoutGrid,
     },
     {
-        title: 'Products',
+        title: 'Product',
         url: '/products',
         icon: Package,
+        items: [
+            { title: 'Products', url: '/products' },
+            { title: 'Category', url: '/categories' },
+            { title: 'Unit', url: '/units' },
+            { title: 'Brand', url: '/brands' },
+        ],
     },
     {
-        title: 'Contacts',
+        title: 'Contact',
         url: '/contacts',
         icon: Users,
+        items: [
+            { title: 'Supplier', url: '/contacts?type=supplier' },
+            { title: 'Customer', url: '/contacts?type=customer' },
+            { title: 'Customer Group', url: '/customer-groups' },
+        ],
     },
     {
         title: 'Payment Accounts',
