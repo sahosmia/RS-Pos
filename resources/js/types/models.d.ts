@@ -14,3 +14,71 @@ export interface Settings {
     serial_number_module_enabled: boolean;
     fiscal_year_start_month: number;
 }
+
+export interface AccountType {
+    id: number;
+    name: string;
+}
+
+export interface Account {
+    id: number;
+    name: string;
+    account_type: AccountType;
+    account_sub_type: string | null;
+    current_balance: number;
+    is_active: boolean;
+}
+
+export interface AccountListItem {
+    id: number;
+    name: string;
+    account_type_id: number;
+    account_type: AccountType;
+    account_sub_type: string | null;
+    account_number: string | null;
+    opening_balance: number;
+    current_balance: number;
+    is_active: boolean;
+    can_delete: boolean;
+    /** Opening balance locks as soon as any other movement is recorded. */
+    can_edit_opening_balance: boolean;
+}
+
+export interface StatementRow {
+    id: number;
+    type: string;
+    amount: number;
+    operation_date: string;
+    note: string | null;
+    reference_type: string | null;
+    reference_id: number | null;
+    balance: number;
+}
+
+export type MiscTransactionCategoryType = 'income' | 'expense';
+
+export interface MiscTransactionCategory {
+    id: number;
+    name: string;
+    type: MiscTransactionCategoryType;
+}
+
+export type CashBookEntryType = 'opening_balance' | 'income' | 'expense';
+
+export interface CashBookEntry {
+    id: number;
+    type: CashBookEntryType;
+    category: MiscTransactionCategory | null;
+    amount: number;
+    note: string | null;
+    entry_date: string;
+}
+
+export interface Paginated<T> {
+    data: T[];
+    current_page: number;
+    last_page: number;
+    total: number;
+    prev_page_url: string | null;
+    next_page_url: string | null;
+}

@@ -242,6 +242,7 @@ accounts
 - account_number             (nullable, encrypted)
 - opening_balance
 - current_balance
+- is_active                    boolean, default true — "Close" an account instead of deleting it once it holds transactions
 - created_by
 
 account_transactions

@@ -31,14 +31,14 @@
 
 ## Phase 2 — Accounts (পর্ব ৬)
 
-- [ ] **2.1** `account_types`, `accounts` migration+model + seeder (Cash, Bank, Mobile Banking, Cheque default)
-- [ ] **2.2** `account_transactions` migration+model (⚠️ `operation_date` field ভুলবেন না)
-- [ ] **2.3** `AccountService` class (`record()`, `recordSplitPayment()`)
-- [ ] **2.4** Account List Page + Add/Edit Modal (CRUD)
-- [ ] **2.5** `fund_transfers` migration + `FundTransferAction` + Modal UI
-- [ ] **2.6** Cash Book (standalone): `cash_book`, `cash_book_entries`, `misc_transaction_categories` migration + Action + Page
-- [ ] **2.7** Account Statement Page (running balance)
-- [ ] **2.8** Feature test: split payment ২টা account-এ সঠিকভাবে ভাগ হয়
+- [x] **2.1** `account_types`, `accounts` migration+model + seeder (Cash, Bank, Mobile Banking, Cheque default)
+- [x] **2.2** `account_transactions` migration+model (⚠️ `operation_date` field ভুলবেন না)
+- [x] **2.3** `AccountService` class (`record()`, `recordSplitPayment()`)
+- [x] **2.4** Account List Page + Add/Edit Modal (CRUD)
+- [x] **2.5** `fund_transfers` migration + `FundTransferAction` + Modal UI
+- [x] **2.6** Cash Book (standalone): `cash_book`, `cash_book_entries`, `misc_transaction_categories` migration + Action + Page
+- [x] **2.7** Account Statement Page (running balance)
+- [x] **2.8** Feature test: split payment ২টা account-এ সঠিকভাবে ভাগ হয়
 
 ---
 
