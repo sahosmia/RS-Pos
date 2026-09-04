@@ -235,3 +235,57 @@ export interface ContactDocument {
     url: string;
     created_at: string;
 }
+
+export type PurchaseStatusValue = 'draft' | 'ordered' | 'received' | 'cancelled';
+export type PaymentStatusValue = 'due' | 'partial' | 'paid';
+
+export interface PurchaseListItem {
+    id: number;
+    invoice_no: string;
+    supplier: { id: number; name: string };
+    purchase_date: string;
+    total_amount: number;
+    paid_amount: number;
+    due_amount: number;
+    payment_status: PaymentStatusValue;
+    status: PurchaseStatusValue;
+    can_edit: boolean;
+}
+
+/** Index signature needed so this array satisfies Inertia's FormDataConvertible constraint in useForm(). */
+export interface PurchaseFormItem {
+    [key: string]: number | undefined;
+    product_id: number;
+    quantity: number;
+    unit_price: number;
+}
+
+export interface PurchaseFormDetail {
+    id: number;
+    supplier_id: number;
+    purchase_date: string;
+    status: PurchaseStatusValue;
+    items: PurchaseFormItem[];
+}
+
+export interface PurchaseItemDetail {
+    id: number;
+    product: { id: number; name: string; sku: string };
+    quantity: number;
+    unit_price: number;
+    subtotal: number;
+}
+
+export interface PurchaseDetail {
+    id: number;
+    invoice_no: string;
+    supplier: { id: number; name: string; phone: string; balance: number };
+    purchase_date: string;
+    total_amount: number;
+    paid_amount: number;
+    due_amount: number;
+    payment_status: PaymentStatusValue;
+    status: PurchaseStatusValue;
+    can_edit: boolean;
+    items: PurchaseItemDetail[];
+}

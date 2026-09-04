@@ -73,9 +73,9 @@
 
 - [x] **5.1** `purchases`, `purchase_items` migration+model (status: draft/ordered/received/cancelled)
 - [x] **5.2** `ConfirmPurchaseAction` (StockService + weighted avg_cost recalculation একসাথে)
-- [ ] **5.3** Purchase List Page + Add/Edit Page (multi-item form)
-- [ ] **5.4** Add Payment Modal + Supplier Credit Auto-apply logic
-- [ ] **5.5** Purchase Detail/Print Page
+- [x] **5.3** Purchase List Page + Add/Edit Page (multi-item form)
+- [x] **5.4** Add Payment Modal + Supplier Credit Auto-apply logic
+- [x] **5.5** Purchase Detail/Print Page
 - [x] **5.6** Feature test: purchase confirm হলে avg_cost সঠিকভাবে recalculate হয়
 
 ---
