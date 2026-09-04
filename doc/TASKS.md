@@ -62,10 +62,10 @@
 - [x] **4.1** `customer_groups`, `contacts`, `contact_ledger` migration+model
 - [x] **4.2** Phone/email mutator (normalize)
 - [x] **4.3** `LedgerService` class (`recordContact()`)
-- [ ] **4.4** Contact List Page (`?type=` filter) + Add/Edit Modal
-- [ ] **4.5** Contact Detail Page (Tab: Ledger/Purchases/Sales/Documents/Payments)
-- [ ] **4.6** Pay Due Amount Modal
-- [ ] **4.7** Bulk select toolbar (Export, Delete guarded by history check)
+- [x] **4.4** Contact List Page (`?type=` filter) + Add/Edit Modal
+- [x] **4.5** Contact Detail Page (Tab: Ledger/Purchases/Sales/Documents/Payments)
+- [x] **4.6** Pay Due Amount Modal
+- [x] **4.7** Bulk select toolbar (Export, Delete guarded by history check)
 
 ---
 

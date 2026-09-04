@@ -143,3 +143,65 @@ export interface ProductDetail {
     can_set_opening_stock: boolean;
     image_url: string | null;
 }
+
+export type ContactType = 'customer' | 'supplier' | 'both';
+export type ContactEntityType = 'individual' | 'business';
+
+export interface CustomerGroup {
+    id: number;
+    name: string;
+}
+
+export interface ContactListItem {
+    id: number;
+    name: string;
+    phone: string;
+    email: string | null;
+    type: ContactType;
+    entity_type: ContactEntityType;
+    business_name: string | null;
+    customer_group: { id: number; name: string } | null;
+    balance: number;
+    balance_label: string;
+    is_active: boolean;
+    can_delete: boolean;
+    can_set_opening_balance: boolean;
+}
+
+export interface ContactDetail {
+    id: number;
+    name: string;
+    phone: string;
+    email: string | null;
+    address: string | null;
+    shipping_address: string | null;
+    type: ContactType;
+    entity_type: ContactEntityType;
+    business_name: string | null;
+    customer_group_id: number | null;
+    customer_group: { id: number; name: string } | null;
+    balance: number;
+    balance_label: string;
+    is_active: boolean;
+    can_set_opening_balance: boolean;
+}
+
+export interface ContactLedgerEntry {
+    id: number;
+    type: string;
+    amount: number;
+    note: string | null;
+    reference_type: string | null;
+    reference_id: number | null;
+    created_at: string;
+    balance: number;
+}
+
+export interface ContactDocument {
+    id: number;
+    name: string;
+    file_name: string;
+    size: number;
+    url: string;
+    created_at: string;
+}
