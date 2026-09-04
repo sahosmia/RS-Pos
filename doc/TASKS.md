@@ -59,9 +59,9 @@
 
 ## Phase 4 — Contacts (পর্ব ২)
 
-- [ ] **4.1** `customer_groups`, `contacts`, `contact_ledger` migration+model
-- [ ] **4.2** Phone/email mutator (normalize)
-- [ ] **4.3** `LedgerService` class (`recordContact()`)
+- [x] **4.1** `customer_groups`, `contacts`, `contact_ledger` migration+model
+- [x] **4.2** Phone/email mutator (normalize)
+- [x] **4.3** `LedgerService` class (`recordContact()`)
 - [ ] **4.4** Contact List Page (`?type=` filter) + Add/Edit Modal
 - [ ] **4.5** Contact Detail Page (Tab: Ledger/Purchases/Sales/Documents/Payments)
 - [ ] **4.6** Pay Due Amount Modal
