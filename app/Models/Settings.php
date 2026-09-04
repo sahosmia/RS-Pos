@@ -2,13 +2,14 @@
 
 namespace App\Models;
 
+use Database\Factories\SettingsFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 
 class Settings extends Model
 {
-    /** @use HasFactory<\Database\Factories\SettingsFactory> */
+    /** @use HasFactory<SettingsFactory> */
     use HasFactory;
 
     /**
