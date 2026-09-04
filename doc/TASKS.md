@@ -82,8 +82,8 @@
 
 ## Phase 6 — Sales (পর্ব ৪) ⭐ সবচেয়ে গুরুত্বপূর্ণ module
 
-- [ ] **6.1** `sales`, `sale_items`, `sale_item_serials` migration+model
-- [ ] **6.2** `ConfirmSaleAction` (StockService + LedgerService + AccountService একসাথে, একই transaction-এ)
+- [x] **6.1** `sales`, `sale_items`, `sale_item_serials` migration+model
+- [x] **6.2** `ConfirmSaleAction` (StockService + LedgerService + AccountService একসাথে, একই transaction-এ)
 - [ ] **6.3** Sales List Page (draft/quotation/confirmed filter)
 - [ ] **6.4** Add Sale Page — Customer সেকশন (বকেয়া দেখানো + সাম্প্রতিক কেনা)
 - [ ] **6.5** Add Sale Page — Product সেকশন (`ProductSearchInput` shared component)
@@ -93,7 +93,7 @@
 - [ ] **6.9** Keyboard shortcuts (F2/F4/Enter/Esc)
 - [ ] **6.10** ৩০-সেকেন্ড Undo toast
 - [ ] **6.11** Invoice Print Page (A4)
-- [ ] **6.12** Feature test: sale confirm করলে stock কমে, ledger+account একসাথে আপডেট হয়
+- [x] **6.12** Feature test: sale confirm করলে stock কমে, ledger+account একসাথে আপডেট হয়
 
 ---
 

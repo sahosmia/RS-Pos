@@ -2,7 +2,9 @@
 
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\ContactDocumentController;
+use App\Http\Controllers\ContactDueWaiverController;
 use App\Http\Controllers\ContactPaymentController;
+use App\Http\Controllers\ContactRecentSalesController;
 use App\Http\Controllers\CustomerGroupController;
 use Illuminate\Support\Facades\Route;
 
@@ -21,6 +23,8 @@ Route::middleware('auth')->group(function () {
     Route::delete('contacts/{contact}', [ContactController::class, 'destroy'])->name('contacts.destroy');
 
     Route::post('contacts/{contact}/payments', [ContactPaymentController::class, 'store'])->name('contacts.payments.store');
+    Route::post('contacts/{contact}/due-waivers', [ContactDueWaiverController::class, 'store'])->name('contacts.due-waivers.store');
+    Route::get('contacts/{contact}/recent-sales', ContactRecentSalesController::class)->name('contacts.recent-sales');
 
     Route::post('contacts/{contact}/documents', [ContactDocumentController::class, 'store'])->name('contacts.documents.store');
     Route::delete('contacts/{contact}/documents/{media}', [ContactDocumentController::class, 'destroy'])->name('contacts.documents.destroy');
