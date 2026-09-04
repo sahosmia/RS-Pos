@@ -11,6 +11,7 @@ use App\Models\Account;
 use App\Models\Contact;
 use App\Models\CustomerGroup;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Response as ResponseFacade;
@@ -78,9 +79,23 @@ class ContactController extends Controller
         ]);
     }
 
-    public function store(StoreContactRequest $request, CreateContactAction $createContact): RedirectResponse
+    /**
+     * A plain JSON request (e.g. the Add Sale page's inline "+ new
+     * customer" quick-add) gets the created contact back directly instead
+     * of a redirect, so the caller never navigates away from an in-progress
+     * page like a cart.
+     */
+    public function store(StoreContactRequest $request, CreateContactAction $createContact): RedirectResponse|JsonResponse
     {
-        $createContact->execute($request->validated());
+        $contact = $createContact->execute($request->validated());
+
+        if ($request->wantsJson() && ! $request->header('X-Inertia')) {
+            return response()->json([
+                'id' => $contact->id,
+                'name' => $contact->name,
+                'balance' => $contact->balance,
+            ]);
+        }
 
         return to_route('contacts.index');
     }
@@ -145,6 +160,14 @@ class ContactController extends Controller
             'documents' => $documents,
             'accounts' => Account::query()->active()->orderBy('name')->get(['id', 'name', 'current_balance']),
             'customerGroups' => CustomerGroup::query()->orderBy('name')->get(['id', 'name']),
+            'purchases' => $contact->purchases()
+                ->orderByDesc('purchase_date')
+                ->orderByDesc('id')
+                ->get(['id', 'invoice_no', 'purchase_date', 'total_amount', 'due_amount', 'payment_status', 'status']),
+            'sales' => $contact->sales()
+                ->orderByDesc('sale_date')
+                ->orderByDesc('id')
+                ->get(['id', 'invoice_no', 'sale_date', 'total_amount', 'due_amount', 'payment_status', 'status']),
         ]);
     }
 

@@ -84,15 +84,15 @@
 
 - [x] **6.1** `sales`, `sale_items`, `sale_item_serials` migration+model
 - [x] **6.2** `ConfirmSaleAction` (StockService + LedgerService + AccountService একসাথে, একই transaction-এ)
-- [ ] **6.3** Sales List Page (draft/quotation/confirmed filter)
-- [ ] **6.4** Add Sale Page — Customer সেকশন (বকেয়া দেখানো + সাম্প্রতিক কেনা)
-- [ ] **6.5** Add Sale Page — Product সেকশন (`ProductSearchInput` shared component)
-- [ ] **6.6** Add Sale Page — Payment সেকশন (`AccountPaymentRows` shared component)
-- [ ] **6.7** ৩-স্তরের Discount (item/invoice/ledger)
-- [ ] **6.8** Historical Record checkbox (`source = imported`, পর্ব ২১.১)
-- [ ] **6.9** Keyboard shortcuts (F2/F4/Enter/Esc)
-- [ ] **6.10** ৩০-সেকেন্ড Undo toast
-- [ ] **6.11** Invoice Print Page (A4)
+- [x] **6.3** Sales List Page (draft/quotation/confirmed filter)
+- [x] **6.4** Add Sale Page — Customer সেকশন (বকেয়া দেখানো + সাম্প্রতিক কেনা)
+- [x] **6.5** Add Sale Page — Product সেকশন (`ProductSearchInput` shared component)
+- [x] **6.6** Add Sale Page — Payment সেকশন (`AccountPaymentRows` shared component)
+- [x] **6.7** ৩-স্তরের Discount (item/invoice/ledger)
+- [x] **6.8** Historical Record checkbox (`source = imported`, পর্ব ২১.১)
+- [x] **6.9** Keyboard shortcuts (F2/F4/Enter/Esc)
+- [x] **6.10** ৩০-সেকেন্ড Undo toast
+- [x] **6.11** Invoice Print Page (A4)
 - [x] **6.12** Feature test: sale confirm করলে stock কমে, ledger+account একসাথে আপডেট হয়
 
 ---

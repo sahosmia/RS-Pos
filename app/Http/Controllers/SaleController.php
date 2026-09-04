@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\Sale\ConfirmSaleAction;
 use App\Actions\Sale\CreateSaleAction;
 use App\Actions\Sale\UpdateSaleAction;
 use App\Http\Requests\Sale\StoreSaleRequest;
@@ -75,14 +76,30 @@ class SaleController extends Controller
             'customers' => Contact::query()->customers()->orderBy('name')->get(['id', 'name', 'balance']),
             'products' => Product::query()->where('is_for_sale', true)->orderBy('name')
                 ->get(['id', 'name', 'sku', 'barcode', 'selling_price', 'current_stock', 'track_serial_number', 'has_installation_service']),
+            'accounts' => Account::query()->active()->orderBy('name')->get(['id', 'name', 'current_balance']),
         ]);
     }
 
-    public function store(StoreSaleRequest $request, CreateSaleAction $createSale): RedirectResponse
+    /**
+     * A single "Confirm Sale" click on the Add Sale page creates the sale
+     * and confirms it in the same request — `status: confirmed` here is
+     * shorthand for "create as Draft, then immediately run
+     * ConfirmSaleAction", so stock/ledger/account only ever move through
+     * that one action.
+     */
+    public function store(StoreSaleRequest $request, CreateSaleAction $createSale, ConfirmSaleAction $confirmSale): RedirectResponse
     {
-        $sale = $createSale->execute($request->validated());
+        $data = $request->validated();
+        $wantsConfirm = $data['status'] === 'confirmed';
+        $data['status'] = $wantsConfirm ? 'draft' : $data['status'];
 
-        return to_route('sales.show', $sale);
+        $sale = $createSale->execute($data);
+
+        if ($wantsConfirm) {
+            $sale = $confirmSale->execute($sale, $data['payments'] ?? []);
+        }
+
+        return to_route('sales.show', $sale)->with('justConfirmed', $wantsConfirm);
     }
 
     public function show(Sale $sale): Response
@@ -92,6 +109,7 @@ class SaleController extends Controller
         return Inertia::render('sales/show', [
             'sale' => $this->present($sale),
             'accounts' => Account::query()->active()->orderBy('name')->get(['id', 'name', 'current_balance']),
+            'justConfirmed' => (bool) session('justConfirmed'),
         ]);
     }
 
@@ -124,18 +142,27 @@ class SaleController extends Controller
             'customers' => Contact::query()->customers()->orderBy('name')->get(['id', 'name', 'balance']),
             'products' => Product::query()->where('is_for_sale', true)->orderBy('name')
                 ->get(['id', 'name', 'sku', 'barcode', 'selling_price', 'current_stock', 'track_serial_number', 'has_installation_service']),
+            'accounts' => Account::query()->active()->orderBy('name')->get(['id', 'name', 'current_balance']),
         ]);
     }
 
-    public function update(UpdateSaleRequest $request, Sale $sale, UpdateSaleAction $updateSale): RedirectResponse
+    public function update(UpdateSaleRequest $request, Sale $sale, UpdateSaleAction $updateSale, ConfirmSaleAction $confirmSale): RedirectResponse
     {
         if (! $sale->canEdit()) {
             return back()->withErrors(['sale' => 'This sale has already been confirmed and can no longer be edited directly.']);
         }
 
-        $updateSale->execute($sale, $request->validated());
+        $data = $request->validated();
+        $wantsConfirm = $data['status'] === 'confirmed';
+        $data['status'] = $wantsConfirm ? 'draft' : $data['status'];
 
-        return to_route('sales.show', $sale);
+        $updateSale->execute($sale, $data);
+
+        if ($wantsConfirm) {
+            $sale = $confirmSale->execute($sale, $data['payments'] ?? []);
+        }
+
+        return to_route('sales.show', $sale)->with('justConfirmed', $wantsConfirm);
     }
 
     /**

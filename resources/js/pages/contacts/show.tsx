@@ -1,5 +1,6 @@
 import ContactFormModal from '@/components/contacts/contact-form-modal';
 import PayDueModal from '@/components/contacts/pay-due-modal';
+import WaiveDueModal from '@/components/contacts/waive-due-modal';
 import HeadingSmall from '@/components/heading-small';
 import InputError from '@/components/input-error';
 import EmptyState from '@/components/shared/empty-state';
@@ -8,10 +9,19 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useMoneyFormat } from '@/hooks/use-money-format';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
-import { type Account, type ContactDetail, type ContactDocument, type ContactLedgerEntry, type CustomerGroup } from '@/types/models';
-import { Head, router, useForm } from '@inertiajs/react';
+import {
+    type Account,
+    type ContactDetail,
+    type ContactDocument,
+    type ContactLedgerEntry,
+    type ContactPurchaseSummary,
+    type ContactSaleSummary,
+    type CustomerGroup,
+} from '@/types/models';
+import { Head, Link, router, useForm } from '@inertiajs/react';
 import { FormEventHandler, useState } from 'react';
 
 interface ContactShowProps {
@@ -21,6 +31,8 @@ interface ContactShowProps {
     documents: ContactDocument[];
     accounts: Account[];
     customerGroups: CustomerGroup[];
+    purchases: ContactPurchaseSummary[];
+    sales: ContactSaleSummary[];
 }
 
 const humanize = (value: string) => value.replaceAll('_', ' ').replace(/\b\w/g, (character) => character.toUpperCase());
@@ -34,9 +46,11 @@ const toRows = (entries: ContactLedgerEntry[]): LedgerRow[] =>
         balance: entry.balance,
     }));
 
-export default function ContactShow({ contact, ledger, payments, documents, accounts, customerGroups }: ContactShowProps) {
+export default function ContactShow({ contact, ledger, payments, documents, accounts, customerGroups, purchases, sales }: ContactShowProps) {
+    const money = useMoneyFormat();
     const [editModalOpen, setEditModalOpen] = useState(false);
     const [payModalOpen, setPayModalOpen] = useState(false);
+    const [waiveModalOpen, setWaiveModalOpen] = useState(false);
 
     const breadcrumbs: BreadcrumbItem[] = [
         { title: 'Contacts', href: '/contacts' },
@@ -80,6 +94,9 @@ export default function ContactShow({ contact, ledger, payments, documents, acco
                         <Button variant="outline" onClick={() => setPayModalOpen(true)} disabled={accounts.length === 0}>
                             Pay Due Amount
                         </Button>
+                        <Button variant="outline" onClick={() => setWaiveModalOpen(true)}>
+                            Add Discount
+                        </Button>
                         <Button variant="outline" onClick={() => setEditModalOpen(true)}>
                             Edit
                         </Button>
@@ -109,11 +126,77 @@ export default function ContactShow({ contact, ledger, payments, documents, acco
                     </TabsContent>
 
                     <TabsContent value="purchases">
-                        <EmptyState title="Purchase module coming soon" description="এই contact-এর purchase history এখানে দেখাবে" />
+                        {purchases.length === 0 ? (
+                            <EmptyState title="No purchases yet" description="এই supplier থেকে এখনো কিছু কেনা হয়নি" />
+                        ) : (
+                            <div className="overflow-x-auto rounded-lg border">
+                                <table className="w-full text-sm">
+                                    <thead className="bg-muted/50 text-muted-foreground">
+                                        <tr>
+                                            <th className="px-4 py-2 text-left font-medium">Invoice</th>
+                                            <th className="px-4 py-2 text-left font-medium">Date</th>
+                                            <th className="px-4 py-2 text-right font-medium">Total</th>
+                                            <th className="px-4 py-2 text-right font-medium">Due</th>
+                                            <th className="px-4 py-2 text-left font-medium">Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {purchases.map((purchase) => (
+                                            <tr key={purchase.id} className="border-t">
+                                                <td className="px-4 py-2">
+                                                    <Link href={route('purchases.show', purchase.id)} className="underline-offset-2 hover:underline">
+                                                        {purchase.invoice_no}
+                                                    </Link>
+                                                </td>
+                                                <td className="px-4 py-2 whitespace-nowrap">{purchase.purchase_date}</td>
+                                                <td className="px-4 py-2 text-right tabular-nums">{money(purchase.total_amount)}</td>
+                                                <td className="px-4 py-2 text-right tabular-nums">{money(purchase.due_amount)}</td>
+                                                <td className="px-4 py-2">
+                                                    <Badge variant="outline">{humanize(purchase.status)}</Badge>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        )}
                     </TabsContent>
 
                     <TabsContent value="sales">
-                        <EmptyState title="Sales module coming soon" description="এই contact-এর sales history এখানে দেখাবে" />
+                        {sales.length === 0 ? (
+                            <EmptyState title="No sales yet" description="এই customer-এর কাছে এখনো কিছু বিক্রি হয়নি" />
+                        ) : (
+                            <div className="overflow-x-auto rounded-lg border">
+                                <table className="w-full text-sm">
+                                    <thead className="bg-muted/50 text-muted-foreground">
+                                        <tr>
+                                            <th className="px-4 py-2 text-left font-medium">Invoice</th>
+                                            <th className="px-4 py-2 text-left font-medium">Date</th>
+                                            <th className="px-4 py-2 text-right font-medium">Total</th>
+                                            <th className="px-4 py-2 text-right font-medium">Due</th>
+                                            <th className="px-4 py-2 text-left font-medium">Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {sales.map((sale) => (
+                                            <tr key={sale.id} className="border-t">
+                                                <td className="px-4 py-2">
+                                                    <Link href={route('sales.show', sale.id)} className="underline-offset-2 hover:underline">
+                                                        {sale.invoice_no}
+                                                    </Link>
+                                                </td>
+                                                <td className="px-4 py-2 whitespace-nowrap">{sale.sale_date}</td>
+                                                <td className="px-4 py-2 text-right tabular-nums">{money(sale.total_amount)}</td>
+                                                <td className="px-4 py-2 text-right tabular-nums">{money(sale.due_amount)}</td>
+                                                <td className="px-4 py-2">
+                                                    <Badge variant="outline">{humanize(sale.status)}</Badge>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        )}
                     </TabsContent>
 
                     <TabsContent value="documents" className="space-y-4">
@@ -171,6 +254,8 @@ export default function ContactShow({ contact, ledger, payments, documents, acco
             />
 
             <PayDueModal open={payModalOpen} onOpenChange={setPayModalOpen} contact={contact} accounts={accounts} />
+
+            <WaiveDueModal open={waiveModalOpen} onOpenChange={setWaiveModalOpen} contact={contact} />
         </AppLayout>
     );
 }

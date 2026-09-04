@@ -289,3 +289,117 @@ export interface PurchaseDetail {
     can_edit: boolean;
     items: PurchaseItemDetail[];
 }
+
+export type SaleStatusValue = 'draft' | 'quotation' | 'confirmed' | 'cancelled';
+export type SaleSourceValue = 'manual' | 'imported';
+
+export interface SaleListItem {
+    id: number;
+    invoice_no: string;
+    customer: { id: number; name: string };
+    sale_date: string;
+    total_amount: number;
+    due_amount: number;
+    payment_status: PaymentStatusValue;
+    status: SaleStatusValue;
+    source: SaleSourceValue;
+    can_edit: boolean;
+}
+
+/** Index signature needed so this array satisfies Inertia's FormDataConvertible constraint in useForm(). */
+export interface SaleFormItem {
+    [key: string]: number | string | boolean | string[] | null | undefined;
+    product_id: number;
+    quantity: number;
+    unit_price: number;
+    installation_required: boolean;
+    installation_charge: number | null;
+    note: string | null;
+    serial_numbers: string[];
+}
+
+export interface SaleFormDetail {
+    id: number;
+    customer_id: number;
+    sale_date: string;
+    status: SaleStatusValue;
+    discount_type: 'flat' | 'percentage' | null;
+    discount_value: number;
+    valid_until: string | null;
+    payment_type: 'cash' | 'emi';
+    items: SaleFormItem[];
+}
+
+export interface SaleItemDetail {
+    id: number;
+    product: { id: number; name: string; sku: string };
+    quantity: number;
+    original_price: number;
+    unit_price: number;
+    discount_amount: number;
+    subtotal: number;
+    installation_required: boolean;
+    installation_charge: number | null;
+    warranty_expires_at: string | null;
+    serial_numbers: string[];
+}
+
+export interface SaleDetail {
+    id: number;
+    invoice_no: string;
+    customer: { id: number; name: string; phone: string; balance: number };
+    sale_date: string;
+    subtotal: number;
+    discount_type: 'flat' | 'percentage' | null;
+    discount_value: number;
+    discount_amount: number;
+    total_amount: number;
+    paid_amount: number;
+    due_amount: number;
+    payment_status: PaymentStatusValue;
+    status: SaleStatusValue;
+    source: SaleSourceValue;
+    can_edit: boolean;
+    items: SaleItemDetail[];
+}
+
+export interface CustomerOption {
+    id: number;
+    name: string;
+    balance: number;
+}
+
+export interface RecentSaleItem {
+    product_id: number;
+    product_name: string;
+    quantity: number;
+    unit_price: number;
+}
+
+export interface RecentSale {
+    id: number;
+    invoice_no: string;
+    sale_date: string;
+    total_amount: number;
+    items: RecentSaleItem[];
+}
+
+export interface ContactPurchaseSummary {
+    id: number;
+    invoice_no: string;
+    purchase_date: string;
+    total_amount: number;
+    due_amount: number;
+    payment_status: PaymentStatusValue;
+    status: PurchaseStatusValue;
+}
+
+export interface ContactSaleSummary {
+    id: number;
+    invoice_no: string;
+    sale_date: string;
+    total_amount: number;
+    due_amount: number;
+    payment_status: PaymentStatusValue;
+    status: SaleStatusValue;
+}

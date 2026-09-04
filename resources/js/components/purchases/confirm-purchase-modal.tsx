@@ -1,4 +1,4 @@
-import PaymentRows, { type PaymentRow } from '@/components/purchases/payment-rows';
+import AccountPaymentRows, { type PaymentRow } from '@/components/shared/account-payment-rows';
 import FormModal from '@/components/shared/form-modal';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -72,7 +72,7 @@ export default function ConfirmPurchaseModal({ open, onOpenChange, purchase, acc
                 </div>
             )}
 
-            <PaymentRows accounts={accounts} rows={rows} onChange={setRows} />
+            <AccountPaymentRows accounts={accounts} rows={rows} onChange={setRows} />
         </FormModal>
     );
 }

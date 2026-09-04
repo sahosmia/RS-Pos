@@ -210,6 +210,30 @@ test('a confirmed sale cannot be edited or deleted', function () {
     expect(Sale::query()->find($sale->id))->not->toBeNull();
 });
 
+test('submitting status confirmed from the Add Sale page creates and confirms in one request', function () {
+    $this->actingAs(User::factory()->create());
+    $customer = Contact::factory()->create();
+    $product = Product::factory()->create(['selling_price' => 250, 'current_stock' => 10, 'avg_cost' => 150]);
+    $account = Account::factory()->create(['account_type_id' => AccountType::factory(), 'current_balance' => 0]);
+
+    $this->post('/sales', [
+        'customer_id' => $customer->id,
+        'sale_date' => '2026-03-01',
+        'status' => 'confirmed',
+        'items' => [
+            ['product_id' => $product->id, 'quantity' => 2, 'unit_price' => 250],
+        ],
+        'payments' => [['account_id' => $account->id, 'amount' => 500]],
+    ])->assertRedirect();
+
+    $sale = Sale::query()->firstOrFail();
+
+    expect($sale->status)->toBe(SaleStatus::Confirmed)
+        ->and($product->fresh()->current_stock)->toBe(8.0)
+        ->and($account->fresh()->current_balance)->toBe(500.0)
+        ->and($sale->payment_status->value)->toBe('paid');
+});
+
 test('the customer field rejects a supplier-only contact', function () {
     $this->actingAs(User::factory()->create());
     $supplier = Contact::factory()->supplier()->create();

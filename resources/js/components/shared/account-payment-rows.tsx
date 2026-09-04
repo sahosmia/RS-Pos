@@ -13,14 +13,22 @@ export interface PaymentRow {
     amount: number;
 }
 
-interface PaymentRowsProps {
+interface AccountPaymentRowsProps {
     accounts: Account[];
     rows: PaymentRow[];
     onChange: (rows: PaymentRow[]) => void;
+    label?: string;
+    emptyHint?: string;
 }
 
-/** One or more {account, amount} rows — the multi-account split payment shape used across Account/Purchase/Contact payments. */
-export default function PaymentRows({ accounts, rows, onChange }: PaymentRowsProps) {
+/** One or more {account, amount} rows — the multi-account split payment shape used across Account/Purchase/Sale/Contact payments. */
+export default function AccountPaymentRows({
+    accounts,
+    rows,
+    onChange,
+    label = 'Payment (optional)',
+    emptyHint = 'এখনো কোনো account যোগ করা হয়নি — না দিলে পুরোটা বকেয়া থাকবে',
+}: AccountPaymentRowsProps) {
     const money = useMoneyFormat();
 
     const update = (index: number, changes: Partial<PaymentRow>) => {
@@ -36,14 +44,14 @@ export default function PaymentRows({ accounts, rows, onChange }: PaymentRowsPro
     return (
         <div className="grid gap-2">
             <div className="flex items-center justify-between">
-                <Label>Payment (optional)</Label>
+                <Label>{label}</Label>
                 <Button type="button" variant="outline" size="sm" onClick={add}>
                     <Plus className="mr-1 size-3.5" />
                     Add Account
                 </Button>
             </div>
 
-            {rows.length === 0 && <p className="text-muted-foreground text-xs">এখনো কোনো account যোগ করা হয়নি — না দিলে পুরোটা বকেয়া থাকবে</p>}
+            {rows.length === 0 && <p className="text-muted-foreground text-xs">{emptyHint}</p>}
 
             {rows.map((row, index) => (
                 <div key={index} className="flex items-center gap-2">
