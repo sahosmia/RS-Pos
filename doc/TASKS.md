@@ -45,9 +45,9 @@
 ## Phase 3 — Inventory (পর্ব ১)
 
 - [x] **3.1** `categories`, `units`, `brands` migration+model (সব ছোট lookup)
-- [ ] **3.2** `products` migration+model (পূর্ণ field list পর্ব ১ থেকে) + `stock_movements` migration+model
-- [ ] **3.3** `StockService` class (`increase()`, `decrease()`)
-- [ ] **3.4** Product accessor: `stockStatus`, `profitMargin` (পর্ব ১৭.৫)
+- [x] **3.2** `products` migration+model (পূর্ণ field list পর্ব ১ থেকে) + `stock_movements` migration+model
+- [x] **3.3** `StockService` class (`increase()`, `decrease()`)
+- [x] **3.4** Product accessor: `stockStatus`, `profitMargin` (পর্ব ১৭.৫)
 - [ ] **3.5** Product List Page (Datatable) + Add/Edit Page (৪ সেকশন ফর্ম)
 - [ ] **3.6** Stock Adjustment Modal + Action
 - [ ] **3.7** Opening Stock flow (একবারই সেট, `NoExistingMovementsRule` দিয়ে গার্ড করা)
