@@ -103,12 +103,9 @@
 - [x] **2.5.26** UI label change: "Cash Book" মেনু/টাইটেল → "Petty Cash" (শুধু display label, DB table নাম বদলাবে না) — sidebar, breadcrumb, page title/heading, Add Entry modal title সব জায়গায় বদলানো হয়েছে; DB table (`cash_book`/`cash_book_entries`) ও route name (`cash-book.*`) অপরিবর্তিত
 
 ### ধাপ ৭ — সব শেষে
-- [ ] **2.5.27** php artisan migrate:fresh --seed দিয়ে আবার test data রিসেট করুন, তারপর Phase 2/5/6-এর manual flow আবার টেস্ট করুন — journal entry, serial number, financing_type সব ঠিকভাবে কাজ করছে কিনা যাচাই করুন
+- [x] **2.5.27** php artisan migrate:fresh --seed দিয়ে আবার test data রিসেট করুন, তারপর Phase 2/5/6-এর manual flow আবার টেস্ট করুন — journal entry, serial number, financing_type সব ঠিকভাবে কাজ করছে কিনা যাচাই করুন — `migrate:fresh --seed` + পুরো test suite (153 passing) + একটা end-to-end tinker simulation (purchase confirm with 2 serials → in_stock, sale confirm picking 1 serial with financing_type=one_time → sold, বাকিটা in_stock-ই থাকে, stock ঠিকভাবে কমেছে) দিয়ে verify করা হয়েছে। Trial balance check: সব journal_entry_lines মিলিয়ে total debit = total credit = 2300 (balanced)। 12টা accounting period, সবগুলো open। Verification data cleanup করতে গিয়ে stock_movements FK restrict ধরা পড়েছে (ইচ্ছাকৃত immutable-audit-trail design ঠিকভাবে কাজ করছে তার প্রমাণ) — তাই শেষে আবার migrate:fresh --seed দিয়ে DB ক্লিন করা হয়েছে
 
-⚠️ সব ধাপ (২.৫.০ থেকে ২.৫.২৭) শেষ না করে Phase 7 (Returns)-এ যাবেন না। Return-এর Action class প্রথম থেকেই Journal posting সহ বানানো হবে (Dr Sales Returns & Allowances/Cr AR-Cash + Dr Inventory/Cr COGS প্যাটার্নে), তাই আলাদা retrofit লাগবে না — কিন্তু Chart of Accounts, 4150 account, আর idempotency pattern আগে থেকে না থাকলে সেটাও ঠিকভাবে বানানো যাবে না।
-
-
-⚠️ **সব ধাপ (২.৫.১ থেকে ২.৫.১৫) শেষ না করে Phase 7 (Returns)-এ যাবেন না।**
+✅ সব ধাপ (২.৫.০ থেকে ২.৫.২৭) শেষ — Phase 2.5 V2 সম্পূর্ণ। Return-এর Action class এখন Chart of Accounts, 4150 account, আর idempotency pattern সব রেডি পেয়ে প্রথম থেকেই Journal posting সহ বানানো যাবে (Dr Sales Returns & Allowances/Cr AR-Cash + Dr Inventory/Cr COGS প্যাটার্নে), আলাদা retrofit ছাড়াই। Phase 7 (Returns) শুরু করা যায়।
 
 ---
 
