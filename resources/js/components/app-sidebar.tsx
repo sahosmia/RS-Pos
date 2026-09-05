@@ -50,7 +50,7 @@ const mainNavItems: NavItem[] = [
         icon: Wallet,
         items: [
             { title: 'Accounts', url: '/accounts' },
-            { title: 'Cash Book', url: '/cash-book' },
+            { title: 'Petty Cash', url: '/cash-book' },
         ],
     },
     {

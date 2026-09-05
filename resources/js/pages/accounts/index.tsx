@@ -131,7 +131,7 @@ export default function AccountsIndex({ accounts, accountTypes, totalBalance }: 
 
                     <div className="flex flex-wrap items-center gap-2">
                         <Button variant="outline" asChild>
-                            <Link href={route('cash-book.index')}>Cash Book</Link>
+                            <Link href={route('cash-book.index')}>Petty Cash</Link>
                         </Button>
                         <Button variant="outline" onClick={() => setTransferModalOpen(true)} disabled={accounts.length < 2}>
                             Fund Transfer

@@ -17,7 +17,7 @@ import { FormEventHandler, useState } from 'react';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
-        title: 'Cash Book',
+        title: 'Petty Cash',
         href: '/cash-book',
     },
 ];
@@ -71,12 +71,12 @@ export default function CashBookIndex({ cashBook, entries, categories, filters, 
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title="Cash Book" />
+            <Head title="Petty Cash" />
 
             <div className="space-y-6 px-4 py-6">
                 <div className="flex flex-wrap items-end justify-between gap-4">
                     <HeadingSmall
-                        title="Cash Book"
+                        title="Petty Cash"
                         description="ছোট দৈনন্দিন খরচের আলাদা খাতা — Accounts বা Financial Position-এ ধরা হয় না"
                     />
                     <Button onClick={openEntryModal}>Add Entry</Button>
@@ -178,7 +178,7 @@ export default function CashBookIndex({ cashBook, entries, categories, filters, 
             <FormModal
                 open={entryModalOpen}
                 onOpenChange={setEntryModalOpen}
-                title="Add Cash Book Entry"
+                title="Add Petty Cash Entry"
                 processing={entryForm.processing}
                 onSubmit={submitEntry}
             >
