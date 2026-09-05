@@ -37,6 +37,47 @@ test('decrease records a movement and lowers the cached stock together', functio
         ->and($product->fresh()->current_stock)->toBe(13.0);
 });
 
+test('increase records unit_cost and total_cost when a unit cost is given', function () {
+    $product = Product::factory()->create(['current_stock' => 0]);
+
+    $movement = app(StockService::class)->increase(
+        $product,
+        10,
+        StockMovementType::Purchase,
+        'purchase',
+        1,
+        unitCost: 150,
+    );
+
+    expect($movement->unit_cost)->toBe(150.0)
+        ->and($movement->total_cost)->toBe(1500.0);
+});
+
+test('decrease records unit_cost and total_cost when a unit cost is given', function () {
+    $product = Product::factory()->create(['current_stock' => 10]);
+
+    $movement = app(StockService::class)->decrease(
+        $product,
+        4,
+        StockMovementType::Sale,
+        'sale',
+        1,
+        unitCost: 90,
+    );
+
+    expect($movement->unit_cost)->toBe(90.0)
+        ->and($movement->total_cost)->toBe(360.0);
+});
+
+test('cost fields stay null when no unit cost is given', function () {
+    $product = Product::factory()->create(['current_stock' => 0]);
+
+    $movement = app(StockService::class)->increase($product, 10, StockMovementType::OpeningStock);
+
+    expect($movement->unit_cost)->toBeNull()
+        ->and($movement->total_cost)->toBeNull();
+});
+
 test('decrease throws when a stock-managed product does not have enough left', function () {
     $product = Product::factory()->create(['current_stock' => 5, 'manage_stock' => true]);
 

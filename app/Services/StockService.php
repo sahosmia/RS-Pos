@@ -28,11 +28,14 @@ class StockService
         ?string $referenceType = null,
         ?int $referenceId = null,
         ?string $note = null,
+        ?float $unitCost = null,
     ): StockMovement {
-        return DB::transaction(function () use ($product, $qty, $type, $referenceType, $referenceId, $note) {
+        return DB::transaction(function () use ($product, $qty, $type, $referenceType, $referenceId, $note, $unitCost) {
             $movement = $product->stockMovements()->create([
                 'type' => $type,
                 'quantity' => $qty,
+                'unit_cost' => $unitCost,
+                'total_cost' => $unitCost !== null ? $qty * $unitCost : null,
                 'reference_type' => $referenceType,
                 'reference_id' => $referenceId,
                 'note' => $note,
@@ -60,8 +63,9 @@ class StockService
         ?string $referenceType = null,
         ?int $referenceId = null,
         ?string $note = null,
+        ?float $unitCost = null,
     ): StockMovement {
-        return DB::transaction(function () use ($product, $qty, $type, $referenceType, $referenceId, $note) {
+        return DB::transaction(function () use ($product, $qty, $type, $referenceType, $referenceId, $note, $unitCost) {
             $locked = Product::query()->lockForUpdate()->findOrFail($product->id);
 
             if ($locked->manage_stock && $locked->current_stock < $qty) {
@@ -71,6 +75,8 @@ class StockService
             $movement = $locked->stockMovements()->create([
                 'type' => $type,
                 'quantity' => $qty,
+                'unit_cost' => $unitCost,
+                'total_cost' => $unitCost !== null ? $qty * $unitCost : null,
                 'reference_type' => $referenceType,
                 'reference_id' => $referenceId,
                 'note' => $note,

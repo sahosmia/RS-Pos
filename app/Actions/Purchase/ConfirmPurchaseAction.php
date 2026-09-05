@@ -135,7 +135,7 @@ class ConfirmPurchaseAction
             : (($product->current_stock * $product->avg_cost) + ($item->quantity * $item->unit_price))
                 / ($product->current_stock + $item->quantity);
 
-        $this->stock->increase($product, $item->quantity, StockMovementType::Purchase, 'purchase', $purchase->id);
+        $this->stock->increase($product, $item->quantity, StockMovementType::Purchase, 'purchase', $purchase->id, unitCost: $item->unit_price);
 
         $product->forceFill(['avg_cost' => round($newAvgCost, 2)])->save();
     }

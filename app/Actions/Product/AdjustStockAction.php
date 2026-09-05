@@ -26,7 +26,7 @@ class AdjustStockAction
         }
 
         return $difference > 0
-            ? $this->stock->increase($product, $difference, StockMovementType::AdjustmentIncrease, note: $reason)
-            : $this->stock->decrease($product, abs($difference), StockMovementType::AdjustmentDecrease, note: $reason);
+            ? $this->stock->increase($product, $difference, StockMovementType::AdjustmentIncrease, note: $reason, unitCost: $product->avg_cost)
+            : $this->stock->decrease($product, abs($difference), StockMovementType::AdjustmentDecrease, note: $reason, unitCost: $product->avg_cost);
     }
 }

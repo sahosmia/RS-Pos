@@ -84,8 +84,8 @@
 - [x] **2.5.13** Feature test: দুইটা simultaneous sale একই শেষ ১টা stock-এর জন্য প্রতিযোগিতা করলে একটাই সফল হয় (concurrency test) — SQLite in-memory single-connection হওয়ায় সত্যিকারের দুই-connection race টেস্ট করা যায় না, তাই sequential guard-behavior টেস্ট করা হয়েছে (StockServiceTest.php)
 
 ### ধাপ ৪ — stock_movements cost fields (V2 নতুন)
-- [ ] **2.5.14** RETROFIT — stock_movements (Phase 3.2-এ বানানো) — unit_cost, total_cost (nullable) column যোগ করুন
-- [ ] **2.5.15** RETROFIT — StockService — প্রতিটা movement তৈরির সময় এই দুটো field পূরণ করুন (purchase→unit_price, sale→cost_at_sale, adjustment→avg_cost)
+- [x] **2.5.14** RETROFIT — stock_movements (Phase 3.2-এ বানানো) — unit_cost, total_cost (nullable) column যোগ করুন
+- [x] **2.5.15** RETROFIT — StockService — প্রতিটা movement তৈরির সময় এই দুটো field পূরণ করুন (purchase→unit_price, sale→cost_at_sale, adjustment→avg_cost) — `increase()`/`decrease()`-এ নতুন optional `unitCost` param; ConfirmPurchaseAction (unit_price), ConfirmSaleAction (cost_at_sale), AdjustStockAction (avg_cost), CancelSaleAction (আসল sale item-এর cost_at_sale, আজকের avg_cost না — reversal-টা সেই sale-এর cost basis-ই প্রতিফলিত করা উচিত) আপডেট করা হয়েছে। Opening stock movement-এ (Task-এ উল্লেখ নেই) ইচ্ছাকৃতভাবে cost বসানো হয়নি
 
 ### ধাপ ৫ — ইতিমধ্যে বানানো Action class-এ Journal + Idempotency Retrofit
 - [ ] **2.5.16** RETROFIT — FundTransferAction — journal lines: Dr {to_account COA}, Cr {from_account COA}

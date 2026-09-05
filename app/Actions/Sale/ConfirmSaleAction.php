@@ -107,7 +107,7 @@ class ConfirmSaleAction
                 : null,
         ])->save();
 
-        $this->stock->decrease($product, $item->quantity, StockMovementType::Sale, 'sale', $sale->id);
+        $this->stock->decrease($product, $item->quantity, StockMovementType::Sale, 'sale', $sale->id, unitCost: $item->cost_at_sale);
 
         return $product->avg_cost * $item->quantity;
     }

@@ -35,7 +35,7 @@ class CancelSaleAction
 
             if ($sale->source !== SaleSource::Imported) {
                 foreach ($sale->items as $item) {
-                    $this->stock->increase($item->product, $item->quantity, StockMovementType::AdjustmentIncrease, 'sale', $sale->id, 'Sale cancelled');
+                    $this->stock->increase($item->product, $item->quantity, StockMovementType::AdjustmentIncrease, 'sale', $sale->id, 'Sale cancelled', unitCost: $item->cost_at_sale);
                 }
 
                 if ($sale->due_amount !== 0.0) {

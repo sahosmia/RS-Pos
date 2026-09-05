@@ -27,6 +27,8 @@ class StockMovement extends Model
         'product_id',
         'type',
         'quantity',
+        'unit_cost',
+        'total_cost',
         'reference_type',
         'reference_id',
         'note',
@@ -43,6 +45,8 @@ class StockMovement extends Model
         return [
             'type' => StockMovementType::class,
             'quantity' => 'float',
+            'unit_cost' => 'float',
+            'total_cost' => 'float',
         ];
     }
 
