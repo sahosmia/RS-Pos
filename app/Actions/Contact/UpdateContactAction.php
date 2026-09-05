@@ -4,12 +4,18 @@ namespace App\Actions\Contact;
 
 use App\Enums\ContactLedgerType;
 use App\Models\Contact;
+use App\Services\ChartOfAccountResolver;
+use App\Services\JournalService;
 use App\Services\LedgerService;
 use Illuminate\Support\Facades\DB;
 
 class UpdateContactAction
 {
-    public function __construct(private LedgerService $ledger) {}
+    public function __construct(
+        private LedgerService $ledger,
+        private JournalService $journal,
+        private ChartOfAccountResolver $chartOfAccounts,
+    ) {}
 
     /**
      * @param  array{name: string, phone: string, email?: string|null, address?: string|null, shipping_address?: string|null, type: string, entity_type?: string, business_name?: string|null, customer_group_id?: int|null, is_active?: bool, opening_balance?: float|string|null}  $data
@@ -36,6 +42,16 @@ class UpdateContactAction
 
             if ($contact->canSetOpeningBalance() && $openingBalance !== 0.0) {
                 $this->ledger->recordContact($contact, ContactLedgerType::OpeningBalance, $openingBalance);
+
+                $this->journal->postOpeningBalance(
+                    today(),
+                    $this->chartOfAccounts->code($openingBalance > 0 ? '1100' : '2100'),
+                    $this->chartOfAccounts->code('3300'),
+                    $openingBalance,
+                    'contact_opening_balance',
+                    $contact->id,
+                    "Opening balance: {$contact->name}",
+                );
             }
 
             return $contact;

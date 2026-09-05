@@ -9,12 +9,18 @@ use App\Models\Account;
 use App\Models\AccountType;
 use App\Models\ChartOfAccount;
 use App\Services\AccountService;
+use App\Services\ChartOfAccountResolver;
+use App\Services\JournalService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class CreateAccountAction
 {
-    public function __construct(private AccountService $accounts) {}
+    public function __construct(
+        private AccountService $accounts,
+        private JournalService $journal,
+        private ChartOfAccountResolver $chartOfAccounts,
+    ) {}
 
     /**
      * @param  array{name: string, account_type_id: int, account_sub_type?: string|null, account_number?: string|null, opening_balance?: float|string|null}  $data
@@ -42,6 +48,16 @@ class CreateAccountAction
                     AccountTransactionType::OpeningBalance,
                     $openingBalance,
                     today(),
+                );
+
+                $this->journal->postOpeningBalance(
+                    today(),
+                    $chartOfAccount,
+                    $this->chartOfAccounts->code('3300'),
+                    $openingBalance,
+                    'account_opening_balance',
+                    $account->id,
+                    "Opening balance: {$account->name}",
                 );
             }
 

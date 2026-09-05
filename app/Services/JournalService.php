@@ -79,12 +79,44 @@ class JournalService
     }
 
     /**
+     * The one entry every opening balance posts against — Dr {subject} / Cr
+     * Opening Balance Equity when $amount is positive (asset-side: Cash,
+     * Inventory, Fixed Asset, Customer Due, Staff Advance), or the mirror
+     * when negative (liability-side: Supplier Due, Loan, Other Liability).
+     *
+     * @throws UnbalancedJournalEntryException
+     * @throws ClosedPeriodException
+     */
+    public function postOpeningBalance(
+        CarbonInterface $date,
+        ChartOfAccount $subject,
+        ChartOfAccount $equity,
+        float $amount,
+        string $referenceType,
+        int $referenceId,
+        string $description,
+    ): JournalEntry {
+        $magnitude = abs(round($amount, 2));
+
+        $lines = $amount > 0
+            ? [
+                ['chart_of_account_id' => $subject->id, 'debit' => $magnitude, 'credit' => 0],
+                ['chart_of_account_id' => $equity->id, 'debit' => 0, 'credit' => $magnitude],
+            ]
+            : [
+                ['chart_of_account_id' => $equity->id, 'debit' => $magnitude, 'credit' => 0],
+                ['chart_of_account_id' => $subject->id, 'debit' => 0, 'credit' => $magnitude],
+            ];
+
+        return $this->post($date, $description, $lines, $referenceType, $referenceId);
+    }
+
+    /**
      * Corrects a mistake without ever editing or deleting history: posts a
      * new entry with every line's debit/credit swapped, then marks the
      * original Reversed. The reversal itself is always allowed through
      * today's date even if the original's period has since closed.
-     */
-    /**
+     *
      * @throws AlreadyReversedException
      */
     public function reverse(JournalEntry $original, string $reason, ?int $userId = null): JournalEntry

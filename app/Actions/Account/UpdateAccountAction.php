@@ -4,12 +4,19 @@ namespace App\Actions\Account;
 
 use App\Enums\AccountTransactionType;
 use App\Models\Account;
+use App\Models\JournalEntry;
 use App\Services\AccountService;
+use App\Services\ChartOfAccountResolver;
+use App\Services\JournalService;
 use Illuminate\Support\Facades\DB;
 
 class UpdateAccountAction
 {
-    public function __construct(private AccountService $accounts) {}
+    public function __construct(
+        private AccountService $accounts,
+        private JournalService $journal,
+        private ChartOfAccountResolver $chartOfAccounts,
+    ) {}
 
     /**
      * @param  array{name: string, account_type_id: int, account_sub_type?: string|null, account_number?: string|null, opening_balance?: float|string|null, is_active?: bool}  $data
@@ -48,6 +55,7 @@ class UpdateAccountAction
         if ($opening === null) {
             if ($openingBalance !== 0.0) {
                 $this->accounts->record($account, AccountTransactionType::OpeningBalance, $openingBalance, today());
+                $this->postOpeningBalanceJournal($account, $openingBalance);
             }
 
             return;
@@ -63,6 +71,44 @@ class UpdateAccountAction
 
         if ($delta !== 0.0) {
             $account->increment('current_balance', $delta);
+            $this->syncOpeningBalanceJournal($account, $openingBalance);
         }
+    }
+
+    /**
+     * The journal entry is never edited — the amount changed, so the
+     * original (if any) is reversed and a fresh one posted for the new
+     * amount, keeping the General Ledger append-only even though the
+     * subsidiary account_transactions row above is corrected in place
+     * (only reachable pre-any-other-activity, where that's accepted).
+     */
+    private function syncOpeningBalanceJournal(Account $account, float $newAmount): void
+    {
+        $original = JournalEntry::query()
+            ->where('reference_type', 'account_opening_balance')
+            ->where('reference_id', $account->id)
+            ->where('status', 'posted')
+            ->first();
+
+        if ($original !== null) {
+            $this->journal->reverse($original, 'Opening balance corrected');
+        }
+
+        if ($newAmount !== 0.0) {
+            $this->postOpeningBalanceJournal($account, $newAmount);
+        }
+    }
+
+    private function postOpeningBalanceJournal(Account $account, float $amount): void
+    {
+        $this->journal->postOpeningBalance(
+            today(),
+            $account->chartOfAccount,
+            $this->chartOfAccounts->code('3300'),
+            $amount,
+            'account_opening_balance',
+            $account->id,
+            "Opening balance: {$account->name}",
+        );
     }
 }

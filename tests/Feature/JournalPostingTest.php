@@ -17,6 +17,97 @@ beforeEach(function () {
     Settings::factory()->create();
 });
 
+test('creating an account with an opening balance posts a balanced journal entry against Opening Balance Equity', function () {
+    $this->actingAs(User::factory()->create());
+    $type = AccountType::factory()->create(['name' => 'Cash']);
+
+    $this->post('/accounts', [
+        'name' => 'City Bank',
+        'account_type_id' => $type->id,
+        'opening_balance' => 5000,
+    ])->assertRedirect('/accounts');
+
+    $account = Account::query()->firstOrFail();
+    $equity = ChartOfAccount::where('code', '3300')->firstOrFail();
+    $entry = JournalEntry::where('reference_type', 'account_opening_balance')->where('reference_id', $account->id)->firstOrFail();
+
+    expect($entry->lines->sum('debit'))->toBe($entry->lines->sum('credit'))
+        ->and($account->chartOfAccount->fresh()->balance)->toBe(5000.0)
+        ->and($equity->fresh()->balance)->toBe(5000.0);
+});
+
+test('correcting an account opening balance reverses the original journal entry and posts a fresh one', function () {
+    $this->actingAs(User::factory()->create());
+    $type = AccountType::factory()->create();
+
+    $this->post('/accounts', [
+        'name' => 'City Bank',
+        'account_type_id' => $type->id,
+        'opening_balance' => 5000,
+    ]);
+
+    $account = Account::query()->firstOrFail();
+    $original = JournalEntry::where('reference_type', 'account_opening_balance')->where('reference_id', $account->id)->firstOrFail();
+
+    $this->patch("/accounts/{$account->id}", [
+        'name' => $account->name,
+        'account_type_id' => $type->id,
+        'opening_balance' => 7000,
+        'is_active' => true,
+    ])->assertRedirect('/accounts');
+
+    $equity = ChartOfAccount::where('code', '3300')->firstOrFail();
+
+    expect($original->fresh()->status->value)->toBe('reversed')
+        ->and($account->chartOfAccount->fresh()->balance)->toBe(7000.0)
+        ->and($equity->fresh()->balance)->toBe(7000.0)
+        ->and(JournalEntry::where('reference_type', 'account_opening_balance')->where('reference_id', $account->id)->count())->toBe(2);
+});
+
+test('creating a contact with a positive opening balance debits Accounts Receivable', function () {
+    $this->actingAs(User::factory()->create());
+
+    $this->post('/contacts', [
+        'name' => 'Verify Customer',
+        'phone' => '01700000000',
+        'type' => 'customer',
+        'entity_type' => 'individual',
+        'is_active' => true,
+        'opening_balance' => 500,
+    ])->assertRedirect();
+
+    $contact = Contact::query()->firstOrFail();
+    $receivable = ChartOfAccount::where('code', '1100')->firstOrFail();
+    $equity = ChartOfAccount::where('code', '3300')->firstOrFail();
+    $entry = JournalEntry::where('reference_type', 'contact_opening_balance')->where('reference_id', $contact->id)->firstOrFail();
+
+    expect($entry->lines->sum('debit'))->toBe($entry->lines->sum('credit'))
+        ->and($receivable->fresh()->balance)->toBe(500.0)
+        ->and($equity->fresh()->balance)->toBe(500.0);
+});
+
+test('creating a contact with a negative opening balance credits Accounts Payable', function () {
+    $this->actingAs(User::factory()->create());
+
+    $this->post('/contacts', [
+        'name' => 'Verify Supplier',
+        'phone' => '01700000001',
+        'type' => 'supplier',
+        'entity_type' => 'individual',
+        'is_active' => true,
+        'opening_balance' => -300,
+    ])->assertRedirect();
+
+    $contact = Contact::query()->firstOrFail();
+    $payable = ChartOfAccount::where('code', '2100')->firstOrFail();
+    $equity = ChartOfAccount::where('code', '3300')->firstOrFail();
+    $entry = JournalEntry::where('reference_type', 'contact_opening_balance')->where('reference_id', $contact->id)->firstOrFail();
+
+    expect($entry->lines->sum('debit'))->toBe($entry->lines->sum('credit'))
+        ->and($payable->fresh()->balance)->toBe(300.0)
+        ->and($equity->fresh()->balance)->toBe(-300.0);
+});
+
 test('confirming a sale posts a balanced journal entry with a receivable/revenue pair and a COGS/inventory pair', function () {
     $this->actingAs(User::factory()->create());
     $customer = Contact::factory()->create();
