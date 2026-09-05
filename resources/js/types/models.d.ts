@@ -433,6 +433,7 @@ export interface JournalEntryListItem {
     description: string;
     reference_type: string | null;
     reference_id: number | null;
+    status: 'posted' | 'reversed';
     total_debit: number;
     total_credit: number;
 }
@@ -451,6 +452,9 @@ export interface JournalEntryDetail {
     description: string;
     reference_type: string | null;
     reference_id: number | null;
+    status: 'posted' | 'reversed';
+    reversed_at: string | null;
+    reversal_of: { id: number; description: string } | null;
     lines: JournalEntryLineDetail[];
 }
 

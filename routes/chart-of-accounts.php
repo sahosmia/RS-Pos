@@ -16,6 +16,9 @@ Route::middleware('auth')->group(function () {
     Route::resource('journal-entries', JournalEntryController::class)
         ->only(['index', 'show']);
 
+    Route::post('journal-entries/{journal_entry}/reverse', [JournalEntryController::class, 'reverse'])
+        ->name('journal-entries.reverse');
+
     Route::resource('accounting-periods', AccountingPeriodController::class)
         ->only(['index']);
 

@@ -87,7 +87,42 @@ test('the journal entries list and detail pages render', function () {
 
     $this->get("/journal-entries/{$entry->id}")
         ->assertOk()
-        ->assertInertia(fn ($page) => $page->component('journal-entries/show')->has('entry.lines', 2));
+        ->assertInertia(fn ($page) => $page->component('journal-entries/show')
+            ->where('entry.status', 'posted')
+            ->has('entry.lines', 2));
+});
+
+test('reversing a journal entry from the UI posts a mirrored entry and marks the original reversed', function () {
+    $this->actingAs(User::factory()->create());
+    $cashType = AccountType::factory()->create(['name' => 'Cash']);
+    $cash = Account::factory()->create(['account_type_id' => $cashType->id, 'current_balance' => 5000]);
+    $bankType = AccountType::factory()->create(['name' => 'Bank']);
+    $bank = Account::factory()->create(['account_type_id' => $bankType->id, 'current_balance' => 0]);
+
+    $this->post('/fund-transfers', [
+        'from_account_id' => $cash->id,
+        'to_account_id' => $bank->id,
+        'amount' => 500,
+        'transfer_date' => '2026-03-01',
+    ]);
+
+    $original = JournalEntry::query()->firstOrFail();
+
+    $this->post("/journal-entries/{$original->id}/reverse", ['reason' => 'entered by mistake'])
+        ->assertRedirect();
+
+    expect($original->fresh()->status->value)->toBe('reversed')
+        ->and(JournalEntry::query()->count())->toBe(2);
+
+    $reversal = JournalEntry::query()->where('reversal_of_id', $original->id)->firstOrFail();
+
+    $this->get("/journal-entries/{$reversal->id}")
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page->component('journal-entries/show')
+            ->where('entry.reversal_of.id', $original->id));
+
+    $this->post("/journal-entries/{$original->id}/reverse", ['reason' => 'again'])
+        ->assertStatus(500);
 });
 
 test('the accounting periods page renders and closing a period locks it', function () {

@@ -2,7 +2,9 @@
 
 namespace App\Services;
 
+use App\Enums\JournalEntryStatus;
 use App\Enums\NormalBalance;
+use App\Exceptions\AlreadyReversedException;
 use App\Exceptions\ClosedPeriodException;
 use App\Exceptions\UnbalancedJournalEntryException;
 use App\Models\AccountingPeriod;
@@ -82,8 +84,15 @@ class JournalService
      * original Reversed. The reversal itself is always allowed through
      * today's date even if the original's period has since closed.
      */
+    /**
+     * @throws AlreadyReversedException
+     */
     public function reverse(JournalEntry $original, string $reason, ?int $userId = null): JournalEntry
     {
+        if ($original->status === JournalEntryStatus::Reversed) {
+            throw new AlreadyReversedException($original->id);
+        }
+
         $original->loadMissing('lines');
 
         $mirroredLines = $original->lines->map(fn ($line) => [

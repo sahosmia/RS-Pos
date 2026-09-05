@@ -1,5 +1,6 @@
 import HeadingSmall from '@/components/heading-small';
 import EmptyState from '@/components/shared/empty-state';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -95,6 +96,7 @@ export default function JournalEntriesIndex({ entries, accounts, filters }: Jour
                                         <th className="px-4 py-2 text-left font-medium">Date</th>
                                         <th className="px-4 py-2 text-left font-medium">Description</th>
                                         <th className="px-4 py-2 text-left font-medium">Reference</th>
+                                        <th className="px-4 py-2 text-left font-medium">Status</th>
                                         <th className="px-4 py-2 text-right font-medium">Debit</th>
                                         <th className="px-4 py-2 text-right font-medium">Credit</th>
                                     </tr>
@@ -110,6 +112,11 @@ export default function JournalEntriesIndex({ entries, accounts, filters }: Jour
                                             </td>
                                             <td className="text-muted-foreground px-4 py-2">
                                                 {entry.reference_type ? `${entry.reference_type} #${entry.reference_id}` : '—'}
+                                            </td>
+                                            <td className="px-4 py-2">
+                                                <Badge variant={entry.status === 'reversed' ? 'outline' : 'secondary'}>
+                                                    {entry.status === 'reversed' ? 'Reversed' : 'Posted'}
+                                                </Badge>
                                             </td>
                                             <td className="px-4 py-2 text-right tabular-nums">{money(entry.total_debit)}</td>
                                             <td className="px-4 py-2 text-right tabular-nums">{money(entry.total_credit)}</td>

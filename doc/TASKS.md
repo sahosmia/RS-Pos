@@ -75,9 +75,9 @@
 - [x] **2.5.6** CreateAccountAction — নতুন account তৈরি হলে automatically একটা matching chart_of_accounts sub-account তৈরি হবে (Cash→1010-এর child, Bank/Mobile/Cheque→1020-এর child) এবং লিংক হবে — Phase 2.4-এ বানানো Account creation flow আপডেট করুন। `ChartOfAccountResolver::forAccount()`-ও এখন guess করার বদলে সরাসরি এই FK ব্যবহার করে। AccountFactory-তেও default `chart_of_account_id` (একটা standalone auto ChartOfAccount) যোগ করা হয়েছে যাতে factory দিয়ে সরাসরি বানানো ২৮টা পুরনো test call site না ভাঙে
 
 ### ধাপ ৩ — Frontend + Idempotency + Concurrency
-- [ ] **2.5.7** Chart of Accounts List Page (tree view, parent-child) + Add/Edit Modal
-- [ ] **2.5.8** Journal Entry List Page + Detail view (সব line + debit/credit + status/reversal দেখাবে)
-- [ ] **2.5.9** General Ledger Page (প্রতি account-এর জন্য, running balance সহ)
+- [x] **2.5.7** Chart of Accounts List Page (tree view, parent-child) + Add/Edit Modal — V1-এই বানানো হয়েছিল, এখনো ঠিকভাবে কাজ করছে
+- [x] **2.5.8** Journal Entry List Page + Detail view (সব line + debit/credit + status/reversal দেখাবে) — list/detail দুটোতেই status badge যোগ করা হয়েছে; detail page-এ reversal_of link + reversed_at দেখায়; একটা posted entry-তে "Reverse" বাটন (reason নিয়ে ConfirmDialog) যোগ করা হয়েছে (নাহলে JournalService::reverse() UI থেকে কখনো reach-ই হতো না) — নতুন `POST journal-entries/{id}/reverse` route + `AlreadyReversedException` guard (একই entry দুইবার reverse করা যাবে না)
+- [x] **2.5.9** General Ledger Page (প্রতি account-এর জন্য, running balance সহ) — V1-এই বানানো হয়েছিল, এখনো ঠিকভাবে কাজ করছে
 - [ ] **2.5.10** RETROFIT — StockService::decrease() (Phase 3.3-এ বানানো) — Product::lockForUpdate() যোগ করুন — V2 (concurrency safety)
 - [ ] **2.5.11** Feature test: unbalanced lines দিয়ে post করতে গেলে exception হয়
 - [ ] **2.5.12** Feature test: balanced entry post হলে সব line ঠিকভাবে সেভ হয়, account balance আপডেট হয়

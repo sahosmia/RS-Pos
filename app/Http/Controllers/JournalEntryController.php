@@ -4,7 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\ChartOfAccount;
 use App\Models\JournalEntry;
+use App\Services\JournalService;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -41,6 +43,7 @@ class JournalEntryController extends Controller
             'description' => $entry->description,
             'reference_type' => $entry->reference_type,
             'reference_id' => $entry->reference_id,
+            'status' => $entry->status,
             'total_debit' => $entry->lines->sum('debit'),
             'total_credit' => $entry->lines->sum('credit'),
         ]);
@@ -58,7 +61,7 @@ class JournalEntryController extends Controller
 
     public function show(JournalEntry $journalEntry): Response
     {
-        $journalEntry->load('lines.chartOfAccount:id,code,name');
+        $journalEntry->load('lines.chartOfAccount:id,code,name', 'reversalOf:id,description');
 
         return Inertia::render('journal-entries/show', [
             'entry' => [
@@ -67,6 +70,9 @@ class JournalEntryController extends Controller
                 'description' => $journalEntry->description,
                 'reference_type' => $journalEntry->reference_type,
                 'reference_id' => $journalEntry->reference_id,
+                'status' => $journalEntry->status,
+                'reversed_at' => $journalEntry->reversed_at?->toDateTimeString(),
+                'reversal_of' => $journalEntry->reversalOf?->only(['id', 'description']),
                 'lines' => $journalEntry->lines->map(fn ($line) => [
                     'id' => $line->id,
                     'chart_of_account' => $line->chartOfAccount->only(['id', 'code', 'name']),
@@ -76,5 +82,18 @@ class JournalEntryController extends Controller
                 ]),
             ],
         ]);
+    }
+
+    /**
+     * Never edits or deletes the original — posts a mirrored correcting
+     * entry and marks this one reversed.
+     */
+    public function reverse(Request $request, JournalEntry $journalEntry, JournalService $journal): RedirectResponse
+    {
+        $validated = $request->validate(['reason' => ['required', 'string', 'max:255']]);
+
+        $reversal = $journal->reverse($journalEntry, $validated['reason']);
+
+        return redirect()->route('journal-entries.show', $reversal->id);
     }
 }
