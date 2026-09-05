@@ -3,7 +3,9 @@
 namespace App\Services;
 
 use App\Enums\NormalBalance;
+use App\Exceptions\ClosedPeriodException;
 use App\Exceptions\UnbalancedJournalEntryException;
+use App\Models\AccountingPeriod;
 use App\Models\ChartOfAccount;
 use App\Models\JournalEntry;
 use Carbon\CarbonInterface;
@@ -22,6 +24,7 @@ class JournalService
      * @param  array<int, array{chart_of_account_id: int, debit?: float|string, credit?: float|string, note?: string|null}>  $lines
      *
      * @throws UnbalancedJournalEntryException
+     * @throws ClosedPeriodException
      */
     public function post(
         CarbonInterface $date,
@@ -36,6 +39,8 @@ class JournalService
         if (abs($totalDebit - $totalCredit) > 0.01) {
             throw new UnbalancedJournalEntryException($totalDebit, $totalCredit);
         }
+
+        $this->assertPeriodOpen($date);
 
         return DB::transaction(function () use ($date, $description, $lines, $referenceType, $referenceId) {
             $entry = JournalEntry::create([
@@ -69,5 +74,54 @@ class JournalService
 
             return $entry->load('lines.chartOfAccount');
         });
+    }
+
+    /**
+     * Corrects a mistake without ever editing or deleting history: posts a
+     * new entry with every line's debit/credit swapped, then marks the
+     * original Reversed. The reversal itself is always allowed through
+     * today's date even if the original's period has since closed.
+     */
+    public function reverse(JournalEntry $original, string $reason, ?int $userId = null): JournalEntry
+    {
+        $original->loadMissing('lines');
+
+        $mirroredLines = $original->lines->map(fn ($line) => [
+            'chart_of_account_id' => $line->chart_of_account_id,
+            'debit' => $line->credit,
+            'credit' => $line->debit,
+        ])->all();
+
+        return DB::transaction(function () use ($original, $reason, $userId, $mirroredLines) {
+            $reversal = $this->post(now(), "Reversal: {$reason}", $mirroredLines, 'journal_reversal', $original->id);
+
+            $original->update([
+                'status' => 'reversed',
+                'reversed_at' => now(),
+                'reversed_by' => $userId ?? Auth::id(),
+            ]);
+
+            $reversal->update(['reversal_of_id' => $original->id]);
+
+            return $reversal;
+        });
+    }
+
+    /**
+     * @throws ClosedPeriodException
+     */
+    private function assertPeriodOpen(CarbonInterface $date): void
+    {
+        $period = AccountingPeriod::query()->containing($date)->first();
+
+        // No period record covers this date (e.g. outside the seeded fiscal
+        // year) — nothing to enforce, so posting is allowed.
+        if ($period === null) {
+            return;
+        }
+
+        if (! $period->isOpen()) {
+            throw new ClosedPeriodException($date);
+        }
     }
 }

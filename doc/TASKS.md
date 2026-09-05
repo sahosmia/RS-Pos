@@ -53,22 +53,22 @@
 - [x] **2.5.0b** php artisan migrate:fresh --seed (এই ধাপের পর, decimal fix reflect করতে) — reset করে column type verify করা হয়েছে ও পুরো test suite (১২৬টা) আবার pass করেছে
 
 ### ধাপ ১ — Chart of Accounts + Journal Entry কাঠামো
-- [ ] **2.5.1** chart_of_accounts migration+model + default seeder — সম্পূর্ণ তালিকা:
+- [x] **2.5.1** chart_of_accounts migration+model + default seeder — সম্পূর্ণ তালিকা:
   - 1010 Cash in Hand (asset/debit), 1020 Bank Accounts parent (asset/debit)
   - 1100 Accounts Receivable (asset/debit), 1200 Inventory (asset/debit)
   - 1300 Staff Advances (asset/debit), 1400 Fixed Assets (asset/debit)
   - 2100 Accounts Payable (liability/credit), 2200 Loans Payable (liability/credit), 2300 Other Liabilities (liability/credit)
   - 3100 Owner's/Investor's Capital (equity/credit), 3200 Retained Earnings (equity/credit), 3300 Opening Balance Equity (equity/credit) — V2 নতুন
   - 4100 Sales Revenue (income/credit), 4200 Service/Installation Income (income/credit), 4150 Sales Returns & Allowances contra-income — V2 নতুন
-  - 5100 Cost of Goods Sold (expense/debit), 5900 Interest Expense (expense/debit) — V2 নতুন, 5200+ প্রতি expense_category-র জন্য একটা sub-account (expense/debit)
-- [ ] **2.5.2** journal_entries (id, entry_date, description, reference_type, reference_id, status enum(posted/reversed) default posted, reversed_at, reversed_by, reversal_of_id — V2, created_by) + journal_entry_lines (id, journal_entry_id, chart_of_account_id, debit, credit, note) migration+model
-- [ ] **2.5.3** JournalService::post(date, description, lines[], refType, refId) — SUM(debit) ≠ SUM(credit) হলে UnbalancedJournalEntryException থ্রো করবে; এবং assertPeriodOpen($date) চেক করবে — V2 (নিচে 2.5.4a দেখুন)
-- [ ] **2.5.3b** JournalService::reverse(JournalEntry $original, reason, userId) — V2 — mirrored debit/credit দিয়ে নতুন reversal entry বানাবে, original-কে status=reversed মার্ক করবে (কখনো edit/delete না)
+  - 5100 Cost of Goods Sold (expense/debit), 5900 Interest Expense (expense/debit) — V2 নতুন, 5200+ প্রতি expense_category-র জন্য একটা sub-account (expense/debit) — নতুন ৩টা account (3300/4150/5900) `migrate:fresh --seed` দিয়ে যাচাই করা হয়েছে
+- [x] **2.5.2** journal_entries (id, entry_date, description, reference_type, reference_id, status enum(posted/reversed) default posted, reversed_at, reversed_by, reversal_of_id — V2, created_by) + journal_entry_lines (id, journal_entry_id, chart_of_account_id, debit, credit, note) migration+model
+- [x] **2.5.3** JournalService::post(date, description, lines[], refType, refId) — SUM(debit) ≠ SUM(credit) হলে UnbalancedJournalEntryException থ্রো করবে; এবং assertPeriodOpen($date) চেক করবে — V2 (নিচে 2.5.4a দেখুন)
+- [x] **2.5.3b** JournalService::reverse(JournalEntry $original, reason, userId) — V2 — mirrored debit/credit দিয়ে নতুন reversal entry বানাবে, original-কে status=reversed মার্ক করবে (কখনো edit/delete না)
 
 ### ধাপ ১.৫ — Accounting Period Lock (V2 নতুন)
-- [ ] **2.5.4a** accounting_periods migration+model (start_date, end_date, status enum(open/closed), closed_at, closed_by) + monthly seeder (fiscal_year_start_month অনুযায়ী)
+- [x] **2.5.4a** accounting_periods migration+model (start_date, end_date, status enum(open/closed), closed_at, closed_by) + monthly seeder (fiscal_year_start_month অনুযায়ী)
 - [ ] **2.5.4b** Close Period Action (Admin-only) + Period List Page
-- [ ] **2.5.4c** Feature test: closed period-এ journal post করতে গেলে ClosedPeriodException হয়
+- [x] **2.5.4c** Feature test: closed period-এ journal post করতে গেলে ClosedPeriodException হয় (JournalServiceTest.php-এ ৩টা নতুন test: closed period reject, no-period allowed, reverse() behavior)
 
 ### ধাপ ২ — accounts ↔ chart_of_accounts Mapping (V2 নতুন)
 - [ ] **2.5.5** accounts.chart_of_account_id FK migration যোগ করুন (Phase 2.1-এ বানানো accounts table-এ)

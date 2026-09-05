@@ -24,6 +24,7 @@ class DatabaseSeeder extends Seeder
             SettingsSeeder::class,
             AccountTypeSeeder::class,
             ChartOfAccountSeeder::class,
+            AccountingPeriodSeeder::class,
             MiscTransactionCategorySeeder::class,
             CashBookSeeder::class,
         ]);
