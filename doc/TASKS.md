@@ -175,7 +175,7 @@
 - [x] **7.3** Return List + Create Return Page — Sale/Purchase-এর detail page-এ "Return" বাটন (শুধু confirmed/received হলে দেখায়) → Create Return page-এ remaining-returnable item table + quantity input
 - [x] **7.4** Refund Payment Modal — return তৈরির সময় customer/supplier due পুরোটাই কমে যায় (ledger credit); Refund Modal আলাদা, পরে যেকোনো সময় সেই credit-এর জন্য নগদ ফেরত দেওয়ার জন্য (AddSalePaymentModal-এর মতোই split-payment UI) — নিজের journal entry পোস্ট করে (Dr AR/Cr account বা Dr account/Cr AP), 4150 আবার touch করে না
 
-**আবিষ্কৃত আরেকটা gap (ফিক্স করা হয়নি, flag শুধু)**: `AddSalePaymentAction`/`AddPurchasePaymentAction` (আগে থেকেই বানানো, Phase 6-এর) কোনো Journal posting করে না — শুধু AccountService+LedgerService touch করে। মানে confirm-এর পরে collect করা payment financial report-এ কখনো দেখা যায় না। Phase 2.5 V2-এর standing rule অনুযায়ী ("প্রতিটা টাকা-সংক্রান্ত Action... JournalService::post()-ও কল করবে") এটাও ফিক্স হওয়া উচিত, কিন্তু "start 7"-এর scope-এর বাইরে থাকায় হাত দেওয়া হয়নি।
+**✅ পরে ফিক্স করা হয়েছে**: `AddSalePaymentAction`/`AddPurchasePaymentAction` (Phase 6-এর, আগে flag করা হয়েছিল) এখন নিজেদের balanced journal entry পোস্ট করে (Dr {account}/Cr AR এবং Dr AP/Cr {account})। এর ফলে একটা সাথে-যুক্ত bug-ও ধরা পড়েছে ও ফিক্স হয়েছে: `CancelSaleAction`-এর journal-reversal লজিক আগে শুধু প্রথম posted entry `->first()` নিয়ে reverse করত — যেহেতু এখন একটা sale-এ একাধিক posted entry থাকতে পারে (confirm-time + প্রতিটা later payment), সেটাকে সব posted entry loop করে reverse করার মতো বদলানো হয়েছে।
 
 ---
 

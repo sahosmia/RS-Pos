@@ -89,20 +89,19 @@ class CancelSaleAction
     }
 
     /**
-     * The confirm-time entry (Dr AR/Cash Cr Revenue, Dr COGS Cr Inventory,
-     * plus one line pair per payment) is reversed as a whole — one mirrored
-     * entry undoes everything it posted.
+     * A sale can have more than one posted entry against it — the
+     * confirm-time one (Dr AR/Cash Cr Revenue, Dr COGS Cr Inventory, plus
+     * one line pair per payment made at confirm time) and, separately, one
+     * per AddSalePaymentAction payment collected afterward. Every one of
+     * them gets reversed, not just the first.
      */
     private function reverseJournalEntry(Sale $sale): void
     {
-        $original = JournalEntry::query()
+        JournalEntry::query()
             ->where('reference_type', 'sale')
             ->where('reference_id', $sale->id)
             ->where('status', 'posted')
-            ->first();
-
-        if ($original !== null) {
-            $this->journal->reverse($original, 'Sale cancelled');
-        }
+            ->get()
+            ->each(fn (JournalEntry $entry) => $this->journal->reverse($entry, 'Sale cancelled'));
     }
 }

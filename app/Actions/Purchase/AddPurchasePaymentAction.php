@@ -4,8 +4,11 @@ namespace App\Actions\Purchase;
 
 use App\Enums\AccountTransactionType;
 use App\Enums\ContactLedgerType;
+use App\Models\Account;
 use App\Models\Purchase;
 use App\Services\AccountService;
+use App\Services\ChartOfAccountResolver;
+use App\Services\JournalService;
 use App\Services\LedgerService;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
@@ -20,6 +23,8 @@ class AddPurchasePaymentAction
     public function __construct(
         private AccountService $accounts,
         private LedgerService $ledger,
+        private JournalService $journal,
+        private ChartOfAccountResolver $chartOfAccounts,
     ) {}
 
     /**
@@ -45,6 +50,8 @@ class AddPurchasePaymentAction
                 ));
 
                 $this->ledger->recordContact($purchase->supplier, ContactLedgerType::PaymentMade, $paidViaAccounts, 'purchase', $purchase->id);
+
+                $this->postJournal($purchase, $payments);
             }
 
             $creditApplied = round($creditApplied, 2);
@@ -57,5 +64,30 @@ class AddPurchasePaymentAction
 
             return $purchase->fresh();
         });
+    }
+
+    /**
+     * One Dr Accounts Payable / Cr {paying account} line pair per account —
+     * same shape as the payment lines ConfirmPurchaseAction posts at
+     * confirm time, just posted separately since this happens later.
+     * Credit applied needs no line — it nets against Payable's existing
+     * balance without a cash movement, same as at confirm time.
+     *
+     * @param  array<int, array{account_id: int|string, amount: float|string}>  $payments
+     */
+    private function postJournal(Purchase $purchase, array $payments): void
+    {
+        $payable = $this->chartOfAccounts->code('2100');
+        $lines = [];
+
+        foreach ($payments as $payment) {
+            $amount = round((float) $payment['amount'], 2);
+            $account = Account::findOrFail($payment['account_id']);
+
+            $lines[] = ['chart_of_account_id' => $payable->id, 'debit' => $amount, 'credit' => 0];
+            $lines[] = ['chart_of_account_id' => $this->chartOfAccounts->forAccount($account)->id, 'debit' => 0, 'credit' => $amount];
+        }
+
+        $this->journal->post(today(), "Payment for purchase {$purchase->invoice_no}", $lines, 'purchase', $purchase->id);
     }
 }

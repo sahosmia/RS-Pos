@@ -237,6 +237,81 @@ test('cancelling a confirmed sale reverses its journal entry', function () {
         ->and($revenue->fresh()->balance)->toBe(0.0);
 });
 
+test('adding a payment to an already-confirmed sale posts its own balanced journal entry', function () {
+    $this->actingAs(User::factory()->create());
+    $customer = Contact::factory()->create();
+    $product = Product::factory()->create(['current_stock' => 5, 'selling_price' => 100]);
+    $accountType = AccountType::factory()->create();
+    $account = Account::factory()->create(['account_type_id' => $accountType->id, 'current_balance' => 0]);
+
+    $sale = Sale::factory()->create(['customer_id' => $customer->id]);
+    $sale->items()->create(['product_id' => $product->id, 'quantity' => 2, 'unit_price' => 100, 'original_price' => 100, 'subtotal' => 200]);
+    $sale->forceFill(['total_amount' => 200, 'due_amount' => 200])->save();
+    $this->post("/sales/{$sale->id}/confirm", []);
+
+    $this->post("/sales/{$sale->id}/payments", ['payments' => [['account_id' => $account->id, 'amount' => 200]]])->assertRedirect();
+
+    $entries = JournalEntry::where('reference_type', 'sale')->where('reference_id', $sale->id)->get();
+    $paymentEntry = $entries->last();
+
+    expect($entries)->toHaveCount(2)
+        ->and($paymentEntry->lines->sum('debit'))->toBe($paymentEntry->lines->sum('credit'));
+
+    $receivable = ChartOfAccount::where('code', '1100')->firstOrFail();
+    expect($receivable->fresh()->balance)->toBe(0.0)
+        ->and($account->chartOfAccount->fresh()->balance)->toBe(200.0);
+});
+
+test('adding a payment to an already-received purchase posts its own balanced journal entry', function () {
+    $this->actingAs(User::factory()->create());
+    $supplier = Contact::factory()->supplier()->create();
+    $product = Product::factory()->create(['current_stock' => 0]);
+    $accountType = AccountType::factory()->create();
+    $account = Account::factory()->create(['account_type_id' => $accountType->id, 'current_balance' => 1000]);
+
+    $purchase = Purchase::factory()->create(['supplier_id' => $supplier->id]);
+    $purchase->items()->create(['product_id' => $product->id, 'quantity' => 10, 'unit_price' => 100, 'original_price' => 100, 'subtotal' => 1000]);
+    $purchase->forceFill(['total_amount' => 1000, 'due_amount' => 1000])->save();
+    $this->post("/purchases/{$purchase->id}/confirm", []);
+
+    $this->post("/purchases/{$purchase->id}/payments", ['payments' => [['account_id' => $account->id, 'amount' => 1000]]])->assertRedirect();
+
+    $entries = JournalEntry::where('reference_type', 'purchase')->where('reference_id', $purchase->id)->get();
+    $paymentEntry = $entries->last();
+
+    expect($entries)->toHaveCount(2)
+        ->and($paymentEntry->lines->sum('debit'))->toBe($paymentEntry->lines->sum('credit'));
+
+    // The account's own GL sub-account starts fresh at 0 regardless of its
+    // subsidiary current_balance — paying out 1000 credits it to -1000.
+    $payable = ChartOfAccount::where('code', '2100')->firstOrFail();
+    expect($payable->fresh()->balance)->toBe(0.0)
+        ->and($account->chartOfAccount->fresh()->balance)->toBe(-1000.0);
+});
+
+test('cancelling a sale reverses both its confirm-time entry and a later payment entry', function () {
+    $this->actingAs(User::factory()->create());
+    $customer = Contact::factory()->create();
+    $product = Product::factory()->create(['current_stock' => 5, 'selling_price' => 100, 'avg_cost' => 60]);
+    $accountType = AccountType::factory()->create();
+    $account = Account::factory()->create(['account_type_id' => $accountType->id, 'current_balance' => 0]);
+
+    $sale = Sale::factory()->create(['customer_id' => $customer->id]);
+    $sale->items()->create(['product_id' => $product->id, 'quantity' => 2, 'unit_price' => 100, 'original_price' => 100, 'subtotal' => 200]);
+    $sale->forceFill(['total_amount' => 200, 'due_amount' => 200])->save();
+    $this->post("/sales/{$sale->id}/confirm", []);
+    $this->post("/sales/{$sale->id}/payments", ['payments' => [['account_id' => $account->id, 'amount' => 200]]]);
+
+    $this->post("/sales/{$sale->id}/cancel")->assertRedirect();
+
+    $postedCount = JournalEntry::where('reference_type', 'sale')->where('reference_id', $sale->id)->where('status', 'posted')->count();
+    expect($postedCount)->toBe(0);
+
+    $receivable = ChartOfAccount::where('code', '1100')->firstOrFail();
+    expect($receivable->fresh()->balance)->toBe(0.0)
+        ->and($account->chartOfAccount->fresh()->balance)->toBe(0.0);
+});
+
 test('a fund transfer posts a balanced journal entry between the two accounts', function () {
     $this->actingAs(User::factory()->create());
     $cashType = AccountType::factory()->create(['name' => 'Cash']);
