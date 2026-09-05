@@ -9,8 +9,10 @@ use App\Enums\SaleStatus;
 use App\Enums\SerialNumberStatus;
 use App\Enums\StockMovementType;
 use App\Models\AccountTransaction;
+use App\Models\JournalEntry;
 use App\Models\Sale;
 use App\Services\AccountService;
+use App\Services\JournalService;
 use App\Services\LedgerService;
 use App\Services\StockService;
 use Illuminate\Support\Facades\DB;
@@ -27,6 +29,7 @@ class CancelSaleAction
         private StockService $stock,
         private LedgerService $ledger,
         private AccountService $accounts,
+        private JournalService $journal,
     ) {}
 
     public function execute(Sale $sale): Sale
@@ -50,6 +53,8 @@ class CancelSaleAction
                 if ($sale->paid_amount > 0.0) {
                     $this->reverseAccountPayments($sale);
                 }
+
+                $this->reverseJournalEntry($sale);
             }
 
             $sale->update(['status' => SaleStatus::Cancelled]);
@@ -80,6 +85,24 @@ class CancelSaleAction
                 $sale->id,
                 'Sale cancelled',
             );
+        }
+    }
+
+    /**
+     * The confirm-time entry (Dr AR/Cash Cr Revenue, Dr COGS Cr Inventory,
+     * plus one line pair per payment) is reversed as a whole — one mirrored
+     * entry undoes everything it posted.
+     */
+    private function reverseJournalEntry(Sale $sale): void
+    {
+        $original = JournalEntry::query()
+            ->where('reference_type', 'sale')
+            ->where('reference_id', $sale->id)
+            ->where('status', 'posted')
+            ->first();
+
+        if ($original !== null) {
+            $this->journal->reverse($original, 'Sale cancelled');
         }
     }
 }

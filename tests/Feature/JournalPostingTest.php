@@ -211,6 +211,32 @@ test('calling ConfirmPurchaseAction on an already-received purchase is a no-op â
         ->and($product->fresh()->current_stock)->toBe(10.0);
 });
 
+test('cancelling a confirmed sale reverses its journal entry', function () {
+    $this->actingAs(User::factory()->create());
+    $customer = Contact::factory()->create();
+    $product = Product::factory()->create(['current_stock' => 10, 'selling_price' => 100, 'avg_cost' => 60]);
+    $sale = Sale::factory()->create(['customer_id' => $customer->id]);
+    $sale->items()->create(['product_id' => $product->id, 'quantity' => 3, 'unit_price' => 100, 'original_price' => 100, 'subtotal' => 300]);
+    $sale->forceFill(['total_amount' => 300, 'due_amount' => 300])->save();
+
+    $this->post("/sales/{$sale->id}/confirm", []);
+    $original = JournalEntry::where('reference_type', 'sale')->where('reference_id', $sale->id)->firstOrFail();
+
+    $this->post("/sales/{$sale->id}/cancel")->assertRedirect();
+
+    $reversal = JournalEntry::where('reversal_of_id', $original->id)->first();
+
+    expect($original->fresh()->status->value)->toBe('reversed')
+        ->and($reversal)->not->toBeNull()
+        ->and($reversal->lines->sum('debit'))->toBe($reversal->lines->sum('credit'));
+
+    $receivable = ChartOfAccount::where('code', '1100')->firstOrFail();
+    $revenue = ChartOfAccount::where('code', '4100')->firstOrFail();
+
+    expect($receivable->fresh()->balance)->toBe(0.0)
+        ->and($revenue->fresh()->balance)->toBe(0.0);
+});
+
 test('a fund transfer posts a balanced journal entry between the two accounts', function () {
     $this->actingAs(User::factory()->create());
     $cashType = AccountType::factory()->create(['name' => 'Cash']);
