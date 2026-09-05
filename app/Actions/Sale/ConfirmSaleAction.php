@@ -6,11 +6,14 @@ use App\Enums\AccountTransactionType;
 use App\Enums\ContactLedgerType;
 use App\Enums\SaleSource;
 use App\Enums\SaleStatus;
+use App\Enums\SerialNumberStatus;
 use App\Enums\StockMovementType;
+use App\Exceptions\InvalidSerialSelectionException;
 use App\Models\Account;
 use App\Models\Product;
 use App\Models\Sale;
 use App\Models\SaleItem;
+use App\Models\SerialNumber;
 use App\Services\AccountService;
 use App\Services\ChartOfAccountResolver;
 use App\Services\JournalService;
@@ -42,14 +45,17 @@ class ConfirmSaleAction
 
     /**
      * @param  array<int, array{account_id: int|string, amount: float|string}>  $payments
+     * @param  array<int, array<int, string>>  $serialSelections  Keyed by sale_item_id — which in-stock unit(s) this line sells, required when the product tracks serials.
+     *
+     * @throws InvalidSerialSelectionException
      */
-    public function execute(Sale $sale, array $payments = []): Sale
+    public function execute(Sale $sale, array $payments = [], array $serialSelections = []): Sale
     {
         if ($sale->status === SaleStatus::Confirmed) {
             return $sale;
         }
 
-        return DB::transaction(function () use ($sale, $payments) {
+        return DB::transaction(function () use ($sale, $payments, $serialSelections) {
             $sale->load('items.product', 'customer');
 
             if ($sale->source === SaleSource::Imported) {
@@ -66,7 +72,7 @@ class ConfirmSaleAction
             $costOfGoodsSold = 0.0;
 
             foreach ($sale->items as $item) {
-                $costOfGoodsSold += $this->sellItem($sale, $item);
+                $costOfGoodsSold += $this->sellItem($sale, $item, $serialSelections[$item->id] ?? []);
             }
 
             $paidViaAccounts = 0.0;
@@ -98,8 +104,10 @@ class ConfirmSaleAction
 
     /**
      * Returns this item's cost_at_sale × quantity, for the COGS journal line.
+     *
+     * @param  array<int, string>  $serialNumbers
      */
-    private function sellItem(Sale $sale, SaleItem $item): float
+    private function sellItem(Sale $sale, SaleItem $item, array $serialNumbers): float
     {
         /** @var Product $product */
         $product = $item->product;
@@ -113,7 +121,48 @@ class ConfirmSaleAction
 
         $this->stock->decrease($product, $item->quantity, StockMovementType::Sale, 'sale', $sale->id, unitCost: $item->cost_at_sale);
 
+        if ($product->track_serial_number) {
+            $this->assignSerials($product, $item, $serialNumbers);
+        }
+
         return $product->avg_cost * $item->quantity;
+    }
+
+    /**
+     * Claims exactly $item->quantity currently in-stock units of this
+     * product — never free-text, since only a real unit already sitting in
+     * inventory can be sold.
+     *
+     * @param  array<int, string>  $serialNumbers
+     *
+     * @throws InvalidSerialSelectionException
+     */
+    private function assignSerials(Product $product, SaleItem $item, array $serialNumbers): void
+    {
+        $serialNumbers = array_values(array_unique($serialNumbers));
+
+        if (count($serialNumbers) !== (int) $item->quantity) {
+            throw new InvalidSerialSelectionException(
+                "\"{$product->name}\" tracks serial numbers — expected {$item->quantity} unique serial(s), got ".count($serialNumbers).'.',
+            );
+        }
+
+        foreach ($serialNumbers as $serialNumber) {
+            $serial = SerialNumber::query()
+                ->where('product_id', $product->id)
+                ->where('serial_number', $serialNumber)
+                ->where('status', SerialNumberStatus::InStock)
+                ->lockForUpdate()
+                ->first();
+
+            if ($serial === null) {
+                throw new InvalidSerialSelectionException(
+                    "Serial \"{$serialNumber}\" is not an in-stock unit of \"{$product->name}\".",
+                );
+            }
+
+            $serial->update(['status' => SerialNumberStatus::Sold, 'sale_item_id' => $item->id]);
+        }
     }
 
     /**

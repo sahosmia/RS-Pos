@@ -22,10 +22,22 @@ export default function ConfirmPurchaseModal({ open, onOpenChange, purchase, acc
     const supplierCredit = Math.max(purchase.supplier.balance, 0);
     const suggestedCredit = Math.min(supplierCredit, purchase.total_amount);
 
+    const serialTrackedItems = purchase.items.filter((item) => item.product.track_serial_number);
+
     const form = useForm({
         payments: [] as PaymentRow[],
         credit_applied: 0,
+        serial_numbers: Object.fromEntries(serialTrackedItems.map((item) => [item.id, Array(item.quantity).fill('')])) as Record<
+            number,
+            string[]
+        >,
     });
+
+    const setSerial = (itemId: number, unitIndex: number, value: string) => {
+        const next = { ...form.data.serial_numbers, [itemId]: [...form.data.serial_numbers[itemId]] };
+        next[itemId][unitIndex] = value;
+        form.setData('serial_numbers', next);
+    };
 
     const submit: FormEventHandler = (e) => {
         e.preventDefault();
@@ -69,6 +81,27 @@ export default function ConfirmPurchaseModal({ open, onOpenChange, purchase, acc
                         onChange={(e) => form.setData('credit_applied', Number(e.target.value))}
                     />
                     <p className="text-muted-foreground text-xs">নতুন cash payment ছাড়াই আগের credit থেকে বকেয়া কমাতে পারেন</p>
+                </div>
+            )}
+
+            {serialTrackedItems.length > 0 && (
+                <div className="space-y-3">
+                    {serialTrackedItems.map((item) => (
+                        <div key={item.id} className="grid gap-2">
+                            <Label>
+                                {item.product.name} — {item.quantity}টা unit-এর serial number
+                            </Label>
+                            {form.data.serial_numbers[item.id].map((serial, unitIndex) => (
+                                <Input
+                                    key={unitIndex}
+                                    value={serial}
+                                    onChange={(e) => setSerial(item.id, unitIndex, e.target.value)}
+                                    placeholder={`Unit ${unitIndex + 1}`}
+                                    required
+                                />
+                            ))}
+                        </div>
+                    ))}
                 </div>
             )}
 

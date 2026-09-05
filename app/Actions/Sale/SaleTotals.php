@@ -41,7 +41,10 @@ class SaleTotals
             $originalPrice = $product->selling_price;
             $itemSubtotal = round($quantity * $unitPrice, 2);
 
-            $saleItem = $sale->items()->create([
+            // Which specific serial-tracked unit each item sells is picked at
+            // confirm time (see SerialSelections/ConfirmSaleAction), not here
+            // — a Draft is fully reversible and shouldn't reserve inventory.
+            $sale->items()->create([
                 'product_id' => $item['product_id'],
                 'quantity' => $quantity,
                 'original_price' => $originalPrice,
@@ -52,12 +55,6 @@ class SaleTotals
                 'installation_charge' => $item['installation_charge'] ?? null,
                 'note' => $item['note'] ?? null,
             ]);
-
-            foreach ($item['serial_numbers'] ?? [] as $serial) {
-                if (trim((string) $serial) !== '') {
-                    $saleItem->serials()->create(['serial_number' => trim((string) $serial)]);
-                }
-            }
 
             $subtotal += $itemSubtotal;
         }

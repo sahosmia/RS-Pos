@@ -20,7 +20,7 @@ class SaleConfirmController extends Controller
             return back()->withErrors(['sale' => 'This sale has already been confirmed.']);
         }
 
-        $confirmSale->execute($sale, $request->validated('payments') ?? []);
+        $confirmSale->execute($sale, $request->validated('payments') ?? [], $request->validated('serial_numbers') ?? []);
 
         return back();
     }

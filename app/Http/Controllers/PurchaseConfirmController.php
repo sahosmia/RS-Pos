@@ -22,7 +22,12 @@ class PurchaseConfirmController extends Controller
 
         $data = $request->validated();
 
-        $confirmPurchase->execute($purchase, $data['payments'] ?? [], (float) ($data['credit_applied'] ?? 0));
+        $confirmPurchase->execute(
+            $purchase,
+            $data['payments'] ?? [],
+            (float) ($data['credit_applied'] ?? 0),
+            $data['serial_numbers'] ?? [],
+        );
 
         return back();
     }

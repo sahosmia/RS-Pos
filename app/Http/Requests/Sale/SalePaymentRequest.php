@@ -30,6 +30,11 @@ class SalePaymentRequest extends FormRequest
             'payments' => ['nullable', 'array'],
             'payments.*.account_id' => ['required', 'integer', 'exists:accounts,id'],
             'payments.*.amount' => ['required', 'numeric', 'min:0.01'],
+            // Keyed by sale_item_id — which in-stock unit(s) this line
+            // sells, only relevant for a track_serial_number product.
+            'serial_numbers' => ['nullable', 'array'],
+            'serial_numbers.*' => ['array'],
+            'serial_numbers.*.*' => ['string'],
         ];
     }
 }

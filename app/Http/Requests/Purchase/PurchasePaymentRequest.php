@@ -32,6 +32,11 @@ class PurchasePaymentRequest extends FormRequest
             'payments.*.account_id' => ['required', 'integer', 'exists:accounts,id'],
             'payments.*.amount' => ['required', 'numeric', 'min:0.01'],
             'credit_applied' => ['nullable', 'numeric', 'min:0'],
+            // Keyed by purchase_item_id — the serial number of each unit
+            // received, only relevant for a track_serial_number product.
+            'serial_numbers' => ['nullable', 'array'],
+            'serial_numbers.*' => ['array'],
+            'serial_numbers.*.*' => ['string'],
         ];
     }
 }

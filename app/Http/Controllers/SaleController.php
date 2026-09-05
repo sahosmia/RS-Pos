@@ -11,6 +11,7 @@ use App\Models\Account;
 use App\Models\Contact;
 use App\Models\Product;
 use App\Models\Sale;
+use App\Support\SerialSelections;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -96,7 +97,8 @@ class SaleController extends Controller
         $sale = $createSale->execute($data);
 
         if ($wantsConfirm) {
-            $sale = $confirmSale->execute($sale, $data['payments'] ?? []);
+            $serialSelections = SerialSelections::extract($sale->items()->orderBy('id')->get(), $data['items']);
+            $sale = $confirmSale->execute($sale, $data['payments'] ?? [], $serialSelections);
         }
 
         return to_route('sales.show', $sale)->with('justConfirmed', $wantsConfirm);
@@ -104,7 +106,7 @@ class SaleController extends Controller
 
     public function show(Sale $sale): Response
     {
-        $sale->load(['customer:id,name,phone,balance', 'items.product:id,name,sku', 'items.serials', 'items' => fn ($query) => $query->orderBy('id')]);
+        $sale->load(['customer:id,name,phone,balance', 'items.product:id,name,sku', 'items.serialNumbers', 'items' => fn ($query) => $query->orderBy('id')]);
 
         return Inertia::render('sales/show', [
             'sale' => $this->present($sale),
@@ -117,7 +119,7 @@ class SaleController extends Controller
     {
         abort_unless($sale->canEdit(), 403);
 
-        $sale->load('items.serials');
+        $sale->load('items');
 
         return Inertia::render('sales/edit', [
             'sale' => [
@@ -136,7 +138,9 @@ class SaleController extends Controller
                     'installation_required' => $item->installation_required,
                     'installation_charge' => $item->installation_charge,
                     'note' => $item->note,
-                    'serial_numbers' => $item->serials->pluck('serial_number')->all(),
+                    // Serial numbers are picked at confirm time, not stored on
+                    // a Draft — nothing to re-populate here (see SaleTotals).
+                    'serial_numbers' => [],
                 ]),
             ],
             'customers' => Contact::query()->customers()->orderBy('name')->get(['id', 'name', 'balance']),
@@ -156,10 +160,11 @@ class SaleController extends Controller
         $wantsConfirm = $data['status'] === 'confirmed';
         $data['status'] = $wantsConfirm ? 'draft' : $data['status'];
 
-        $updateSale->execute($sale, $data);
+        $sale = $updateSale->execute($sale, $data);
 
         if ($wantsConfirm) {
-            $sale = $confirmSale->execute($sale, $data['payments'] ?? []);
+            $serialSelections = SerialSelections::extract($sale->items()->orderBy('id')->get(), $data['items']);
+            $sale = $confirmSale->execute($sale, $data['payments'] ?? [], $serialSelections);
         }
 
         return to_route('sales.show', $sale)->with('justConfirmed', $wantsConfirm);
@@ -211,7 +216,7 @@ class SaleController extends Controller
                 'installation_required' => $item->installation_required,
                 'installation_charge' => $item->installation_charge,
                 'warranty_expires_at' => $item->warranty_expires_at?->toDateString(),
-                'serial_numbers' => $item->serials->pluck('serial_number')->all(),
+                'serial_numbers' => $item->serialNumbers->pluck('serial_number')->all(),
             ]),
         ];
     }

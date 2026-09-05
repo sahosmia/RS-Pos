@@ -6,6 +6,7 @@ use Database\Factories\PurchaseItemFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class PurchaseItem extends Model
 {
@@ -53,5 +54,16 @@ class PurchaseItem extends Model
     public function product(): BelongsTo
     {
         return $this->belongsTo(Product::class);
+    }
+
+    /**
+     * The specific units this line item brought into stock — set at
+     * receive/confirm time for a track_serial_number product.
+     *
+     * @return HasMany<SerialNumber, $this>
+     */
+    public function serialNumbers(): HasMany
+    {
+        return $this->hasMany(SerialNumber::class);
     }
 }

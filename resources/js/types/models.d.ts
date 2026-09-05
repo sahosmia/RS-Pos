@@ -270,7 +270,7 @@ export interface PurchaseFormDetail {
 
 export interface PurchaseItemDetail {
     id: number;
-    product: { id: number; name: string; sku: string };
+    product: { id: number; name: string; sku: string; track_serial_number: boolean };
     quantity: number;
     unit_price: number;
     subtotal: number;

@@ -71,11 +71,13 @@ class SaleItem extends Model
     }
 
     /**
-     * @return HasMany<SaleItemSerial, $this>
+     * The specific units sold against this line — set at confirm time.
+     *
+     * @return HasMany<SerialNumber, $this>
      */
-    public function serials(): HasMany
+    public function serialNumbers(): HasMany
     {
-        return $this->hasMany(SaleItemSerial::class);
+        return $this->hasMany(SerialNumber::class);
     }
 
     /**

@@ -2,6 +2,7 @@
 
 use App\Enums\ContactLedgerType;
 use App\Enums\SaleStatus;
+use App\Enums\SerialNumberStatus;
 use App\Enums\StockMovementType;
 use App\Models\Account;
 use App\Models\AccountType;
@@ -9,6 +10,7 @@ use App\Models\Contact;
 use App\Models\ContactLedger;
 use App\Models\Product;
 use App\Models\Sale;
+use App\Models\SerialNumber;
 use App\Models\Settings;
 use App\Models\StockMovement;
 use App\Models\User;
@@ -183,23 +185,42 @@ test('warranty_expires_at is snapshotted from the product warranty period at con
     expect($sale->items()->first()->warranty_expires_at->toDateString())->toBe('2027-01-15');
 });
 
-test('serial numbers are stored per sale item', function () {
+test('confirming a sale with a serial-tracked product claims the in-stock unit', function () {
     $this->actingAs(User::factory()->create());
     $customer = Contact::factory()->create();
-    $product = Product::factory()->create(['track_serial_number' => true]);
+    $product = Product::factory()->create(['track_serial_number' => true, 'current_stock' => 1]);
+    $serial = SerialNumber::factory()->create(['product_id' => $product->id, 'serial_number' => 'SN-001']);
 
     $this->post('/sales', [
         'customer_id' => $customer->id,
         'sale_date' => '2026-03-01',
-        'status' => 'draft',
+        'status' => 'confirmed',
         'items' => [
             ['product_id' => $product->id, 'quantity' => 1, 'unit_price' => 100, 'serial_numbers' => ['SN-001']],
         ],
-    ]);
+    ])->assertRedirect();
 
     $sale = Sale::query()->firstOrFail();
 
-    expect($sale->items()->first()->serials()->pluck('serial_number')->all())->toBe(['SN-001']);
+    expect($serial->fresh()->status)->toBe(SerialNumberStatus::Sold)
+        ->and($serial->fresh()->sale_item_id)->toBe($sale->items()->first()->id);
+});
+
+test('confirming a sale rejects a serial that is not currently in stock', function () {
+    $this->actingAs(User::factory()->create());
+    $customer = Contact::factory()->create();
+    $product = Product::factory()->create(['track_serial_number' => true, 'current_stock' => 1]);
+
+    $this->post('/sales', [
+        'customer_id' => $customer->id,
+        'sale_date' => '2026-03-01',
+        'status' => 'confirmed',
+        'items' => [
+            ['product_id' => $product->id, 'quantity' => 1, 'unit_price' => 100, 'serial_numbers' => ['SN-DOES-NOT-EXIST']],
+        ],
+    ]);
+
+    expect(Sale::query()->firstOrFail()->status)->toBe(SaleStatus::Draft);
 });
 
 test('a confirmed sale cannot be edited or deleted', function () {

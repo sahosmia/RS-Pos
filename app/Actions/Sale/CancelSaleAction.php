@@ -6,6 +6,7 @@ use App\Enums\AccountTransactionType;
 use App\Enums\ContactLedgerType;
 use App\Enums\SaleSource;
 use App\Enums\SaleStatus;
+use App\Enums\SerialNumberStatus;
 use App\Enums\StockMovementType;
 use App\Models\AccountTransaction;
 use App\Models\Sale;
@@ -36,6 +37,10 @@ class CancelSaleAction
             if ($sale->source !== SaleSource::Imported) {
                 foreach ($sale->items as $item) {
                     $this->stock->increase($item->product, $item->quantity, StockMovementType::AdjustmentIncrease, 'sale', $sale->id, 'Sale cancelled', unitCost: $item->cost_at_sale);
+
+                    if ($item->product->track_serial_number) {
+                        $item->serialNumbers()->update(['status' => SerialNumberStatus::InStock, 'sale_item_id' => null]);
+                    }
                 }
 
                 if ($sale->due_amount !== 0.0) {

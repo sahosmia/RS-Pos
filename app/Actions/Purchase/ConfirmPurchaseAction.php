@@ -5,11 +5,14 @@ namespace App\Actions\Purchase;
 use App\Enums\AccountTransactionType;
 use App\Enums\ContactLedgerType;
 use App\Enums\PurchaseStatus;
+use App\Enums\SerialNumberStatus;
 use App\Enums\StockMovementType;
+use App\Exceptions\InvalidSerialSelectionException;
 use App\Models\Account;
 use App\Models\Product;
 use App\Models\Purchase;
 use App\Models\PurchaseItem;
+use App\Models\SerialNumber;
 use App\Services\AccountService;
 use App\Services\ChartOfAccountResolver;
 use App\Services\JournalService;
@@ -36,18 +39,21 @@ class ConfirmPurchaseAction
 
     /**
      * @param  array<int, array{account_id: int|string, amount: float|string}>  $payments
+     * @param  array<int, array<int, string>>  $serialSelections  Keyed by purchase_item_id — the serial number of each unit received, required when the product tracks serials.
+     *
+     * @throws InvalidSerialSelectionException
      */
-    public function execute(Purchase $purchase, array $payments = [], float $creditApplied = 0.0): Purchase
+    public function execute(Purchase $purchase, array $payments = [], float $creditApplied = 0.0, array $serialSelections = []): Purchase
     {
         if ($purchase->status === PurchaseStatus::Received) {
             return $purchase;
         }
 
-        return DB::transaction(function () use ($purchase, $payments, $creditApplied) {
+        return DB::transaction(function () use ($purchase, $payments, $creditApplied, $serialSelections) {
             $purchase->load('items.product', 'supplier');
 
             foreach ($purchase->items as $item) {
-                $this->receiveItem($purchase, $item);
+                $this->receiveItem($purchase, $item, $serialSelections[$item->id] ?? []);
             }
 
             $paidViaAccounts = 0.0;
@@ -128,8 +134,10 @@ class ConfirmPurchaseAction
     /**
      * Weighted average cost must be computed from the stock quantity
      * *before* this purchase's increase is applied.
+     *
+     * @param  array<int, string>  $serialNumbers
      */
-    private function receiveItem(Purchase $purchase, PurchaseItem $item): void
+    private function receiveItem(Purchase $purchase, PurchaseItem $item, array $serialNumbers): void
     {
         /** @var Product $product */
         $product = $item->product;
@@ -142,5 +150,40 @@ class ConfirmPurchaseAction
         $this->stock->increase($product, $item->quantity, StockMovementType::Purchase, 'purchase', $purchase->id, unitCost: $item->unit_price);
 
         $product->forceFill(['avg_cost' => round($newAvgCost, 2)])->save();
+
+        if ($product->track_serial_number) {
+            $this->createSerials($product, $item, $serialNumbers);
+        }
+    }
+
+    /**
+     * One in_stock serial_numbers row per unit received — every unit must
+     * have its own serial when the product tracks them.
+     *
+     * @param  array<int, string>  $serialNumbers
+     *
+     * @throws InvalidSerialSelectionException
+     */
+    private function createSerials(Product $product, PurchaseItem $item, array $serialNumbers): void
+    {
+        $serialNumbers = array_values(array_unique($serialNumbers));
+
+        if (count($serialNumbers) !== (int) $item->quantity) {
+            throw new InvalidSerialSelectionException(
+                "\"{$product->name}\" tracks serial numbers — expected {$item->quantity} unique serial(s), got ".count($serialNumbers).'.',
+            );
+        }
+
+        foreach ($serialNumbers as $serialNumber) {
+            if (SerialNumber::query()->where('product_id', $product->id)->where('serial_number', $serialNumber)->exists()) {
+                throw new InvalidSerialSelectionException("Serial \"{$serialNumber}\" already exists for \"{$product->name}\".");
+            }
+
+            $item->serialNumbers()->create([
+                'product_id' => $product->id,
+                'serial_number' => $serialNumber,
+                'status' => SerialNumberStatus::InStock,
+            ]);
+        }
     }
 }
