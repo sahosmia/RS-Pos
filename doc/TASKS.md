@@ -107,6 +107,10 @@
 
 ✅ সব ধাপ (২.৫.০ থেকে ২.৫.২৭) শেষ — Phase 2.5 V2 সম্পূর্ণ। Return-এর Action class এখন Chart of Accounts, 4150 account, আর idempotency pattern সব রেডি পেয়ে প্রথম থেকেই Journal posting সহ বানানো যাবে (Dr Sales Returns & Allowances/Cr AR-Cash + Dr Inventory/Cr COGS প্যাটার্নে), আলাদা retrofit ছাড়াই। Phase 7 (Returns) শুরু করা যায়।
 
+**২৮টা task-এর বাইরে, ভেরিফিকেশনের সময় ধরা পড়া ২টা architecture gap আলাদাভাবে ফিক্স করা হয়েছে (source-of-truth নীতি রক্ষা করতে):**
+- Opening balance (Account/Contact তৈরি বা edit করার সময়) আগে শুধু subsidiary ledger-এ যেত, journal_entries-এ কখনো না — এখন `JournalService::postOpeningBalance()` দিয়ে 3300-এর বিপরীতে balanced entry পোস্ট হয় (CreateAccountAction, UpdateAccountAction — reverse+repost দিয়ে সংশোধনযোগ্য, CreateContactAction, UpdateContactAction — set-once)।
+- `CancelSaleAction` স্টক/লেজার/অ্যাকাউন্ট reverse করত কিন্তু journal entry-কে ছুঁতই না — এখন সেই sale-এর posted journal entry `JournalService::reverse()` দিয়ে reverse হয়।
+
 ---
 
 ## Phase 3 — Inventory (পর্ব ১)
