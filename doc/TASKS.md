@@ -78,10 +78,10 @@
 - [x] **2.5.7** Chart of Accounts List Page (tree view, parent-child) + Add/Edit Modal — V1-এই বানানো হয়েছিল, এখনো ঠিকভাবে কাজ করছে
 - [x] **2.5.8** Journal Entry List Page + Detail view (সব line + debit/credit + status/reversal দেখাবে) — list/detail দুটোতেই status badge যোগ করা হয়েছে; detail page-এ reversal_of link + reversed_at দেখায়; একটা posted entry-তে "Reverse" বাটন (reason নিয়ে ConfirmDialog) যোগ করা হয়েছে (নাহলে JournalService::reverse() UI থেকে কখনো reach-ই হতো না) — নতুন `POST journal-entries/{id}/reverse` route + `AlreadyReversedException` guard (একই entry দুইবার reverse করা যাবে না)
 - [x] **2.5.9** General Ledger Page (প্রতি account-এর জন্য, running balance সহ) — V1-এই বানানো হয়েছিল, এখনো ঠিকভাবে কাজ করছে
-- [ ] **2.5.10** RETROFIT — StockService::decrease() (Phase 3.3-এ বানানো) — Product::lockForUpdate() যোগ করুন — V2 (concurrency safety)
-- [ ] **2.5.11** Feature test: unbalanced lines দিয়ে post করতে গেলে exception হয়
-- [ ] **2.5.12** Feature test: balanced entry post হলে সব line ঠিকভাবে সেভ হয়, account balance আপডেট হয়
-- [ ] **2.5.13** Feature test: দুইটা simultaneous sale একই শেষ ১টা stock-এর জন্য প্রতিযোগিতা করলে একটাই সফল হয় (concurrency test)
+- [x] **2.5.10** RETROFIT — StockService::decrease() (Phase 3.3-এ বানানো) — Product::lockForUpdate() যোগ করুন — V2 (concurrency safety) — নতুন `InsufficientStockException`, `manage_stock=false` হলে চেক স্কিপ হয়। এই ফিক্স-এর ফলে একটা পুরনো test (SalePagesTest) যেটা stock না দিয়েই sale confirm করছিল সেটাও ঠিক করতে হয়েছে (আগে silently negative stock allow হতো)
+- [x] **2.5.11** Feature test: unbalanced lines দিয়ে post করতে গেলে exception হয় (V1-এই JournalServiceTest.php-এ ছিল)
+- [x] **2.5.12** Feature test: balanced entry post হলে সব line ঠিকভাবে সেভ হয়, account balance আপডেট হয় (V1-এই JournalServiceTest.php-এ ছিল)
+- [x] **2.5.13** Feature test: দুইটা simultaneous sale একই শেষ ১টা stock-এর জন্য প্রতিযোগিতা করলে একটাই সফল হয় (concurrency test) — SQLite in-memory single-connection হওয়ায় সত্যিকারের দুই-connection race টেস্ট করা যায় না, তাই sequential guard-behavior টেস্ট করা হয়েছে (StockServiceTest.php)
 
 ### ধাপ ৪ — stock_movements cost fields (V2 নতুন)
 - [ ] **2.5.14** RETROFIT — stock_movements (Phase 3.2-এ বানানো) — unit_cost, total_cost (nullable) column যোগ করুন

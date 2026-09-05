@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Enums\StockMovementType;
+use App\Exceptions\InsufficientStockException;
 use App\Models\Product;
 use App\Models\StockMovement;
 use Illuminate\Support\Facades\Auth;
@@ -46,7 +47,11 @@ class StockService
 
     /**
      * Remove stock from a product — sale, purchase return, or a manual
-     * decrease adjustment.
+     * decrease adjustment. Locks the product row for the duration of the
+     * check-and-decrement so two simultaneous sales of the last unit can't
+     * both succeed.
+     *
+     * @throws InsufficientStockException
      */
     public function decrease(
         Product $product,
@@ -57,7 +62,13 @@ class StockService
         ?string $note = null,
     ): StockMovement {
         return DB::transaction(function () use ($product, $qty, $type, $referenceType, $referenceId, $note) {
-            $movement = $product->stockMovements()->create([
+            $locked = Product::query()->lockForUpdate()->findOrFail($product->id);
+
+            if ($locked->manage_stock && $locked->current_stock < $qty) {
+                throw new InsufficientStockException($locked, $qty);
+            }
+
+            $movement = $locked->stockMovements()->create([
                 'type' => $type,
                 'quantity' => $qty,
                 'reference_type' => $referenceType,
@@ -66,7 +77,8 @@ class StockService
                 'created_by' => Auth::id(),
             ]);
 
-            $product->decrement('current_stock', $qty);
+            $locked->decrement('current_stock', $qty);
+            $product->refresh();
 
             return $movement;
         });

@@ -30,7 +30,7 @@ test('the add sale page renders', function () {
 test('the sale detail page renders and flags a fresh confirm for the undo toast', function () {
     $this->actingAs(User::factory()->create());
     $customer = Contact::factory()->create();
-    $product = Product::factory()->create();
+    $product = Product::factory()->create(['current_stock' => 5]);
 
     $this->post('/sales', [
         'customer_id' => $customer->id,
