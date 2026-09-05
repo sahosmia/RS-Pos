@@ -454,6 +454,15 @@ export interface JournalEntryDetail {
     lines: JournalEntryLineDetail[];
 }
 
+export interface AccountingPeriodListItem {
+    id: number;
+    start_date: string;
+    end_date: string;
+    status: 'open' | 'closed';
+    closed_at: string | null;
+    closed_by: { id: number; name: string } | null;
+}
+
 export interface GeneralLedgerLine {
     id: number;
     entry_date: string;

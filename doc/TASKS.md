@@ -67,7 +67,7 @@
 
 ### ধাপ ১.৫ — Accounting Period Lock (V2 নতুন)
 - [x] **2.5.4a** accounting_periods migration+model (start_date, end_date, status enum(open/closed), closed_at, closed_by) + monthly seeder (fiscal_year_start_month অনুযায়ী)
-- [ ] **2.5.4b** Close Period Action (Admin-only) + Period List Page
+- [x] **2.5.4b** Close Period Action (Admin-only) + Period List Page — এই প্রজেক্টে এখনো কোনো role/permission system নেই (সব route শুধু `auth` middleware দিয়ে গার্ড করা), তাই "Admin-only" আপাতত normal authenticated user-এর জন্যই খোলা রাখা হয়েছে, বাকি সব page-এর মতোই — role system যোগ হলে এখানে middleware বসাতে হবে
 - [x] **2.5.4c** Feature test: closed period-এ journal post করতে গেলে ClosedPeriodException হয় (JournalServiceTest.php-এ ৩টা নতুন test: closed period reject, no-period allowed, reverse() behavior)
 
 ### ধাপ ২ — accounts ↔ chart_of_accounts Mapping (V2 নতুন)

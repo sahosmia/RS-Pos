@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Account;
+use App\Models\AccountingPeriod;
 use App\Models\AccountType;
 use App\Models\ChartOfAccount;
 use App\Models\Contact;
@@ -87,4 +88,39 @@ test('the journal entries list and detail pages render', function () {
     $this->get("/journal-entries/{$entry->id}")
         ->assertOk()
         ->assertInertia(fn ($page) => $page->component('journal-entries/show')->has('entry.lines', 2));
+});
+
+test('the accounting periods page renders and closing a period locks it', function () {
+    $this->actingAs(User::factory()->create());
+    $period = AccountingPeriod::factory()->create([
+        'start_date' => '2026-03-01',
+        'end_date' => '2026-03-31',
+        'status' => 'open',
+    ]);
+
+    $this->get('/accounting-periods')
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('accounting-periods/index')
+            ->where('periods.0.status', 'open'));
+
+    $this->patch("/accounting-periods/{$period->id}/close");
+
+    expect($period->fresh()->status->value)->toBe('closed')
+        ->and($period->fresh()->closed_at)->not->toBeNull();
+});
+
+test('closing an already-closed period is a no-op', function () {
+    $this->actingAs(User::factory()->create());
+    $period = AccountingPeriod::factory()->create([
+        'start_date' => '2026-03-01',
+        'end_date' => '2026-03-31',
+        'status' => 'closed',
+        'closed_at' => now()->subDay(),
+    ]);
+    $originalClosedAt = $period->closed_at;
+
+    $this->patch("/accounting-periods/{$period->id}/close");
+
+    expect($period->fresh()->closed_at->toDateTimeString())->toBe($originalClosedAt->toDateTimeString());
 });

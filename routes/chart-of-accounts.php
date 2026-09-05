@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AccountingPeriodController;
 use App\Http\Controllers\ChartOfAccountController;
 use App\Http\Controllers\GeneralLedgerController;
 use App\Http\Controllers\JournalEntryController;
@@ -14,4 +15,10 @@ Route::middleware('auth')->group(function () {
 
     Route::resource('journal-entries', JournalEntryController::class)
         ->only(['index', 'show']);
+
+    Route::resource('accounting-periods', AccountingPeriodController::class)
+        ->only(['index']);
+
+    Route::patch('accounting-periods/{accounting_period}/close', [AccountingPeriodController::class, 'close'])
+        ->name('accounting-periods.close');
 });

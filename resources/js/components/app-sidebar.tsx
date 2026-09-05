@@ -60,6 +60,7 @@ const mainNavItems: NavItem[] = [
         items: [
             { title: 'Chart of Accounts', url: '/chart-of-accounts' },
             { title: 'Journal Entries', url: '/journal-entries' },
+            { title: 'Accounting Periods', url: '/accounting-periods' },
         ],
     },
     {
