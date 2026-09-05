@@ -72,9 +72,7 @@
 - [x] **2.5.12** Feature test: `ConfirmSaleAction` চালানোর পর সংশ্লিষ্ট journal entry তৈরি হয়েছে ও balanced (`reference_type='sale'` দিয়ে খুঁজে verify করুন)
 - [x] **2.5.13** Feature test: `ConfirmPurchaseAction` চালানোর পর journal entry তৈরি হয়েছে ও balanced
 - [x] **2.5.14** Feature test: `FundTransferAction` চালানোর পর journal entry তৈরি হয়েছে ও balanced
-- [ ] **2.5.15** `php artisan migrate:fresh --seed` দিয়ে পুরনো টেস্ট ডেটা রিসেট করুন (এখনো production data নেই বলে নিরাপদ) — এরপর Phase 2/5/6-এর manual flow আবার টেস্ট করে দেখুন journal entry তৈরি হচ্ছে কিনা
-
-⚠️ **সব ধাপ (২.৫.১ থেকে ২.৫.১৫) শেষ না করে Phase 7 (Returns)-এ যাবেন না।**
+- [x] **2.5.15** `php artisan migrate:fresh --seed` দিয়ে পুরনো টেস্ট ডেটা রিসেট করুন (এখনো production data নেই বলে নিরাপদ) — এরপর Phase 2/5/6-এর manual flow আবার টেস্ট করে দেখুন journal entry তৈরি হচ্ছে কিনা — reset করে Purchase confirm + Sale confirm + Fund Transfer একসাথে চালিয়ে verify করা হয়েছে: ৩টা journal entry, প্রতিটা balanced, সব Chart of Accounts balance (Cash, Bank, AR, AP, Inventory, Sales Revenue, COGS) হাতে হিসাব করে মিলিয়ে দেখা হয়েছে
 
 ---
 
