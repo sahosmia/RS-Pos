@@ -170,10 +170,12 @@
 
 ## Phase 7 — Returns (পর্ব ৫)
 
-- [ ] **7.1** `sale_returns`, `sale_return_items`, `purchase_returns`, `purchase_return_items` migration+model
-- [ ] **7.2** `CreateSaleReturnAction` / `CreatePurchaseReturnAction` (`ReturnQuantityWithinSoldRule` দিয়ে validate + **JournalService::post()** প্রথম থেকেই যোগ করা — Sale Return: `Dr Sales Returns & Allowances(4150)/Cr AR-Cash` + `Dr Inventory/Cr COGS`; Purchase Return: `Dr Accounts Payable-Cash/Cr Inventory`; idempotency guard-ও প্রথম থেকেই — retrofit লাগবে না)
-- [ ] **7.3** Return List + Create Return Page
-- [ ] **7.4** Refund Payment Modal
+- [x] **7.1** `sale_returns`, `sale_return_items`, `purchase_returns`, `purchase_return_items` migration+model — schema doc-এ `sale_item_id`/`purchase_item_id` কলাম উল্লেখ ছিল না, কিন্তু design-decisions.md-এর `ReturnQuantityWithinSoldRule` sample code সেটার উপর নির্ভর করে (এবং একটা sale-এ একই product দুইবার ভিন্ন cost_at_sale-এ থাকতে পারে) — তাই যোগ করা হয়েছে, item table-গুলো `product_id`-ও রাখে। সব money column decimal(19,4) থেকেই শুরু
+- [x] **7.2** `CreateSaleReturnAction` / `CreatePurchaseReturnAction` (`ReturnQuantityWithinSoldRule`/`ReturnQuantityWithinPurchasedRule` দিয়ে validate + **JournalService::post()** প্রথম থেকেই — Sale Return: `Dr 4150/Cr Accounts Receivable(1100)` + `Dr Inventory/Cr COGS`; Purchase Return: `Dr Accounts Payable(2100)/Cr Inventory`)। "idempotency" এখানে status field দিয়ে না — return quantity validation rule নিজেই ডাবল-প্রসেস আটকায় (দ্বিতীয়বার চেষ্টা করলে remaining quantity 0 হয়ে যায়), Action-এও same check আছে (direct call করলেও safe)। Serial-tracked product: sale return-এ oldest sold serial(s) status=`returned` হয়, purchase return-এ oldest in_stock serial(s) status=`disposed` হয় (design doc-এ purchase return + serial interaction নিয়ে কিছু বলা ছিল না, তাই deterministic simplification)
+- [x] **7.3** Return List + Create Return Page — Sale/Purchase-এর detail page-এ "Return" বাটন (শুধু confirmed/received হলে দেখায়) → Create Return page-এ remaining-returnable item table + quantity input
+- [x] **7.4** Refund Payment Modal — return তৈরির সময় customer/supplier due পুরোটাই কমে যায় (ledger credit); Refund Modal আলাদা, পরে যেকোনো সময় সেই credit-এর জন্য নগদ ফেরত দেওয়ার জন্য (AddSalePaymentModal-এর মতোই split-payment UI) — নিজের journal entry পোস্ট করে (Dr AR/Cr account বা Dr account/Cr AP), 4150 আবার touch করে না
+
+**আবিষ্কৃত আরেকটা gap (ফিক্স করা হয়নি, flag শুধু)**: `AddSalePaymentAction`/`AddPurchasePaymentAction` (আগে থেকেই বানানো, Phase 6-এর) কোনো Journal posting করে না — শুধু AccountService+LedgerService touch করে। মানে confirm-এর পরে collect করা payment financial report-এ কখনো দেখা যায় না। Phase 2.5 V2-এর standing rule অনুযায়ী ("প্রতিটা টাকা-সংক্রান্ত Action... JournalService::post()-ও কল করবে") এটাও ফিক্স হওয়া উচিত, কিন্তু "start 7"-এর scope-এর বাইরে থাকায় হাত দেওয়া হয়নি।
 
 ---
 

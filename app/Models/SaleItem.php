@@ -81,6 +81,14 @@ class SaleItem extends Model
     }
 
     /**
+     * @return HasMany<SaleReturnItem, $this>
+     */
+    public function returnItems(): HasMany
+    {
+        return $this->hasMany(SaleReturnItem::class);
+    }
+
+    /**
      * `(unit_price - cost_at_sale) × quantity` — cost_at_sale is a snapshot,
      * so this stays accurate even after avg_cost later changes.
      *

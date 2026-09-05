@@ -2,28 +2,33 @@
 
 namespace App\Models;
 
-use Database\Factories\PurchaseItemFactory;
+use Database\Factories\PurchaseReturnFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class PurchaseItem extends Model
+/**
+ * Immutable once created — never edited (a correction is a new return, not
+ * a change to this one).
+ */
+class PurchaseReturn extends Model
 {
-    /** @use HasFactory<PurchaseItemFactory> */
+    /** @use HasFactory<PurchaseReturnFactory> */
     use HasFactory;
 
     /**
-     * The attributes that are mass assignable.
+     * `total_amount` is deliberately not fillable — derived from its items
+     * by CreatePurchaseReturnAction.
      *
      * @var list<string>
      */
     protected $fillable = [
         'purchase_id',
-        'product_id',
-        'quantity',
-        'unit_price',
-        'subtotal',
+        'supplier_id',
+        'return_date',
+        'reason',
+        'created_by',
     ];
 
     /**
@@ -34,9 +39,8 @@ class PurchaseItem extends Model
     protected function casts(): array
     {
         return [
-            'quantity' => 'float',
-            'unit_price' => 'float',
-            'subtotal' => 'float',
+            'return_date' => 'date',
+            'total_amount' => 'float',
         ];
     }
 
@@ -49,28 +53,17 @@ class PurchaseItem extends Model
     }
 
     /**
-     * @return BelongsTo<Product, $this>
+     * @return BelongsTo<Contact, $this>
      */
-    public function product(): BelongsTo
+    public function supplier(): BelongsTo
     {
-        return $this->belongsTo(Product::class);
-    }
-
-    /**
-     * The specific units this line item brought into stock — set at
-     * receive/confirm time for a track_serial_number product.
-     *
-     * @return HasMany<SerialNumber, $this>
-     */
-    public function serialNumbers(): HasMany
-    {
-        return $this->hasMany(SerialNumber::class);
+        return $this->belongsTo(Contact::class);
     }
 
     /**
      * @return HasMany<PurchaseReturnItem, $this>
      */
-    public function returnItems(): HasMany
+    public function items(): HasMany
     {
         return $this->hasMany(PurchaseReturnItem::class);
     }

@@ -485,3 +485,85 @@ export interface BackupListItem {
     date: string;
     size_in_bytes: number;
 }
+
+export interface SaleReturnListItem {
+    id: number;
+    sale: { id: number; invoice_no: string };
+    customer: { id: number; name: string };
+    return_date: string;
+    total_amount: number;
+}
+
+export interface ReturnableSaleItem {
+    id: number;
+    product: { id: number; name: string; sku: string };
+    quantity: number;
+    unit_price: number;
+    already_returned: number;
+}
+
+export interface SaleReturnCreateSale {
+    id: number;
+    invoice_no: string;
+    customer: { id: number; name: string };
+    items: ReturnableSaleItem[];
+}
+
+export interface SaleReturnItemDetail {
+    id: number;
+    product: { id: number; name: string; sku: string };
+    quantity: number;
+    unit_price: number;
+    subtotal: number;
+}
+
+export interface SaleReturnDetail {
+    id: number;
+    sale: { id: number; invoice_no: string };
+    customer: { id: number; name: string; phone: string; balance: number };
+    return_date: string;
+    total_amount: number;
+    reason: string | null;
+    items: SaleReturnItemDetail[];
+}
+
+export interface PurchaseReturnListItem {
+    id: number;
+    purchase: { id: number; invoice_no: string };
+    supplier: { id: number; name: string };
+    return_date: string;
+    total_amount: number;
+}
+
+export interface ReturnablePurchaseItem {
+    id: number;
+    product: { id: number; name: string; sku: string };
+    quantity: number;
+    unit_price: number;
+    already_returned: number;
+}
+
+export interface PurchaseReturnCreatePurchase {
+    id: number;
+    invoice_no: string;
+    supplier: { id: number; name: string };
+    items: ReturnablePurchaseItem[];
+}
+
+export interface PurchaseReturnItemDetail {
+    id: number;
+    product: { id: number; name: string; sku: string };
+    quantity: number;
+    unit_price: number;
+    subtotal: number;
+}
+
+export interface PurchaseReturnDetail {
+    id: number;
+    purchase: { id: number; invoice_no: string };
+    supplier: { id: number; name: string; phone: string; balance: number };
+    return_date: string;
+    total_amount: number;
+    reason: string | null;
+    items: PurchaseReturnItemDetail[];
+}

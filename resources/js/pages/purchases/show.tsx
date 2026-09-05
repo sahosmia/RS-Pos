@@ -63,6 +63,12 @@ export default function PurchaseShow({ purchase, accounts }: PurchaseShowProps) 
                             </>
                         )}
 
+                        {purchase.status === 'received' && (
+                            <Button variant="outline" asChild>
+                                <Link href={`/purchase-returns/create?purchase_id=${purchase.id}`}>Return</Link>
+                            </Button>
+                        )}
+
                         {purchase.status === 'received' && purchase.due_amount > 0 && (
                             <Button onClick={() => setPaymentOpen(true)}>Add Payment</Button>
                         )}

@@ -17,6 +17,10 @@ const mainNavItems: NavItem[] = [
         title: 'Sales',
         url: '/sales',
         icon: Receipt,
+        items: [
+            { title: 'Sales', url: '/sales' },
+            { title: 'Sale Returns', url: '/sale-returns' },
+        ],
     },
     {
         title: 'Product',
@@ -43,6 +47,10 @@ const mainNavItems: NavItem[] = [
         title: 'Purchases',
         url: '/purchases',
         icon: ShoppingCart,
+        items: [
+            { title: 'Purchases', url: '/purchases' },
+            { title: 'Purchase Returns', url: '/purchase-returns' },
+        ],
     },
     {
         title: 'Payment Accounts',

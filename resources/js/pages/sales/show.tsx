@@ -79,6 +79,12 @@ export default function SaleShow({ sale, accounts, justConfirmed }: SaleShowProp
                             </>
                         )}
 
+                        {sale.status === 'confirmed' && (
+                            <Button variant="outline" asChild>
+                                <Link href={`/sale-returns/create?sale_id=${sale.id}`}>Return</Link>
+                            </Button>
+                        )}
+
                         {sale.status === 'confirmed' && sale.due_amount > 0 && <Button onClick={() => setPaymentOpen(true)}>Add Payment</Button>}
                     </div>
                 </div>
