@@ -479,3 +479,9 @@ export interface GeneralLedgerLine {
     note: string | null;
     balance: number;
 }
+
+export interface BackupListItem {
+    filename: string;
+    date: string;
+    size_in_bytes: number;
+}
