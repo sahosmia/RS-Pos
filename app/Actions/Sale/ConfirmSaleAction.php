@@ -7,10 +7,13 @@ use App\Enums\ContactLedgerType;
 use App\Enums\SaleSource;
 use App\Enums\SaleStatus;
 use App\Enums\StockMovementType;
+use App\Models\Account;
 use App\Models\Product;
 use App\Models\Sale;
 use App\Models\SaleItem;
 use App\Services\AccountService;
+use App\Services\ChartOfAccountResolver;
+use App\Services\JournalService;
 use App\Services\LedgerService;
 use App\Services\StockService;
 use Illuminate\Support\Facades\DB;
@@ -23,9 +26,9 @@ use Illuminate\Support\Facades\DB;
  * period, both in the same transaction as the stock decrease.
  *
  * A "Historical record" sale (source: imported) skips StockService,
- * LedgerService, and AccountService entirely — it exists only for
- * reporting/record-keeping, so it's recorded as fully paid with no live
- * side effects (there's no ledger entry a future payment could reduce).
+ * LedgerService, AccountService, and the journal post entirely — it exists
+ * only for reporting/record-keeping, so it's recorded as fully paid with no
+ * live side effects (there's no ledger entry a future payment could reduce).
  */
 class ConfirmSaleAction
 {
@@ -33,6 +36,8 @@ class ConfirmSaleAction
         private StockService $stock,
         private LedgerService $ledger,
         private AccountService $accounts,
+        private JournalService $journal,
+        private ChartOfAccountResolver $chartOfAccounts,
     ) {}
 
     /**
@@ -54,8 +59,10 @@ class ConfirmSaleAction
                 return $sale->fresh(['items.product', 'customer']);
             }
 
+            $costOfGoodsSold = 0.0;
+
             foreach ($sale->items as $item) {
-                $this->sellItem($sale, $item);
+                $costOfGoodsSold += $this->sellItem($sale, $item);
             }
 
             $paidViaAccounts = 0.0;
@@ -79,11 +86,16 @@ class ConfirmSaleAction
             $sale->update(['status' => SaleStatus::Confirmed]);
             $sale->recalculatePaymentTotals();
 
+            $this->postJournal($sale, $payments, round($costOfGoodsSold, 2));
+
             return $sale->fresh(['items.product', 'customer']);
         });
     }
 
-    private function sellItem(Sale $sale, SaleItem $item): void
+    /**
+     * Returns this item's cost_at_sale × quantity, for the COGS journal line.
+     */
+    private function sellItem(Sale $sale, SaleItem $item): float
     {
         /** @var Product $product */
         $product = $item->product;
@@ -96,5 +108,49 @@ class ConfirmSaleAction
         ])->save();
 
         $this->stock->decrease($product, $item->quantity, StockMovementType::Sale, 'sale', $sale->id);
+
+        return $product->avg_cost * $item->quantity;
+    }
+
+    /**
+     * Two line pairs in one entry: Dr Accounts Receivable/Cash, Cr Sales
+     * Revenue for the sale itself, and Dr Cost of Goods Sold, Cr Inventory
+     * for the stock leaving — plus one Dr {paying account} / Cr Accounts
+     * Receivable line per account paid at confirm time.
+     *
+     * @param  array<int, array{account_id: int|string, amount: float|string}>  $payments
+     */
+    private function postJournal(Sale $sale, array $payments, float $costOfGoodsSold): void
+    {
+        $receivable = $this->chartOfAccounts->code('1100');
+        $revenue = $this->chartOfAccounts->code('4100');
+        $cogs = $this->chartOfAccounts->code('5100');
+        $inventory = $this->chartOfAccounts->code('1200');
+
+        $lines = [
+            ['chart_of_account_id' => $receivable->id, 'debit' => $sale->total_amount, 'credit' => 0],
+            ['chart_of_account_id' => $revenue->id, 'debit' => 0, 'credit' => $sale->total_amount],
+        ];
+
+        if ($costOfGoodsSold > 0.0) {
+            $lines[] = ['chart_of_account_id' => $cogs->id, 'debit' => $costOfGoodsSold, 'credit' => 0];
+            $lines[] = ['chart_of_account_id' => $inventory->id, 'debit' => 0, 'credit' => $costOfGoodsSold];
+        }
+
+        foreach ($payments as $payment) {
+            $amount = round((float) $payment['amount'], 2);
+            $account = Account::findOrFail($payment['account_id']);
+
+            $lines[] = ['chart_of_account_id' => $this->chartOfAccounts->forAccount($account)->id, 'debit' => $amount, 'credit' => 0];
+            $lines[] = ['chart_of_account_id' => $receivable->id, 'debit' => 0, 'credit' => $amount];
+        }
+
+        $this->journal->post(
+            $sale->sale_date,
+            "Sale {$sale->invoice_no}",
+            $lines,
+            'sale',
+            $sale->id,
+        );
     }
 }

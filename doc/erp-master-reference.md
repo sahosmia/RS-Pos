@@ -403,6 +403,127 @@ misc_transaction_categories — name, type(income/expense)
 
 ---
 
+# পর্ব ৬.৫ — Double-Entry Bookkeeping (Chart of Accounts + Journal) ⭐ Professional-grade
+
+## কেন এটা যোগ করা হলো
+
+আগের Debit/Credit শুধু **presentation** ছিল (একটা signed amount থেকে বের করা) — সত্যিকারের double-entry না। বড় ব্যবসায়ী/audit-প্রয়োজনীয় customer-দের জন্য এটা যথেষ্ট না — ব্যাংক লোন, VAT filing, external audit-এ formal Chart of Accounts লাগে। যেহেতু এখনো কোনো কোড লেখা হয়নি, এখনই এটা ঠিক করার সঠিক সময়।
+
+## মূল ধারণা — কিছুই বাদ যাচ্ছে না, শুধু একটা স্তর যোগ হচ্ছে
+
+```
+আগে থেকে যা আছে (Subsidiary Ledger — দ্রুত UI-এর জন্য, অক্ষত থাকবে):
+  contact_ledger, account_transactions, stock_movements, staff_ledger...
+
+নতুন (General Ledger — সরকারি/আনুষ্ঠানিক হিসাবের জন্য):
+  chart_of_accounts, journal_entries, journal_entry_lines
+```
+
+এটাই real accounting-এর নিয়ম — "Accounts Receivable" একটা **control account**, যার ভিতরে প্রতিটা customer-এর হিসেব (আমাদের `contact_ledger`) subsidiary হিসেবে থাকে।
+
+## Database
+
+```
+chart_of_accounts
+- code, name
+- type              enum(asset/liability/equity/income/expense)
+- normal_balance     enum(debit/credit)
+- parent_id          (nullable)
+
+journal_entries
+- entry_date (=operation_date), description
+- reference_type, reference_id
+- created_by
+
+journal_entry_lines
+- journal_entry_id, chart_of_account_id
+- debit, credit, note
+```
+
+**Default Chart of Accounts (seeded):**
+```
+1010 Cash in Hand           1020 Bank Accounts (parent)
+1100 Accounts Receivable ← contact_ledger (customer)-এর control account
+1200 Inventory            ← stock value-এর control account
+1300 Staff Advances         1400 Fixed Assets
+2100 Accounts Payable      ← contact_ledger (supplier)-এর control account
+2200 Loans Payable          2300 Other Liabilities
+3100 Capital                 3200 Retained Earnings
+4100 Sales Revenue            4200 Service Income
+5100 Cost of Goods Sold         5200+ প্রতি expense_category-র জন্য একটা
+```
+
+## JournalService — সব Journal Entry এখান দিয়ে যাবে
+
+```php
+class JournalService {
+    public function post(Carbon $date, string $description, array $lines, ?string $refType = null, ?int $refId = null): JournalEntry {
+        $totalDebit = array_sum(array_column($lines, 'debit'));
+        $totalCredit = array_sum(array_column($lines, 'credit'));
+        if (abs($totalDebit - $totalCredit) > 0.01) {
+            throw new UnbalancedJournalEntryException();  // ⚠️ ভাঙা যাবে না
+        }
+        // ... journal_entry + lines তৈরি
+    }
+}
+```
+
+## উদাহরণ Posting (প্রতিটা existing Action-এ যোগ হবে, আগের logic-এর পাশাপাশি)
+
+```
+Sale (বাকিতে, total 1000, COGS 700):
+  Dr Accounts Receivable  1000 | Cr Sales Revenue     1000
+  Dr Cost of Goods Sold    700 | Cr Inventory           700
+
+Payment গ্রহণ (500):
+  Dr Cash/Bank             500 | Cr Accounts Receivable 500
+
+Purchase (বাকিতে):
+  Dr Inventory             600 | Cr Accounts Payable    600
+
+Expense (নগদে):
+  Dr Rent Expense         1000 | Cr Cash/Bank          1000
+
+Fund Transfer:
+  Dr Bank A               5000 | Cr Cash In Hand       5000
+
+Investor Investment:
+  Dr Cash/Bank          100000 | Cr Owner's Capital  100000
+```
+
+⚠️ **আগের StockService/LedgerService/AccountService কল বদলাচ্ছে না** — শুধু একই transaction-এর ভিতরে নতুন `JournalService::post()` কল যোগ হচ্ছে।
+
+## Reports এখন Journal থেকে (সত্যিকারের গ্যারান্টিসহ)
+
+```php
+// Trial Balance — সত্যিই balanced, শুধু দেখতে না
+JournalEntryLine::selectRaw('chart_of_account_id, SUM(debit), SUM(credit)')->groupBy('chart_of_account_id');
+```
+
+## ⚠️ Reconciliation Check — দুই স্তর মিলছে কিনা
+
+```php
+// দৈনিক scheduled job
+$contactTotal = Contact::whereIn('type',['customer','both'])->sum('balance');
+$glReceivable = ChartOfAccount::where('code','1100')->first()->balance;
+if (abs($contactTotal - $glReceivable) > 0.01) {
+    // 🚨 Alert — subsidiary আর General Ledger মিলছে না, তদন্ত দরকার
+}
+```
+একই check Accounts Payable আর Inventory-তেও।
+
+## Frontend
+| স্ক্রিন | ধরন |
+|---|---|
+| Chart of Accounts List | **Page** — tree view (parent-child) |
+| Add/Edit Account | **Modal** |
+| Journal Entry List | **Page** — সব entry, filter by date/account |
+| Journal Entry Detail | **Modal/Page** — সব line দেখাবে |
+| General Ledger (per account) | **Page** — নির্দিষ্ট account-এর সব entry + running balance |
+| Reconciliation Report | **Page** — subsidiary vs GL mismatch দেখাবে (থাকলে) |
+
+---
+
 # পর্ব ৭ — Expense 🟡
 
 > **স্ট্যাটাস:** এটা নিয়ে আপনি পরে আবার ভাববেন বলেছিলেন — এখনকার design রাখা আছে
@@ -918,25 +1039,27 @@ purchases:    INDEX(purchase_date, status)
 ```
 ১.  Basic Auth + Settings
 ২.  Accounts (+ Account Types, Fund Transfer, Cash Book)
-৩.  Inventory (Product, Category, Unit, Brand)
-৪.  Contacts
-৫.  Purchase
-৬.  Sales (+ Draft, Quotation)
-৭.  Returns
-৮.  Sales Order
-৯.  Expense
-১০. Assets, Loan, Other Liability, Investor
-১১. Staff
-১২. Warranty & Service
-১৩. EMI + Serial
-১৪. Import Tools
-১৫. Dashboard + Reports
-১৬. UI Polish (Datatable, Global Search, Dark mode)
-১৭. Notification, Activity Log, Backup, Marketing
-১৮. Role & Permission (granular) ← সবার শেষে
+৩.  ⭐ Chart of Accounts + Journal Entry + JournalService   ← নতুন, Accounts-এর ঠিক পরেই
+৪.  Inventory (Product, Category, Unit, Brand)
+৫.  Contacts
+৬.  Purchase (+ Journal posting)
+৭.  Sales (+ Draft, Quotation, Journal posting)
+৮.  Returns (+ Journal posting)
+৯.  Sales Order
+১০. Expense (+ Journal posting)
+১১. Assets, Loan, Other Liability, Investor (+ Journal posting)
+১২. Staff (+ Journal posting)
+১৩. Warranty & Service
+১৪. EMI + Serial
+১৫. Import Tools
+১৬. Dashboard + Reports (Trial Balance/P&L/Balance Sheet এখন Journal থেকে)
+১৭. UI Polish (Datatable, Global Search, Dark mode)
+১৮. Notification, Activity Log, Backup, Marketing
+১৯. Reconciliation Check (scheduled job)
+২০. Role & Permission (granular) ← সবার শেষে
 ```
 
-**কেন এই ক্রম:** Settings আগে (invoice numbering লাগে) → Accounts (সবাই `account_id` reference করে) → তারপর Product/Contact → তারপর transaction module → Reports সবার ডেটা লাগে বলে শেষে → Role শেষে (development-এ একটা admin login-ই যথেষ্ট)
+**কেন এই ক্রম:** Settings আগে (invoice numbering লাগে) → Accounts (সবাই `account_id` reference করে) → **Chart of Accounts এখনই** কারণ এর পরের সব transaction module (Purchase/Sale/Expense...) journal entry post করবে → তারপর Product/Contact → তারপর transaction module → Reports সবার ডেটা লাগে বলে শেষে → Role শেষে (development-এ একটা admin login-ই যথেষ্ট)
 
 ---
 

@@ -1374,6 +1374,9 @@ payment_status                due, partial, paid   -- shared across sales, purch
 accounts.type                 (moved to account_types lookup table — Cash, Bank, Mobile Banking, Cheque as seeded defaults, extensible)
 misc_transaction_categories.type   income, expense
 cash_book_entries.type             opening_balance, income, expense   -- standalone ledger, does NOT touch account_transactions (Phase 6, revised)
+
+chart_of_accounts.type              asset, liability, equity, income, expense
+chart_of_accounts.normal_balance     debit, credit
 account_transactions.type     opening_balance, sale_payment, purchase_payment, sale_return_refund, purchase_return_refund, expense, adjustment, transfer_in, transfer_out, loan_received, loan_repayment, asset_purchase, asset_sale, investment_received, profit_distribution, investor_withdrawal, sales_order_advance, service_charge, staff_salary_payment, staff_advance, staff_loan, emi_payment
 
 asset_transactions.type       opening_asset, purchase, addition, sold, disposal
@@ -2843,6 +2846,119 @@ Many shop staff aren't comfortable in English, and this is a genuine gap versus 
 - Per-user preference (`users.locale`, default `bn`) — so an owner comfortable in English and a cashier who prefers Bengali can each get their own.
 - **Scope boundary**: UI labels/messages are translated; user-entered data (product names, customer names, notes) is stored and shown exactly as typed — never machine-translated.
 - Bengali numeral display (৳১২,০০০ vs ৳12,000) as a separate settings toggle, since preferences differ even among Bengali speakers.
+
+---
+
+## Phase 34: True Double-Entry Bookkeeping (Chart of Accounts + Journal Entries)
+
+### Why this changed ✅
+The earlier Debit/Credit labels shown in Contact Ledger, Trial Balance, and Financial Position were **derived presentation only** — computed from a single signed `amount` column, not genuine double-entry accounting (no Chart of Accounts, no guarantee that total debits equal total credits system-wide). This is fine for a small proprietorship shop, but insufficient for customers who need bank loans, formal audits, or tax filings — a real requirement once the target market includes larger/audit-needing businesses. Since no code has been written yet, this is the correct and cheapest time to build it properly, before any migration exists.
+
+### Core Approach — Subsidiary Ledgers + General Ledger (standard accounting pattern) ✅
+**Nothing already designed is discarded.** `contact_ledger`, `account_transactions`, `stock_movements`, `staff_ledger`, `asset_transactions`, etc. remain exactly as designed — in accounting terms these are **subsidiary ledgers** (fast, per-entity operational detail). A new **General Ledger** layer sits above them: every business event that already writes to a subsidiary ledger *also* posts a balanced Journal Entry to a Chart of Accounts, in the same `DB::transaction()`. The General Ledger becomes authoritative for formal accounting reports (Trial Balance, Balance Sheet, Profit & Loss); the subsidiary ledgers remain authoritative for fast operational UI (customer statement, account statement, stock history).
+
+### Chart of Accounts ✅
+```
+chart_of_accounts
+- id, code, name
+- type              enum('asset', 'liability', 'equity', 'income', 'expense')
+- normal_balance     enum('debit', 'credit')
+- parent_id          (nullable — sub-accounts, e.g. each `accounts` row gets one under "Bank Accounts")
+- is_active
+```
+**Default seeded accounts:**
+```
+1010 Cash in Hand (asset/debit)          1020 Bank Accounts (asset/debit, parent for per-bank sub-accounts)
+1100 Accounts Receivable (asset/debit — control account, rolls up contacts.balance for customers)
+1200 Inventory (asset/debit — control account, rolls up stock value)
+1300 Staff Advances (asset/debit)         1400 Fixed Assets (asset/debit)
+2100 Accounts Payable (liability/credit — control account, rolls up contacts.balance for suppliers)
+2200 Loans Payable (liability/credit)      2300 Other Liabilities (liability/credit)
+3100 Owner's/Investor's Capital (equity/credit)    3200 Retained Earnings (equity/credit)
+4100 Sales Revenue (income/credit)          4200 Service/Installation Income (income/credit)
+5100 Cost of Goods Sold (expense/debit)      5200+ one per expense_category (expense/debit)
+```
+
+### Journal Entries ✅
+```
+journal_entries
+- id, entry_date (= operation_date, the authoritative business date), description
+- reference_type, reference_id       (links back to Sale, Purchase, Expense, etc.)
+- created_by, created_at
+
+journal_entry_lines
+- id, journal_entry_id, chart_of_account_id
+- debit, credit
+- note
+```
+**Hard rule**: for any single `journal_entry`, `SUM(debit) = SUM(credit)` across its lines — enforced in code, never allowed to be violated.
+
+```php
+class JournalService {
+    public function post(Carbon $date, string $description, array $lines, ?string $refType = null, ?int $refId = null): JournalEntry {
+        $totalDebit = array_sum(array_column($lines, 'debit'));
+        $totalCredit = array_sum(array_column($lines, 'credit'));
+        if (abs($totalDebit - $totalCredit) > 0.01) {
+            throw new UnbalancedJournalEntryException();
+        }
+        return DB::transaction(function () use ($date, $description, $lines, $refType, $refId) {
+            $entry = JournalEntry::create(['entry_date'=>$date, 'description'=>$description, 'reference_type'=>$refType, 'reference_id'=>$refId]);
+            foreach ($lines as $line) { $entry->lines()->create($line); }
+            return $entry;
+        });
+    }
+}
+```
+
+### Example Postings — every existing Action class gains a journal post, alongside its existing subsidiary-ledger writes ✅
+```
+Sale (on credit, total 1000, COGS 700):
+  Dr Accounts Receivable  1000  |  Cr Sales Revenue     1000
+  Dr Cost of Goods Sold    700  |  Cr Inventory           700
+
+Payment received (500):
+  Dr Cash/Bank             500  |  Cr Accounts Receivable 500
+
+Purchase (on credit):
+  Dr Inventory             600  |  Cr Accounts Payable    600
+
+Expense paid immediately (rent, 1000):
+  Dr Rent Expense         1000  |  Cr Cash/Bank          1000
+
+Fund Transfer:
+  Dr Bank A               5000  |  Cr Cash In Hand       5000
+
+Investor Investment:
+  Dr Cash/Bank          100000  |  Cr Owner's Capital  100000
+
+Company Loan Received:
+  Dr Cash/Bank          200000  |  Cr Loans Payable    200000
+```
+Each existing Action class (`ConfirmSaleAction`, `ConfirmPurchaseAction`, `RecordPaymentAction`, expense/asset/loan/investor actions, `FundTransferAction`) is extended to call `JournalService::post()` with the correct lines, inside the same transaction as its existing `StockService`/`LedgerService`/`AccountService` calls — nothing about those existing calls changes.
+
+### Reports now sourced from the Journal ✅ (supersedes the earlier ad-hoc formulas in Phase 14)
+```php
+// Trial Balance — genuinely guaranteed balanced, not just presented that way
+JournalEntryLine::selectRaw('chart_of_account_id, SUM(debit) as total_debit, SUM(credit) as total_credit')
+    ->groupBy('chart_of_account_id')->get();
+
+// Balance Sheet — aggregate Chart of Accounts balances by type (asset / liability / equity)
+// Profit & Loss — Income-type minus Expense-type account balances for a date range
+```
+
+### Reconciliation Check — safety net against subsidiary/GL divergence ✅
+Since subsidiary ledgers and the General Ledger are dual-written, a bug in one path could silently desync them. A daily scheduled check:
+```php
+$contactReceivableTotal = Contact::whereIn('type', ['customer','both'])->where('balance', '>', 0)->sum('balance');
+$glReceivable = ChartOfAccount::where('code', '1100')->first()->balance;
+if (abs($contactReceivableTotal - $glReceivable) > 0.01) {
+    // alert — investigate immediately, do not let this go unnoticed
+}
+```
+Same check pattern applies to Accounts Payable (2100) vs supplier dues, and Inventory (1200) vs stock valuation.
+
+### Build Order impact ✅
+Chart of Accounts + Journal Entry + `JournalService` must be built **immediately after Accounts**, before any transaction module (Purchase, Sale, Expense...), since every one of those modules now posts journal entries as part of its core confirm logic.
 
 ---
 

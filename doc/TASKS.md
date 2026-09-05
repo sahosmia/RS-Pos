@@ -15,7 +15,7 @@
 ## Phase 0 — Setup (একবারই)
 
 - [x] **0.1** `laravel new erp-app --react` দিয়ে project তৈরি, git init
-- [x] **0.2** `docs/` ফোল্ডারে তিনটা ফাইল রাখা: `erp-master-reference.md`, `erp-database-schema.md`, `erp-design-decisions.md`
+- [x] **0.2** `docs/` ফোল্ডারে ফাইল রাখা: `erp-master-reference.md`, `erp-database-schema.md`, `erp-design-decisions.md`
 - [x] **0.3** Project root-এ `CLAUDE.md` রাখা
 - [x] **0.4** Auth scaffold verify করা (starter kit-এই থাকে) — login/register কাজ করছে কিনা test
 
@@ -39,6 +39,42 @@
 - [x] **2.6** Cash Book (standalone): `cash_book`, `cash_book_entries`, `misc_transaction_categories` migration + Action + Page
 - [x] **2.7** Account Statement Page (running balance)
 - [x] **2.8** Feature test: split payment ২টা account-এ সঠিকভাবে ভাগ হয়
+
+⚠️ **এই Phase Chart of Accounts আসার আগে বানানো হয়েছিল — নিচের Phase 2.5 শেষে `FundTransferAction`-এ Journal posting retrofit করতে হবে (task 2.5.9)।**
+
+---
+
+## Phase 2.5 — Chart of Accounts + Journal Entry (পর্ব ৬.৫) ⭐⭐ এখন সবচেয়ে জরুরি
+
+> **এই পুরো Phase-টা design-এ পরে যোগ হয়েছিল, তাই Phase 2/5/6 এটার আগেই বানানো হয়ে গেছে।** নিচের কাজগুলো তাই দুই ভাগে — প্রথমে নতুন কাঠামো তৈরি, তারপর ইতিমধ্যে বানানো ৩টা Action class-এ retrofit।
+
+### ধাপ ১ — নতুন কাঠামো তৈরি
+- [x] **2.5.1** `chart_of_accounts` migration+model + default seeder — সম্পূর্ণ তালিকা:
+  - 1010 Cash in Hand (asset/debit) · 1020 Bank Accounts, parent (asset/debit)
+  - 1100 Accounts Receivable (asset/debit) · 1200 Inventory (asset/debit)
+  - 1300 Staff Advances (asset/debit) · 1400 Fixed Assets (asset/debit)
+  - 2100 Accounts Payable (liability/credit) · 2200 Loans Payable (liability/credit) · 2300 Other Liabilities (liability/credit)
+  - 3100 Owner's/Investor's Capital (equity/credit) · 3200 Retained Earnings (equity/credit)
+  - 4100 Sales Revenue (income/credit) · 4200 Service/Installation Income (income/credit)
+  - 5100 Cost of Goods Sold (expense/debit) · 5200+ প্রতি `expense_category`-র জন্য একটা sub-account (expense/debit)
+- [x] **2.5.2** `journal_entries` (id, entry_date, description, reference_type, reference_id, created_by) + `journal_entry_lines` (id, journal_entry_id, chart_of_account_id, debit, credit, note) migration+model
+- [x] **2.5.3** `JournalService::post(date, description, lines[], refType, refId)` — SUM(debit) ≠ SUM(credit) হলে `UnbalancedJournalEntryException` throw করবে
+- [ ] **2.5.4** Chart of Accounts List Page (tree view, parent-child) + Add/Edit Modal
+- [ ] **2.5.5** Journal Entry List Page + Detail view (সব line + debit/credit দেখাবে)
+- [ ] **2.5.6** General Ledger Page (প্রতি account-এর জন্য, running balance সহ)
+- [x] **2.5.7** Feature test: unbalanced lines দিয়ে post করতে গেলে exception হয়
+- [x] **2.5.8** Feature test: balanced entry post হলে সব line ঠিকভাবে সেভ হয়, account balance আপডেট হয়
+
+### ধাপ ২ — ইতিমধ্যে বানানো Action class-এ Retrofit 🔧
+- [x] **2.5.9** 🔧 **`FundTransferAction`** (Phase 2.5-এর মূল কাজ) — journal lines: `Dr {to_account COA}, Cr {from_account COA}`
+- [x] **2.5.10** 🔧 **`ConfirmPurchaseAction`** (Phase 5.2-এ বানানো হয়েছিল) — journal lines: বাকিতে হলে `Dr Inventory, Cr Accounts Payable`; নগদে হলে `Dr Inventory, Cr Cash/Bank`
+- [x] **2.5.11** 🔧 **`ConfirmSaleAction`** (Phase 6.2-এ বানানো হয়েছিল) — একই journal entry-তে দুই সেট line: `Dr Accounts Receivable/Cash, Cr Sales Revenue` **এবং** `Dr Cost of Goods Sold, Cr Inventory` (পর্ব ৬.৫-এর উদাহরণ অনুসরণ করুন)
+- [x] **2.5.12** Feature test: `ConfirmSaleAction` চালানোর পর সংশ্লিষ্ট journal entry তৈরি হয়েছে ও balanced (`reference_type='sale'` দিয়ে খুঁজে verify করুন)
+- [x] **2.5.13** Feature test: `ConfirmPurchaseAction` চালানোর পর journal entry তৈরি হয়েছে ও balanced
+- [x] **2.5.14** Feature test: `FundTransferAction` চালানোর পর journal entry তৈরি হয়েছে ও balanced
+- [ ] **2.5.15** `php artisan migrate:fresh --seed` দিয়ে পুরনো টেস্ট ডেটা রিসেট করুন (এখনো production data নেই বলে নিরাপদ) — এরপর Phase 2/5/6-এর manual flow আবার টেস্ট করে দেখুন journal entry তৈরি হচ্ছে কিনা
+
+⚠️ **সব ধাপ (২.৫.১ থেকে ২.৫.১৫) শেষ না করে Phase 7 (Returns)-এ যাবেন না।**
 
 ---
 
@@ -72,7 +108,7 @@
 ## Phase 5 — Purchase (পর্ব ৩)
 
 - [x] **5.1** `purchases`, `purchase_items` migration+model (status: draft/ordered/received/cancelled)
-- [x] **5.2** `ConfirmPurchaseAction` (StockService + weighted avg_cost recalculation একসাথে)
+- [x] **5.2** `ConfirmPurchaseAction` (StockService + weighted avg_cost recalculation একসাথে) — ⚠️ Journal posting এখনো বাকি, দেখুন 2.5.10
 - [x] **5.3** Purchase List Page + Add/Edit Page (multi-item form)
 - [x] **5.4** Add Payment Modal + Supplier Credit Auto-apply logic
 - [x] **5.5** Purchase Detail/Print Page
@@ -83,7 +119,7 @@
 ## Phase 6 — Sales (পর্ব ৪) ⭐ সবচেয়ে গুরুত্বপূর্ণ module
 
 - [x] **6.1** `sales`, `sale_items`, `sale_item_serials` migration+model
-- [x] **6.2** `ConfirmSaleAction` (StockService + LedgerService + AccountService একসাথে, একই transaction-এ)
+- [x] **6.2** `ConfirmSaleAction` (StockService + LedgerService + AccountService একসাথে, একই transaction-এ) — ⚠️ Journal posting এখনো বাকি, দেখুন 2.5.11
 - [x] **6.3** Sales List Page (draft/quotation/confirmed filter)
 - [x] **6.4** Add Sale Page — Customer সেকশন (বকেয়া দেখানো + সাম্প্রতিক কেনা)
 - [x] **6.5** Add Sale Page — Product সেকশন (`ProductSearchInput` shared component)
@@ -100,7 +136,7 @@
 ## Phase 7 — Returns (পর্ব ৫)
 
 - [ ] **7.1** `sale_returns`, `sale_return_items`, `purchase_returns`, `purchase_return_items` migration+model
-- [ ] **7.2** `CreateSaleReturnAction` / `CreatePurchaseReturnAction` (`ReturnQuantityWithinSoldRule` দিয়ে validate)
+- [ ] **7.2** `CreateSaleReturnAction` / `CreatePurchaseReturnAction` (`ReturnQuantityWithinSoldRule` দিয়ে validate + **JournalService::post()** প্রথম থেকেই যোগ করা — retrofit লাগবে না)
 - [ ] **7.3** Return List + Create Return Page
 - [ ] **7.4** Refund Payment Modal
 
@@ -117,17 +153,17 @@
 ## Phase 9 — Expense 🟡 (design পুনর্বিবেচনার অপেক্ষায়)
 
 - [ ] **9.1** `expense_categories`, `expenses` migration+model
-- [ ] **9.2** Expense List Page + Add/Edit Modal + Payment Modal
+- [ ] **9.2** Expense List Page + Add/Edit Modal + Payment Modal (⭐ Journal posting: Dr Expense account, Cr Cash/Bank বা Accounts Payable)
 
 ---
 
 ## Phase 10 — Asset/Loan/Investor/Liability (পর্ব ৮)
 
 - [ ] **10.1** `HasLedger` trait তৈরি (পর্ব ১৭.৩)
-- [ ] **10.2** `assets`, `asset_transactions` migration+model (trait ব্যবহার করে)
-- [ ] **10.3** `company_loans`, `loan_transactions` migration+model
-- [ ] **10.4** `investors`, `investor_transactions` migration+model
-- [ ] **10.5** `other_liabilities`, `other_liability_transactions` migration+model
+- [ ] **10.2** `assets`, `asset_transactions` migration+model (trait ব্যবহার করে, ⭐ প্রতিটা transaction-এ JournalService posting যোগ)
+- [ ] **10.3** `company_loans`, `loan_transactions` migration+model (⭐ Journal posting)
+- [ ] **10.4** `investors`, `investor_transactions` migration+model (⭐ Journal posting)
+- [ ] **10.5** `other_liabilities`, `other_liability_transactions` migration+model (⭐ Journal posting)
 - [ ] **10.6** চারটার জন্য একই প্যাটার্নের List+Detail+Add Transaction Page/Modal
 - [ ] **10.7** Feature test: `HasLedger` trait সঠিকভাবে balance recalculate করে
 
@@ -136,7 +172,7 @@
 ## Phase 11 — Staff (পর্ব ৯)
 
 - [ ] **11.1** `staff`, `staff_transaction_types` (seeded), `staff_ledger` migration+model
-- [ ] **11.2** Staff List + Add/Edit Page + Ledger Detail Page
+- [ ] **11.2** Staff List + Add/Edit Page + Ledger Detail Page (⭐ salary charge/payment-এ JournalService posting)
 - [ ] **11.3** Add Transaction Modal
 
 ---
@@ -165,7 +201,7 @@
 
 - [ ] **14.1** Import Products/Contacts (`maatwebsite/excel`)
 - [ ] **14.2** Import Opening Stock
-- [ ] **14.3** Import Sales (`source = imported`, stock/ledger touch হবে না)
+- [ ] **14.3** Import Sales (`source = imported`, stock/ledger/journal touch হবে না)
 - [ ] **14.4** Import file cleanup (job শেষে delete)
 
 ---
@@ -174,10 +210,11 @@
 
 - [ ] **15.1** Dashboard Quick Actions (permission-filtered)
 - [ ] **15.2** Dashboard Summary Cards
-- [ ] **15.3** Profit & Loss Report + `INDEX(sale_date, status)` কম্পোজিট ইনডেক্স
-- [ ] **15.4** Balance Sheet (quick) + Financial Position (full) + Trial Balance
+- [ ] **15.3** Profit & Loss Report + `INDEX(sale_date, status)` কম্পোজিট ইনডেক্স (⭐ এখন Journal থেকে সোর্স করা)
+- [ ] **15.4** Balance Sheet (quick) + Financial Position (full) + Trial Balance (⭐ `journal_entry_lines` থেকে সোর্স, পর্ব ৬.৫)
 - [ ] **15.5** Cash Flow, Stock Report, Due Report, Trending Products
 - [ ] **15.6** Fiscal Year filter (`fiscal_year_start_month`)
+- [ ] **15.7** Reconciliation Check scheduled job (Contact balance vs Accounts Receivable/Payable GL, Stock value vs Inventory GL) — পর্ব ৬.৫
 
 ---
 
@@ -192,7 +229,7 @@
 
 ## Phase 17 — Notification, Activity Log, Backup, Marketing (পর্ব ১৫)
 
-- [ ] **17.1** `activity_logs` (spatie/laravel-activitylog) + retention job (dropdown setting)
+- [ ] **17.1** `activity_logs` (spatie/laravel-activitylog) + retention job (dropdown setting: 3/6/12/18 মাস)
 - [ ] **17.2** `notifications` + daily scheduled job (Low Stock/Due/EMI Overdue)
 - [ ] **17.3** `message_logs`, `campaigns`, `campaign_recipients` migration+model
 - [ ] **17.4** Contact bulk-select → Send Notification Modal

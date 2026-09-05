@@ -242,7 +242,6 @@ accounts
 - account_number             (nullable, encrypted)
 - opening_balance
 - current_balance
-- is_active                    boolean, default true — "Close" an account instead of deleting it once it holds transactions
 - created_by
 
 account_transactions
@@ -288,6 +287,27 @@ cash_book_entries
 - created_by
 ```
 Does NOT tie to any `accounts` row or create `account_transactions` — deliberately excluded from Balance Sheet/Financial Position, an informal side-ledger only.
+
+## Chart of Accounts & Journal Entries (Double-Entry Bookkeeping)
+
+```
+chart_of_accounts
+- id, code, name
+- type              enum('asset','liability','equity','income','expense')
+- normal_balance     enum('debit','credit')
+- parent_id          (nullable)
+- is_active
+
+journal_entries
+- id, entry_date, description
+- reference_type, reference_id
+- created_by, created_at
+
+journal_entry_lines
+- id, journal_entry_id, chart_of_account_id
+- debit, credit, note
+```
+Sits above the subsidiary ledgers (contact_ledger, account_transactions, stock_movements, etc. — all unchanged) as the General Ledger. Every Action class posts a balanced Journal Entry alongside its existing subsidiary writes. `SUM(debit) = SUM(credit)` per entry, enforced in `JournalService`.
 
 ---
 
