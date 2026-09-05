@@ -403,3 +403,66 @@ export interface ContactSaleSummary {
     payment_status: PaymentStatusValue;
     status: SaleStatusValue;
 }
+
+export type ChartOfAccountTypeValue = 'asset' | 'liability' | 'equity' | 'income' | 'expense';
+export type NormalBalanceValue = 'debit' | 'credit';
+
+export interface ChartOfAccountOption {
+    id: number;
+    code: string;
+    name: string;
+    parent_id?: number | null;
+}
+
+export interface ChartOfAccountListItem {
+    id: number;
+    code: string;
+    name: string;
+    type: ChartOfAccountTypeValue;
+    normal_balance: NormalBalanceValue;
+    parent_id: number | null;
+    parent: { id: number; name: string } | null;
+    balance: number;
+    is_active: boolean;
+    can_delete: boolean;
+}
+
+export interface JournalEntryListItem {
+    id: number;
+    entry_date: string;
+    description: string;
+    reference_type: string | null;
+    reference_id: number | null;
+    total_debit: number;
+    total_credit: number;
+}
+
+export interface JournalEntryLineDetail {
+    id: number;
+    chart_of_account: { id: number; code: string; name: string };
+    debit: number;
+    credit: number;
+    note: string | null;
+}
+
+export interface JournalEntryDetail {
+    id: number;
+    entry_date: string;
+    description: string;
+    reference_type: string | null;
+    reference_id: number | null;
+    lines: JournalEntryLineDetail[];
+}
+
+export interface GeneralLedgerLine {
+    id: number;
+    entry_date: string;
+    description: string;
+    reference_type: string | null;
+    reference_id: number | null;
+    journal_entry_id: number;
+    debit: number;
+    credit: number;
+    note: string | null;
+    balance: number;
+}

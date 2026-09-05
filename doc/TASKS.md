@@ -59,9 +59,9 @@
   - 5100 Cost of Goods Sold (expense/debit) · 5200+ প্রতি `expense_category`-র জন্য একটা sub-account (expense/debit)
 - [x] **2.5.2** `journal_entries` (id, entry_date, description, reference_type, reference_id, created_by) + `journal_entry_lines` (id, journal_entry_id, chart_of_account_id, debit, credit, note) migration+model
 - [x] **2.5.3** `JournalService::post(date, description, lines[], refType, refId)` — SUM(debit) ≠ SUM(credit) হলে `UnbalancedJournalEntryException` throw করবে
-- [ ] **2.5.4** Chart of Accounts List Page (tree view, parent-child) + Add/Edit Modal
-- [ ] **2.5.5** Journal Entry List Page + Detail view (সব line + debit/credit দেখাবে)
-- [ ] **2.5.6** General Ledger Page (প্রতি account-এর জন্য, running balance সহ)
+- [x] **2.5.4** Chart of Accounts List Page (tree view, parent-child) + Add/Edit Modal
+- [x] **2.5.5** Journal Entry List Page + Detail view (সব line + debit/credit দেখাবে)
+- [x] **2.5.6** General Ledger Page (প্রতি account-এর জন্য, running balance সহ)
 - [x] **2.5.7** Feature test: unbalanced lines দিয়ে post করতে গেলে exception হয়
 - [x] **2.5.8** Feature test: balanced entry post হলে সব line ঠিকভাবে সেভ হয়, account balance আপডেট হয়
 

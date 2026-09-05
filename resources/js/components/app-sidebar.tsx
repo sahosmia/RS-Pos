@@ -4,7 +4,7 @@ import { NavUser } from '@/components/nav-user';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/react';
-import { BookOpen, Folder, LayoutGrid, Notebook, Package, Receipt, Settings, ShoppingCart, Users, Wallet } from 'lucide-react';
+import { BookOpen, BookText, Folder, LayoutGrid, Package, Receipt, Settings, ShoppingCart, Users, Wallet } from 'lucide-react';
 import AppLogo from './app-logo';
 
 const mainNavItems: NavItem[] = [
@@ -48,11 +48,19 @@ const mainNavItems: NavItem[] = [
         title: 'Payment Accounts',
         url: '/accounts',
         icon: Wallet,
+        items: [
+            { title: 'Accounts', url: '/accounts' },
+            { title: 'Cash Book', url: '/cash-book' },
+        ],
     },
     {
-        title: 'Cash Book',
-        url: '/cash-book',
-        icon: Notebook,
+        title: 'Accounting',
+        url: '/chart-of-accounts',
+        icon: BookText,
+        items: [
+            { title: 'Chart of Accounts', url: '/chart-of-accounts' },
+            { title: 'Journal Entries', url: '/journal-entries' },
+        ],
     },
     {
         title: 'Business Settings',
