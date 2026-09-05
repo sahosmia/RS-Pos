@@ -8,6 +8,6 @@ namespace App\Enums;
  */
 enum SalePaymentType: string
 {
-    case Cash = 'cash';
+    case OneTime = 'one_time';
     case Emi = 'emi';
 }

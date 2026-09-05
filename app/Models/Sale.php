@@ -39,7 +39,7 @@ class Sale extends Model
         'delivery_status',
         'delivered_at',
         'valid_until',
-        'payment_type',
+        'financing_type',
         'created_by',
     ];
 
@@ -65,7 +65,7 @@ class Sale extends Model
             'delivery_status' => DeliveryStatus::class,
             'delivered_at' => 'datetime',
             'valid_until' => 'date',
-            'payment_type' => SalePaymentType::class,
+            'financing_type' => SalePaymentType::class,
         ];
     }
 

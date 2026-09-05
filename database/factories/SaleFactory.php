@@ -31,6 +31,7 @@ class SaleFactory extends Factory
             'payment_status' => 'due',
             'status' => SaleStatus::Draft,
             'source' => 'manual',
+            'financing_type' => 'one_time',
         ];
     }
 

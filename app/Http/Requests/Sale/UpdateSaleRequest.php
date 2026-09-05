@@ -30,7 +30,7 @@ class UpdateSaleRequest extends FormRequest
             'discount_type' => ['nullable', 'in:flat,percentage'],
             'discount_value' => ['nullable', 'numeric', 'min:0'],
             'valid_until' => ['required_if:status,quotation', 'nullable', 'date', 'after_or_equal:sale_date'],
-            'payment_type' => ['nullable', 'in:cash,emi'],
+            'financing_type' => ['nullable', 'in:one_time,emi'],
             'payments' => ['nullable', 'array'],
             'payments.*.account_id' => ['required', 'integer', 'exists:accounts,id'],
             'payments.*.amount' => ['required', 'numeric', 'min:0.01'],

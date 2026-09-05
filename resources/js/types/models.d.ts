@@ -326,7 +326,7 @@ export interface SaleFormDetail {
     discount_type: 'flat' | 'percentage' | null;
     discount_value: number;
     valid_until: string | null;
-    payment_type: 'cash' | 'emi';
+    financing_type: 'one_time' | 'emi';
     items: SaleFormItem[];
 }
 

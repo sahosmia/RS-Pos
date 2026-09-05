@@ -130,7 +130,7 @@ class SaleController extends Controller
                 'discount_type' => $sale->discount_type,
                 'discount_value' => $sale->discount_value,
                 'valid_until' => $sale->valid_until?->toDateString(),
-                'payment_type' => $sale->payment_type,
+                'financing_type' => $sale->financing_type,
                 'items' => $sale->items->map(fn ($item) => [
                     'product_id' => $item->product_id,
                     'quantity' => $item->quantity,

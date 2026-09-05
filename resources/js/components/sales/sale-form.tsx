@@ -53,7 +53,7 @@ export default function SaleForm({ mode, sale, customers: initialCustomers, prod
         discount_type: sale?.discount_type ?? null,
         discount_value: sale?.discount_value ?? 0,
         valid_until: sale?.valid_until ?? '',
-        payment_type: sale?.payment_type ?? 'cash',
+        financing_type: sale?.financing_type ?? 'one_time',
         items: sale?.items ?? ([] as SaleFormItem[]),
     });
 
