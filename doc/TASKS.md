@@ -40,39 +40,75 @@
 - [x] **2.7** Account Statement Page (running balance)
 - [x] **2.8** Feature test: split payment ২টা account-এ সঠিকভাবে ভাগ হয়
 
-⚠️ **এই Phase Chart of Accounts আসার আগে বানানো হয়েছিল — নিচের Phase 2.5 শেষে `FundTransferAction`-এ Journal posting retrofit করতে হবে (task 2.5.9)।**
+⚠️ **এই Phase Chart of Accounts আসার আগে বানানো হয়েছিল — নিচের Phase 2.5 শেষে `FundTransferAction`-এ Journal posting retrofit করতে হবে (task 2.5.16), আর `StockService`-এ concurrency lock (task 2.5.10)।**
 
 ---
 
-## Phase 2.5 — Chart of Accounts + Journal Entry (পর্ব ৬.৫) ⭐⭐ এখন সবচেয়ে জরুরি
+## Phase 2.5 — Chart of Accounts + Journal Entry, Architecture V2 (পর্ব ৬.৫ + Phase 35) ⭐⭐⭐ এখন সবচেয়ে জরুরি
 
-> **এই পুরো Phase-টা design-এ পরে যোগ হয়েছিল, তাই Phase 2/5/6 এটার আগেই বানানো হয়ে গেছে।** নিচের কাজগুলো তাই দুই ভাগে — প্রথমে নতুন কাঠামো তৈরি, তারপর ইতিমধ্যে বানানো ৩টা Action class-এ retrofit।
+> **এই Phase দুইবার আপডেট হয়েছে** — প্রথমে Chart of Accounts যোগ হলো (Phase 2/5/6 তার আগেই বানানো হয়ে গিয়েছিল), তারপর একটা external architecture review-এর পর আরও কিছু গুরুত্বপূর্ণ fix (V2) যোগ হলো। **এখনো এই Phase শুরুই হয়নি**, তাই বেশিরভাগ V2 fix সরাসরি বসিয়ে দেওয়া যাচ্ছে, কোনো retrofit-এর retrofit ছাড়াই — শুধু ৩টা জিনিস (Serial Number, Backup, `financing_type` rename) আগে থেকেই বানানো ছিল বলে retrofit লাগবে।
 
-### ধাপ ১ — নতুন কাঠামো তৈরি
-- [x] **2.5.1** `chart_of_accounts` migration+model + default seeder — সম্পূর্ণ তালিকা:
-  - 1010 Cash in Hand (asset/debit) · 1020 Bank Accounts, parent (asset/debit)
-  - 1100 Accounts Receivable (asset/debit) · 1200 Inventory (asset/debit)
-  - 1300 Staff Advances (asset/debit) · 1400 Fixed Assets (asset/debit)
-  - 2100 Accounts Payable (liability/credit) · 2200 Loans Payable (liability/credit) · 2300 Other Liabilities (liability/credit)
-  - 3100 Owner's/Investor's Capital (equity/credit) · 3200 Retained Earnings (equity/credit)
-  - 4100 Sales Revenue (income/credit) · 4200 Service/Installation Income (income/credit)
-  - 5100 Cost of Goods Sold (expense/debit) · 5200+ প্রতি `expense_category`-র জন্য একটা sub-account (expense/debit)
-- [x] **2.5.2** `journal_entries` (id, entry_date, description, reference_type, reference_id, created_by) + `journal_entry_lines` (id, journal_entry_id, chart_of_account_id, debit, credit, note) migration+model
-- [x] **2.5.3** `JournalService::post(date, description, lines[], refType, refId)` — SUM(debit) ≠ SUM(credit) হলে `UnbalancedJournalEntryException` throw করবে
-- [x] **2.5.4** Chart of Accounts List Page (tree view, parent-child) + Add/Edit Modal
-- [x] **2.5.5** Journal Entry List Page + Detail view (সব line + debit/credit দেখাবে)
-- [x] **2.5.6** General Ledger Page (প্রতি account-এর জন্য, running balance সহ)
-- [x] **2.5.7** Feature test: unbalanced lines দিয়ে post করতে গেলে exception হয়
-- [x] **2.5.8** Feature test: balanced entry post হলে সব line ঠিকভাবে সেভ হয়, account balance আপডেট হয়
+### ধাপ ০ — সবার আগে (V2 P0 fix, Chart of Accounts-এর আগেই করা উচিত)
+- [x] **2.5.0a** RETROFIT — Phase 2/5/6-এ যত migration আছে, সবকটাতে টাকার সব column (amount, price, balance, total, subtotal, paid_amount, due_amount ইত্যাদি) float/double-এর বদলে decimal(19,4) কিনা check করুন, না থাকলে নতুন migration দিয়ে ঠিক করুন। এটা এখনই ঠিক না করলে পরে করাই কঠিন হয়ে যাবে — কোনো column float/double ছিল না, সবই decimal(15,2); একটা নতুন migration (`widen_money_columns_to_decimal_19_4`) দিয়ে MySQL-এ রॉ `MODIFY COLUMN` দিয়ে decimal(19,4)-এ widen করা হয়েছে (SQLite driver-এ no-op, ওখানে fixed-precision decimal নেই)। Phase 2/5/6-এর সাথে এই একই পাসে ইতিমধ্যে বানানো `chart_of_accounts.balance`/`journal_entry_lines.debit,credit`-ও widen করা হয়েছে (স্কোপের বাইরে না রেখে, যেহেতু ওগুলোও money এবং একই V1 পাসে বানানো)। `contacts.balance`/`contact_ledger.amount` (Phase 4) ইচ্ছাকৃতভাবে বাদ — task-এর স্কোপ শুধু Phase 2/5/6
+- [x] **2.5.0b** php artisan migrate:fresh --seed (এই ধাপের পর, decimal fix reflect করতে) — reset করে column type verify করা হয়েছে ও পুরো test suite (১২৬টা) আবার pass করেছে
 
-### ধাপ ২ — ইতিমধ্যে বানানো Action class-এ Retrofit 🔧
-- [x] **2.5.9** 🔧 **`FundTransferAction`** (Phase 2.5-এর মূল কাজ) — journal lines: `Dr {to_account COA}, Cr {from_account COA}`
-- [x] **2.5.10** 🔧 **`ConfirmPurchaseAction`** (Phase 5.2-এ বানানো হয়েছিল) — journal lines: বাকিতে হলে `Dr Inventory, Cr Accounts Payable`; নগদে হলে `Dr Inventory, Cr Cash/Bank`
-- [x] **2.5.11** 🔧 **`ConfirmSaleAction`** (Phase 6.2-এ বানানো হয়েছিল) — একই journal entry-তে দুই সেট line: `Dr Accounts Receivable/Cash, Cr Sales Revenue` **এবং** `Dr Cost of Goods Sold, Cr Inventory` (পর্ব ৬.৫-এর উদাহরণ অনুসরণ করুন)
-- [x] **2.5.12** Feature test: `ConfirmSaleAction` চালানোর পর সংশ্লিষ্ট journal entry তৈরি হয়েছে ও balanced (`reference_type='sale'` দিয়ে খুঁজে verify করুন)
-- [x] **2.5.13** Feature test: `ConfirmPurchaseAction` চালানোর পর journal entry তৈরি হয়েছে ও balanced
-- [x] **2.5.14** Feature test: `FundTransferAction` চালানোর পর journal entry তৈরি হয়েছে ও balanced
-- [x] **2.5.15** `php artisan migrate:fresh --seed` দিয়ে পুরনো টেস্ট ডেটা রিসেট করুন (এখনো production data নেই বলে নিরাপদ) — এরপর Phase 2/5/6-এর manual flow আবার টেস্ট করে দেখুন journal entry তৈরি হচ্ছে কিনা — reset করে Purchase confirm + Sale confirm + Fund Transfer একসাথে চালিয়ে verify করা হয়েছে: ৩টা journal entry, প্রতিটা balanced, সব Chart of Accounts balance (Cash, Bank, AR, AP, Inventory, Sales Revenue, COGS) হাতে হিসাব করে মিলিয়ে দেখা হয়েছে
+### ধাপ ১ — Chart of Accounts + Journal Entry কাঠামো
+- [ ] **2.5.1** chart_of_accounts migration+model + default seeder — সম্পূর্ণ তালিকা:
+  - 1010 Cash in Hand (asset/debit), 1020 Bank Accounts parent (asset/debit)
+  - 1100 Accounts Receivable (asset/debit), 1200 Inventory (asset/debit)
+  - 1300 Staff Advances (asset/debit), 1400 Fixed Assets (asset/debit)
+  - 2100 Accounts Payable (liability/credit), 2200 Loans Payable (liability/credit), 2300 Other Liabilities (liability/credit)
+  - 3100 Owner's/Investor's Capital (equity/credit), 3200 Retained Earnings (equity/credit), 3300 Opening Balance Equity (equity/credit) — V2 নতুন
+  - 4100 Sales Revenue (income/credit), 4200 Service/Installation Income (income/credit), 4150 Sales Returns & Allowances contra-income — V2 নতুন
+  - 5100 Cost of Goods Sold (expense/debit), 5900 Interest Expense (expense/debit) — V2 নতুন, 5200+ প্রতি expense_category-র জন্য একটা sub-account (expense/debit)
+- [ ] **2.5.2** journal_entries (id, entry_date, description, reference_type, reference_id, status enum(posted/reversed) default posted, reversed_at, reversed_by, reversal_of_id — V2, created_by) + journal_entry_lines (id, journal_entry_id, chart_of_account_id, debit, credit, note) migration+model
+- [ ] **2.5.3** JournalService::post(date, description, lines[], refType, refId) — SUM(debit) ≠ SUM(credit) হলে UnbalancedJournalEntryException থ্রো করবে; এবং assertPeriodOpen($date) চেক করবে — V2 (নিচে 2.5.4a দেখুন)
+- [ ] **2.5.3b** JournalService::reverse(JournalEntry $original, reason, userId) — V2 — mirrored debit/credit দিয়ে নতুন reversal entry বানাবে, original-কে status=reversed মার্ক করবে (কখনো edit/delete না)
+
+### ধাপ ১.৫ — Accounting Period Lock (V2 নতুন)
+- [ ] **2.5.4a** accounting_periods migration+model (start_date, end_date, status enum(open/closed), closed_at, closed_by) + monthly seeder (fiscal_year_start_month অনুযায়ী)
+- [ ] **2.5.4b** Close Period Action (Admin-only) + Period List Page
+- [ ] **2.5.4c** Feature test: closed period-এ journal post করতে গেলে ClosedPeriodException হয়
+
+### ধাপ ২ — accounts ↔ chart_of_accounts Mapping (V2 নতুন)
+- [ ] **2.5.5** accounts.chart_of_account_id FK migration যোগ করুন (Phase 2.1-এ বানানো accounts table-এ)
+- [ ] **2.5.6** CreateAccountAction — নতুন account তৈরি হলে automatically একটা matching chart_of_accounts sub-account তৈরি হবে (Cash→1010-এর child, Bank/Mobile/Cheque→1020-এর child) এবং লিংক হবে — Phase 2.4-এ বানানো Account creation flow আপডেট করুন
+
+### ধাপ ৩ — Frontend + Idempotency + Concurrency
+- [ ] **2.5.7** Chart of Accounts List Page (tree view, parent-child) + Add/Edit Modal
+- [ ] **2.5.8** Journal Entry List Page + Detail view (সব line + debit/credit + status/reversal দেখাবে)
+- [ ] **2.5.9** General Ledger Page (প্রতি account-এর জন্য, running balance সহ)
+- [ ] **2.5.10** RETROFIT — StockService::decrease() (Phase 3.3-এ বানানো) — Product::lockForUpdate() যোগ করুন — V2 (concurrency safety)
+- [ ] **2.5.11** Feature test: unbalanced lines দিয়ে post করতে গেলে exception হয়
+- [ ] **2.5.12** Feature test: balanced entry post হলে সব line ঠিকভাবে সেভ হয়, account balance আপডেট হয়
+- [ ] **2.5.13** Feature test: দুইটা simultaneous sale একই শেষ ১টা stock-এর জন্য প্রতিযোগিতা করলে একটাই সফল হয় (concurrency test)
+
+### ধাপ ৪ — stock_movements cost fields (V2 নতুন)
+- [ ] **2.5.14** RETROFIT — stock_movements (Phase 3.2-এ বানানো) — unit_cost, total_cost (nullable) column যোগ করুন
+- [ ] **2.5.15** RETROFIT — StockService — প্রতিটা movement তৈরির সময় এই দুটো field পূরণ করুন (purchase→unit_price, sale→cost_at_sale, adjustment→avg_cost)
+
+### ধাপ ৫ — ইতিমধ্যে বানানো Action class-এ Journal + Idempotency Retrofit
+- [ ] **2.5.16** RETROFIT — FundTransferAction — journal lines: Dr {to_account COA}, Cr {from_account COA}
+- [ ] **2.5.17** RETROFIT — ConfirmPurchaseAction — journal lines: বাকিতে Dr Inventory, Cr Accounts Payable; নগদে Dr Inventory, Cr Cash/Bank + idempotency guard (if status==received, return) — V2
+- [ ] **2.5.18** RETROFIT — ConfirmSaleAction — একই journal entry-তে দুই সেট line: Dr Accounts Receivable/Cash, Cr Sales Revenue এবং Dr Cost of Goods Sold, Cr Inventory + idempotency guard (if status==confirmed, return) — V2
+- [ ] **2.5.19** Feature test: ConfirmSaleAction চালানোর পর journal entry তৈরি হয়েছে ও balanced
+- [ ] **2.5.20** Feature test: ConfirmSaleAction দুইবার চালালে দ্বিতীয়বার কোনো নতুন entry তৈরি হয় না (idempotency)
+- [ ] **2.5.21** Feature test: ConfirmPurchaseAction চালানোর পর journal entry তৈরি হয়েছে ও balanced
+- [ ] **2.5.22** Feature test: FundTransferAction চালানোর পর journal entry তৈরি হয়েছে ও balanced
+
+### ধাপ ৬ — অন্যান্য V2 Retrofit (আগে বানানো হয়ে গেছে বলে)
+- [ ] **2.5.23** RETROFIT — Serial Number Lifecycle — sale_item_serials বাদ দিয়ে serial_numbers (product_id, serial_number, status enum(in_stock/sold/returned/under_warranty_service/disposed), purchase_item_id, sale_item_id) migration+model বানান; ConfirmPurchaseAction-এ in_stock row জেনারেট করা, ConfirmSaleAction-এ নির্দিষ্ট serial পিক করে sold করা যোগ করুন
+- [ ] **2.5.24** RETROFIT — sales.payment_type → financing_type column rename migration (enum('cash','emi') → enum('one_time','emi')), ConfirmSaleAction-এ reference আপডেট
+- [ ] **2.5.25** RETROFIT — Backup — Scheduled backup:run cron যোগ, backup:clean retention, backup:monitor, আর পুরো Restore flow (permission gate + typed confirmation + auto-safety-backup + RestoreDatabaseJob) — যদি Phase 17.5 আগে করা হয়ে থাকে সেটাও আপডেট করুন
+- [ ] **2.5.26** UI label change: "Cash Book" মেনু/টাইটেল → "Petty Cash" (শুধু display label, DB table নাম বদলাবে না)
+
+### ধাপ ৭ — সব শেষে
+- [ ] **2.5.27** php artisan migrate:fresh --seed দিয়ে আবার test data রিসেট করুন, তারপর Phase 2/5/6-এর manual flow আবার টেস্ট করুন — journal entry, serial number, financing_type সব ঠিকভাবে কাজ করছে কিনা যাচাই করুন
+
+⚠️ সব ধাপ (২.৫.০ থেকে ২.৫.২৭) শেষ না করে Phase 7 (Returns)-এ যাবেন না। Return-এর Action class প্রথম থেকেই Journal posting সহ বানানো হবে (Dr Sales Returns & Allowances/Cr AR-Cash + Dr Inventory/Cr COGS প্যাটার্নে), তাই আলাদা retrofit লাগবে না — কিন্তু Chart of Accounts, 4150 account, আর idempotency pattern আগে থেকে না থাকলে সেটাও ঠিকভাবে বানানো যাবে না।
+
+
+⚠️ **সব ধাপ (২.৫.১ থেকে ২.৫.১৫) শেষ না করে Phase 7 (Returns)-এ যাবেন না।**
 
 ---
 
@@ -106,7 +142,7 @@
 ## Phase 5 — Purchase (পর্ব ৩)
 
 - [x] **5.1** `purchases`, `purchase_items` migration+model (status: draft/ordered/received/cancelled)
-- [x] **5.2** `ConfirmPurchaseAction` (StockService + weighted avg_cost recalculation একসাথে) — ⚠️ Journal posting এখনো বাকি, দেখুন 2.5.10
+- [x] **5.2** `ConfirmPurchaseAction` (StockService + weighted avg_cost recalculation একসাথে) — ⚠️ Journal posting এখনো বাকি, দেখুন 2.5.17
 - [x] **5.3** Purchase List Page + Add/Edit Page (multi-item form)
 - [x] **5.4** Add Payment Modal + Supplier Credit Auto-apply logic
 - [x] **5.5** Purchase Detail/Print Page
@@ -117,7 +153,7 @@
 ## Phase 6 — Sales (পর্ব ৪) ⭐ সবচেয়ে গুরুত্বপূর্ণ module
 
 - [x] **6.1** `sales`, `sale_items`, `sale_item_serials` migration+model
-- [x] **6.2** `ConfirmSaleAction` (StockService + LedgerService + AccountService একসাথে, একই transaction-এ) — ⚠️ Journal posting এখনো বাকি, দেখুন 2.5.11
+- [x] **6.2** `ConfirmSaleAction` (StockService + LedgerService + AccountService একসাথে, একই transaction-এ) — ⚠️ Journal posting এখনো বাকি, দেখুন 2.5.18
 - [x] **6.3** Sales List Page (draft/quotation/confirmed filter)
 - [x] **6.4** Add Sale Page — Customer সেকশন (বকেয়া দেখানো + সাম্প্রতিক কেনা)
 - [x] **6.5** Add Sale Page — Product সেকশন (`ProductSearchInput` shared component)
@@ -134,7 +170,7 @@
 ## Phase 7 — Returns (পর্ব ৫)
 
 - [ ] **7.1** `sale_returns`, `sale_return_items`, `purchase_returns`, `purchase_return_items` migration+model
-- [ ] **7.2** `CreateSaleReturnAction` / `CreatePurchaseReturnAction` (`ReturnQuantityWithinSoldRule` দিয়ে validate + **JournalService::post()** প্রথম থেকেই যোগ করা — retrofit লাগবে না)
+- [ ] **7.2** `CreateSaleReturnAction` / `CreatePurchaseReturnAction` (`ReturnQuantityWithinSoldRule` দিয়ে validate + **JournalService::post()** প্রথম থেকেই যোগ করা — Sale Return: `Dr Sales Returns & Allowances(4150)/Cr AR-Cash` + `Dr Inventory/Cr COGS`; Purchase Return: `Dr Accounts Payable-Cash/Cr Inventory`; idempotency guard-ও প্রথম থেকেই — retrofit লাগবে না)
 - [ ] **7.3** Return List + Create Return Page
 - [ ] **7.4** Refund Payment Modal
 

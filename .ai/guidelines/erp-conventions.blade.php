@@ -21,6 +21,18 @@
 - **Stock পরিবর্তন সবসময় `StockService::increase()/decrease()` দিয়ে** — সরাসরি `increment()/decrement()` কল করবে না
 - **Contact/Staff balance পরিবর্তন সবসময় `LedgerService` দিয়ে**
 - **Account balance পরিবর্তন সবসময় `AccountService` দিয়ে**, আর `operation_date` set করতে ভুলবে না (শুধু `created_at` না)
+- **⭐ প্রতিটা টাকা-সংক্রান্ত Action (Sale/Purchase/Payment/Expense/Transfer/Asset/Loan/Investor confirm) একই transaction-এর ভিতরে `JournalService::post()`-ও কল করবে** — Chart of Accounts-এ balanced Debit=Credit journal entry পোস্ট করার জন্য। কোনো money-movement Action journal posting ছাড়া "সম্পূর্ণ" ধরা হবে না। কোন account কোন lines পাবে সেটা `docs/erp-master-reference.md`-এর পর্ব ৬.৫-এ উদাহরণ আকারে আছে।
+
+## Architecture V2 — গুরুত্বপূর্ণ Standing Rule (Phase 35)
+
+- **Source of Truth:** Trial Balance/P&L/Balance Sheet **শুধু** `journal_entries`/`journal_entry_lines` থেকে আসবে। `contact_ledger`, `account_transactions`, `stock_movements` — এগুলো কখনো financial report-এর সরাসরি source হবে না, শুধু operational UI-এর জন্য
+- **Money সবসময় `decimal(19,4)`** — কখনো `float`/`double` না, কোনো টেবিলে না
+- **Journal Entry কখনো edit/delete হবে না** — ভুল হলে `JournalService::reverse()` দিয়ে reversing entry বানাতে হবে
+- **Closed Accounting Period-এ কোনো নতুন journal post করা যাবে না** — `assertPeriodOpen()` check বাধ্যতামূলক প্রতিটা posting-এর আগে
+- **Idempotency:** প্রতিটা confirm Action-এর প্রথম লাইনে state-check (`if ($model->status === 'confirmed') return $model;`) — reprocessing নিরাপদ no-op হবে, duplicate entry না
+- **Stock decrement সবসময় `Product::lockForUpdate()` দিয়ে** — race condition এড়াতে
+- **কোনো financial record (Sale, Purchase, account_transactions, journal_entries, stock_movements, যেকোনো ledger) কখনো hard-delete হবে না**, Admin দিয়েও না — Return/Adjustment/Void/Reversal দিয়ে সংশোধন হবে
+- নতুন কোনো `accounts` row তৈরি হলে সাথে সাথে একটা `chart_of_accounts` sub-account **automatically** তৈরি হবে (manually পিক করতে হবে না)
 
 ### Immutability — এই নিয়ম কখনো ভাঙবে না
 - Confirmed Sale/Purchase-এর data সরাসরি edit করা যাবে না — correction লাগলে নতুন adjustment/return entry
@@ -52,5 +64,3 @@
 - সংশ্লিষ্ট migration/model/action-এর জন্য feature test লেখা ও পাশ করানো
 - `docs/`-এর কোনো enum/schema reference বদলালে সেটাও আপডেট করা (sync রাখা)
 - ছোট, স্পষ্ট commit message দেওয়া
-
-===

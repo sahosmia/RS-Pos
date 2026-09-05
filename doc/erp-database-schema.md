@@ -153,7 +153,7 @@ sales
 - delivery_status             enum('pending','delivered')
 - delivered_at
 - valid_until                  (nullable — quotation validity)
-- payment_type                  enum('cash','emi')
+- financing_type                  enum('one_time','emi')   -- renamed from payment_type, see Architecture Hardening section
 - sales_order_id                 (nullable, FK — if converted from a Sales Order)
 - created_by
 
@@ -172,10 +172,7 @@ sale_items
 - warranty_expires_at            (nullable, snapshotted)
 - note                             (nullable)
 
-sale_item_serials
-- id
-- sale_item_id
-- serial_number
+⚠️ `sale_item_serials` (id, sale_item_id, serial_number) — superseded, see `serial_numbers` in the Architecture Hardening section below.
 
 sale_returns
 - id
@@ -308,6 +305,48 @@ journal_entry_lines
 - debit, credit, note
 ```
 Sits above the subsidiary ledgers (contact_ledger, account_transactions, stock_movements, etc. — all unchanged) as the General Ledger. Every Action class posts a balanced Journal Entry alongside its existing subsidiary writes. `SUM(debit) = SUM(credit)` per entry, enforced in `JournalService`.
+
+## Architecture Hardening (V2) — additions/changes from external review
+
+```
+accounts
+- ...
+- chart_of_account_id    (FK, required — maps this account to its COA node)
+
+journal_entries
+- ...
+- status              enum('posted','reversed'), default 'posted'
+- reversed_at, reversed_by    (nullable)
+- reversal_of_id                (nullable, self-referencing FK)
+
+accounting_periods
+- id, start_date, end_date
+- status         enum('open','closed')
+- closed_at, closed_by
+
+stock_movements
+- ...
+- unit_cost, total_cost    (nullable — cost snapshot at the time of this specific movement)
+
+serial_numbers    -- supersedes sale_item_serials
+- id, product_id, serial_number
+- status                enum('in_stock','sold','returned','under_warranty_service','disposed')
+- purchase_item_id        (nullable, FK)
+- sale_item_id              (nullable, FK)
+- created_at
+
+sales
+- ...
+- financing_type    enum('one_time','emi')   -- renamed from payment_type
+
+chart_of_accounts   -- new seeded accounts added by V2
+- 3300 Opening Balance Equity (equity/credit)
+- 4150 Sales Returns & Allowances (contra-income)
+- 5900 Interest Expense (expense/debit)
+```
+⚠️ **Global rule**: every monetary/quantity-adjacent column in every table (not just the ones listed above) uses `decimal(19,4)`, never `float`/`double`.
+
+⚠️ **Delete policy**: Sale, Purchase, `account_transactions`, `journal_entries`, `stock_movements`, and every ledger table are never hard-deleted by anyone — corrections only via Return/Adjustment/Void/Journal-reversal.
 
 ---
 

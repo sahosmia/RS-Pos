@@ -1189,12 +1189,12 @@ activity_logs
 ```
 **Implementation note:** use **Spatie Laravel-activitylog** package rather than building from scratch — add a trait to models to auto-track changes.
 
-### 3. Backup / Data Export ✅ (simplified — manual only, no scheduling, no restore)
-- A single **"Backup Now"** button in Settings — click it, a full DB backup is generated immediately. Nothing automatic, nothing scheduled.
+### 3. Backup / Data Export ⚠️ SUPERSEDED by Phase 35 §13 — Scheduled + Restore reinstated
+~~A single **"Backup Now"** button in Settings — click it, a full DB backup is generated immediately. Nothing automatic, nothing scheduled.~~
 - **Implementation note:** use **Spatie Laravel-backup** package for backup creation (`backup:run`) — standard practice, saves hand-rolling a `mysqldump` wrapper.
 - Backup list shown in Settings → Backup page comes directly from the storage disk (filename, `created_at`, size) — no separate DB table needed.
 - **Download Backup** — a `backup.manage`-gated download link lets the owner keep an off-site copy (own Google Drive/pendrive).
-- **Restore is explicitly out of scope for now** — kept simple per the user's decision; if a shop needs to recover data, they'd currently need direct server/database access (e.g. via hosting support) rather than a self-service in-app restore flow. Can be added later without disrupting this backup mechanism if the need arises.
+- ~~Restore is explicitly out of scope for now~~ — this was simplified early on for a small-shop-only target; once larger, audit-needing clients entered scope, that trade-off no longer held. **See Phase 35 §13 for the current, authoritative design** (scheduled automatic backup, retention, health monitoring, and a fully guarded self-service restore flow).
 
 ### 4. Customer-facing Notification — multi-channel (SMS/WhatsApp/Email) ✅
 Generalized from SMS-only to support choosing the channel per message, since not every contact has every channel (e.g. no email on file) and the sender wants to pick WhatsApp vs SMS vs Email at the time of sending.
@@ -1363,7 +1363,7 @@ invoice_templates.type        a4, thermal
 ai_messages.role              user, assistant
 sales.discount_type           flat, percentage
 sales.delivery_status         pending, delivered
-sales.payment_type            cash, emi
+sales.financing_type          one_time, emi   -- renamed from payment_type (Phase 35)
 
 sales_orders.status           pending, partial, completed, cancelled
 
@@ -1377,6 +1377,9 @@ cash_book_entries.type             opening_balance, income, expense   -- standal
 
 chart_of_accounts.type              asset, liability, equity, income, expense
 chart_of_accounts.normal_balance     debit, credit
+journal_entries.status               posted, reversed
+accounting_periods.status            open, closed
+serial_numbers.status                 in_stock, sold, returned, under_warranty_service, disposed
 account_transactions.type     opening_balance, sale_payment, purchase_payment, sale_return_refund, purchase_return_refund, expense, adjustment, transfer_in, transfer_out, loan_received, loan_repayment, asset_purchase, asset_sale, investment_received, profit_distribution, investor_withdrawal, sales_order_advance, service_charge, staff_salary_payment, staff_advance, staff_loan, emi_payment
 
 asset_transactions.type       opening_asset, purchase, addition, sold, disposal
@@ -1962,15 +1965,16 @@ DB::transaction(function () use ($installment, $accountId, $amount) {
 
 **Overdue detection**: reuses the Phase 16 daily scheduled job pattern — `due_date < today AND status = 'pending'` → mark `overdue`, trigger a notification (extends the existing `due_payment` notification type).
 
-### Serial Number Tracking — optional, not required ✅
-A separate table (not a single field on `sale_items`) since a line item's quantity may exceed 1, needing multiple serials per row:
+### Serial Number Tracking — optional, not required ✅ ⚠️ SUPERSEDED by Phase 35 (full lifecycle table)
+~~A separate table (not a single field on `sale_items`) since a line item's quantity may exceed 1, needing multiple serials per row:~~
 ```
-sale_item_serials
+sale_item_serials    -- ⚠️ superseded, see Phase 35 §12 — replaced by `serial_numbers` with full purchase→sale→return lifecycle
 - id
 - sale_item_id
 - serial_number
 ```
-Entry is fully optional — no validation requiring the count to match `quantity`; can be zero, partial, or complete.
+~~Entry is fully optional — no validation requiring the count to match `quantity`; can be zero, partial, or complete.~~
+This lightweight design was later upgraded to a full lifecycle model once the target market was confirmed to benefit from purchase-through-warranty serial traceability — see Phase 35 §12 for the current, authoritative design.
 
 ---
 
@@ -2959,6 +2963,189 @@ Same check pattern applies to Accounts Payable (2100) vs supplier dues, and Inve
 
 ### Build Order impact ✅
 Chart of Accounts + Journal Entry + `JournalService` must be built **immediately after Accounts**, before any transaction module (Purchase, Sale, Expense...), since every one of those modules now posts journal entries as part of its core confirm logic.
+
+---
+
+## Phase 35: Architecture Hardening (V2) — External Review Fixes
+
+Following an external architectural review (after Phase 34's double-entry addition), a set of gaps were identified and evaluated. This phase locks in the fixes — timed intentionally before Phase 2.5 (Chart of Accounts) implementation begins, so most land cleanly with no retrofit. Two items (Serial Number Lifecycle, Backup) require retrofitting already-built modules since those were completed before this review.
+
+### 1. Explicit Source of Truth Rule ✅
+Stated plainly, not just implied: **`journal_entries`/`journal_entry_lines` is the only source for financial statements** (Trial Balance, P&L, Balance Sheet, General Ledger). `contact_ledger`, `account_transactions`, `stock_movements`, `staff_ledger`, `asset_transactions`, etc. remain **operational subsidiary ledgers only** — fast UI, customer/account/stock detail — and must never be queried to produce a formal accounting report. `account_transactions` in particular must never become an alternate Balance Sheet source; if a future report needs "cash position," it queries the Cash/Bank Chart of Accounts balances, not `account_transactions` directly.
+
+### 2. `accounts` ↔ `chart_of_accounts` mapping ✅
+```
+accounts
+- ...
+- chart_of_account_id    (FK, required — links this specific Cash/Bank/Mobile Banking account to its COA node)
+```
+Auto-created, not manually picked: when a new `accounts` row is created, a matching child `chart_of_accounts` entry is created under the right parent (Cash-type → child of 1010, Bank/Mobile Banking/Cheque-type → child of 1020) in the same transaction:
+```php
+class CreateAccountAction {
+    public function execute(array $data): Account {
+        return DB::transaction(function () use ($data) {
+            $parentCode = $data['account_type'] === 'cash' ? '1010' : '1020';
+            $coa = ChartOfAccount::create([
+                'code' => $this->nextSubCode($parentCode), 'name' => $data['name'],
+                'type' => 'asset', 'normal_balance' => 'debit',
+                'parent_id' => ChartOfAccount::where('code', $parentCode)->first()->id,
+            ]);
+            return Account::create([...$data, 'chart_of_account_id' => $coa->id]);
+        });
+    }
+}
+```
+`account_types` (Cash/Bank/Mobile Banking/Cheque) and `chart_of_accounts.type` (asset/liability/equity/income/expense) are explicitly two different classification axes — the former is payment-medium, the latter is accounting classification — never conflate them.
+
+### 3. Opening Balance posts a Journal Entry too ✅
+Previously, opening balances (Account, Contact, Asset, Loan, Investor, Other Liability) only wrote to their subsidiary ledger. Now each also posts a balanced journal entry against a new equity account:
+```
+New COA: 3300 Opening Balance Equity (equity/credit)
+
+Asset-side opening (Cash, Inventory, Fixed Asset, Customer Due, Staff Advance):
+  Dr {Asset COA}                  X   |  Cr Opening Balance Equity      X
+
+Liability-side opening (Supplier Due, Loan, Other Liability):
+  Dr Opening Balance Equity       X   |  Cr {Liability COA}             X
+```
+`accounts.opening_balance` remains as a historical/display field, but is no longer the accounting source of truth — the journal entry is.
+
+### 4. Journal Entry status + reversal (never edit, only reverse) ✅
+Consistent with the system's own immutability principle — extended properly to the General Ledger:
+```
+journal_entries
+- ...
+- status              enum('posted', 'reversed'), default 'posted'
+- reversed_at, reversed_by     (nullable)
+- reversal_of_id                (nullable, self-referencing FK)
+```
+```php
+class JournalService {
+    public function reverse(JournalEntry $original, string $reason, int $userId): JournalEntry {
+        $mirrored = $original->lines->map(fn($l) => ['chart_of_account_id'=>$l->chart_of_account_id, 'debit'=>$l->credit, 'credit'=>$l->debit])->toArray();
+        $reversal = $this->post(now(), "Reversal: {$reason}", $mirrored, 'journal_reversal', $original->id);
+        $original->update(['status'=>'reversed', 'reversed_at'=>now(), 'reversed_by'=>$userId]);
+        $reversal->update(['reversal_of_id'=>$original->id]);
+        return $reversal;
+    }
+}
+```
+
+### 5. Accounting Period Lock ✅
+```
+accounting_periods
+- id, start_date, end_date
+- status         enum('open', 'closed')
+- closed_at, closed_by
+```
+`JournalService::post()` checks the entry's date falls in an **open** period before writing; closed-period entries are rejected outright (`ClosedPeriodException`). Periods are seeded (monthly, aligned to `fiscal_year_start_month`) as `open` by default; closing one is an explicit Admin-only action. This prevents a July sale edit from silently changing an already-reported June P&L.
+
+### 6. Idempotency for money-moving Actions ✅
+Every Action that posts stock/ledger/journal entries (`ConfirmSaleAction`, `ConfirmPurchaseAction`, `RecordPaymentAction`, `CreateSaleReturnAction`, `CreatePurchaseReturnAction`, `FundTransferAction`, `EmiInstallmentPaymentAction`) gets a state-check guard as its first line — reprocessing an already-confirmed record is a safe no-op, not a duplicate:
+```php
+class ConfirmSaleAction {
+    public function execute(Sale $sale, array $payments): Sale {
+        if ($sale->status === 'confirmed') {
+            return $sale; // already processed — idempotent no-op, not an error
+        }
+        return DB::transaction(function () use ($sale, $payments) { /* ... */ });
+    }
+}
+```
+For brand-new-record double-submission (e.g. double-clicking "Save Purchase" creating two separate rows), the frontend disables the submit button after first click, and the backend additionally rejects a repeat submission carrying the same short-lived request token within a small time window.
+
+### 7. Stock Concurrency — pessimistic locking ✅
+```php
+class StockService {
+    public function decrease(Product $product, float $qty, string $type, ...): void {
+        DB::transaction(function () use ($product, $qty, $type, ...) {
+            $locked = Product::lockForUpdate()->find($product->id);
+            if ($locked->manage_stock && $locked->current_stock < $qty) {
+                throw new InsufficientStockException();
+            }
+            StockMovement::create([...]);
+            $locked->decrement('current_stock', $qty);
+        });
+    }
+}
+```
+Prevents two simultaneous sales of the last unit from both succeeding.
+
+### 8. Stock Movement — cost fields for valuation traceability ✅
+```
+stock_movements
+- ...
+- unit_cost      (nullable — cost per unit at the time of this specific movement)
+- total_cost      (nullable — quantity × unit_cost)
+```
+`purchase` movements get the purchase's `unit_price`; `sale`/`sale_return` movements get the sale item's `cost_at_sale`; `adjustment` movements get the product's `avg_cost` at that moment. This makes `stock_movements` self-sufficient for inventory valuation reports without re-joining to `sale_items`/`purchase_items` every time.
+
+### 9. Money fields — DECIMAL, never float ✅
+**Global rule, applies retroactively to every already-defined column**: every monetary/quantity-adjacent column (`amount`, `price`, `balance`, `total`, `subtotal`, `debit`, `credit`, `cost`, etc., across all ~56 tables) uses `decimal('column', 19, 4)` in migrations — never `float`/`double`. This must be corrected in Phase 2/5/6's already-built migrations before Phase 2.5 continues, since it gets progressively more disruptive to fix later.
+
+### 10. Return accounting mapping ✅
+```
+New COA: 4150 Sales Returns & Allowances (contra-income — nets against 4100 in reporting)
+
+Sales Return:
+  Dr Sales Returns & Allowances     X   |  Cr Accounts Receivable/Cash    X
+  Dr Inventory                       Y (at cost_at_sale)  |  Cr Cost of Goods Sold   Y
+
+Purchase Return:
+  Dr Accounts Payable/Cash          X   |  Cr Inventory (at original purchase unit_cost)   X
+```
+
+### 11. Investor & Loan accounting mapping — explicit ✅
+```
+New COA: 5900 Interest Expense (expense/debit)
+
+Investment:       Dr Cash/Bank              X  |  Cr Owner's/Investor's Capital   X
+Profit Share:      Dr Retained Earnings       X  |  Cr Cash/Bank                    X
+Withdrawal:         Dr Investor's Capital      X  |  Cr Cash/Bank                    X
+
+Loan Disbursement: Dr Cash/Bank              X  |  Cr Loans Payable                X
+Loan Repayment:      Dr Loans Payable          X  |  Cr Cash/Bank                    X
+Interest Charge:      Dr Interest Expense        X  |  Cr Loans Payable                X
+```
+
+### 12. Serial Number Lifecycle — full retrofit, supersedes the earlier `sale_item_serials` ✅ (decided: do now)
+The earlier lightweight `sale_item_serials` (Phase 26 — optional, sale-only, unconnected to purchase) is **replaced entirely** by a proper lifecycle table, since the target market (home appliances) genuinely benefits from tracking a specific unit from purchase through warranty:
+```
+serial_numbers
+- id
+- product_id
+- serial_number         (unique per product)
+- status                 enum('in_stock', 'sold', 'returned', 'under_warranty_service', 'disposed')
+- purchase_item_id         (nullable, FK — which purchase brought this unit in)
+- sale_item_id               (nullable, FK — set once sold)
+- created_at
+```
+**Lifecycle**: Purchase confirm (if `product.track_serial_number`) creates one `serial_numbers` row per unit at `status: in_stock`. Sale confirm requires picking specific in-stock serial(s) for that product, setting `status: sold` + `sale_item_id`. Sale Return sets the matched serial to `status: returned` (requires manual move back to `in_stock` after inspection — a returned appliance may need a service check first, not an automatic re-stock). This gives the full chain: **Serial → Sale Item → Customer → Warranty → Service History**, queryable directly.
+**Retrofit note**: since `sale_item_serials` was already built as part of Phase 6, this needs a migration replacing it with `serial_numbers`, plus updating `ConfirmSaleAction` to require serial selection (not free-text entry) when `track_serial_number` is on, and `ConfirmPurchaseAction` to generate `in_stock` rows.
+
+### 13. Backup — Scheduled + Retention + Restore, reinstated ✅ (decided: revert the earlier simplification)
+Phase 16 was deliberately simplified earlier to manual-only, no restore — reasonable for a small-shop-only target. Now that larger, audit-needing clients are in scope, that trade-off no longer holds; reinstating the fuller design:
+- **Scheduled automatic backup** (daily, via `spatie/laravel-backup`'s `backup:run` on the schedule) + **retention** (`backup:clean`) + **health monitoring** (`backup:monitor`, alerting if a backup is missing or stale).
+- **Restore — self-service, heavily guarded** (this exact design was worked out earlier in the project and is being reinstated as-is): `backup.manage` permission gate (Admin/Owner only) → typed confirmation ("type RESTORE to confirm, this is irreversible") → automatic safety-snapshot of current state immediately before restoring → queued `RestoreDatabaseJob` that extracts the backup's SQL dump and applies it. Download Backup and Upload-and-Restore (for migrating to new hosting) both included.
+
+### 14. Cash Book → displayed as "Petty Cash" (no DB rename) ✅
+The `cash_book`/`cash_book_entries` tables (already built, Phase 2.6) keep their internal names — renaming an already-migrated table has real cost for zero functional benefit. Only the **user-facing label** changes, everywhere in the UI (sidebar, page titles): "Cash Book" → **"Petty Cash"**, to avoid confusion with the formal accounting Cash account now that Chart of Accounts exists.
+
+### 15. `sales.payment_type` renamed to `financing_type` — retrofit ✅
+`enum('cash', 'emi')` was confusingly named (it's about financing mode, not payment method — payment method is already handled via account selection/split payment). Renamed:
+```
+sales.financing_type    enum('one_time', 'emi')   -- was payment_type enum('cash','emi')
+```
+Retrofit: rename the column, update the enum values, and update the one place (`ConfirmSaleAction`) that reads it.
+
+### 16. Delete policy — tightened, stated explicitly ✅
+Sale, Purchase, Payment (`account_transactions`), Journal Entry, Stock Movement, and every ledger table (`contact_ledger`, `staff_ledger`, `asset_transactions`, etc.) are **never hard-deleted, by anyone, including Admin** — the application layer exposes no delete action for these at all. Corrections always happen via Return, Adjustment, Void/Cancel, or Journal Reversal — never a DELETE statement against financial history.
+
+### 17. Deferred, explicitly (per this review, given lower priority now) ⏳
+- **Payment Allocation** (one payment split across multiple invoices via `payments`/`payment_allocations`) — decided to keep simple for now: one payment record ties to one Sale/Purchase reference, as already designed. Revisit if a real customer need for split-invoice payments surfaces.
+- **Approval Workflow** (discount >20%, large stock adjustment, etc. requiring sign-off) — architecture leaves room for it (nullable `approved_by`/`approved_at` could be added later to sensitive tables) but not built now.
+- **Tax/VAT** — schema stays naturally extensible (adding nullable `tax_rate`/`tax_amount` to `sale_items`/`purchase_items` later is non-disruptive); no action needed today.
+- **Polymorphic `reference_type`/`reference_id` FK integrity** — an accepted trade-off of Laravel's polymorphic pattern; mitigated at the application layer (Actions only ever write valid references) rather than restructured into per-type FK columns, which would add far more complexity than the risk warrants at this scale.
 
 ---
 
