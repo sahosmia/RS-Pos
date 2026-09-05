@@ -1,5 +1,7 @@
 <?php
 
+use App\Actions\Purchase\ConfirmPurchaseAction;
+use App\Actions\Sale\ConfirmSaleAction;
 use App\Models\Account;
 use App\Models\AccountType;
 use App\Models\ChartOfAccount;
@@ -86,6 +88,36 @@ test('confirming a purchase with a cash payment adds a balanced payable/cash pai
     expect($entry->lines->sum('debit'))->toBe($entry->lines->sum('credit'))
         ->and($cash->chartOfAccount->fresh()->balance)->toBe(-200.0)
         ->and($payable->fresh()->balance)->toBe(300.0); // 500 - 200
+});
+
+test('calling ConfirmSaleAction on an already-confirmed sale is a no-op — no duplicate journal entry', function () {
+    $this->actingAs(User::factory()->create());
+    $customer = Contact::factory()->create();
+    $product = Product::factory()->create(['selling_price' => 1000, 'current_stock' => 5, 'avg_cost' => 600]);
+    $sale = Sale::factory()->create(['customer_id' => $customer->id]);
+    $sale->items()->create(['product_id' => $product->id, 'quantity' => 2, 'unit_price' => 1000, 'original_price' => 1000, 'subtotal' => 2000]);
+    $sale->forceFill(['total_amount' => 2000, 'due_amount' => 2000])->save();
+
+    $confirmed = app(ConfirmSaleAction::class)->execute($sale);
+    app(ConfirmSaleAction::class)->execute($confirmed->fresh());
+
+    expect(JournalEntry::query()->where('reference_type', 'sale')->where('reference_id', $sale->id)->count())->toBe(1)
+        ->and($product->fresh()->current_stock)->toBe(3.0);
+});
+
+test('calling ConfirmPurchaseAction on an already-received purchase is a no-op — no duplicate journal entry', function () {
+    $this->actingAs(User::factory()->create());
+    $supplier = Contact::factory()->supplier()->create();
+    $product = Product::factory()->create(['current_stock' => 0]);
+    $purchase = Purchase::factory()->create(['supplier_id' => $supplier->id]);
+    $purchase->items()->create(['product_id' => $product->id, 'quantity' => 10, 'unit_price' => 100, 'original_price' => 100, 'subtotal' => 1000]);
+    $purchase->forceFill(['total_amount' => 1000, 'due_amount' => 1000])->save();
+
+    $received = app(ConfirmPurchaseAction::class)->execute($purchase);
+    app(ConfirmPurchaseAction::class)->execute($received->fresh());
+
+    expect(JournalEntry::query()->where('reference_type', 'purchase')->where('reference_id', $purchase->id)->count())->toBe(1)
+        ->and($product->fresh()->current_stock)->toBe(10.0);
 });
 
 test('a fund transfer posts a balanced journal entry between the two accounts', function () {

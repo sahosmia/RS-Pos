@@ -45,6 +45,10 @@ class ConfirmSaleAction
      */
     public function execute(Sale $sale, array $payments = []): Sale
     {
+        if ($sale->status === SaleStatus::Confirmed) {
+            return $sale;
+        }
+
         return DB::transaction(function () use ($sale, $payments) {
             $sale->load('items.product', 'customer');
 

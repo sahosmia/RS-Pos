@@ -39,6 +39,10 @@ class ConfirmPurchaseAction
      */
     public function execute(Purchase $purchase, array $payments = [], float $creditApplied = 0.0): Purchase
     {
+        if ($purchase->status === PurchaseStatus::Received) {
+            return $purchase;
+        }
+
         return DB::transaction(function () use ($purchase, $payments, $creditApplied) {
             $purchase->load('items.product', 'supplier');
 

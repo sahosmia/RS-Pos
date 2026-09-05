@@ -88,13 +88,13 @@
 - [x] **2.5.15** RETROFIT — StockService — প্রতিটা movement তৈরির সময় এই দুটো field পূরণ করুন (purchase→unit_price, sale→cost_at_sale, adjustment→avg_cost) — `increase()`/`decrease()`-এ নতুন optional `unitCost` param; ConfirmPurchaseAction (unit_price), ConfirmSaleAction (cost_at_sale), AdjustStockAction (avg_cost), CancelSaleAction (আসল sale item-এর cost_at_sale, আজকের avg_cost না — reversal-টা সেই sale-এর cost basis-ই প্রতিফলিত করা উচিত) আপডেট করা হয়েছে। Opening stock movement-এ (Task-এ উল্লেখ নেই) ইচ্ছাকৃতভাবে cost বসানো হয়নি
 
 ### ধাপ ৫ — ইতিমধ্যে বানানো Action class-এ Journal + Idempotency Retrofit
-- [ ] **2.5.16** RETROFIT — FundTransferAction — journal lines: Dr {to_account COA}, Cr {from_account COA}
-- [ ] **2.5.17** RETROFIT — ConfirmPurchaseAction — journal lines: বাকিতে Dr Inventory, Cr Accounts Payable; নগদে Dr Inventory, Cr Cash/Bank + idempotency guard (if status==received, return) — V2
-- [ ] **2.5.18** RETROFIT — ConfirmSaleAction — একই journal entry-তে দুই সেট line: Dr Accounts Receivable/Cash, Cr Sales Revenue এবং Dr Cost of Goods Sold, Cr Inventory + idempotency guard (if status==confirmed, return) — V2
-- [ ] **2.5.19** Feature test: ConfirmSaleAction চালানোর পর journal entry তৈরি হয়েছে ও balanced
-- [ ] **2.5.20** Feature test: ConfirmSaleAction দুইবার চালালে দ্বিতীয়বার কোনো নতুন entry তৈরি হয় না (idempotency)
-- [ ] **2.5.21** Feature test: ConfirmPurchaseAction চালানোর পর journal entry তৈরি হয়েছে ও balanced
-- [ ] **2.5.22** Feature test: FundTransferAction চালানোর পর journal entry তৈরি হয়েছে ও balanced
+- [x] **2.5.16** RETROFIT — FundTransferAction — journal lines: Dr {to_account COA}, Cr {from_account COA} — V1-এই ঠিকভাবে বানানো ছিল, status field না থাকায় (create-once record) idempotency guard এখানে প্রযোজ্য না
+- [x] **2.5.17** RETROFIT — ConfirmPurchaseAction — journal lines: বাকিতে Dr Inventory, Cr Accounts Payable; নগদে Dr Inventory, Cr Cash/Bank + idempotency guard (if status==received, return) — V2 — journal lines V1-এই ছিল, idempotency guard এখন যোগ করা হয়েছে
+- [x] **2.5.18** RETROFIT — ConfirmSaleAction — একই journal entry-তে দুই সেট line: Dr Accounts Receivable/Cash, Cr Sales Revenue এবং Dr Cost of Goods Sold, Cr Inventory + idempotency guard (if status==confirmed, return) — V2 — journal lines V1-এই ছিল, idempotency guard এখন যোগ করা হয়েছে (Imported/historical sale path-ও এই guard-এর আওতায় পড়ে)
+- [x] **2.5.19** Feature test: ConfirmSaleAction চালানোর পর journal entry তৈরি হয়েছে ও balanced (V1-এই JournalPostingTest.php-এ ছিল)
+- [x] **2.5.20** Feature test: ConfirmSaleAction দুইবার চালালে দ্বিতীয়বার কোনো নতুন entry তৈরি হয় না (idempotency) — নতুন
+- [x] **2.5.21** Feature test: ConfirmPurchaseAction চালানোর পর journal entry তৈরি হয়েছে ও balanced (V1-এই JournalPostingTest.php-এ ছিল) + নতুন idempotency test
+- [x] **2.5.22** Feature test: FundTransferAction চালানোর পর journal entry তৈরি হয়েছে ও balanced (V1-এই JournalPostingTest.php-এ ছিল)
 
 ### ধাপ ৬ — অন্যান্য V2 Retrofit (আগে বানানো হয়ে গেছে বলে)
 - [ ] **2.5.23** RETROFIT — Serial Number Lifecycle — sale_item_serials বাদ দিয়ে serial_numbers (product_id, serial_number, status enum(in_stock/sold/returned/under_warranty_service/disposed), purchase_item_id, sale_item_id) migration+model বানান; ConfirmPurchaseAction-এ in_stock row জেনারেট করা, ConfirmSaleAction-এ নির্দিষ্ট serial পিক করে sold করা যোগ করুন
