@@ -2877,10 +2877,14 @@ chart_of_accounts
 1200 Inventory (asset/debit — control account, rolls up stock value)
 1300 Staff Advances (asset/debit)         1400 Fixed Assets (asset/debit)
 2100 Accounts Payable (liability/credit — control account, rolls up contacts.balance for suppliers)
+2150 Customer Advances (liability/credit — Phase 8, money collected on a Sales Order before delivery)
 2200 Loans Payable (liability/credit)      2300 Other Liabilities (liability/credit)
 3100 Owner's/Investor's Capital (equity/credit)    3200 Retained Earnings (equity/credit)
-4100 Sales Revenue (income/credit)          4200 Service/Installation Income (income/credit)
+3300 Opening Balance Equity (equity/credit)
+4100 Sales Revenue (income/credit)          4150 Sales Returns & Allowances (contra-income, income/debit)
+4200 Service/Installation Income (income/credit)
 5100 Cost of Goods Sold (expense/debit)      5200+ one per expense_category (expense/debit)
+5900 Interest Expense (expense/debit)
 ```
 
 ### Journal Entries ✅

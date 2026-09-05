@@ -22,6 +22,10 @@ class ChartOfAccountSeeder extends Seeder
             ['1300', 'Staff Advances', ChartOfAccountType::Asset, NormalBalance::Debit],
             ['1400', 'Fixed Assets', ChartOfAccountType::Asset, NormalBalance::Debit],
             ['2100', 'Accounts Payable', ChartOfAccountType::Liability, NormalBalance::Credit],
+            // Phase 8 (Sales Order) - money collected ahead of delivery; the
+            // shop owes goods (or a refund) against it, not cash, so it's a
+            // liability until the order converts into a Sale or is refunded.
+            ['2150', 'Customer Advances', ChartOfAccountType::Liability, NormalBalance::Credit],
             ['2200', 'Loans Payable', ChartOfAccountType::Liability, NormalBalance::Credit],
             ['2300', 'Other Liabilities', ChartOfAccountType::Liability, NormalBalance::Credit],
             ['3100', "Owner's/Investor's Capital", ChartOfAccountType::Equity, NormalBalance::Credit],

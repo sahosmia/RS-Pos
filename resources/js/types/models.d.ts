@@ -517,6 +517,44 @@ export interface SaleReturnItemDetail {
     subtotal: number;
 }
 
+export type SalesOrderStatusValue = 'pending' | 'partial' | 'completed' | 'cancelled';
+
+export interface SalesOrderListItem {
+    id: number;
+    order_no: string;
+    customer: { id: number; name: string };
+    order_date: string;
+    expected_delivery_date: string | null;
+    total_amount: number;
+    advance_paid: number;
+    due_amount: number;
+    status: SalesOrderStatusValue;
+    can_convert: boolean;
+}
+
+export interface SalesOrderItemDetail {
+    id: number;
+    product: { id: number; name: string; sku: string };
+    quantity: number;
+    unit_price: number;
+    subtotal: number;
+}
+
+export interface SalesOrderDetail {
+    id: number;
+    order_no: string;
+    customer: { id: number; name: string; phone: string | null; balance: number };
+    order_date: string;
+    expected_delivery_date: string | null;
+    total_amount: number;
+    advance_paid: number;
+    due_amount: number;
+    status: SalesOrderStatusValue;
+    can_convert: boolean;
+    sale: { id: number; invoice_no: string } | null;
+    items: SalesOrderItemDetail[];
+}
+
 export interface SaleReturnDetail {
     id: number;
     sale: { id: number; invoice_no: string };

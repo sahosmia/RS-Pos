@@ -19,6 +19,8 @@ class SettingsSeeder extends Seeder
             'invoice_next_number' => 1,
             'purchase_prefix' => 'PUR-',
             'purchase_next_number' => 1,
+            'sales_order_prefix' => 'SO-',
+            'sales_order_next_number' => 1,
             'thermal_printer_enabled' => false,
             'emi_module_enabled' => false,
             'serial_number_module_enabled' => false,

@@ -27,6 +27,8 @@ class Settings extends Model
         'invoice_next_number',
         'purchase_prefix',
         'purchase_next_number',
+        'sales_order_prefix',
+        'sales_order_next_number',
         'thermal_printer_enabled',
         'emi_module_enabled',
         'serial_number_module_enabled',
@@ -51,6 +53,7 @@ class Settings extends Model
             'fiscal_year_start_month' => 'integer',
             'invoice_next_number' => 'integer',
             'purchase_next_number' => 'integer',
+            'sales_order_next_number' => 'integer',
             'license_key' => 'encrypted',
             'license_last_verified_at' => 'datetime',
         ];
@@ -93,6 +96,23 @@ class Settings extends Model
             $number = $settings->purchase_prefix.str_pad((string) $settings->purchase_next_number, 4, '0', STR_PAD_LEFT);
 
             $settings->increment('purchase_next_number');
+
+            return $number;
+        });
+    }
+
+    /**
+     * Reserve and format the next sales order number (e.g. "SO-0001").
+     * Locks the row so concurrent orders never receive the same number.
+     */
+    public function generateSalesOrderNumber(): string
+    {
+        return DB::transaction(function () {
+            $settings = static::query()->lockForUpdate()->findOrFail($this->id);
+
+            $number = $settings->sales_order_prefix.str_pad((string) $settings->sales_order_next_number, 4, '0', STR_PAD_LEFT);
+
+            $settings->increment('sales_order_next_number');
 
             return $number;
         });

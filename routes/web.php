@@ -22,5 +22,6 @@ require __DIR__.'/inventory.php';
 require __DIR__.'/contacts.php';
 require __DIR__.'/purchases.php';
 require __DIR__.'/sales.php';
+require __DIR__.'/sales-orders.php';
 require __DIR__.'/returns.php';
 require __DIR__.'/auth.php';

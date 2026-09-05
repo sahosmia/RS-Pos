@@ -15,13 +15,14 @@ use Illuminate\Support\Facades\DB;
 class CreateSaleAction
 {
     /**
-     * @param  array{customer_id: int, sale_date: string, status: string, source?: string, discount_type?: string|null, discount_value?: float|string|null, valid_until?: string|null, financing_type?: string, items: array<int, array{product_id: int, quantity: float|string, unit_price: float|string, installation_required?: bool, installation_charge?: float|string|null, note?: string|null, serial_numbers?: array<int, string>}>}  $data
+     * @param  array{customer_id: int, sales_order_id?: int|null, sale_date: string, status: string, source?: string, discount_type?: string|null, discount_value?: float|string|null, valid_until?: string|null, financing_type?: string, items: array<int, array{product_id: int, quantity: float|string, unit_price: float|string, installation_required?: bool, installation_charge?: float|string|null, note?: string|null, serial_numbers?: array<int, string>}>}  $data
      */
     public function execute(array $data): Sale
     {
         return DB::transaction(function () use ($data) {
             $sale = Sale::create([
                 'customer_id' => $data['customer_id'],
+                'sales_order_id' => $data['sales_order_id'] ?? null,
                 'invoice_no' => Settings::current()->generateInvoiceNumber(),
                 'sale_date' => $data['sale_date'],
                 'status' => $data['status'],

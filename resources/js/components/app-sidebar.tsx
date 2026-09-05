@@ -20,6 +20,7 @@ const mainNavItems: NavItem[] = [
         items: [
             { title: 'Sales', url: '/sales' },
             { title: 'Sale Returns', url: '/sale-returns' },
+            { title: 'Sales Order', url: '/sales-orders' },
         ],
     },
     {

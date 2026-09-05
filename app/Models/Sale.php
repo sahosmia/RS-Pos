@@ -30,6 +30,7 @@ class Sale extends Model
      */
     protected $fillable = [
         'customer_id',
+        'sales_order_id',
         'invoice_no',
         'sale_date',
         'discount_type',
@@ -78,6 +79,17 @@ class Sale extends Model
     }
 
     /**
+     * Set only when ConvertSalesOrderToSaleAction created this sale from a
+     * Sales Order booking.
+     *
+     * @return BelongsTo<SalesOrder, $this>
+     */
+    public function salesOrder(): BelongsTo
+    {
+        return $this->belongsTo(SalesOrder::class);
+    }
+
+    /**
      * @return HasMany<SaleItem, $this>
      */
     public function items(): HasMany
@@ -109,6 +121,12 @@ class Sale extends Model
      * Re-derive paid_amount/due_amount/payment_status from the actual
      * account_transactions referencing this sale — the source of truth,
      * never accumulated incrementally.
+     *
+     * A sale converted from a Sales Order also folds in the advance
+     * collected against that order (still keyed to `reference_type =
+     * 'sales_order'` there, never rewritten) — that's the "carried into the
+     * Sale's paid_amount" behaviour ConvertSalesOrderToSaleAction relies on,
+     * without ever double-recording the cash itself.
      */
     public function recalculatePaymentTotals(): void
     {
@@ -117,7 +135,14 @@ class Sale extends Model
             ->where('reference_id', $this->id)
             ->sum('amount'));
 
-        $paidAmount = round($paidViaAccounts, 2);
+        $advanceCarried = $this->sales_order_id
+            ? abs((float) DB::table('account_transactions')
+                ->where('reference_type', 'sales_order')
+                ->where('reference_id', $this->sales_order_id)
+                ->sum('amount'))
+            : 0.0;
+
+        $paidAmount = round($paidViaAccounts + $advanceCarried, 2);
         $dueAmount = round($this->total_amount - $paidAmount, 2);
 
         $this->forceFill([
