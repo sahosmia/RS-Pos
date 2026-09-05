@@ -71,8 +71,8 @@
 - [x] **2.5.4c** Feature test: closed period-এ journal post করতে গেলে ClosedPeriodException হয় (JournalServiceTest.php-এ ৩টা নতুন test: closed period reject, no-period allowed, reverse() behavior)
 
 ### ধাপ ২ — accounts ↔ chart_of_accounts Mapping (V2 নতুন)
-- [ ] **2.5.5** accounts.chart_of_account_id FK migration যোগ করুন (Phase 2.1-এ বানানো accounts table-এ)
-- [ ] **2.5.6** CreateAccountAction — নতুন account তৈরি হলে automatically একটা matching chart_of_accounts sub-account তৈরি হবে (Cash→1010-এর child, Bank/Mobile/Cheque→1020-এর child) এবং লিংক হবে — Phase 2.4-এ বানানো Account creation flow আপডেট করুন
+- [x] **2.5.5** accounts.chart_of_account_id FK migration যোগ করুন (Phase 2.1-এ বানানো accounts table-এ)
+- [x] **2.5.6** CreateAccountAction — নতুন account তৈরি হলে automatically একটা matching chart_of_accounts sub-account তৈরি হবে (Cash→1010-এর child, Bank/Mobile/Cheque→1020-এর child) এবং লিংক হবে — Phase 2.4-এ বানানো Account creation flow আপডেট করুন। `ChartOfAccountResolver::forAccount()`-ও এখন guess করার বদলে সরাসরি এই FK ব্যবহার করে। AccountFactory-তেও default `chart_of_account_id` (একটা standalone auto ChartOfAccount) যোগ করা হয়েছে যাতে factory দিয়ে সরাসরি বানানো ২৮টা পুরনো test call site না ভাঙে
 
 ### ধাপ ৩ — Frontend + Idempotency + Concurrency
 - [ ] **2.5.7** Chart of Accounts List Page (tree view, parent-child) + Add/Edit Modal

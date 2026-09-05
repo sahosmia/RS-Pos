@@ -54,7 +54,7 @@ test('the general ledger page shows a posted line with the running balance', fun
         'transfer_date' => '2026-03-01',
     ]);
 
-    $cashCoa = ChartOfAccount::where('code', '1010')->firstOrFail();
+    $cashCoa = $cash->chartOfAccount;
 
     $this->get("/chart-of-accounts/{$cashCoa->id}/ledger")
         ->assertOk()

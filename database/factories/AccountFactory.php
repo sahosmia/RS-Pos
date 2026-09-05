@@ -4,6 +4,7 @@ namespace Database\Factories;
 
 use App\Models\Account;
 use App\Models\AccountType;
+use App\Models\ChartOfAccount;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -26,6 +27,7 @@ class AccountFactory extends Factory
             'opening_balance' => 0,
             'current_balance' => 0,
             'is_active' => true,
+            'chart_of_account_id' => ChartOfAccount::factory(),
         ];
     }
 }

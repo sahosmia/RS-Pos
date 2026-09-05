@@ -81,11 +81,10 @@ test('confirming a purchase with a cash payment adds a balanced payable/cash pai
 
     $entry = JournalEntry::query()->where('reference_type', 'purchase')->where('reference_id', $purchase->id)->firstOrFail();
 
-    $cashAccount = ChartOfAccount::where('code', '1010')->first();
     $payable = ChartOfAccount::where('code', '2100')->first();
 
     expect($entry->lines->sum('debit'))->toBe($entry->lines->sum('credit'))
-        ->and($cashAccount->fresh()->balance)->toBe(-200.0)
+        ->and($cash->chartOfAccount->fresh()->balance)->toBe(-200.0)
         ->and($payable->fresh()->balance)->toBe(300.0); // 500 - 200
 });
 
@@ -105,11 +104,8 @@ test('a fund transfer posts a balanced journal entry between the two accounts', 
 
     $entry = JournalEntry::query()->where('reference_type', 'fund_transfer')->firstOrFail();
 
-    $cashCoa = ChartOfAccount::where('code', '1010')->first();
-    $bankCoa = ChartOfAccount::where('code', '1020')->first();
-
     expect($entry->lines->sum('debit'))->toBe($entry->lines->sum('credit'))
         ->and($entry->lines->sum('debit'))->toBe(1500.0)
-        ->and($cashCoa->fresh()->balance)->toBe(-1500.0)
-        ->and($bankCoa->fresh()->balance)->toBe(1500.0);
+        ->and($cash->chartOfAccount->fresh()->balance)->toBe(-1500.0)
+        ->and($bank->chartOfAccount->fresh()->balance)->toBe(1500.0);
 });

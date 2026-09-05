@@ -29,6 +29,7 @@ class Account extends Model
         'opening_balance',
         'is_active',
         'created_by',
+        'chart_of_account_id',
     ];
 
     /**
@@ -52,6 +53,17 @@ class Account extends Model
     public function accountType(): BelongsTo
     {
         return $this->belongsTo(AccountType::class);
+    }
+
+    /**
+     * The General Ledger sub-account this Cash/Bank account posts against —
+     * auto-created and linked by CreateAccountAction, never manually picked.
+     *
+     * @return BelongsTo<ChartOfAccount, $this>
+     */
+    public function chartOfAccount(): BelongsTo
+    {
+        return $this->belongsTo(ChartOfAccount::class);
     }
 
     /**

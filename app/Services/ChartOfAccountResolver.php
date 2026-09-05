@@ -7,10 +7,9 @@ use App\Models\ChartOfAccount;
 
 /**
  * Looks up well-known Chart of Accounts rows by their fixed seeded code, and
- * maps a cash/bank Account (Phase 2) to the General Ledger account it posts
- * against — Cash in Hand (1010) or Bank Accounts (1020), keyed off the
- * Account's type name rather than a per-account link, since no per-bank
- * sub-account is created for individual accounts.
+ * maps a cash/bank Account (Phase 2) to the General Ledger sub-account it
+ * posts against — the one CreateAccountAction auto-created and linked via
+ * accounts.chart_of_account_id.
  */
 class ChartOfAccountResolver
 {
@@ -21,8 +20,6 @@ class ChartOfAccountResolver
 
     public function forAccount(Account $account): ChartOfAccount
     {
-        $account->loadMissing('accountType');
-
-        return $this->code($account->accountType->name === 'Cash' ? '1010' : '1020');
+        return $account->loadMissing('chartOfAccount')->chartOfAccount;
     }
 }
