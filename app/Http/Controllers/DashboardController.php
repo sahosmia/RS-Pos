@@ -2,15 +2,18 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\ContactType;
 use App\Enums\DateRangePreset;
 use App\Enums\PurchaseStatus;
 use App\Enums\SaleStatus;
 use App\Models\ChartOfAccount;
+use App\Models\Contact;
 use App\Models\Expense;
 use App\Models\Product;
 use App\Models\Purchase;
 use App\Models\PurchaseReturn;
 use App\Models\Sale;
+use App\Models\SaleItem;
 use App\Models\SaleReturn;
 use App\Models\Settings;
 use App\Support\FiscalYear;
@@ -21,17 +24,7 @@ use Inertia\Inertia;
 use Inertia\Response;
 
 /**
- * Quick Actions + date-filtered analytics grid (doc/corrections2.md #4).
- * Quick Actions aren't permission-filtered yet — Role & Permission
- * (Phase 18) is deliberately the very last phase of this project, so
- * every authenticated user is currently an Admin/Owner-equivalent; the
- * fixed action set below is shown to all of them, exactly like every
- * other page in the app today that's guarded by `auth` alone.
- *
- * Receivable/Payable/Cash are Chart-of-Accounts-sourced (1100/2100/
- * 1010+1020), matching the Balance Sheet's own numbers — they're a
- * point-in-time balance, not a period metric, so the date filter
- * deliberately doesn't touch them.
+ * Quick Actions + date-filtered analytics grid.
  */
 class DashboardController extends Controller
 {
@@ -66,6 +59,9 @@ class DashboardController extends Controller
             ->whereColumn('current_stock', '<=', 'minimum_stock_level')
             ->count();
 
+        $totalCustomers = Contact::query()->whereIn('type', [ContactType::Customer, ContactType::Both])->count();
+        $totalSuppliers = Contact::query()->whereIn('type', [ContactType::Supplier, ContactType::Both])->count();
+
         $confirmedSales = fn () => Sale::query()->where('status', SaleStatus::Confirmed)->whereBetween('sale_date', [$from, $to]);
         $receivedPurchases = fn () => Purchase::query()->where('status', PurchaseStatus::Received)->whereBetween('purchase_date', [$from, $to]);
 
@@ -77,6 +73,75 @@ class DashboardController extends Controller
         $purchaseDue = (float) $receivedPurchases()->sum('due_amount');
         $totalPurchaseReturn = (float) PurchaseReturn::query()->whereBetween('return_date', [$from, $to])->sum('total_amount');
         $totalExpense = (float) Expense::query()->whereBetween('expense_date', [$from, $to])->sum('total_amount');
+
+        // Recent transactions lists
+        $recentSales = Sale::query()
+            ->with('customer:id,name')
+            ->latest('sale_date')
+            ->latest('id')
+            ->take(5)
+            ->get()
+            ->map(fn (Sale $s) => [
+                'id' => $s->id,
+                'invoice_no' => $s->invoice_no,
+                'party_name' => $s->customer?->name ?? 'Walk-in Customer',
+                'amount' => (float) $s->total_amount,
+                'status' => $s->status->value,
+                'date' => $s->sale_date->toDateString(),
+                'href' => route('sales.show', $s->id),
+            ]);
+
+        $recentPurchases = Purchase::query()
+            ->with('supplier:id,name')
+            ->latest('purchase_date')
+            ->latest('id')
+            ->take(5)
+            ->get()
+            ->map(fn (Purchase $p) => [
+                'id' => $p->id,
+                'invoice_no' => $p->purchase_no,
+                'party_name' => $p->supplier?->name ?? 'N/A',
+                'amount' => (float) $p->total_amount,
+                'status' => $p->status->value,
+                'date' => $p->purchase_date->toDateString(),
+                'href' => route('purchases.show', $p->id),
+            ]);
+
+        $recentExpenses = Expense::query()
+            ->with('category:id,name')
+            ->latest('expense_date')
+            ->latest('id')
+            ->take(5)
+            ->get()
+            ->map(fn (Expense $e) => [
+                'id' => $e->id,
+                'invoice_no' => $e->expense_no,
+                'party_name' => $e->category?->name ?? 'General',
+                'amount' => (float) $e->total_amount,
+                'status' => 'completed',
+                'date' => $e->expense_date->toDateString(),
+                'href' => route('expenses.index'),
+            ]);
+
+        // Best seller products in current month
+        $startOfMonth = Carbon::now()->startOfMonth();
+        $endOfMonth = Carbon::now()->endOfMonth();
+
+        $bestSellers = SaleItem::query()
+            ->whereHas('sale', fn ($q) => $q->where('status', SaleStatus::Confirmed)->whereBetween('sale_date', [$startOfMonth, $endOfMonth]))
+            ->with('product:id,name,sku')
+            ->selectRaw('product_id, SUM(quantity) as total_qty, SUM(subtotal) as total_amount')
+            ->groupBy('product_id')
+            ->orderByDesc('total_qty')
+            ->take(5)
+            ->get()
+            ->map(fn ($item) => [
+                'id' => $item->product_id,
+                'name' => $item->product?->name ?? 'Unknown',
+                'sku' => $item->product?->sku ?? '',
+                'quantity' => (float) $item->total_qty,
+                'total_amount' => (float) $item->total_amount,
+            ]);
 
         return Inertia::render('dashboard', [
             'salesLast30Days' => $this->salesLast30Days(),
@@ -109,14 +174,20 @@ class DashboardController extends Controller
                 'totalPayable' => round($byCode('2100'), 2),
                 'cashAndBank' => round($cashAndBank, 2),
                 'lowStockCount' => $lowStockCount,
+                'totalCustomers' => $totalCustomers,
+                'totalSuppliers' => $totalSuppliers,
             ],
+            'recentTransactions' => [
+                'sales' => $recentSales,
+                'purchases' => $recentPurchases,
+                'expenses' => $recentExpenses,
+            ],
+            'bestSellers' => $bestSellers,
         ]);
     }
 
     /**
-     * One point per calendar day, today back through 29 days ago — always
-     * this fixed trailing window, independent of the page's own date-range
-     * filter above (which is for the metrics grid, not this chart).
+     * One point per calendar day, today back through 29 days ago.
      *
      * @return list<array{date: string, total: float}>
      */
@@ -145,10 +216,7 @@ class DashboardController extends Controller
     }
 
     /**
-     * One point per month of the shop's current fiscal year (per
-     * `Settings::fiscal_year_start_month` — Bangladesh default July–June),
-     * not the calendar year — a month with no sales yet (e.g. the rest of
-     * the year still ahead) just shows 0 rather than being left out.
+     * One point per month of the shop's current fiscal year.
      *
      * @return list<array{month: string, label: string, total: float}>
      */

@@ -1,4 +1,4 @@
-import SalesBarChart from '@/components/dashboard/sales-bar-chart';
+import SalesChart from '@/components/dashboard/sales-chart';
 import HeadingSmall from '@/components/heading-small';
 import DateRangeFilter from '@/components/shared/date-range-filter';
 import { Button } from '@/components/ui/button';
@@ -40,12 +40,12 @@ interface DashboardProps {
     salesCurrentFiscalYear: DashboardMonthlySalesPoint[];
 }
 
-/** `2026-07-26` → `26 Jul` — short enough for 30 bars to sit under without colliding. */
+/** `2026-09-26` → `26 Sep 2026` — full date format matching the design specs. */
 function shortDayLabel(isoDate: string): string {
-    const [, month, day] = isoDate.split('-').map(Number);
+    const [year, month, day] = isoDate.split('-').map(Number);
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
-    return `${day} ${months[month - 1]}`;
+    return `${day} ${months[month - 1]} ${year}`;
 }
 
 function ColorfulMetricCard({ label, value, colorClass, icon: Icon }: { label: string; value: string; colorClass: string; icon: LucideIcon }) {
@@ -182,18 +182,15 @@ export default function Dashboard({ quickActions, range, metrics, balances, sale
                     </div>
                 </div>
 
-                {/* 4. Full-width Sales Bar Charts */}
-                <div className="grid gap-4 grid-cols-1 pt-2">
-                    <SalesBarChart
-                        title="Sales — Last 30 Days"
+                {/* 4. Full-width Sales Line Charts */}
+                <div className="grid grid-cols-1 gap-6 pt-2">
+                    <SalesChart
+                        title="Sales Last 30 Days"
                         data={salesLast30Days.map((point) => ({ key: point.date, label: shortDayLabel(point.date), total: point.total }))}
-                        labelEvery={5}
                     />
-                    <SalesBarChart
+                    <SalesChart
                         title="Sales — Current Fiscal Year"
-                        description="By month"
                         data={salesCurrentFiscalYear.map((point) => ({ key: point.month, label: point.label, total: point.total }))}
-                        labelEvery={2}
                     />
                 </div>
             </div>

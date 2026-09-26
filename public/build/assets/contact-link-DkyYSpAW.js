@@ -1,0 +1,1 @@
+import{j as r,$ as s}from"./app-evpLOvc-.js";function i({id:o,name:e,className:n}){return r.jsx(s,{href:route("contacts.show",o),className:n??"underline-offset-2 hover:underline",onClick:t=>t.stopPropagation(),children:e})}export{i as C};
