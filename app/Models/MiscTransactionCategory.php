@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\MiscTransactionCategoryType;
+use App\Models\Concerns\LogsActivityDefaults;
 use Database\Factories\MiscTransactionCategoryFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -12,6 +13,8 @@ class MiscTransactionCategory extends Model
 {
     /** @use HasFactory<MiscTransactionCategoryFactory> */
     use HasFactory;
+
+    use LogsActivityDefaults;
 
     /**
      * The attributes that are mass assignable.

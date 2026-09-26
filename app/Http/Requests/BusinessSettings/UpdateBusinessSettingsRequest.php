@@ -2,8 +2,11 @@
 
 namespace App\Http\Requests\BusinessSettings;
 
+use App\Enums\ThemeColor;
+use App\Models\Settings;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class UpdateBusinessSettingsRequest extends FormRequest
 {
@@ -40,6 +43,26 @@ class UpdateBusinessSettingsRequest extends FormRequest
             'thermal_printer_enabled' => ['required', 'boolean'],
             'emi_module_enabled' => ['required', 'boolean'],
             'serial_number_module_enabled' => ['required', 'boolean'],
+
+            // Pagination — the "Rows per page" choices offered on every list page
+            'pagination_per_page_options' => ['required', 'array', 'min:1'],
+            'pagination_per_page_options.*' => ['integer', 'min:1', 'max:1000', 'distinct'],
+            'pagination_default_per_page' => ['required', 'integer', Rule::in($this->input('pagination_per_page_options', []))],
+            'pagination_allow_all' => ['required', 'boolean'],
+
+            // Audit — how long activity_logs rows are kept before the monthly retention job prunes them
+            'activity_log_retention_months' => ['required', 'integer', Rule::in(Settings::ACTIVITY_LOG_RETENTION_OPTIONS)],
+
+            // Branding — the shop-wide default accent color (users may override their own, see ThemeColorController)
+            'theme_color' => ['required', Rule::enum(ThemeColor::class)],
+
+            // Sidebar order — keys are the stable nav keys from resources/js/lib/nav-items.ts
+            'menu_order' => ['nullable', 'array:top,sub'],
+            'menu_order.top' => ['nullable', 'array'],
+            'menu_order.top.*' => ['string', 'max:64', 'distinct'],
+            'menu_order.sub' => ['nullable', 'array'],
+            'menu_order.sub.*' => ['array'],
+            'menu_order.sub.*.*' => ['string', 'max:64', 'distinct'],
         ];
     }
 }

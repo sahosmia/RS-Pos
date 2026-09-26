@@ -4,6 +4,7 @@ use App\Enums\StockMovementType;
 use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Product;
+use App\Models\Settings;
 use App\Models\StockMovement;
 use App\Models\Unit;
 use App\Models\User;
@@ -22,6 +23,64 @@ test('products page lists products with their stock status', function () {
             ->component('products/index')
             ->where('products.data.0.name', 'Split AC 1.5 Ton')
             ->where('products.data.0.stock_status', 'low_stock'));
+});
+
+test('per_page controls how many products come back per page, defaulting to the configured default', function () {
+    $this->actingAs(User::factory()->create());
+    Settings::factory()->create(['pagination_per_page_options' => [5, 10], 'pagination_default_per_page' => 5]);
+    Product::factory()->count(12)->create();
+
+    $this->get('/products')
+        ->assertInertia(fn ($page) => $page
+            ->where('products.data', fn ($data) => count($data) === 5)
+            ->where('products.per_page', 5)
+            ->where('products.last_page', 3)
+            ->where('filters.per_page', 5));
+
+    $this->get('/products?per_page=10')
+        ->assertInertia(fn ($page) => $page
+            ->where('products.data', fn ($data) => count($data) === 10)
+            ->where('filters.per_page', 10));
+});
+
+test('a per_page value outside the configured options falls back to the default instead of erroring', function () {
+    $this->actingAs(User::factory()->create());
+    Settings::factory()->create(['pagination_per_page_options' => [5, 10], 'pagination_default_per_page' => 5]);
+    Product::factory()->count(3)->create();
+
+    $this->get('/products?per_page=9999')
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page->where('filters.per_page', 5));
+});
+
+test('per_page=all returns every product on a single page when the shop allows it', function () {
+    $this->actingAs(User::factory()->create());
+    Settings::factory()->create(['pagination_per_page_options' => [5, 10], 'pagination_allow_all' => true]);
+    Product::factory()->count(12)->create();
+
+    $this->get('/products?per_page=all')
+        ->assertInertia(fn ($page) => $page
+            ->where('products.data', fn ($data) => count($data) === 12)
+            ->where('products.last_page', 1)
+            ->where('filters.per_page', 'all'));
+});
+
+test('per_page=all falls back to the default page size when the shop has disabled it', function () {
+    $this->actingAs(User::factory()->create());
+    Settings::factory()->create(['pagination_per_page_options' => [5, 10], 'pagination_default_per_page' => 5, 'pagination_allow_all' => false]);
+    Product::factory()->count(12)->create();
+
+    $this->get('/products?per_page=all')
+        ->assertInertia(fn ($page) => $page
+            ->where('products.data', fn ($data) => count($data) === 5)
+            ->where('filters.per_page', 5));
+});
+
+test('products index still works when no Settings row exists at all', function () {
+    $this->actingAs(User::factory()->create());
+    Product::factory()->count(3)->create();
+
+    $this->get('/products')->assertOk();
 });
 
 test('creating a product with an opening stock records the opening movement and sets avg_cost', function () {

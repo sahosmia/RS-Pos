@@ -16,8 +16,8 @@ return new class extends Migration
             $table->foreignId('purchase_id')->constrained()->cascadeOnDelete();
             $table->foreignId('product_id')->constrained()->restrictOnDelete();
             $table->decimal('quantity', 12, 2);
-            $table->decimal('unit_price', 15, 2);
-            $table->decimal('subtotal', 15, 2);
+            $table->decimal('unit_price', 19, 4);
+            $table->decimal('subtotal', 19, 4);
             $table->timestamps();
 
             $table->index(['purchase_id', 'product_id']);

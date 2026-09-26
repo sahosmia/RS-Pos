@@ -15,8 +15,8 @@ return new class extends Migration
             $table->id();
             $table->foreignId('journal_entry_id')->constrained()->cascadeOnDelete();
             $table->foreignId('chart_of_account_id')->constrained()->restrictOnDelete();
-            $table->decimal('debit', 15, 2)->default(0);
-            $table->decimal('credit', 15, 2)->default(0);
+            $table->decimal('debit', 19, 4)->default(0);
+            $table->decimal('credit', 19, 4)->default(0);
             $table->text('note')->nullable();
             $table->timestamps();
 

@@ -22,8 +22,8 @@ class SettingsSeeder extends Seeder
             'sales_order_prefix' => 'SO-',
             'sales_order_next_number' => 1,
             'thermal_printer_enabled' => false,
-            'emi_module_enabled' => false,
-            'serial_number_module_enabled' => false,
+            'emi_module_enabled' => true,
+            'serial_number_module_enabled' => true,
             'fiscal_year_start_month' => 7,
         ]);
     }

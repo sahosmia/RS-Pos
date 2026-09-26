@@ -1,7 +1,9 @@
 <?php
 
+use App\Models\User;
 use Database\Seeders\ChartOfAccountSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Spatie\Permission\Models\Permission;
 use Tests\TestCase;
 
 /*
@@ -46,7 +48,17 @@ expect()->extend('toBeOne', function () {
 |
 */
 
-function something()
+/**
+ * A user with just the given permissions — for tests against routes gated
+ * by `permission:` middleware or manual `can()` checks (Phase 18), without
+ * needing to run the full RolePermissionSeeder.
+ *
+ * @param  list<string>  $permissions
+ */
+function userWithPermissions(array $permissions): User
 {
-    // ..
+    $user = User::factory()->create();
+    $user->syncPermissions(array_map(fn (string $name) => Permission::findOrCreate($name), $permissions));
+
+    return $user;
 }

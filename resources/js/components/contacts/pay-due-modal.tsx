@@ -1,3 +1,4 @@
+import { FormSelect } from '@/components/form/form-select';
 import InputError from '@/components/input-error';
 import FormModal from '@/components/shared/form-modal';
 import MoneyInput from '@/components/shared/money-input';
@@ -5,9 +6,11 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { useMoneyFormat } from '@/hooks/use-money-format';
+import { useTranslation } from '@/hooks/use-translation';
 import { type Account, type ContactDetail } from '@/types/models';
 import { useForm } from '@inertiajs/react';
 import { FormEventHandler, useEffect, useMemo } from 'react';
+import { toast } from 'sonner';
 
 interface PayDueModalProps {
     open: boolean;
@@ -21,6 +24,7 @@ type Direction = 'received' | 'made';
 
 export default function PayDueModal({ open, onOpenChange, contact, accounts }: PayDueModalProps) {
     const money = useMoneyFormat();
+    const { t } = useTranslation();
 
     const availableDirections = useMemo<Direction[]>(() => {
         if (contact.type === 'customer') return ['received'];
@@ -43,12 +47,21 @@ export default function PayDueModal({ open, onOpenChange, contact, accounts }: P
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [open]);
 
+    const directionOptions = [
+        { value: 'received', label: `${t('payDueModal', 'receive_from')} ${contact.name}` },
+        { value: 'made', label: `${t('payDueModal', 'pay_to')} ${contact.name}` },
+    ];
+
     const submit: FormEventHandler = (e) => {
         e.preventDefault();
 
         form.post(route('contacts.payments.store', contact.id), {
             preserveScroll: true,
-            onSuccess: () => onOpenChange(false),
+            onSuccess: () => {
+                toast.success('Payment recorded.');
+                onOpenChange(false);
+            },
+            onError: () => toast.error('Could not record payment — check the form for errors.'),
         });
     };
 
@@ -56,36 +69,31 @@ export default function PayDueModal({ open, onOpenChange, contact, accounts }: P
         <FormModal
             open={open}
             onOpenChange={onOpenChange}
-            title="Pay Due Amount"
-            description={`বর্তমান অবস্থা: ${contact.balance_label}`}
-            submitLabel="Record Payment"
+            title={t('payDueModal', 'title')}
+            description={`${t('payDueModal', 'current_status')} ${contact.balance_label}`}
+            submitLabel={t('payDueModal', 'submit')}
             processing={form.processing}
             onSubmit={submit}
         >
             {availableDirections.length > 1 && (
-                <div className="grid gap-2">
-                    <Label htmlFor="direction">Direction</Label>
-                    <Select value={form.data.direction} onValueChange={(value) => form.setData('direction', value as Direction)}>
-                        <SelectTrigger id="direction">
-                            <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="received">Receive from {contact.name}</SelectItem>
-                            <SelectItem value="made">Pay to {contact.name}</SelectItem>
-                        </SelectContent>
-                    </Select>
-                    <InputError message={form.errors.direction} />
-                </div>
+                <FormSelect
+                    id="direction"
+                    label={t('payDueModal', 'direction')}
+                    value={form.data.direction}
+                    onChange={(val) => val && form.setData('direction', val as Direction)}
+                    options={directionOptions}
+                    error={form.errors.direction}
+                />
             )}
 
             <div className="grid gap-2">
-                <Label htmlFor="account_id">Account</Label>
+                <Label htmlFor="account_id">{t('common', 'account')}</Label>
                 <Select
                     value={form.data.account_id ? String(form.data.account_id) : ''}
                     onValueChange={(value) => form.setData('account_id', Number(value))}
                 >
                     <SelectTrigger id="account_id">
-                        <SelectValue placeholder="Select an account" />
+                        <SelectValue placeholder={t('common', 'select_account')} />
                     </SelectTrigger>
                     <SelectContent>
                         {accounts.map((account) => (
@@ -99,13 +107,13 @@ export default function PayDueModal({ open, onOpenChange, contact, accounts }: P
             </div>
 
             <div className="grid gap-2">
-                <Label htmlFor="amount">Amount</Label>
+                <Label htmlFor="amount">{t('common', 'amount')}</Label>
                 <MoneyInput id="amount" value={form.data.amount} onChange={(e) => form.setData('amount', Number(e.target.value))} required />
                 <InputError message={form.errors.amount} />
             </div>
 
             <div className="grid gap-2">
-                <Label htmlFor="note">Note</Label>
+                <Label htmlFor="note">{t('common', 'note')}</Label>
                 <Textarea id="note" value={form.data.note} onChange={(e) => form.setData('note', e.target.value)} />
                 <InputError message={form.errors.note} />
             </div>

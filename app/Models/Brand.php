@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\LogsActivityDefaults;
 use Database\Factories\BrandFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -11,6 +12,8 @@ class Brand extends Model
 {
     /** @use HasFactory<BrandFactory> */
     use HasFactory;
+
+    use LogsActivityDefaults;
 
     /**
      * The attributes that are mass assignable.

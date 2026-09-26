@@ -3,7 +3,7 @@
 use App\Http\Controllers\BackupController;
 use Illuminate\Support\Facades\Route;
 
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', 'permission:backup.manage'])->group(function () {
     Route::get('backups', [BackupController::class, 'index'])->name('backups.index');
     Route::post('backups', [BackupController::class, 'store'])->name('backups.store');
     Route::post('backups/upload-restore', [BackupController::class, 'uploadRestore'])->name('backups.upload-restore');

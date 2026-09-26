@@ -1,14 +1,15 @@
 import AccountPaymentRows, { type PaymentRow } from '@/components/shared/account-payment-rows';
 import FormModal from '@/components/shared/form-modal';
 import { useMoneyFormat } from '@/hooks/use-money-format';
-import { type Account, type SaleDetail } from '@/types/models';
+import { type Account } from '@/types/models';
 import { useForm } from '@inertiajs/react';
 import { FormEventHandler, useState } from 'react';
 
 interface AddSalePaymentModalProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
-    sale: SaleDetail;
+    /** Only these three fields are used — both the show page's full `SaleDetail` and the list's leaner `SaleListItem` satisfy this. */
+    sale: { id: number; invoice_no: string; due_amount: number };
     accounts: Account[];
 }
 
@@ -42,7 +43,7 @@ export default function AddSalePaymentModal({ open, onOpenChange, sale, accounts
             processing={form.processing}
             onSubmit={submit}
         >
-            <AccountPaymentRows accounts={accounts} rows={rows} onChange={setRows} />
+            <AccountPaymentRows accounts={accounts} rows={rows} onChange={setRows} total={sale.due_amount} />
         </FormModal>
     );
 }

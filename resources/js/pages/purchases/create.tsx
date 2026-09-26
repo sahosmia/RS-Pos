@@ -2,6 +2,7 @@ import HeadingSmall from '@/components/heading-small';
 import PurchaseForm from '@/components/purchases/purchase-form';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
+import { type PurchaseProductOption, type SupplierOption } from '@/types/models';
 import { Head } from '@inertiajs/react';
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -10,11 +11,11 @@ const breadcrumbs: BreadcrumbItem[] = [
 ];
 
 interface ProductsCreateProps {
-    suppliers: { id: number; name: string }[];
-    products: { id: number; name: string; sku: string; avg_cost: number }[];
+    initialSupplier: SupplierOption | null;
+    initialProducts: PurchaseProductOption[];
 }
 
-export default function PurchasesCreate({ suppliers, products }: ProductsCreateProps) {
+export default function PurchasesCreate({ initialSupplier, initialProducts }: ProductsCreateProps) {
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Add Purchase" />
@@ -22,7 +23,7 @@ export default function PurchasesCreate({ suppliers, products }: ProductsCreateP
             <div className="space-y-6 px-4 py-6">
                 <HeadingSmall title="Add Purchase" description="নতুন purchase তৈরি করুন — Draft/Ordered অবস্থায় stock-এ প্রভাব পড়বে না" />
 
-                <PurchaseForm mode="create" suppliers={suppliers} products={products} />
+                <PurchaseForm mode="create" initialSupplier={initialSupplier} initialProducts={initialProducts} />
             </div>
         </AppLayout>
     );

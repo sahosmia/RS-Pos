@@ -1,11 +1,16 @@
 <?php
 
+use App\Enums\CampaignStatus;
+use App\Enums\CampaignTargetType;
 use App\Enums\ContactLedgerType;
 use App\Models\Account;
 use App\Models\AccountType;
+use App\Models\Campaign;
+use App\Models\CampaignRecipient;
 use App\Models\Contact;
 use App\Models\ContactLedger;
 use App\Models\CustomerGroup;
+use App\Models\MessageLog;
 use App\Models\User;
 
 test('guests are redirected to the login page', function () {
@@ -56,6 +61,122 @@ test('business_name is required when entity_type is business', function () {
         'entity_type' => 'business',
         'is_active' => true,
     ])->assertSessionHasErrors('business_name');
+});
+
+test('a contact created without a contact id gets one auto-generated from its own id', function () {
+    $this->actingAs(User::factory()->create());
+
+    $this->post('/contacts', [
+        'name' => 'Auto Coded',
+        'phone' => '+8801712345678',
+        'type' => 'supplier',
+        'entity_type' => 'individual',
+        'is_active' => true,
+    ])->assertRedirect('/contacts');
+
+    $contact = Contact::query()->where('name', 'Auto Coded')->firstOrFail();
+
+    expect($contact->contact_code)->toBe(sprintf('SUP-%06d', $contact->id));
+});
+
+test('a contact created with an explicit contact id keeps it instead of auto-generating one', function () {
+    $this->actingAs(User::factory()->create());
+
+    $this->post('/contacts', [
+        'name' => 'Manually Coded',
+        'contact_code' => 'CUS-CUSTOM-1',
+        'phone' => '+8801712345678',
+        'type' => 'customer',
+        'entity_type' => 'individual',
+        'is_active' => true,
+    ])->assertRedirect('/contacts');
+
+    expect(Contact::query()->where('name', 'Manually Coded')->value('contact_code'))->toBe('CUS-CUSTOM-1');
+});
+
+test('contact id must be unique on create', function () {
+    $this->actingAs(User::factory()->create());
+    Contact::factory()->create(['contact_code' => 'CUS-000099']);
+
+    $this->post('/contacts', [
+        'name' => 'Duplicate Code',
+        'contact_code' => 'CUS-000099',
+        'phone' => '+8801712345678',
+        'type' => 'customer',
+        'entity_type' => 'individual',
+        'is_active' => true,
+    ])->assertSessionHasErrors('contact_code');
+});
+
+test('the new profile fields round-trip through create and the show page', function () {
+    $this->actingAs(User::factory()->create());
+
+    $this->post('/contacts', [
+        'name' => 'Dr. John Michael Doe',
+        'prefix' => 'dr',
+        'first_name' => 'John',
+        'middle_name' => 'Michael',
+        'last_name' => 'Doe',
+        'phone' => '+8801712345678',
+        'phone_alternate' => '+8801812345678',
+        'reference' => 'Referred by Alice',
+        'type' => 'customer',
+        'entity_type' => 'individual',
+        'is_active' => true,
+    ])->assertRedirect('/contacts');
+
+    $contact = Contact::query()->where('first_name', 'John')->firstOrFail();
+
+    $this->get("/contacts/{$contact->id}")
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('contacts/show')
+            ->where('contact.prefix', 'dr')
+            ->where('contact.first_name', 'John')
+            ->where('contact.middle_name', 'Michael')
+            ->where('contact.last_name', 'Doe')
+            ->where('contact.phone_alternate', '+8801812345678')
+            ->where('contact.reference', 'Referred by Alice'));
+});
+
+test('leaving contact id blank on update keeps the existing one instead of wiping it', function () {
+    $this->actingAs(User::factory()->create());
+    $contact = Contact::factory()->create(['contact_code' => 'CUS-000042']);
+
+    $this->patch("/contacts/{$contact->id}", [
+        'name' => $contact->name,
+        'phone' => $contact->phone,
+        'type' => $contact->type->value,
+        'entity_type' => $contact->entity_type->value,
+        'is_active' => true,
+    ])->assertRedirect();
+
+    expect($contact->fresh()->contact_code)->toBe('CUS-000042');
+});
+
+test('contact id must be unique on update, ignoring the contact being updated', function () {
+    $this->actingAs(User::factory()->create());
+    Contact::factory()->create(['contact_code' => 'CUS-000001']);
+    $contact = Contact::factory()->create(['contact_code' => 'CUS-000002']);
+
+    $this->patch("/contacts/{$contact->id}", [
+        'name' => $contact->name,
+        'phone' => $contact->phone,
+        'contact_code' => 'CUS-000001',
+        'type' => $contact->type->value,
+        'entity_type' => $contact->entity_type->value,
+        'is_active' => true,
+    ])->assertSessionHasErrors('contact_code');
+
+    // Keeping its own code on an update must never trip the uniqueness rule against itself.
+    $this->patch("/contacts/{$contact->id}", [
+        'name' => $contact->name,
+        'phone' => $contact->phone,
+        'contact_code' => 'CUS-000002',
+        'type' => $contact->type->value,
+        'entity_type' => $contact->entity_type->value,
+        'is_active' => true,
+    ])->assertSessionDoesntHaveErrors('contact_code');
 });
 
 test('opening balance is rejected once the contact already has a ledger entry', function () {
@@ -141,12 +262,63 @@ test('contact detail page shows the running ledger balance', function () {
             ->has('ledger', 1));
 });
 
-test('export streams a csv of the selected contacts', function () {
+test('export downloads a csv of the selected contacts', function () {
     $this->actingAs(User::factory()->create());
     $contact = Contact::factory()->create(['name' => 'Export Me']);
 
-    $response = $this->get('/contacts/export?ids[]='.$contact->id);
+    $response = $this->get('/contacts/export?'.http_build_query([
+        'format' => 'csv',
+        'scope' => 'selected',
+        'ids' => [$contact->id],
+        'columns' => ['name'],
+    ], '', '&', PHP_QUERY_RFC3986));
 
-    $response->assertOk();
-    expect($response->streamedContent())->toContain('Export Me');
+    $response->assertOk()->assertDownload('contacts.csv');
+});
+
+test('bulk sending a notification creates a campaign, recipients, and message logs', function () {
+    $user = User::factory()->create();
+    $one = Contact::factory()->create();
+    $two = Contact::factory()->create();
+
+    $this->actingAs($user)
+        ->post('/contacts/send-notification', [
+            'ids' => [$one->id, $two->id],
+            'channel' => 'sms',
+            'message' => 'Your order is ready for pickup.',
+        ])
+        ->assertRedirect();
+
+    expect(Campaign::count())->toBe(1)
+        ->and(CampaignRecipient::count())->toBe(2)
+        ->and(MessageLog::count())->toBe(2);
+
+    $campaign = Campaign::first();
+    expect($campaign->status)->toBe(CampaignStatus::Completed)
+        ->and($campaign->target_type)->toBe(CampaignTargetType::CustomSelection)
+        ->and($campaign->created_by)->toBe($user->id);
+});
+
+test('email channel requires a subject', function () {
+    $this->actingAs(User::factory()->create());
+    $contact = Contact::factory()->create(['email' => 'test@example.com']);
+
+    $this->post('/contacts/send-notification', [
+        'ids' => [$contact->id],
+        'channel' => 'email',
+        'message' => 'Reminder',
+    ])->assertSessionHasErrors('subject');
+});
+
+test('sending twice to the same contact within one call does not violate the recipient unique constraint', function () {
+    $this->actingAs(User::factory()->create());
+    $contact = Contact::factory()->create();
+
+    $this->post('/contacts/send-notification', [
+        'ids' => [$contact->id, $contact->id],
+        'channel' => 'sms',
+        'message' => 'Reminder',
+    ])->assertRedirect();
+
+    expect(CampaignRecipient::count())->toBe(1);
 });

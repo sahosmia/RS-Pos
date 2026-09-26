@@ -8,6 +8,7 @@ use App\Enums\PaymentStatus;
 use App\Enums\SalePaymentType;
 use App\Enums\SaleSource;
 use App\Enums\SaleStatus;
+use App\Models\Concerns\LogsActivityDefaults;
 use Database\Factories\SaleFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -19,6 +20,8 @@ class Sale extends Model
 {
     /** @use HasFactory<SaleFactory> */
     use HasFactory;
+
+    use LogsActivityDefaults;
 
     /**
      * `subtotal`/`discount_amount`/`total_amount`/`paid_amount`/
@@ -41,6 +44,7 @@ class Sale extends Model
         'delivered_at',
         'valid_until',
         'financing_type',
+        'installment_count',
         'created_by',
     ];
 
@@ -67,6 +71,7 @@ class Sale extends Model
             'delivered_at' => 'datetime',
             'valid_until' => 'date',
             'financing_type' => SalePaymentType::class,
+            'installment_count' => 'integer',
         ];
     }
 
@@ -95,6 +100,22 @@ class Sale extends Model
     public function items(): HasMany
     {
         return $this->hasMany(SaleItem::class);
+    }
+
+    /**
+     * @return HasMany<EmiInstallment, $this>
+     */
+    public function emiInstallments(): HasMany
+    {
+        return $this->hasMany(EmiInstallment::class);
+    }
+
+    /**
+     * @return HasMany<SaleReturn, $this>
+     */
+    public function returns(): HasMany
+    {
+        return $this->hasMany(SaleReturn::class);
     }
 
     /**

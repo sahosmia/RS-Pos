@@ -11,12 +11,33 @@ beforeEach(function () {
 });
 
 test('the sales list page renders', function () {
-    $this->actingAs(User::factory()->create());
+    $this->actingAs(userWithPermissions(['sale.view_all']));
     Sale::factory()->create(['customer_id' => Contact::factory()]);
 
     $this->get('/sales')
         ->assertOk()
         ->assertInertia(fn ($page) => $page->component('sales/index'));
+});
+
+test('the sales list search matches by invoice number or customer name', function () {
+    $this->actingAs(userWithPermissions(['sale.view_all']));
+    $alice = Contact::factory()->create(['name' => 'Alice Traders']);
+    $bob = Contact::factory()->create(['name' => 'Bob Enterprises']);
+    Sale::factory()->create(['customer_id' => $alice->id, 'invoice_no' => 'INV-0001']);
+    Sale::factory()->create(['customer_id' => $bob->id, 'invoice_no' => 'INV-0002']);
+
+    $this->get('/sales?search=Alice')
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('sales/index')
+            ->has('sales.data', 1)
+            ->where('sales.data.0.invoice_no', 'INV-0001'));
+
+    $this->get('/sales?search=INV-0002')
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->has('sales.data', 1)
+            ->where('sales.data.0.invoice_no', 'INV-0002'));
 });
 
 test('the add sale page renders', function () {

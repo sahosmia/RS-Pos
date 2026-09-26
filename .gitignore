@@ -12,7 +12,7 @@
 /.zed
 /bootstrap/ssr
 /node_modules
-/public/build
+/public/bcomplete uild
 /public/hot
 /public/storage
 /storage/*.key
@@ -23,3 +23,11 @@ Homestead.json
 Homestead.yaml
 npm-debug.log
 yarn-error.log
+
+
+/storage/*.key
+/storage/framework/cache/*
+/storage/framework/sessions/*
+/storage/framework/testing/*
+/storage/framework/views/*
+/storage/logs/*

@@ -1,7 +1,7 @@
 <?php
 
-use App\Actions\SalesOrder\ConvertSalesOrderToSaleAction;
-use App\Actions\SalesOrder\CreateSalesOrderAction;
+use App\Actions\Sales\SalesOrder\ConvertSalesOrderToSaleAction;
+use App\Actions\Sales\SalesOrder\CreateSalesOrderAction;
 use App\Enums\SalesOrderStatus;
 use App\Models\Account;
 use App\Models\AccountType;
@@ -88,6 +88,29 @@ test('converting a sales order to a sale carries the advance into paid_amount wi
         ->and($order->fresh()->status)->toBe(SalesOrderStatus::Completed);
 });
 
+test('converting a sales order clears the advance from Customer Advances and leaves Accounts Receivable at the true remaining due', function () {
+    $this->actingAs(User::factory()->create());
+    $customer = Contact::factory()->create(['balance' => 0]);
+    $product = Product::factory()->create(['selling_price' => 500, 'current_stock' => 5, 'avg_cost' => 300]);
+    $accountType = AccountType::factory()->create();
+    $account = Account::factory()->create(['account_type_id' => $accountType->id, 'current_balance' => 0]);
+
+    $order = app(CreateSalesOrderAction::class)->execute([
+        'customer_id' => $customer->id,
+        'order_date' => '2026-03-05',
+        'items' => [['product_id' => $product->id, 'quantity' => 2, 'unit_price' => 500]],
+        'payments' => [['account_id' => $account->id, 'amount' => 300]],
+    ]);
+
+    app(ConvertSalesOrderToSaleAction::class)->execute($order);
+
+    $receivable = ChartOfAccount::where('code', '1100')->firstOrFail();
+    $customerAdvances = ChartOfAccount::where('code', '2150')->firstOrFail();
+
+    expect($receivable->fresh()->balance)->toBe(700.0)
+        ->and($customerAdvances->fresh()->balance)->toBe(0.0);
+});
+
 test('converting an already-completed sales order is a no-op that returns the same sale', function () {
     $this->actingAs(User::factory()->create());
     $customer = Contact::factory()->create();
@@ -119,13 +142,13 @@ test('sales order pages render', function () {
 
     $this->get('/sales-orders')
         ->assertOk()
-        ->assertInertia(fn ($page) => $page->component('sales-orders/index')->has('orders.data', 1));
+        ->assertInertia(fn ($page) => $page->component('sales/sales-orders/index')->has('orders.data', 1));
 
     $this->get('/sales-orders/create')
         ->assertOk()
-        ->assertInertia(fn ($page) => $page->component('sales-orders/create'));
+        ->assertInertia(fn ($page) => $page->component('sales/sales-orders/create'));
 
     $this->get("/sales-orders/{$order->id}")
         ->assertOk()
-        ->assertInertia(fn ($page) => $page->component('sales-orders/show')->where('order.order_no', $order->order_no));
+        ->assertInertia(fn ($page) => $page->component('sales/sales-orders/show')->where('order.order_no', $order->order_no));
 });

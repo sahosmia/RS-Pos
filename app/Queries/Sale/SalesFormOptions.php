@@ -1,0 +1,27 @@
+<?php
+
+namespace App\Queries\Sale;
+
+use App\Models\Account;
+use App\Models\Product;
+use Illuminate\Database\Eloquent\Collection;
+
+class SalesFormOptions
+{
+    /**
+     * @return Collection<int, Product>
+     */
+    public static function productsForSale(): Collection
+    {
+        return Product::query()->where('is_for_sale', true)->orderBy('name')
+            ->get(['id', 'name', 'sku', 'barcode', 'selling_price', 'current_stock', 'track_serial_number', 'has_installation_service']);
+    }
+
+    /**
+     * @return Collection<int, Account>
+     */
+    public static function activeAccounts(): Collection
+    {
+        return Account::query()->active()->orderBy('name')->get(['id', 'name', 'current_balance']);
+    }
+}

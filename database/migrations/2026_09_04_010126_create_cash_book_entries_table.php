@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('type');
             $table->foreignId('category_id')->nullable()->constrained('misc_transaction_categories')->restrictOnDelete();
-            $table->decimal('amount', 15, 2);
+            $table->decimal('amount', 19, 4);
             $table->text('note')->nullable();
             $table->date('entry_date');
             $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();

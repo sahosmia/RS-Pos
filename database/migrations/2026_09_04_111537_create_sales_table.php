@@ -16,20 +16,23 @@ return new class extends Migration
             $table->foreignId('customer_id')->constrained('contacts')->restrictOnDelete();
             $table->string('invoice_no')->unique();
             $table->date('sale_date');
-            $table->decimal('subtotal', 15, 2)->default(0);
+            $table->decimal('subtotal', 19, 4)->default(0);
             $table->string('discount_type')->nullable();
-            $table->decimal('discount_value', 15, 2)->default(0);
-            $table->decimal('discount_amount', 15, 2)->default(0);
-            $table->decimal('total_amount', 15, 2)->default(0);
-            $table->decimal('paid_amount', 15, 2)->default(0);
-            $table->decimal('due_amount', 15, 2)->default(0);
+            $table->decimal('discount_value', 19, 4)->default(0);
+            $table->decimal('discount_amount', 19, 4)->default(0);
+            $table->decimal('total_amount', 19, 4)->default(0);
+            $table->decimal('paid_amount', 19, 4)->default(0);
+            $table->decimal('due_amount', 19, 4)->default(0);
             $table->string('payment_status')->default('due');
             $table->string('status')->default('draft');
             $table->string('source')->default('manual');
             $table->string('delivery_status')->default('pending');
             $table->timestamp('delivered_at')->nullable();
             $table->date('valid_until')->nullable();
-            $table->string('payment_type')->default('cash');
+            // Financing mode (pay in full vs. installments) — not payment method,
+            // which is handled separately via account selection/split payment.
+            $table->string('financing_type')->default('one_time');
+            $table->unsignedInteger('installment_count')->nullable();
             $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();
 

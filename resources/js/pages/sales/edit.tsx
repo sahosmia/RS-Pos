@@ -13,12 +13,12 @@ const breadcrumbs: BreadcrumbItem[] = [
 
 interface SalesEditProps {
     sale: SaleFormDetail;
-    customers: CustomerOption[];
+    initialCustomer: CustomerOption | null;
     products: ProductOption[];
     accounts: Account[];
 }
 
-export default function SalesEdit({ sale, customers, products, accounts }: SalesEditProps) {
+export default function SalesEdit({ sale, initialCustomer, products, accounts }: SalesEditProps) {
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Edit Sale" />
@@ -26,7 +26,7 @@ export default function SalesEdit({ sale, customers, products, accounts }: Sales
             <div className="space-y-6 px-4 py-6">
                 <HeadingSmall title="Edit Sale" description="Draft/Quotation অবস্থায় স্বাধীনভাবে সম্পাদনা করা যায়" />
 
-                <SaleForm mode="edit" sale={sale} customers={customers} products={products} accounts={accounts} />
+                <SaleForm mode="edit" sale={sale} initialCustomer={initialCustomer} products={products} accounts={accounts} />
             </div>
         </AppLayout>
     );

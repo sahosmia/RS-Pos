@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('from_account_id')->constrained('accounts')->restrictOnDelete();
             $table->foreignId('to_account_id')->constrained('accounts')->restrictOnDelete();
-            $table->decimal('amount', 15, 2);
+            $table->decimal('amount', 19, 4);
             $table->date('transfer_date');
             $table->text('note')->nullable();
             $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();

@@ -1,15 +1,19 @@
 import HeadingSmall from '@/components/heading-small';
 import AddSalePaymentModal from '@/components/sales/add-sale-payment-modal';
+import SalePaymentHistoryTable from '@/components/sales/sale-payment-history-table';
 import UndoToast from '@/components/sales/undo-toast';
 import ConfirmDialog from '@/components/shared/confirm-dialog';
+import ContactLink from '@/components/shared/contact-link';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useMoneyFormat } from '@/hooks/use-money-format';
 import AppLayout from '@/layouts/app-layout';
+import { buildSaleWhatsappMessage, openWhatsapp } from '@/lib/sale-whatsapp-message';
 import { type BreadcrumbItem } from '@/types';
 import { type Account, type SaleDetail } from '@/types/models';
 import { Head, Link, router } from '@inertiajs/react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
 
 interface SaleShowProps {
     sale: SaleDetail;
@@ -51,13 +55,68 @@ export default function SaleShow({ sale, accounts, justConfirmed }: SaleShowProp
         );
     };
 
+    // The Sales list's "Print Invoice" and "Send WhatsApp Notification" row
+    // actions can't run window.print()/open a wa.me link from the list itself
+    // (this page has the actual invoice/customer data) — they link here with
+    // `?print=1`/`?whatsapp=1` instead, and this fires the action once on
+    // arrival.
+    useEffect(() => {
+        const params = new URLSearchParams(window.location.search);
+        const wantsPrint = params.get('print') === '1';
+        const wantsWhatsapp = params.get('whatsapp') === '1';
+
+        if (!wantsPrint && !wantsWhatsapp) return;
+
+        if (wantsPrint) {
+            window.print();
+        }
+
+        if (wantsWhatsapp) {
+            if (!sale.customer.phone) {
+                toast.error('এই গ্রাহকের কোনো ফোন নাম্বার নেই — হোয়াটসঅ্যাপ পাঠানো যাবে না।');
+            } else {
+                openWhatsapp(
+                    sale.customer.phone,
+                    buildSaleWhatsappMessage(
+                        {
+                            customerName: sale.customer.name,
+                            invoiceNo: sale.invoice_no,
+                            saleDate: sale.sale_date,
+                            items: sale.items.map((item) => ({ name: item.product.name, quantity: item.quantity, unitPrice: item.unit_price })),
+                            subtotal: sale.subtotal,
+                            discountAmount: sale.discount_amount,
+                            totalAmount: sale.total_amount,
+                            saleDueAmount: sale.due_amount,
+                            oldDue: 0,
+                            newTotalDue: Math.max(sale.customer.balance, 0),
+                        },
+                        money,
+                    ),
+                );
+            }
+        }
+
+        params.delete('print');
+        params.delete('whatsapp');
+        const query = params.toString();
+        window.history.replaceState({}, '', window.location.pathname + (query ? `?${query}` : ''));
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={sale.invoice_no} />
 
             <div className="space-y-6 px-4 py-6">
                 <div className="flex flex-wrap items-start justify-between gap-4 print:hidden">
-                    <HeadingSmall title={sale.invoice_no} description={`${sale.customer.name} • ${sale.sale_date}`} />
+                    <HeadingSmall
+                        title={sale.invoice_no}
+                        description={
+                            <>
+                                <ContactLink id={sale.customer.id} name={sale.customer.name} /> • {sale.sale_date}
+                            </>
+                        }
+                    />
 
                     <div className="flex flex-wrap items-center gap-2">
                         <Badge variant="outline">{humanize(sale.status)}</Badge>
@@ -165,6 +224,13 @@ export default function SaleShow({ sale, accounts, justConfirmed }: SaleShowProp
                         </tfoot>
                     </table>
                 </div>
+
+                {sale.payment_history.length > 0 && (
+                    <div className="space-y-2">
+                        <h3 className="font-medium">Payment History</h3>
+                        <SalePaymentHistoryTable rows={sale.payment_history} />
+                    </div>
+                )}
             </div>
 
             <AddSalePaymentModal open={paymentOpen} onOpenChange={setPaymentOpen} sale={sale} accounts={accounts} />

@@ -16,7 +16,7 @@ test('customer groups page lists groups with their contact count', function () {
     $this->get('/customer-groups')
         ->assertOk()
         ->assertInertia(fn ($page) => $page
-            ->component('customer-groups/index')
+            ->component('contacts/customer-groups/index')
             ->where('customerGroups.0.name', 'VIP')
             ->where('customerGroups.0.contacts_count', 1)
             ->where('customerGroups.0.can_delete', false));

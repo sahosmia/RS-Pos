@@ -21,7 +21,7 @@ test('the chart of accounts page renders the seeded default accounts', function 
     $this->get('/chart-of-accounts')
         ->assertOk()
         ->assertInertia(fn ($page) => $page
-            ->component('chart-of-accounts/index')
+            ->component('accounting/chart-of-accounts/index')
             ->where('accounts.0.code', '1010'));
 });
 
@@ -59,7 +59,7 @@ test('the general ledger page shows a posted line with the running balance', fun
     $this->get("/chart-of-accounts/{$cashCoa->id}/ledger")
         ->assertOk()
         ->assertInertia(fn ($page) => $page
-            ->component('chart-of-accounts/ledger')
+            ->component('accounting/chart-of-accounts/ledger')
             ->has('lines', 1)
             ->where('lines.0.debit', 1000)
             ->where('lines.0.balance', 1000));
@@ -83,11 +83,11 @@ test('the journal entries list and detail pages render', function () {
 
     $this->get('/journal-entries')
         ->assertOk()
-        ->assertInertia(fn ($page) => $page->component('journal-entries/index')->has('entries.data', 1));
+        ->assertInertia(fn ($page) => $page->component('accounting/journal-entries/index')->has('entries.data', 1));
 
     $this->get("/journal-entries/{$entry->id}")
         ->assertOk()
-        ->assertInertia(fn ($page) => $page->component('journal-entries/show')
+        ->assertInertia(fn ($page) => $page->component('accounting/journal-entries/show')
             ->where('entry.status', 'posted')
             ->has('entry.lines', 2));
 });
@@ -118,7 +118,7 @@ test('reversing a journal entry from the UI posts a mirrored entry and marks the
 
     $this->get("/journal-entries/{$reversal->id}")
         ->assertOk()
-        ->assertInertia(fn ($page) => $page->component('journal-entries/show')
+        ->assertInertia(fn ($page) => $page->component('accounting/journal-entries/show')
             ->where('entry.reversal_of.id', $original->id));
 
     $this->post("/journal-entries/{$original->id}/reverse", ['reason' => 'again'])
@@ -136,7 +136,7 @@ test('the accounting periods page renders and closing a period locks it', functi
     $this->get('/accounting-periods')
         ->assertOk()
         ->assertInertia(fn ($page) => $page
-            ->component('accounting-periods/index')
+            ->component('accounting/accounting-periods/index')
             ->where('periods.0.status', 'open'));
 
     $this->patch("/accounting-periods/{$period->id}/close");

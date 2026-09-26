@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\LogsActivityDefaults;
 use Database\Factories\AccountTypeFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -11,6 +12,8 @@ class AccountType extends Model
 {
     /** @use HasFactory<AccountTypeFactory> */
     use HasFactory;
+
+    use LogsActivityDefaults;
 
     /**
      * The attributes that are mass assignable.

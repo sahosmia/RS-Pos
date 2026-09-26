@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\ChartOfAccountType;
 use App\Enums\NormalBalance;
+use App\Models\Concerns\LogsActivityDefaults;
 use Database\Factories\ChartOfAccountFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -15,6 +16,8 @@ class ChartOfAccount extends Model
 {
     /** @use HasFactory<ChartOfAccountFactory> */
     use HasFactory;
+
+    use LogsActivityDefaults;
 
     /**
      * `balance` is deliberately not fillable — it's the General Ledger's
@@ -68,6 +71,22 @@ class ChartOfAccount extends Model
     public function lines(): HasMany
     {
         return $this->hasMany(JournalEntryLine::class);
+    }
+
+    /**
+     * @return HasMany<Account, $this>
+     */
+    public function accounts(): HasMany
+    {
+        return $this->hasMany(Account::class);
+    }
+
+    /**
+     * @return HasMany<ExpenseCategory, $this>
+     */
+    public function expenseCategories(): HasMany
+    {
+        return $this->hasMany(ExpenseCategory::class);
     }
 
     /**

@@ -22,11 +22,15 @@ class DatabaseSeeder extends Seeder
 
         $this->call([
             SettingsSeeder::class,
+            RolePermissionSeeder::class,
             AccountTypeSeeder::class,
             ChartOfAccountSeeder::class,
             AccountingPeriodSeeder::class,
             MiscTransactionCategorySeeder::class,
             CashBookSeeder::class,
+            StaffTransactionTypeSeeder::class,
+            DummyDataSeeder::class,
+            HomeApplianceProductSeeder::class,
         ]);
     }
 }

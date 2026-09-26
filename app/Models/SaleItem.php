@@ -89,6 +89,58 @@ class SaleItem extends Model
     }
 
     /**
+     * This sold unit's free-service schedule, snapshotted from the
+     * product's ServicePlanTemplate rows at confirm time.
+     *
+     * @return HasMany<SaleItemServicePeriod, $this>
+     */
+    public function servicePeriods(): HasMany
+    {
+        return $this->hasMany(SaleItemServicePeriod::class);
+    }
+
+    /**
+     * @return HasMany<ServiceRequest, $this>
+     */
+    public function serviceRequests(): HasMany
+    {
+        return $this->hasMany(ServiceRequest::class);
+    }
+
+    /**
+     * @return HasMany<WarrantyClaim, $this>
+     */
+    public function warrantyClaims(): HasMany
+    {
+        return $this->hasMany(WarrantyClaim::class);
+    }
+
+    /**
+     * The service period covering today, if any — null once the whole
+     * plan has run out (every period ended) or if this product never had
+     * one to begin with.
+     */
+    public function currentServicePeriod(): ?SaleItemServicePeriod
+    {
+        return $this->servicePeriods()
+            ->where('period_start_date', '<=', now())
+            ->where('period_end_date', '>', now())
+            ->first();
+    }
+
+    /**
+     * Whether the *next* `service`-type request against this unit qualifies
+     * free, per পর্ব ১০ — installation never counts here, and a plan that's
+     * fully lapsed (no current period) is always paid.
+     */
+    public function isNextServiceFree(): bool
+    {
+        $period = $this->currentServicePeriod();
+
+        return $period !== null && $period->freeQuotaRemaining() > 0;
+    }
+
+    /**
      * `(unit_price - cost_at_sale) × quantity` — cost_at_sale is a snapshot,
      * so this stays accurate even after avg_cost later changes.
      *

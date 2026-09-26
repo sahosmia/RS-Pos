@@ -1,13 +1,13 @@
-// Components
 import { Head, useForm } from '@inertiajs/react';
-import { LoaderCircle } from 'lucide-react';
+import { ArrowLeft, LoaderCircle, Lock, ShieldCheck, Zap } from 'lucide-react';
 import { FormEventHandler } from 'react';
 
+import AuthSplitShell from '@/components/auth/auth-split-shell';
 import InputError from '@/components/input-error';
+import TextLink from '@/components/text-link';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import AuthLayout from '@/layouts/auth-layout';
+import { PasswordInput } from '@/components/ui/password-input';
 
 export default function ConfirmPassword() {
     const { data, setData, post, processing, errors, reset } = useForm({
@@ -23,38 +23,54 @@ export default function ConfirmPassword() {
     };
 
     return (
-        <AuthLayout
-            title="Confirm your password"
-            description="This is a secure area of the application. Please confirm your password before continuing."
-        >
-            <Head title="Confirm password" />
+        <>
+            <Head title="Confirm Password" />
 
-            <form onSubmit={submit}>
-                <div className="space-y-6">
-                    <div className="grid gap-2">
-                        <Label htmlFor="password">Password</Label>
-                        <Input
-                            id="password"
-                            type="password"
-                            name="password"
-                            placeholder="Password"
-                            autoComplete="current-password"
-                            value={data.password}
-                            autoFocus
-                            onChange={(e) => setData('password', e.target.value)}
-                        />
+            <AuthSplitShell
+                heading="Confirm your password"
+                subheading="This is a secure area of the application. Please confirm your password before continuing."
+                badge={{ icon: Lock, label: 'High-Security Zone', tone: 'amber' }}
+                heroTitle="Protected area of your terminal."
+                heroDescription="To access sensitive system settings, administrative controls, or financial records, please confirm your identity."
+                features={[
+                    { icon: ShieldCheck, label: 'End-to-End Encryption', iconClassName: 'h-4 w-4 text-indigo-400' },
+                    { icon: Zap, label: 'Session Security', iconClassName: 'h-4 w-4 text-emerald-400' },
+                ]}
+            >
+                <form className="flex flex-col gap-5" onSubmit={submit}>
+                    <div className="grid gap-5">
+                        <div className="grid gap-2">
+                            <Label htmlFor="password">Password</Label>
+                            <PasswordInput
+                                id="password"
+                                name="password"
+                                placeholder="••••••••"
+                                autoComplete="current-password"
+                                value={data.password}
+                                autoFocus
+                                onChange={(e) => setData('password', e.target.value)}
+                            />
+                            <InputError message={errors.password} />
+                        </div>
 
-                        <InputError message={errors.password} />
-                    </div>
-
-                    <div className="flex items-center">
-                        <Button className="w-full" disabled={processing}>
-                            {processing && <LoaderCircle className="h-4 w-4 animate-spin" />}
+                        <Button type="submit" className="h-11 w-full bg-indigo-600 hover:bg-indigo-700" disabled={processing}>
+                            {processing && <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />}
                             Confirm password
                         </Button>
                     </div>
+                </form>
+
+                <div className="text-muted-foreground text-center text-sm">
+                    <TextLink
+                        href={route('logout')}
+                        method="post"
+                        as="button"
+                        className="hover:text-foreground inline-flex items-center gap-1 transition-colors"
+                    >
+                        <ArrowLeft className="h-3.5 w-3.5" /> Log out instead
+                    </TextLink>
                 </div>
-            </form>
-        </AuthLayout>
+            </AuthSplitShell>
+        </>
     );
 }

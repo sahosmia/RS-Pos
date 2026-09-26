@@ -1,7 +1,5 @@
-import InputError from '@/components/input-error';
+import { FormInput } from '@/components/form/form-input';
 import FormModal from '@/components/shared/form-modal';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { type CustomerOption } from '@/types/models';
 import { FormEventHandler, useState } from 'react';
 
@@ -74,17 +72,16 @@ export default function QuickAddCustomerModal({ open, onOpenChange, onCreated }:
 
     return (
         <FormModal open={open} onOpenChange={onOpenChange} title="Add Customer" processing={processing} onSubmit={submit}>
-            <div className="grid gap-2">
-                <Label htmlFor="quick_customer_name">Name</Label>
-                <Input id="quick_customer_name" value={name} onChange={(e) => setName(e.target.value)} required />
-                <InputError message={errors.name} />
-            </div>
+            <FormInput id="quick_customer_name" label="Name" value={name} onChange={(e) => setName(e.target.value)} error={errors.name} required />
 
-            <div className="grid gap-2">
-                <Label htmlFor="quick_customer_phone">Phone</Label>
-                <Input id="quick_customer_phone" value={phone} onChange={(e) => setPhone(e.target.value)} required />
-                <InputError message={errors.phone} />
-            </div>
+            <FormInput
+                id="quick_customer_phone"
+                label="Phone"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                error={errors.phone}
+                required
+            />
         </FormModal>
     );
 }

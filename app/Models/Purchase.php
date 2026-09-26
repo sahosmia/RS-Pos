@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\PaymentStatus;
 use App\Enums\PurchaseStatus;
+use App\Models\Concerns\LogsActivityDefaults;
 use Database\Factories\PurchaseFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -15,6 +16,8 @@ class Purchase extends Model
 {
     /** @use HasFactory<PurchaseFactory> */
     use HasFactory;
+
+    use LogsActivityDefaults;
 
     /**
      * `total_amount`/`paid_amount`/`due_amount`/`payment_status` are

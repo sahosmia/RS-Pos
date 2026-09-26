@@ -17,11 +17,18 @@ return new class extends Migration
             $table->string('description');
             $table->string('reference_type')->nullable();
             $table->unsignedBigInteger('reference_id')->nullable();
+            // A journal entry is never edited or deleted — a mistake is corrected by
+            // JournalService::reverse(), which posts a mirrored entry and marks this one `reversed`.
+            $table->string('status')->default('posted');
             $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->timestamp('reversed_at')->nullable();
+            $table->foreignId('reversed_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('reversal_of_id')->nullable()->constrained('journal_entries')->nullOnDelete();
             $table->timestamps();
 
             $table->index('entry_date');
             $table->index(['reference_type', 'reference_id']);
+            $table->index('status');
         });
     }
 

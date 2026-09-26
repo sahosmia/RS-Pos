@@ -28,6 +28,10 @@ class ChartOfAccountSeeder extends Seeder
             ['2150', 'Customer Advances', ChartOfAccountType::Liability, NormalBalance::Credit],
             ['2200', 'Loans Payable', ChartOfAccountType::Liability, NormalBalance::Credit],
             ['2300', 'Other Liabilities', ChartOfAccountType::Liability, NormalBalance::Credit],
+            // Phase 11 (Staff) - what's owed to staff between a Salary Charge
+            // accrual and the Salary Payment that settles it. Kept distinct
+            // from 2100 (supplier/expense dues) since it's a different party.
+            ['2250', 'Staff Payable', ChartOfAccountType::Liability, NormalBalance::Credit],
             ['3100', "Owner's/Investor's Capital", ChartOfAccountType::Equity, NormalBalance::Credit],
             ['3200', 'Retained Earnings', ChartOfAccountType::Equity, NormalBalance::Credit],
             // V2 (Phase 35 par 3) - the other side of every opening-balance journal entry.
@@ -38,11 +42,21 @@ class ChartOfAccountSeeder extends Seeder
             // grouping, but its normal balance is debit, since it nets *against*
             // 4100 rather than adding to it.
             ['4150', 'Sales Returns & Allowances', ChartOfAccountType::Income, NormalBalance::Debit],
+            // Phase 10 (Assets) - the gain/loss side of AssetTransactionType::Sold,
+            // whichever direction the sale price vs. book value falls.
+            ['4300', 'Gain on Asset Disposal', ChartOfAccountType::Income, NormalBalance::Credit],
             ['5100', 'Cost of Goods Sold', ChartOfAccountType::Expense, NormalBalance::Debit],
+            // Phase 11 (Staff) - StaffTransactionNature::Expense (Salary Charge).
+            ['5210', 'Salary Expense', ChartOfAccountType::Expense, NormalBalance::Debit],
             // V2 (Phase 35 par 11).
             ['5900', 'Interest Expense', ChartOfAccountType::Expense, NormalBalance::Debit],
-            // Expense module (Phase 9) doesn't exist yet - this is a placeholder
-            // until each expense_category gets its own 52xx sub-account.
+            // Phase 10 (Assets) - AssetTransactionType::Sold at a loss, and
+            // ::Disposal (a write-off with no recovery) always lands here.
+            ['5950', 'Loss on Asset Disposal', ChartOfAccountType::Expense, NormalBalance::Debit],
+            // Phase 9 - parent node only, mirroring 1010/1020: every
+            // expense_category gets its own auto-created 52xx child
+            // (CreateExpenseCategoryAction), and postings always go to that
+            // child, never to 5200 itself.
             ['5200', 'General Expenses', ChartOfAccountType::Expense, NormalBalance::Debit],
         ])->each(fn (array $row) => $this->account(...$row));
     }

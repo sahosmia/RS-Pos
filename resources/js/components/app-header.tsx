@@ -17,6 +17,7 @@ import AppLogoIcon from './app-logo-icon';
 
 const mainNavItems: NavItem[] = [
     {
+        key: 'dashboard',
         title: 'Dashboard',
         url: '/dashboard',
         icon: LayoutGrid,
@@ -25,11 +26,13 @@ const mainNavItems: NavItem[] = [
 
 const rightNavItems: NavItem[] = [
     {
+        key: 'repository',
         title: 'Repository',
         url: 'https://github.com/laravel/react-starter-kit',
         icon: Folder,
     },
     {
+        key: 'documentation',
         title: 'Documentation',
         url: 'https://laravel.com/docs/starter-kits',
         icon: BookOpen,

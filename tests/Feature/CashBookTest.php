@@ -68,7 +68,7 @@ test('cash book page lists entries with the running balance', function () {
     $this->get('/cash-book')
         ->assertOk()
         ->assertInertia(fn ($page) => $page
-            ->component('cash-book/index')
+            ->component('accounting/cash-book/index')
             ->has('entries.data', 1)
             ->where('openingBalanceSet', true));
 });

@@ -1,5 +1,5 @@
 import { SidebarProvider } from '@/components/ui/sidebar';
-import { useState } from 'react';
+import { useSidebarState } from '@/hooks/use-sidebar-state';
 
 interface AppShellProps {
     children: React.ReactNode;
@@ -7,22 +7,14 @@ interface AppShellProps {
 }
 
 export function AppShell({ children, variant = 'header' }: AppShellProps) {
-    const [isOpen, setIsOpen] = useState(() => (typeof window !== 'undefined' ? localStorage.getItem('sidebar') !== 'false' : true));
-
-    const handleSidebarChange = (open: boolean) => {
-        setIsOpen(open);
-
-        if (typeof window !== 'undefined') {
-            localStorage.setItem('sidebar', String(open));
-        }
-    };
+    const { state, update } = useSidebarState();
 
     if (variant === 'header') {
         return <div className="flex min-h-screen w-full flex-col">{children}</div>;
     }
 
     return (
-        <SidebarProvider defaultOpen={isOpen} open={isOpen} onOpenChange={handleSidebarChange}>
+        <SidebarProvider defaultOpen={state.open} open={state.open} onOpenChange={(open) => update({ open })}>
             {children}
         </SidebarProvider>
     );

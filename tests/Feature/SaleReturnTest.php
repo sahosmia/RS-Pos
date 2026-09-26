@@ -1,8 +1,8 @@
 <?php
 
-use App\Actions\Sale\ConfirmSaleAction;
-use App\Actions\SaleReturn\CreateSaleReturnAction;
-use App\Actions\SaleReturn\RefundSaleReturnAction;
+use App\Actions\Sales\Sale\ConfirmSaleAction;
+use App\Actions\Sales\SaleReturn\CreateSaleReturnAction;
+use App\Actions\Sales\SaleReturn\RefundSaleReturnAction;
 use App\Enums\SerialNumberStatus;
 use App\Exceptions\ReturnQuantityExceedsRemainingException;
 use App\Models\Account;
@@ -189,7 +189,7 @@ test('sale returns and refund pages render', function () {
 
     $this->get("/sale-returns/create?sale_id={$sale->id}")
         ->assertOk()
-        ->assertInertia(fn ($page) => $page->component('sale-returns/create')->has('sale.items', 1));
+        ->assertInertia(fn ($page) => $page->component('sales/sale-returns/create')->has('sale.items', 1));
 
     $return = app(CreateSaleReturnAction::class)->execute([
         'sale_id' => $sale->id,
@@ -199,9 +199,9 @@ test('sale returns and refund pages render', function () {
 
     $this->get('/sale-returns')
         ->assertOk()
-        ->assertInertia(fn ($page) => $page->component('sale-returns/index')->has('returns.data', 1));
+        ->assertInertia(fn ($page) => $page->component('sales/sale-returns/index')->has('returns.data', 1));
 
     $this->get("/sale-returns/{$return->id}")
         ->assertOk()
-        ->assertInertia(fn ($page) => $page->component('sale-returns/show')->where('return.total_amount', 100));
+        ->assertInertia(fn ($page) => $page->component('sales/sale-returns/show')->where('return.total_amount', 100));
 });

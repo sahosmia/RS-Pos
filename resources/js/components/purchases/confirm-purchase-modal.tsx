@@ -1,11 +1,12 @@
+import { FormInput } from '@/components/form/form-input';
 import AccountPaymentRows, { type PaymentRow } from '@/components/shared/account-payment-rows';
 import FormModal from '@/components/shared/form-modal';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useMoneyFormat } from '@/hooks/use-money-format';
 import { type Account, type PurchaseDetail } from '@/types/models';
 import { useForm } from '@inertiajs/react';
 import { FormEventHandler, useState } from 'react';
+import { toast } from 'sonner';
 
 interface ConfirmPurchaseModalProps {
     open: boolean;
@@ -47,6 +48,7 @@ export default function ConfirmPurchaseModal({ open, onOpenChange, purchase, acc
         form.post(route('purchases.confirm', purchase.id), {
             preserveScroll: true,
             onSuccess: () => {
+                toast.success('Purchase confirmed as received.');
                 onOpenChange(false);
                 setRows([]);
                 form.setData('credit_applied', 0);
@@ -70,9 +72,9 @@ export default function ConfirmPurchaseModal({ open, onOpenChange, purchase, acc
 
             {supplierCredit > 0 && (
                 <div className="grid gap-2">
-                    <Label htmlFor="credit_applied">Apply Supplier Credit (available: {money(supplierCredit)})</Label>
-                    <Input
+                    <FormInput
                         id="credit_applied"
+                        label={`Apply Supplier Credit (available: ${money(supplierCredit)})`}
                         type="number"
                         step="0.01"
                         min={0}
@@ -92,8 +94,9 @@ export default function ConfirmPurchaseModal({ open, onOpenChange, purchase, acc
                                 {item.product.name} — {item.quantity}টা unit-এর serial number
                             </Label>
                             {form.data.serial_numbers[item.id].map((serial, unitIndex) => (
-                                <Input
+                                <FormInput
                                     key={unitIndex}
+                                    id={`serial-${item.id}-${unitIndex}`}
                                     value={serial}
                                     onChange={(e) => setSerial(item.id, unitIndex, e.target.value)}
                                     placeholder={`Unit ${unitIndex + 1}`}
@@ -105,7 +108,7 @@ export default function ConfirmPurchaseModal({ open, onOpenChange, purchase, acc
                 </div>
             )}
 
-            <AccountPaymentRows accounts={accounts} rows={rows} onChange={setRows} />
+            <AccountPaymentRows accounts={accounts} rows={rows} onChange={setRows} total={purchase.total_amount - form.data.credit_applied} />
         </FormModal>
     );
 }

@@ -33,7 +33,10 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
-        return redirect()->intended(route('dashboard', absolute: false));
+        // Flashed (one request only) so the sidebar can tell "just logged in" apart
+        // from an ordinary in-session navigation and skip restoring whichever
+        // submenu happened to be expanded last time — see `useSidebarState`.
+        return redirect()->intended(route('dashboard', absolute: false))->with('freshLogin', true);
     }
 
     /**

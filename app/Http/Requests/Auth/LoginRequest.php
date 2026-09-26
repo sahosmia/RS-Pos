@@ -28,7 +28,10 @@ class LoginRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'email' => ['required', 'string', 'email'],
+            // Still named `email` (the login form's one identifier field, unchanged
+            // for callers) but no longer validated as an email shape — it now also
+            // accepts a username, so only "some non-empty string" is enforced here.
+            'email' => ['required', 'string'],
             'password' => ['required', 'string'],
         ];
     }
@@ -42,11 +45,21 @@ class LoginRequest extends FormRequest
     {
         $this->ensureIsNotRateLimited();
 
-        if (! Auth::attempt($this->only('email', 'password'), $this->boolean('remember'))) {
+        $identifierField = filter_var($this->string('email'), FILTER_VALIDATE_EMAIL) ? 'email' : 'username';
+
+        if (! Auth::attempt([$identifierField => $this->input('email'), 'password' => $this->input('password')], $this->boolean('remember'))) {
             RateLimiter::hit($this->throttleKey());
 
             throw ValidationException::withMessages([
                 'email' => __('auth.failed'),
+            ]);
+        }
+
+        if (! Auth::user()->is_active) {
+            Auth::logout();
+
+            throw ValidationException::withMessages([
+                'email' => 'This account has been deactivated.',
             ]);
         }
 

@@ -1,9 +1,9 @@
+import { FormInput } from '@/components/form/form-input';
 import HeadingSmall from '@/components/heading-small';
 import ConfirmDialog from '@/components/shared/confirm-dialog';
 import EmptyState from '@/components/shared/empty-state';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { type BackupListItem } from '@/types/models';
@@ -141,16 +141,14 @@ export default function BackupsIndex({ backups }: BackupsIndexProps) {
                     />
                     <form onSubmit={submitUpload} className="space-y-3">
                         <Input type="file" accept=".zip" onChange={(e) => uploadForm.setData('file', e.target.files?.[0] ?? null)} required />
-                        <div className="grid gap-2">
-                            <Label htmlFor="upload_confirmation">Type RESTORE to confirm</Label>
-                            <Input
-                                id="upload_confirmation"
-                                value={uploadForm.data.confirmation}
-                                onChange={(e) => uploadForm.setData('confirmation', e.target.value)}
-                                placeholder="RESTORE"
-                                required
-                            />
-                        </div>
+                        <FormInput
+                            id="upload_confirmation"
+                            label="Type RESTORE to confirm"
+                            value={uploadForm.data.confirmation}
+                            onChange={(e) => uploadForm.setData('confirmation', e.target.value)}
+                            placeholder="RESTORE"
+                            required
+                        />
                         <Button type="submit" variant="destructive" disabled={uploadForm.processing || uploadForm.data.confirmation !== 'RESTORE'}>
                             {uploadForm.processing ? 'Uploading...' : 'Upload & Restore'}
                         </Button>
@@ -173,10 +171,10 @@ export default function BackupsIndex({ backups }: BackupsIndexProps) {
                 confirmDisabled={restoreConfirmation !== 'RESTORE'}
                 onConfirm={confirmRestore}
             >
-                <div className="grid gap-2 pt-2">
-                    <Label htmlFor="restore_confirmation">Type RESTORE to confirm</Label>
-                    <Input
+                <div className="pt-2">
+                    <FormInput
                         id="restore_confirmation"
+                        label="Type RESTORE to confirm"
                         value={restoreConfirmation}
                         onChange={(e) => setRestoreConfirmation(e.target.value)}
                         placeholder="RESTORE"

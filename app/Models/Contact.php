@@ -3,7 +3,9 @@
 namespace App\Models;
 
 use App\Enums\ContactEntityType;
+use App\Enums\ContactPrefix;
 use App\Enums\ContactType;
+use App\Models\Concerns\LogsActivityDefaults;
 use Database\Factories\ContactFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
@@ -20,6 +22,7 @@ class Contact extends Model implements HasMedia
     use HasFactory;
 
     use InteractsWithMedia;
+    use LogsActivityDefaults;
 
     /**
      * `balance` is deliberately not fillable — it may only change through
@@ -29,10 +32,17 @@ class Contact extends Model implements HasMedia
      */
     protected $fillable = [
         'name',
+        'prefix',
+        'first_name',
+        'middle_name',
+        'last_name',
+        'contact_code',
         'phone',
+        'phone_alternate',
         'email',
         'address',
         'shipping_address',
+        'reference',
         'type',
         'entity_type',
         'business_name',
@@ -51,6 +61,7 @@ class Contact extends Model implements HasMedia
         return [
             'type' => ContactType::class,
             'entity_type' => ContactEntityType::class,
+            'prefix' => ContactPrefix::class,
             'balance' => 'float',
             'is_active' => 'boolean',
         ];
@@ -115,6 +126,30 @@ class Contact extends Model implements HasMedia
     public function sales(): HasMany
     {
         return $this->hasMany(Sale::class, 'customer_id');
+    }
+
+    /**
+     * @return HasMany<SalesOrder, $this>
+     */
+    public function salesOrders(): HasMany
+    {
+        return $this->hasMany(SalesOrder::class, 'customer_id');
+    }
+
+    /**
+     * @return HasMany<MessageLog, $this>
+     */
+    public function messageLogs(): HasMany
+    {
+        return $this->hasMany(MessageLog::class);
+    }
+
+    /**
+     * @return HasMany<CampaignRecipient, $this>
+     */
+    public function campaignRecipients(): HasMany
+    {
+        return $this->hasMany(CampaignRecipient::class);
     }
 
     /**

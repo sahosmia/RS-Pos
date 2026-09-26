@@ -3,9 +3,11 @@ import FormModal from '@/components/shared/form-modal';
 import MoneyInput from '@/components/shared/money-input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { useTranslation } from '@/hooks/use-translation';
 import { type ContactDetail } from '@/types/models';
 import { useForm } from '@inertiajs/react';
 import { FormEventHandler, useEffect } from 'react';
+import { toast } from 'sonner';
 
 interface WaiveDueModalProps {
     open: boolean;
@@ -18,6 +20,7 @@ interface WaiveDueModalProps {
  * unrelated to any specific sale (loyalty, goodwill).
  */
 export default function WaiveDueModal({ open, onOpenChange, contact }: WaiveDueModalProps) {
+    const { t } = useTranslation();
     const form = useForm({ amount: 0, note: '' });
 
     useEffect(() => {
@@ -33,7 +36,11 @@ export default function WaiveDueModal({ open, onOpenChange, contact }: WaiveDueM
 
         form.post(route('contacts.due-waivers.store', contact.id), {
             preserveScroll: true,
-            onSuccess: () => onOpenChange(false),
+            onSuccess: () => {
+                toast.success('Due waived.');
+                onOpenChange(false);
+            },
+            onError: () => toast.error('Could not waive due — check the form for errors.'),
         });
     };
 
@@ -41,23 +48,23 @@ export default function WaiveDueModal({ open, onOpenChange, contact }: WaiveDueM
         <FormModal
             open={open}
             onOpenChange={onOpenChange}
-            title="Add Discount"
-            description={`বর্তমান অবস্থা: ${contact.balance_label} — কোনো cash movement হবে না, শুধু বকেয়া মাফ`}
-            submitLabel="Waive"
+            title={t('waiveDueModal', 'title')}
+            description={`${t('waiveDueModal', 'current_status')} ${contact.balance_label} — ${t('waiveDueModal', 'no_cash_movement_hint')}`}
+            submitLabel={t('waiveDueModal', 'submit')}
             processing={form.processing}
             onSubmit={submit}
         >
             <div className="grid gap-2">
-                <Label htmlFor="waive_amount">Amount</Label>
+                <Label htmlFor="waive_amount">{t('common', 'amount')}</Label>
                 <MoneyInput id="waive_amount" value={form.data.amount} onChange={(e) => form.setData('amount', Number(e.target.value))} required />
                 <InputError message={form.errors.amount} />
             </div>
 
             <div className="grid gap-2">
-                <Label htmlFor="waive_note">Reason</Label>
+                <Label htmlFor="waive_note">{t('waiveDueModal', 'reason')}</Label>
                 <Textarea
                     id="waive_note"
-                    placeholder="loyalty, goodwill..."
+                    placeholder={t('waiveDueModal', 'reason_placeholder')}
                     value={form.data.note}
                     onChange={(e) => form.setData('note', e.target.value)}
                 />

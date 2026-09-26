@@ -2,7 +2,7 @@ import HeadingSmall from '@/components/heading-small';
 import PurchaseForm from '@/components/purchases/purchase-form';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
-import { type PurchaseFormDetail } from '@/types/models';
+import { type PurchaseFormDetail, type PurchaseProductOption, type SupplierOption } from '@/types/models';
 import { Head } from '@inertiajs/react';
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -12,11 +12,11 @@ const breadcrumbs: BreadcrumbItem[] = [
 
 interface PurchasesEditProps {
     purchase: PurchaseFormDetail;
-    suppliers: { id: number; name: string }[];
-    products: { id: number; name: string; sku: string; avg_cost: number }[];
+    initialSupplier: SupplierOption | null;
+    initialProducts: PurchaseProductOption[];
 }
 
-export default function PurchasesEdit({ purchase, suppliers, products }: PurchasesEditProps) {
+export default function PurchasesEdit({ purchase, initialSupplier, initialProducts }: PurchasesEditProps) {
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Edit Purchase" />
@@ -24,7 +24,7 @@ export default function PurchasesEdit({ purchase, suppliers, products }: Purchas
             <div className="space-y-6 px-4 py-6">
                 <HeadingSmall title="Edit Purchase" description="Draft/Ordered অবস্থায় স্বাধীনভাবে সম্পাদনা করা যায়" />
 
-                <PurchaseForm mode="edit" purchase={purchase} suppliers={suppliers} products={products} />
+                <PurchaseForm mode="edit" purchase={purchase} initialSupplier={initialSupplier} initialProducts={initialProducts} />
             </div>
         </AppLayout>
     );

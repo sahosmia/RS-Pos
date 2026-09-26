@@ -1,11 +1,11 @@
+import { FormInput } from '@/components/form/form-input';
 import AccountPaymentRows, { type PaymentRow } from '@/components/shared/account-payment-rows';
 import FormModal from '@/components/shared/form-modal';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { useMoneyFormat } from '@/hooks/use-money-format';
 import { type Account, type PurchaseDetail } from '@/types/models';
 import { useForm } from '@inertiajs/react';
 import { FormEventHandler, useState } from 'react';
+import { toast } from 'sonner';
 
 interface AddPaymentModalProps {
     open: boolean;
@@ -34,6 +34,7 @@ export default function AddPaymentModal({ open, onOpenChange, purchase, accounts
         form.post(route('purchases.payments.store', purchase.id), {
             preserveScroll: true,
             onSuccess: () => {
+                toast.success('Payment recorded.');
                 onOpenChange(false);
                 setRows([]);
                 form.setData('credit_applied', 0);
@@ -52,21 +53,19 @@ export default function AddPaymentModal({ open, onOpenChange, purchase, accounts
             onSubmit={submit}
         >
             {supplierCredit > 0 && (
-                <div className="grid gap-2">
-                    <Label htmlFor="credit_applied">Apply Supplier Credit (available: {money(supplierCredit)})</Label>
-                    <Input
-                        id="credit_applied"
-                        type="number"
-                        step="0.01"
-                        min={0}
-                        max={suggestedCredit}
-                        value={form.data.credit_applied}
-                        onChange={(e) => form.setData('credit_applied', Number(e.target.value))}
-                    />
-                </div>
+                <FormInput
+                    id="credit_applied"
+                    label={`Apply Supplier Credit (available: ${money(supplierCredit)})`}
+                    type="number"
+                    step="0.01"
+                    min={0}
+                    max={suggestedCredit}
+                    value={form.data.credit_applied}
+                    onChange={(e) => form.setData('credit_applied', Number(e.target.value))}
+                />
             )}
 
-            <AccountPaymentRows accounts={accounts} rows={rows} onChange={setRows} />
+            <AccountPaymentRows accounts={accounts} rows={rows} onChange={setRows} total={purchase.due_amount - form.data.credit_applied} />
         </FormModal>
     );
 }

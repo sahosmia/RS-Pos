@@ -16,9 +16,9 @@ return new class extends Migration
             $table->foreignId('supplier_id')->constrained('contacts')->restrictOnDelete();
             $table->string('invoice_no')->unique();
             $table->date('purchase_date');
-            $table->decimal('total_amount', 15, 2)->default(0);
-            $table->decimal('paid_amount', 15, 2)->default(0);
-            $table->decimal('due_amount', 15, 2)->default(0);
+            $table->decimal('total_amount', 19, 4)->default(0);
+            $table->decimal('paid_amount', 19, 4)->default(0);
+            $table->decimal('due_amount', 19, 4)->default(0);
             $table->string('payment_status')->default('due');
             $table->string('status')->default('draft');
             $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();

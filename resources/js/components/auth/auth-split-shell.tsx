@@ -1,0 +1,88 @@
+import { Store, type LucideIcon } from 'lucide-react';
+import { type ReactNode } from 'react';
+
+interface AuthSplitShellProps {
+    /** Right-panel heading (the branding panel's own headline/description are separate — see `heroTitle`/`heroDescription`). */
+    heading: string;
+    subheading: string;
+    badge: { icon: LucideIcon; label: string; tone?: 'indigo' | 'amber' };
+    heroTitle: string;
+    heroDescription: string;
+    features: { icon: LucideIcon; label: string; iconClassName?: string }[];
+    children: ReactNode;
+}
+
+const badgeToneClasses = {
+    indigo: 'border-indigo-500/30 bg-indigo-500/10 text-indigo-400',
+    amber: 'border-amber-500/30 bg-amber-500/10 text-amber-400',
+} as const;
+
+const Logo = ({ className }: { className?: string }) => (
+    <div className={className}>
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-600 font-bold text-white shadow-lg shadow-indigo-500/30">
+            <Store className="h-6 w-6" />
+        </div>
+        <span className="text-xl font-bold tracking-tight">ApexPOS</span>
+    </div>
+);
+
+/**
+ * The split-screen shell every auth page (Login, Forgot/Reset/Confirm
+ * Password, Verify Email) shares — previously ~60 lines of this markup were
+ * copy-pasted into each page. Only the branding panel's copy (headline,
+ * badge, feature badges) and the actual form differ per page; everything
+ * else — the radial-gradient panel, logo, mobile fallback logo, footer
+ * copyright, right-panel frame — lives here once.
+ */
+export default function AuthSplitShell({ heading, subheading, badge, heroTitle, heroDescription, features, children }: AuthSplitShellProps) {
+    const BadgeIcon = badge.icon;
+
+    return (
+        <div className="bg-background flex min-h-screen w-full font-sans antialiased">
+            {/* Left Side: Modern POS Branding Showcase (Hidden on small screens) */}
+            <div className="relative hidden w-1/2 flex-col justify-between bg-slate-900 p-12 text-white lg:flex xl:w-7/12">
+                <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,_var(--tw-gradient-stops))] from-indigo-600/25 via-transparent to-transparent" />
+
+                <Logo className="relative z-10 flex items-center gap-3" />
+
+                <div className="relative z-10 my-auto max-w-lg">
+                    <div
+                        className={`mb-6 inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-medium backdrop-blur-sm ${badgeToneClasses[badge.tone ?? 'indigo']}`}
+                    >
+                        <BadgeIcon className="h-3.5 w-3.5" /> {badge.label}
+                    </div>
+                    <h1 className="text-4xl leading-tight font-extrabold tracking-tight sm:text-5xl">{heroTitle}</h1>
+                    <p className="mt-4 text-base leading-relaxed text-slate-400">{heroDescription}</p>
+
+                    <div className="mt-8 flex items-center gap-6 text-xs font-medium text-slate-300">
+                        {features.map((feature) => {
+                            const FeatureIcon = feature.icon;
+
+                            return (
+                                <div key={feature.label} className="flex items-center gap-2">
+                                    <FeatureIcon className={feature.iconClassName ?? 'h-4 w-4 text-amber-400'} /> {feature.label}
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+
+                <div className="relative z-10 text-xs text-slate-500">&copy; {new Date().getFullYear()} ApexPOS Systems. All rights reserved.</div>
+            </div>
+
+            {/* Right Side: Page content */}
+            <div className="flex w-full items-center justify-center p-6 sm:p-12 lg:w-1/2 xl:w-5/12">
+                <div className="w-full max-w-md space-y-6">
+                    <Logo className="flex items-center gap-3 lg:hidden" />
+
+                    <div className="flex flex-col space-y-1.5">
+                        <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">{heading}</h2>
+                        <p className="text-muted-foreground text-sm">{subheading}</p>
+                    </div>
+
+                    {children}
+                </div>
+            </div>
+        </div>
+    );
+}

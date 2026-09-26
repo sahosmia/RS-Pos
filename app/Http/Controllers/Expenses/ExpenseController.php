@@ -1,0 +1,82 @@
+<?php
+
+namespace App\Http\Controllers\Expenses;
+
+use App\Actions\Expenses\Expense\CreateExpenseAction;
+use App\Actions\Expenses\Expense\UpdateExpenseAction;
+use App\Http\Controllers\Controller;
+use App\Http\Requests\Expenses\Expense\StoreExpenseRequest;
+use App\Http\Requests\Expenses\Expense\UpdateExpenseRequest;
+use App\Models\Account;
+use App\Models\Expense;
+use App\Models\ExpenseCategory;
+use App\Models\Settings;
+use App\Queries\Expenses\ExpenseQuery;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Inertia\Inertia;
+use Inertia\Response;
+
+class ExpenseController extends Controller
+{
+    public function index(Request $request): Response
+    {
+        $validated = $request->validate([
+            'from' => ['nullable', 'date'],
+            'to' => ['nullable', 'date', 'after_or_equal:from'],
+            'expense_category_id' => ['nullable', 'integer', 'exists:expense_categories,id'],
+            'payment_status' => ['nullable', 'in:due,partial,paid'],
+            'per_page' => ['nullable', 'string', 'max:10'],
+        ]);
+
+        $resolvedPerPage = Settings::resolveRequestedPerPage($validated['per_page'] ?? null);
+
+        $expenses = ExpenseQuery::filtered($validated)
+            ->paginate($resolvedPerPage ?? Settings::MAX_UNPAGINATED_ROWS)
+            ->withQueryString();
+
+        $expenses->getCollection()->transform(fn (Expense $expense) => [
+            'id' => $expense->id,
+            'category' => $expense->category->only(['id', 'name']),
+            'contact' => $expense->contact?->only(['id', 'name']),
+            'total_amount' => $expense->total_amount,
+            'paid_amount' => $expense->paid_amount,
+            'due_amount' => $expense->due_amount,
+            'payment_status' => $expense->payment_status,
+            'expense_date' => $expense->expense_date->toDateString(),
+            'note' => $expense->note,
+            'can_edit' => $expense->canEdit(),
+        ]);
+
+        return Inertia::render('expenses/index', [
+            'expenses' => $expenses,
+            'categories' => ExpenseCategory::query()->orderBy('name')->get(['id', 'name']),
+            'accounts' => Account::query()->active()->orderBy('name')->get(['id', 'name', 'current_balance']),
+            'filters' => [
+                'from' => $validated['from'] ?? null,
+                'to' => $validated['to'] ?? null,
+                'expense_category_id' => $validated['expense_category_id'] ?? null,
+                'payment_status' => $validated['payment_status'] ?? null,
+                'per_page' => $resolvedPerPage ?? 'all',
+            ],
+        ]);
+    }
+
+    public function store(StoreExpenseRequest $request, CreateExpenseAction $createExpense): RedirectResponse
+    {
+        $createExpense->execute($request->validated());
+
+        return back();
+    }
+
+    public function update(UpdateExpenseRequest $request, Expense $expense, UpdateExpenseAction $updateExpense): RedirectResponse
+    {
+        if (! $expense->canEdit()) {
+            return back()->withErrors(['expense' => 'This expense already has a payment and can no longer be edited directly.']);
+        }
+
+        $updateExpense->execute($expense, $request->validated());
+
+        return back();
+    }
+}

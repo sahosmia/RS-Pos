@@ -1,0 +1,28 @@
+<?php
+
+namespace App\Http\Controllers\Sales;
+
+use App\Actions\Sales\Sale\ConfirmSaleAction;
+use App\Http\Controllers\Controller;
+use App\Http\Requests\Sales\Sale\SalePaymentRequest;
+use App\Models\Sale;
+use Illuminate\Http\RedirectResponse;
+
+class SaleConfirmController extends Controller
+{
+    /**
+     * Draft/Quotation → Confirmed — the point stock and the customer's
+     * ledger actually move, with an optional payment collected at the
+     * same time.
+     */
+    public function store(SalePaymentRequest $request, Sale $sale, ConfirmSaleAction $confirmSale): RedirectResponse
+    {
+        if (! $sale->canEdit()) {
+            return back()->withErrors(['sale' => 'This sale has already been confirmed.']);
+        }
+
+        $confirmSale->execute($sale, $request->validated('payments') ?? [], $request->validated('serial_numbers') ?? []);
+
+        return back();
+    }
+}

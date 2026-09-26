@@ -18,7 +18,7 @@ return new class extends Migration
             $table->string('type');
             $table->string('normal_balance');
             $table->foreignId('parent_id')->nullable()->constrained('chart_of_accounts')->nullOnDelete();
-            $table->decimal('balance', 15, 2)->default(0);
+            $table->decimal('balance', 19, 4)->default(0);
             $table->boolean('is_active')->default(true);
             $table->timestamps();
 

@@ -24,11 +24,22 @@ return new class extends Migration
             $table->unsignedInteger('invoice_next_number')->default(1);
             $table->string('purchase_prefix')->default('PUR-');
             $table->unsignedInteger('purchase_next_number')->default(1);
+            $table->string('sales_order_prefix')->default('SO-');
+            $table->unsignedInteger('sales_order_next_number')->default(1);
 
             $table->boolean('thermal_printer_enabled')->default(false);
             $table->boolean('emi_module_enabled')->default(false);
             $table->boolean('serial_number_module_enabled')->default(false);
             $table->unsignedTinyInteger('fiscal_year_start_month')->default(7);
+
+            $table->json('pagination_per_page_options')->nullable();
+            $table->unsignedInteger('pagination_default_per_page')->default(20);
+            $table->boolean('pagination_allow_all')->default(true);
+            $table->unsignedInteger('activity_log_retention_months')->default(18);
+            $table->string('theme_color')->default('neutral');
+            // Null = no custom order yet, sidebar uses its built-in order.
+            // Shape: {"top": ["dashboard","sales",...], "sub": {"sales": ["sales","add_sale",...]}}
+            $table->json('menu_order')->nullable();
 
             $table->text('license_key')->nullable();
             $table->string('license_status')->nullable();

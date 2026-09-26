@@ -77,6 +77,7 @@
 }
 
 :root {
+    color-scheme: light;
     --background: hsl(0, 0%, 100%);
     --foreground: hsl(0, 0%, 3.9%);
     --card: hsl(0, 0%, 100%);
@@ -113,6 +114,7 @@
 }
 
 .dark {
+    color-scheme: dark;
     --background: hsl(0, 0%, 3.9%);
     --foreground: hsl(0, 0%, 98%);
     --card: hsl(0, 0%, 3.9%);
@@ -147,6 +149,68 @@
     --sidebar-ring: hsl(217.2, 91.2%, 59.8%);
 }
 
+/*
+  Centralized accent-color palettes (corrections.md #6). Applied via a
+  `data-theme-color="..."` attribute on <html> (see ThemeColorComposer +
+  resources/js/hooks/use-theme-color.tsx) — mirrors how dark mode toggles
+  the `.dark` class. Only the brand-accent variables are overridden here
+  (everything else — background, card, borders, muted, ...) stays exactly
+  as `:root`/`.dark` already define it, in both light and dark mode, so a
+  palette switch never touches unrelated colors. No `data-theme-color`
+  attribute (or value "neutral") means "use the default grayscale palette
+  above" — nothing to add here for that case.
+
+  Each rule applies to both light and dark mode (declared once, no `.dark`
+  variant) since it comes after `.dark` in source order and wins on equal
+  specificity — same approach already used for the app's one existing
+  brand color, `--sidebar-ring`, which is likewise identical in both modes.
+  Add a new palette by adding an `App\Enums\ThemeColor` case and a block here.
+*/
+[data-theme-color='blue'] {
+    --primary: hsl(217, 91%, 60%);
+    --primary-foreground: hsl(0, 0%, 100%);
+    --ring: hsl(217, 91%, 60%);
+    --sidebar-primary: hsl(217, 91%, 60%);
+    --sidebar-primary-foreground: hsl(0, 0%, 100%);
+    --sidebar-ring: hsl(217, 91%, 60%);
+}
+
+[data-theme-color='green'] {
+    --primary: hsl(142, 71%, 42%);
+    --primary-foreground: hsl(0, 0%, 100%);
+    --ring: hsl(142, 71%, 42%);
+    --sidebar-primary: hsl(142, 71%, 42%);
+    --sidebar-primary-foreground: hsl(0, 0%, 100%);
+    --sidebar-ring: hsl(142, 71%, 42%);
+}
+
+[data-theme-color='violet'] {
+    --primary: hsl(262, 83%, 58%);
+    --primary-foreground: hsl(0, 0%, 100%);
+    --ring: hsl(262, 83%, 58%);
+    --sidebar-primary: hsl(262, 83%, 58%);
+    --sidebar-primary-foreground: hsl(0, 0%, 100%);
+    --sidebar-ring: hsl(262, 83%, 58%);
+}
+
+[data-theme-color='rose'] {
+    --primary: hsl(347, 77%, 50%);
+    --primary-foreground: hsl(0, 0%, 100%);
+    --ring: hsl(347, 77%, 50%);
+    --sidebar-primary: hsl(347, 77%, 50%);
+    --sidebar-primary-foreground: hsl(0, 0%, 100%);
+    --sidebar-ring: hsl(347, 77%, 50%);
+}
+
+[data-theme-color='orange'] {
+    --primary: hsl(21, 90%, 48%);
+    --primary-foreground: hsl(0, 0%, 100%);
+    --ring: hsl(21, 90%, 48%);
+    --sidebar-primary: hsl(21, 90%, 48%);
+    --sidebar-primary-foreground: hsl(0, 0%, 100%);
+    --sidebar-ring: hsl(21, 90%, 48%);
+}
+
 @layer base {
     * {
         @apply border-border;
@@ -154,5 +218,62 @@
 
     body {
         @apply bg-background text-foreground;
+    }
+}
+
+@layer utilities {
+    /* Thin, theme-aware scrollbar for inner-scrolling panels (Datatable body, Command palette, ...). */
+    .scrollbar-thin {
+        scrollbar-width: thin;
+        scrollbar-color: var(--border) transparent;
+    }
+
+    .scrollbar-thin::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+    }
+
+    .scrollbar-thin::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    .scrollbar-thin::-webkit-scrollbar-thumb {
+        background-color: var(--border);
+        border-radius: 9999px;
+        border: 2px solid transparent;
+        background-clip: content-box;
+    }
+
+    .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+        background-color: var(--muted-foreground);
+    }
+
+    /* Hides the scrollbar entirely while keeping the element scrollable (e.g. the sidebar nav list). */
+    .scrollbar-none {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+    }
+
+    .scrollbar-none::-webkit-scrollbar {
+        display: none;
+    }
+}
+
+/* Smooth open/close for Radix Collapsible (e.g. the "Filters" disclosure) using its own reported content height. */
+@keyframes collapsible-down {
+    from {
+        height: 0;
+    }
+    to {
+        height: var(--radix-collapsible-content-height);
+    }
+}
+
+@keyframes collapsible-up {
+    from {
+        height: var(--radix-collapsible-content-height);
+    }
+    to {
+        height: 0;
     }
 }

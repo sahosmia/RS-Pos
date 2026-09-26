@@ -1,9 +1,10 @@
 <?php
 
-use App\Actions\Purchase\ConfirmPurchaseAction;
-use App\Actions\Sale\ConfirmSaleAction;
+use App\Actions\Purchases\Purchase\ConfirmPurchaseAction;
+use App\Actions\Sales\Sale\ConfirmSaleAction;
 use App\Models\Account;
 use App\Models\AccountType;
+use App\Models\Category;
 use App\Models\ChartOfAccount;
 use App\Models\Contact;
 use App\Models\JournalEntry;
@@ -11,6 +12,7 @@ use App\Models\Product;
 use App\Models\Purchase;
 use App\Models\Sale;
 use App\Models\Settings;
+use App\Models\Unit;
 use App\Models\User;
 
 beforeEach(function () {
@@ -106,6 +108,37 @@ test('creating a contact with a negative opening balance credits Accounts Payabl
     expect($entry->lines->sum('debit'))->toBe($entry->lines->sum('credit'))
         ->and($payable->fresh()->balance)->toBe(300.0)
         ->and($equity->fresh()->balance)->toBe(-300.0);
+});
+
+test('creating a product with an opening stock posts a balanced journal entry against Opening Balance Equity', function () {
+    $this->actingAs(User::factory()->create());
+    $category = Category::factory()->create();
+    $unit = Unit::factory()->create();
+
+    $this->post('/products', [
+        'name' => 'Reconciliation Test Fridge',
+        'sku' => 'RECON-FRIDGE-1',
+        'category_id' => $category->id,
+        'unit_id' => $unit->id,
+        'selling_price' => 45000,
+        'manage_stock' => true,
+        'is_for_sale' => true,
+        'is_active' => true,
+        'has_installation_service' => false,
+        'emi_available' => false,
+        'track_serial_number' => false,
+        'opening_stock' => 10,
+        'opening_stock_cost' => 32000,
+    ])->assertRedirect('/products');
+
+    $product = Product::query()->where('sku', 'RECON-FRIDGE-1')->firstOrFail();
+    $inventory = ChartOfAccount::where('code', '1200')->firstOrFail();
+    $equity = ChartOfAccount::where('code', '3300')->firstOrFail();
+    $entry = JournalEntry::where('reference_type', 'product_opening_stock')->where('reference_id', $product->id)->firstOrFail();
+
+    expect($entry->lines->sum('debit'))->toBe($entry->lines->sum('credit'))
+        ->and($inventory->fresh()->balance)->toBe(320000.0)
+        ->and($equity->fresh()->balance)->toBe(320000.0);
 });
 
 test('confirming a sale posts a balanced journal entry with a receivable/revenue pair and a COGS/inventory pair', function () {

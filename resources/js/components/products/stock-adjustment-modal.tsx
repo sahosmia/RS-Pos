@@ -1,11 +1,13 @@
+import { FormInput } from '@/components/form/form-input';
 import InputError from '@/components/input-error';
 import FormModal from '@/components/shared/form-modal';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { useTranslation } from '@/hooks/use-translation';
 import { type ProductListItem } from '@/types/models';
 import { useForm } from '@inertiajs/react';
 import { FormEventHandler, useEffect } from 'react';
+import { toast } from 'sonner';
 
 interface StockAdjustmentModalProps {
     product: ProductListItem | null;
@@ -17,6 +19,7 @@ interface StockAdjustmentModalProps {
  * becomes one adjustment_increase/decrease movement (AdjustStockAction).
  */
 export default function StockAdjustmentModal({ product, onOpenChange }: StockAdjustmentModalProps) {
+    const { t } = useTranslation();
     const form = useForm({
         quantity: 0,
         reason: '',
@@ -39,7 +42,10 @@ export default function StockAdjustmentModal({ product, onOpenChange }: StockAdj
 
         form.post(route('stock-adjustments.store', product.id), {
             preserveScroll: true,
-            onSuccess: () => onOpenChange(false),
+            onSuccess: () => {
+                toast.success(t('stockAdjustment', 'toast'));
+                onOpenChange(false);
+            },
         });
     };
 
@@ -47,35 +53,40 @@ export default function StockAdjustmentModal({ product, onOpenChange }: StockAdj
         <FormModal
             open={product !== null}
             onOpenChange={onOpenChange}
-            title={`Adjust Stock — ${product?.name ?? ''}`}
-            description="প্রকৃত গণনা করা quantity লিখুন — বর্তমান stock-এর সাথে পার্থক্যটুকু adjustment হিসেবে যোগ হবে"
-            submitLabel="Adjust"
+            title={`${t('stockAdjustment', 'title')} — ${product?.name ?? ''}`}
+            description={t('stockAdjustment', 'description')}
+            submitLabel={t('stockAdjustment', 'adjust')}
             processing={form.processing}
             onSubmit={submit}
         >
             <div className="grid gap-2">
-                <Label htmlFor="quantity">Actual Quantity {product && <span className="text-muted-foreground">({product.unit.name})</span>}</Label>
-                <Input
+                <FormInput
                     id="quantity"
+                    label={
+                        <>
+                            {t('stockAdjustment', 'actual_quantity')}{' '}
+                            {product && <span className="text-muted-foreground">({product.unit.name})</span>}
+                        </>
+                    }
                     type="number"
-                    step="0.01"
+                    step="1"
                     value={form.data.quantity}
                     onChange={(e) => form.setData('quantity', Number(e.target.value))}
+                    error={form.errors.quantity}
                     required
                 />
                 {product && (
                     <p className="text-muted-foreground text-xs">
-                        বর্তমান stock: {product.current_stock} {product.unit.name}
+                        {t('stockAdjustment', 'current_stock')}: {product.current_stock} {product.unit.name}
                     </p>
                 )}
-                <InputError message={form.errors.quantity} />
             </div>
 
             <div className="grid gap-2">
-                <Label htmlFor="reason">Reason</Label>
+                <Label htmlFor="reason">{t('stockAdjustment', 'reason')}</Label>
                 <Textarea
                     id="reason"
-                    placeholder="damaged, count mismatch..."
+                    placeholder={t('stockAdjustment', 'reason_placeholder')}
                     value={form.data.reason}
                     onChange={(e) => form.setData('reason', e.target.value)}
                 />

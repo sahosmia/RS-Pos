@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('account_id')->constrained()->restrictOnDelete();
             $table->string('type');
-            $table->decimal('amount', 15, 2);
+            $table->decimal('amount', 19, 4);
             $table->string('reference_type')->nullable();
             $table->unsignedBigInteger('reference_id')->nullable();
             $table->date('operation_date');

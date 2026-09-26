@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('cash_book', function (Blueprint $table) {
             $table->id();
-            $table->decimal('current_balance', 15, 2)->default(0);
+            $table->decimal('current_balance', 19, 4)->default(0);
             $table->timestamps();
         });
     }

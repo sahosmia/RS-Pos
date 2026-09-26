@@ -1,48 +1,84 @@
+import { FormInput } from '@/components/form/form-input';
 import InputError from '@/components/input-error';
 import MoneyInput from '@/components/shared/money-input';
+import SearchableSelect from '@/components/shared/searchable-select';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useMoneyFormat } from '@/hooks/use-money-format';
-import { type PurchaseFormDetail, type PurchaseFormItem, type PurchaseStatusValue } from '@/types/models';
+import { today } from '@/lib/format-date';
+import {
+    type PurchaseFormDetail,
+    type PurchaseFormItem,
+    type PurchaseProductOption,
+    type PurchaseStatusValue,
+    type SupplierOption,
+} from '@/types/models';
 import { router, useForm } from '@inertiajs/react';
 import { Trash2 } from 'lucide-react';
-import { FormEventHandler } from 'react';
-
-interface ProductOption {
-    id: number;
-    name: string;
-    sku: string;
-    avg_cost: number;
-}
-
-interface SupplierOption {
-    id: number;
-    name: string;
-}
+import { FormEventHandler, useState } from 'react';
+import { toast } from 'sonner';
 
 interface PurchaseFormProps {
     mode: 'create' | 'edit';
     purchase?: PurchaseFormDetail;
-    suppliers: SupplierOption[];
-    products: ProductOption[];
+    /** The already-picked supplier's data — `null` for a fresh create form. */
+    initialSupplier: SupplierOption | null;
+    /** Every product referenced by `purchase.items` — empty for a fresh create form. */
+    initialProducts: PurchaseProductOption[];
 }
 
-const today = () => new Date().toISOString().slice(0, 10);
 const emptyItem: PurchaseFormItem = { product_id: 0, quantity: 1, unit_price: 0 };
 
-export default function PurchaseForm({ mode, purchase, suppliers, products }: PurchaseFormProps) {
+/**
+ * Re-keys a `{ index: T }` map after an item at `removedIndex` is spliced
+ * out — every entry past it shifts down by one, matching the new `items` array.
+ */
+function reindexAfterRemoval<T>(map: Record<number, T>, removedIndex: number): Record<number, T> {
+    const next: Record<number, T> = {};
+
+    for (const [key, entry] of Object.entries(map)) {
+        const index = Number(key);
+
+        if (index < removedIndex) {
+            next[index] = entry;
+        } else if (index > removedIndex) {
+            next[index - 1] = entry;
+        }
+    }
+
+    return next;
+}
+
+export default function PurchaseForm({ mode, purchase, initialSupplier, initialProducts }: PurchaseFormProps) {
     const money = useMoneyFormat();
 
     const form = useForm({
-        supplier_id: purchase?.supplier_id ?? suppliers[0]?.id ?? 0,
+        supplier_id: purchase?.supplier_id ?? 0,
         purchase_date: purchase?.purchase_date ?? today(),
         status: (purchase?.status ?? 'draft') as PurchaseStatusValue,
         items: purchase?.items ?? [{ ...emptyItem }],
     });
 
-    const productById = (id: number) => products.find((product) => product.id === id);
+    const [supplier, setSupplier] = useState<SupplierOption | null>(initialSupplier);
+
+    // Selected product per item row, keyed by row index — the form's own `items` only carries
+    // `product_id` for submission, this is purely so each row's picker can show a label (doc/corrections2.md #8:
+    // the full product catalog is no longer preloaded, so a row can't just look its id up in a big local array).
+    const [selectedProducts, setSelectedProducts] = useState<Record<number, PurchaseProductOption>>(() => {
+        const byId = new Map(initialProducts.map((product) => [product.id, product]));
+        const seeded: Record<number, PurchaseProductOption> = {};
+
+        (purchase?.items ?? []).forEach((item, index) => {
+            const product = byId.get(item.product_id);
+
+            if (product) {
+                seeded[index] = product;
+            }
+        });
+
+        return seeded;
+    });
 
     const updateItem = (index: number, changes: Partial<PurchaseFormItem>) => {
         const items = [...form.data.items];
@@ -50,9 +86,19 @@ export default function PurchaseForm({ mode, purchase, suppliers, products }: Pu
         form.setData('items', items);
     };
 
-    const onProductChange = (index: number, productId: number) => {
-        const product = productById(productId);
-        updateItem(index, { product_id: productId, unit_price: product?.avg_cost ?? 0 });
+    const onProductChange = (index: number, product: PurchaseProductOption | null) => {
+        setSelectedProducts((current) => {
+            const next = { ...current };
+
+            if (product) {
+                next[index] = product;
+            } else {
+                delete next[index];
+            }
+
+            return next;
+        });
+        updateItem(index, { product_id: product?.id ?? 0, unit_price: product?.avg_cost ?? 0 });
     };
 
     const addItem = () => form.setData('items', [...form.data.items, { ...emptyItem }]);
@@ -61,10 +107,12 @@ export default function PurchaseForm({ mode, purchase, suppliers, products }: Pu
         if (form.data.items.length <= 1) {
             return;
         }
+
         form.setData(
             'items',
             form.data.items.filter((_, i) => i !== index),
         );
+        setSelectedProducts((current) => reindexAfterRemoval(current, index));
     };
 
     const total = form.data.items.reduce((sum, item) => sum + item.quantity * item.unit_price, 0);
@@ -73,9 +121,9 @@ export default function PurchaseForm({ mode, purchase, suppliers, products }: Pu
         e.preventDefault();
 
         if (mode === 'edit' && purchase) {
-            form.patch(route('purchases.update', purchase.id));
+            form.patch(route('purchases.update', purchase.id), { onSuccess: () => toast.success('Purchase updated.') });
         } else {
-            form.post(route('purchases.store'));
+            form.post(route('purchases.store'), { onSuccess: () => toast.success('Purchase created.') });
         }
     };
 
@@ -83,36 +131,34 @@ export default function PurchaseForm({ mode, purchase, suppliers, products }: Pu
         <form onSubmit={submit} className="space-y-6">
             <div className="grid gap-4 rounded-lg border p-4 sm:grid-cols-3">
                 <div className="grid gap-2">
-                    <Label htmlFor="supplier_id">Supplier</Label>
-                    <Select
-                        value={form.data.supplier_id ? String(form.data.supplier_id) : ''}
-                        onValueChange={(value) => form.setData('supplier_id', Number(value))}
-                    >
-                        <SelectTrigger id="supplier_id">
-                            <SelectValue placeholder="Select a supplier" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {suppliers.map((supplier) => (
-                                <SelectItem key={supplier.id} value={String(supplier.id)}>
-                                    {supplier.name}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
+                    <Label htmlFor="supplier_id" required>
+                        Supplier
+                    </Label>
+                    <SearchableSelect
+                        id="supplier_id"
+                        value={supplier}
+                        onChange={(next) => {
+                            setSupplier(next);
+                            form.setData('supplier_id', next?.id ?? 0);
+                        }}
+                        getLabel={(option) => option.name}
+                        getSublabel={(option) => option.phone ?? ''}
+                        searchUrl={route('contacts.search')}
+                        searchParams={{ type: 'supplier' }}
+                        placeholder="Search a supplier by name or phone"
+                    />
                     <InputError message={form.errors.supplier_id} />
                 </div>
 
-                <div className="grid gap-2">
-                    <Label htmlFor="purchase_date">Purchase Date</Label>
-                    <Input
-                        id="purchase_date"
-                        type="date"
-                        value={form.data.purchase_date}
-                        onChange={(e) => form.setData('purchase_date', e.target.value)}
-                        required
-                    />
-                    <InputError message={form.errors.purchase_date} />
-                </div>
+                <FormInput
+                    id="purchase_date"
+                    label="Purchase Date"
+                    type="date"
+                    value={form.data.purchase_date}
+                    onChange={(e) => form.setData('purchase_date', e.target.value)}
+                    error={form.errors.purchase_date}
+                    required
+                />
 
                 <div className="grid gap-2">
                     <Label htmlFor="status">Status</Label>
@@ -153,27 +199,21 @@ export default function PurchaseForm({ mode, purchase, suppliers, products }: Pu
                             {form.data.items.map((item, index) => (
                                 <tr key={index} className="border-t">
                                     <td className="py-2 pr-2">
-                                        <Select
-                                            value={item.product_id ? String(item.product_id) : ''}
-                                            onValueChange={(value) => onProductChange(index, Number(value))}
-                                        >
-                                            <SelectTrigger>
-                                                <SelectValue placeholder="Select a product" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                {products.map((product) => (
-                                                    <SelectItem key={product.id} value={String(product.id)}>
-                                                        {product.name} — {product.sku}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
+                                        <SearchableSelect
+                                            value={selectedProducts[index] ?? null}
+                                            onChange={(product) => onProductChange(index, product)}
+                                            getLabel={(option) => option.name}
+                                            getSublabel={(option) => option.sku}
+                                            searchUrl={route('products.search')}
+                                            placeholder="Search a product by name, SKU or barcode"
+                                        />
                                         <InputError message={(form.errors as Record<string, string>)[`items.${index}.product_id`]} />
                                     </td>
                                     <td className="py-2 pr-2">
-                                        <Input
+                                        <FormInput
+                                            id={`purchase-item-${index}-quantity`}
                                             type="number"
-                                            step="0.01"
+                                            step="1"
                                             min={0}
                                             value={item.quantity}
                                             onChange={(e) => updateItem(index, { quantity: Number(e.target.value) })}

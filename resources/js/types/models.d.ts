@@ -13,6 +13,12 @@ export interface Settings {
     emi_module_enabled: boolean;
     serial_number_module_enabled: boolean;
     fiscal_year_start_month: number;
+    pagination_per_page_options: number[];
+    pagination_default_per_page: number;
+    pagination_allow_all: boolean;
+    activity_log_retention_months: number;
+    theme_color: string;
+    menu_order: { top: string[]; sub: Record<string, string[]> } | null;
 }
 
 export interface AccountType {
@@ -79,6 +85,8 @@ export interface Paginated<T> {
     current_page: number;
     last_page: number;
     total: number;
+    from: number | null;
+    to: number | null;
     prev_page_url: string | null;
     next_page_url: string | null;
 }
@@ -129,7 +137,7 @@ export interface ProductListItem {
     name: string;
     sku: string;
     barcode: string | null;
-    category: { id: number; name: string };
+    category: { id: number; name: string } | null;
     brand: { id: number; name: string } | null;
     unit: { id: number; name: string };
     avg_cost: number;
@@ -150,7 +158,7 @@ export interface ProductDetail {
     name: string;
     sku: string;
     barcode: string | null;
-    category_id: number;
+    category_id: number | null;
     brand_id: number | null;
     unit_id: number;
     selling_price: number;
@@ -165,10 +173,18 @@ export interface ProductDetail {
     current_stock: number;
     can_set_opening_stock: boolean;
     image_url: string | null;
+    service_plan: ServicePlanPeriod[];
+}
+
+export interface ServicePlanPeriod {
+    period_months: number;
+    free_quota: number;
 }
 
 export type ContactType = 'customer' | 'supplier' | 'both';
 export type ContactEntityType = 'individual' | 'business';
+export type ContactPrefixValue = 'mr' | 'mrs' | 'ms' | 'dr' | 'mx';
+export type MessageChannel = 'sms' | 'whatsapp' | 'email';
 
 export interface CustomerGroup {
     id: number;
@@ -182,14 +198,34 @@ export interface CustomerGroupListItem {
     can_delete: boolean;
 }
 
-export interface ContactListItem {
+/**
+ * The structured-identity fields the Contact create/edit modal captures —
+ * shared by `ContactListItem` (the primary "open for edit" source, on the
+ * list page) and `ContactDetail` (the contact show page, which can also
+ * open the same modal). `name` stays the single always-populated display
+ * field; these are additional structure the backend composes it from.
+ */
+interface ContactProfileFields {
+    prefix: ContactPrefixValue | null;
+    first_name: string | null;
+    middle_name: string | null;
+    last_name: string | null;
+    contact_code: string | null;
+    phone_alternate: string | null;
+    reference: string | null;
+}
+
+export interface ContactListItem extends ContactProfileFields {
     id: number;
     name: string;
     phone: string;
     email: string | null;
+    address: string | null;
+    shipping_address: string | null;
     type: ContactType;
     entity_type: ContactEntityType;
     business_name: string | null;
+    customer_group_id: number | null;
     customer_group: { id: number; name: string } | null;
     balance: number;
     balance_label: string;
@@ -198,7 +234,7 @@ export interface ContactListItem {
     can_set_opening_balance: boolean;
 }
 
-export interface ContactDetail {
+export interface ContactDetail extends ContactProfileFields {
     id: number;
     name: string;
     phone: string;
@@ -216,6 +252,13 @@ export interface ContactDetail {
     can_set_opening_balance: boolean;
 }
 
+export interface ContactLedgerLineItem {
+    product: string;
+    quantity: number;
+    unit_price: number;
+    subtotal: number;
+}
+
 export interface ContactLedgerEntry {
     id: number;
     type: string;
@@ -223,6 +266,10 @@ export interface ContactLedgerEntry {
     note: string | null;
     reference_type: string | null;
     reference_id: number | null;
+    /** e.g. the sale/purchase invoice number, sales order number, expense category, or account name — resolved server-side from `reference_type`/`reference_id`. */
+    reference_label: string | null;
+    /** Product line items for sale/purchase/return/sales-order entries — empty for payments, opening balance, adjustments, etc. */
+    items: ContactLedgerLineItem[];
     created_at: string;
     balance: number;
 }
@@ -266,6 +313,28 @@ export interface PurchaseFormDetail {
     purchase_date: string;
     status: PurchaseStatusValue;
     items: PurchaseFormItem[];
+}
+
+/** Matches `ProductSearchController`'s response shape (doc/corrections2.md #8) — same for a search result or an edit form's already-picked product. */
+export interface PurchaseProductOption {
+    id: number;
+    name: string;
+    sku: string;
+    barcode: string | null;
+    selling_price: number;
+    avg_cost: number;
+    current_stock: number;
+    track_serial_number: boolean;
+    has_installation_service: boolean;
+}
+
+/** Matches `ContactSearchController`'s response shape. */
+export interface SupplierOption {
+    id: number;
+    name: string;
+    phone: string | null;
+    business_name: string | null;
+    balance: number;
 }
 
 export interface PurchaseItemDetail {
@@ -327,7 +396,21 @@ export interface SaleFormDetail {
     discount_value: number;
     valid_until: string | null;
     financing_type: 'one_time' | 'emi';
+    installment_count: number | null;
     items: SaleFormItem[];
+}
+
+export type EmiInstallmentStatusValue = 'pending' | 'paid' | 'overdue';
+
+export interface EmiInstallmentListItem {
+    id: number;
+    invoice_no: string;
+    customer: { id: number; name: string };
+    installment_number: number;
+    due_date: string;
+    amount: number;
+    paid_amount: number;
+    status: EmiInstallmentStatusValue;
 }
 
 export interface SaleItemDetail {
@@ -360,12 +443,24 @@ export interface SaleDetail {
     status: SaleStatusValue;
     source: SaleSourceValue;
     can_edit: boolean;
+    payment_history: SalePaymentHistoryEntry[];
     items: SaleItemDetail[];
 }
 
+export interface SalePaymentHistoryEntry {
+    id: number;
+    date: string;
+    account: string;
+    amount: number;
+    kind: 'payment' | 'refund';
+}
+
+/** Matches `ContactSearchController`'s response shape (same as `SupplierOption`, kept separate for readability at call sites). */
 export interface CustomerOption {
     id: number;
     name: string;
+    phone: string | null;
+    business_name: string | null;
     balance: number;
 }
 
@@ -436,6 +531,8 @@ export interface JournalEntryListItem {
     status: 'posted' | 'reversed';
     total_debit: number;
     total_credit: number;
+    /** True when this entry is itself a reversal of another — it can never be reversed again. */
+    is_reversal: boolean;
 }
 
 export interface JournalEntryLineDetail {
@@ -540,6 +637,24 @@ export interface SalesOrderItemDetail {
     subtotal: number;
 }
 
+export interface ExpenseCategoryOption {
+    id: number;
+    name: string;
+}
+
+export interface ExpenseListItem {
+    id: number;
+    category: { id: number; name: string };
+    contact: { id: number; name: string } | null;
+    total_amount: number;
+    paid_amount: number;
+    due_amount: number;
+    payment_status: PaymentStatusValue;
+    expense_date: string;
+    note: string | null;
+    can_edit: boolean;
+}
+
 export interface SalesOrderDetail {
     id: number;
     order_no: string;
@@ -604,4 +719,351 @@ export interface PurchaseReturnDetail {
     total_amount: number;
     reason: string | null;
     items: PurchaseReturnItemDetail[];
+}
+
+/** Shared shape for the Asset/Company Loan/Investor/Other Liability ledger — same running-balance table on every Detail page. */
+export interface LedgerTransactionRow {
+    id: number;
+    type: string;
+    amount: number;
+    account: { id: number; name: string } | null;
+    note: string | null;
+    created_at: string;
+    balance: number;
+}
+
+export type AssetTransactionTypeValue = 'opening_asset' | 'purchase' | 'addition' | 'sold' | 'disposal';
+
+export interface AssetListItem {
+    id: number;
+    name: string;
+    category: string | null;
+    opening_value: number;
+    current_value: number;
+    purchase_date: string | null;
+    can_delete: boolean;
+    can_edit_opening_value: boolean;
+}
+
+export interface AssetDetail {
+    id: number;
+    name: string;
+    category: string | null;
+    current_value: number;
+    purchase_date: string | null;
+}
+
+export type LoanTransactionTypeValue = 'disbursement' | 'repayment' | 'interest_charge' | 'adjustment';
+
+export interface CompanyLoanListItem {
+    id: number;
+    lender_name: string;
+    loan_amount: number;
+    interest_rate: number | null;
+    outstanding_balance: number;
+    start_date: string;
+    can_delete: boolean;
+}
+
+export interface CompanyLoanDetail {
+    id: number;
+    lender_name: string;
+    loan_amount: number;
+    interest_rate: number | null;
+    outstanding_balance: number;
+    start_date: string;
+}
+
+export type InvestorTransactionTypeValue = 'investment' | 'profit_share' | 'withdrawal' | 'adjustment';
+
+export interface InvestorListItem {
+    id: number;
+    name: string;
+    total_invested: number;
+    can_delete: boolean;
+}
+
+export interface InvestorDetail {
+    id: number;
+    name: string;
+    total_invested: number;
+}
+
+export type OtherLiabilityTransactionTypeValue = 'opening_liability' | 'increase' | 'payment' | 'adjustment';
+
+export interface OtherLiabilityListItem {
+    id: number;
+    name: string;
+    opening_amount: number;
+    current_balance: number;
+    can_delete: boolean;
+    can_edit_opening_amount: boolean;
+}
+
+export interface OtherLiabilityDetail {
+    id: number;
+    name: string;
+    current_balance: number;
+}
+
+export type StaffStatusValue = 'active' | 'inactive';
+export type BalanceEffectValue = 'increase' | 'decrease';
+export type StaffTransactionNatureValue = 'expense' | 'settlement' | 'advance' | 'adjustment';
+
+export interface StaffTransactionTypeOption {
+    id: number;
+    name: string;
+    effect_on_balance: BalanceEffectValue;
+    nature: StaffTransactionNatureValue;
+}
+
+export interface StaffListItem {
+    id: number;
+    name: string;
+    phone: string | null;
+    designation: string | null;
+    joining_date: string | null;
+    salary_amount: number;
+    status: StaffStatusValue;
+    investor: { id: number; name: string } | null;
+    balance: number;
+    can_delete: boolean;
+}
+
+export interface StaffDetail {
+    id: number;
+    name: string;
+    designation: string | null;
+    salary_amount: number;
+    balance: number;
+    balance_label: string;
+}
+
+export interface StaffLedgerRow {
+    id: number;
+    type: { id: number; name: string };
+    amount: number;
+    account: { id: number; name: string } | null;
+    note: string | null;
+    created_at: string;
+    balance: number;
+}
+
+export type ServiceRequestTypeValue = 'installation' | 'service';
+export type ServiceRequestStatusValue = 'pending' | 'scheduled' | 'completed' | 'cancelled';
+export type WarrantyClaimStatusValue = 'pending' | 'in_progress' | 'resolved' | 'rejected';
+
+export interface ServiceRequestListItem {
+    id: number;
+    product: { id: number; name: string; sku: string };
+    invoice_no: string;
+    customer: { id: number; name: string };
+    type: ServiceRequestTypeValue;
+    is_free: boolean;
+    charge_amount: number;
+    staff: { id: number; name: string } | null;
+    status: ServiceRequestStatusValue;
+    request_date: string;
+}
+
+export interface ServiceableSaleItem {
+    id: number;
+    product: { id: number; name: string; sku: string };
+    invoice_no: string;
+    customer: { id: number; name: string };
+    is_next_free: boolean;
+}
+
+export interface WarrantyableSaleItem {
+    id: number;
+    product: { id: number; name: string; sku: string };
+    invoice_no: string;
+    customer: { id: number; name: string };
+    warranty_expires_at: string | null;
+}
+
+export interface WarrantyClaimListItem {
+    id: number;
+    product: { id: number; name: string; sku: string };
+    invoice_no: string;
+    customer: { id: number; name: string };
+    warranty_expires_at: string | null;
+    claim_date: string;
+    issue_description: string;
+    status: WarrantyClaimStatusValue;
+    resolution_note: string | null;
+}
+
+export interface QuickAction {
+    label: string;
+    href: string;
+}
+
+/** Keep in sync with `App\Enums\DateRangePreset`. */
+export type DateRangePresetValue =
+    | 'today'
+    | 'yesterday'
+    | 'last_7_days'
+    | 'last_30_days'
+    | 'this_month'
+    | 'last_month'
+    | 'this_month_last_year'
+    | 'this_year'
+    | 'last_year'
+    | 'custom';
+
+export interface DashboardRange {
+    preset: DateRangePresetValue;
+    from: string;
+    to: string;
+}
+
+/** Sales/Purchases & Expenses cards — filtered by `DashboardRange` (doc/corrections2.md #4). */
+export interface DashboardMetrics {
+    totalSales: number;
+    netSales: number;
+    invoiceDue: number;
+    totalSellReturn: number;
+    totalPurchase: number;
+    purchaseDue: number;
+    totalPurchaseReturn: number;
+    totalExpense: number;
+}
+
+/** Point-in-time balances (Chart-of-Accounts-sourced) — not affected by the date filter. */
+export interface DashboardBalances {
+    totalReceivable: number;
+    totalPayable: number;
+    cashAndBank: number;
+    lowStockCount: number;
+}
+
+export interface DashboardDailySalesPoint {
+    date: string;
+    total: number;
+}
+
+export interface DashboardMonthlySalesPoint {
+    month: string;
+    label: string;
+    total: number;
+}
+
+export interface ChartOfAccountLine {
+    id: number;
+    code: string;
+    name: string;
+    amount: number;
+}
+
+export interface BalanceSheetAccountRow {
+    id: number;
+    code: string;
+    name: string;
+    balance: number;
+}
+
+export interface QuickBalanceSheet {
+    receivable: number;
+    payable: number;
+    inventory: number;
+    cashAndBank: number;
+}
+
+export interface FullFinancialPosition {
+    assets: BalanceSheetAccountRow[];
+    liabilities: BalanceSheetAccountRow[];
+    equity: BalanceSheetAccountRow[];
+    netProfit: number;
+    assetsTotal: number;
+    liabilitiesAndEquityTotal: number;
+}
+
+/** One as-of-date section of `FinancialPositionReportData` — e.g. Sundry Debtors, Cash at Bank. */
+export interface FinancialPositionSection {
+    total: number;
+    breakdown: { name: string; amount: number }[];
+}
+
+/** `FinancialPositionReport::forEndDate()` — the ledger-per-module report, distinct from `FullFinancialPosition` (Chart-of-Accounts based). */
+export interface FinancialPositionReportData {
+    end_date: string;
+    assets: {
+        closing_stock: FinancialPositionSection;
+        sundry_debtors: FinancialPositionSection;
+        staff_advances: FinancialPositionSection;
+        cash_and_bank: FinancialPositionSection;
+        other_assets: FinancialPositionSection;
+        total: number;
+    };
+    liabilities: {
+        investor_capital: FinancialPositionSection;
+        company_loans: FinancialPositionSection;
+        sundry_creditors: FinancialPositionSection;
+        other_liabilities: FinancialPositionSection;
+        net_profit: number;
+        total: number;
+    };
+}
+
+export interface TrialBalanceRow {
+    id: number;
+    code: string;
+    name: string;
+    debit: number;
+    credit: number;
+}
+
+export interface CashFlowTypeRow {
+    type: string;
+    total: number;
+}
+
+export interface StockReportRow {
+    id: number;
+    name: string;
+    sku: string;
+    current_stock: number;
+    avg_cost: number;
+    stock_value: number;
+    stock_status: 'in_stock' | 'low_stock' | 'out_of_stock';
+}
+
+export interface DueRow {
+    id: number;
+    name: string;
+    phone?: string;
+    balance: number;
+}
+
+export interface TrendingProductRow {
+    id: number;
+    name: string;
+    sku: string;
+    quantity_sold: number;
+    revenue: number;
+}
+
+export interface PermissionOption {
+    id: number;
+    name: string;
+    action: string;
+}
+
+export interface RoleListItem {
+    id: number;
+    name: string;
+    users_count: number;
+    permissions: string[];
+    protected: boolean;
+}
+
+export interface RoleUserListItem {
+    id: number;
+    name: string;
+    email: string;
+    username: string | null;
+    is_active: boolean;
+    roles: string[];
+    can_delete: boolean;
 }

@@ -664,6 +664,12 @@ Profit       = Revenue − COGS − Expenses
 ```
 Total due (any time) = `SUM(due_amount)` across expenses/purchases/sales, optionally filtered by category/contact.
 
+**Implemented as-is (Phase 9 of TASKS.md), plus a few gaps this doc left open, filled in consistently with the rest of V2:**
+- Every `expense_category` auto-creates its own 52xx sub-account under 5200 "General Expenses" (which becomes a pure parent, exactly like 1010/1020) — this doc didn't say how the "5200+" numbering should actually be assigned, so `CreateExpenseCategoryAction` mirrors `CreateAccountAction`'s existing pattern.
+- Creation and Payment are two separate steps, matching the master reference's "Add/Edit → Modal · Payment → Modal" split literally: `CreateExpenseAction` never takes a payment, it always starts fully due; `AddExpensePaymentAction` is the only place cash moves, later, one or more times.
+- Journal posting (not in this doc's original snippets, added per the V2 standing rule that every money-movement Action posts one): Dr {category's sub-account} / Cr Accounts Payable (2100) at creation — regardless of whether `contact_id` is set, since Accounts Payable is where every unpaid expense sits either way; Dr Accounts Payable / Cr {account} per payment.
+- Edit is only reachable while nothing's been paid yet (`Expense::canEdit()`) — since creation already posts a journal entry immediately (Expense has no Draft/Confirm split like Sale/Purchase), a correction reverses the old entry and posts a fresh one, and cancels/reapplies the old contact_ledger contribution the same way, rather than ever editing either in place.
+
 ---
 
 ## Phase 8: Assets Module
@@ -888,6 +894,12 @@ Equity side = `investors.total_invested` + accumulated profit.
 
 This full picture (Balance Sheet) will be a computed report in the future Dashboard/Reports phase — not new data-entry tables beyond `other_liabilities`.
 
+**Implemented as TASKS.md Phase 10, plus V2 journal posting (not in this doc's original snippets, added per the standing rule that every money-movement Action posts one) and a few gaps this doc left open:**
+- Asset/Company Loan/Investor/Other Liability each post against **one shared control account** (1400/2200/3100/2300 respectively), never a per-row sub-account — the same relationship contacts have with 1100/2100: `asset_transactions`/`loan_transactions`/`investor_transactions`/`other_liability_transactions` are each row's own subsidiary ledger, so the control account is a rollup, not a 1:1 mapping (unlike Accounts or Expense Categories, which have no such subsidiary ledger of their own and so do get an auto-created sub-account each).
+- Asset's Gain/Loss on Sale needed accounts this doc didn't name — added **4300 Gain on Asset Disposal** (income) and **5950 Loss on Asset Disposal** (expense); `disposal` (a write-off with no sale) posts the entire book value to 5950.
+- Every module's `adjustment` type (Company Loan, Investor, Other Liability all have one, described only as "correction, situational") posts against **3300 Opening Balance Equity** via the same `JournalService::postOpeningBalance()` helper opening entries already use — a sign-based Dr/Cr router that fits an undirected correction as well as an opening balance.
+- `HasLedger` (পর্ব ১৭.৩) ended up needing one addition beyond its original sketch: a `ledgerBalanceColumn()` method each model implements, since the four cached-balance columns keep the different names this doc's Balance Sheet formula (above) references (`current_value`/`outstanding_balance`/`total_invested`/`current_balance`) rather than being unified into one column name.
+
 ---
 
 # Part III — মানুষ, রিপোর্ট ও UX
@@ -1014,6 +1026,13 @@ Staff::increment('balance', X);
 ```
 Rationale: advance and loan behave identically (money given to staff, staff owes it back, net-settles naturally through the ledger sum); keeping them as separate `type` values (not separate tables/logic) gives reporting distinction without duplicating logic. If interest/scheduling is ever needed for loans specifically, extend via a new ledger type rather than restructuring.
 
+**Implemented as TASKS.md Phase 11, plus V2 journal posting and one structural addition the doc's code snippets didn't need to spell out:**
+- Every `staff_transaction_types` row (default or admin-added) now also declares a **`nature`** (`StaffTransactionNature`: expense/settlement/advance/adjustment) alongside `effect_on_balance`. The doc's own PHP snippets branch behavior by the type's *name* ("Salary Charge", "Advance Given"...), which works for a fixed enum but not for a genuinely admin-manageable lookup — a shop owner adding a new type later has no name the code recognizes. `nature` is the fixed, small vocabulary the journal actually switches on, independent of what the type is called.
+- Salary Charge posts Dr **5210 Salary Expense** / Cr **2250 Staff Payable** (both new — the doc's liability side wasn't named) instead of also creating an `expenses` row as literally described; doing both would book the same liability twice (once in 2250, once in 2100 via the Expense module). The `expenses`-row mirroring can be added properly once Phase 15's P&L report actually needs to source salary from there.
+- Salary Payment settles 2250 the same way Expense's own payment settles 2100 — Dr 2250 / Cr {account}.
+- Advance Given and Loan Given share one GL shape (Dr 1300 Staff Advances / Cr {account}) but tag `account_transactions.type` differently (`staff_advance` vs `staff_loan`) for the reporting split the doc asks for.
+- Adjustment can land on either side of staff's balance (1300 when they owe the company, 2250 when the company owes them) — the counterpart account is chosen from the balance's sign *before* the adjustment, not after, so a correction crossing zero doesn't try to move value between two different control accounts mid-transaction.
+
 ---
 
 ## Phase 14: Dashboard / Reports Module
@@ -1102,6 +1121,13 @@ Note: **Staff advance/loan balances belong on the Assets side** (staff owing the
 
 ### Performance Note — deferred optimization ✅
 Reports query live data directly for now (fine at current scale). If aggregation becomes slow as data grows (per the earlier stock_movements performance discussion), a future `daily_summaries` cache table (pre-computed daily totals for sales/expenses/profit) can be added without changing the underlying schema — not needed at this stage.
+
+**Implemented as TASKS.md Phase 15, entirely on the Phase 35-superseded GL-sourced formulas (not this section's original per-module ones), plus three findings from actually building the Reconciliation Check (two fixed, one still open):**
+- P&L, both Balance Sheets, and Trial Balance never touch `sales`/`sale_items`/`expenses`/`accounts.current_balance`/`contacts.balance`/`other_liabilities.current_balance`/`investors.total_invested`/`company_loans.outstanding_balance` — only `chart_of_accounts.balance` (a point-in-time cached figure) or, for a date-ranged report (P&L, Cash Flow, Trending Products), `journal_entry_lines` summed within that range. Cash Flow, Stock Report, Due Report, and Trending Products stay on subsidiary tables directly, per the Phase 35 rule that only Trial Balance/P&L/Balance Sheet/General Ledger are restricted to the Journal.
+- Quick Actions ships with no permission filter — Role & Permission (Phase 18) is deliberately the very last phase, so there's nothing to filter by yet; every action is shown to any authenticated user, matching how every other page in the app is guarded today (`auth` middleware alone).
+- **Found and fixed (1)**: Product opening stock never posted a journal entry (only `stock_movements`), unlike every other opening balance in the app (Account/Contact/Asset/OtherLiability all post Dr subject/Cr 3300). This meant Inventory (1200)'s GL balance permanently under-counted real stock value by every product's opening quantity — invisible until the Reconciliation Check below made it show up as a hard mismatch. Fixed with a shared `PostOpeningStockJournal` action, called from `CreateProductAction`, `UpdateProductAction`, and `OpeningStockImport` (Phase 14) alike.
+- **Found and fixed (2)**: `ConvertSalesOrderToSaleAction` (Phase 21) never cleared a Sales Order's advance out of 2150 Customer Advances when the order converted into a real Sale — `ConfirmSaleAction` debited 1100 for the sale's *full* total regardless, so 1100 stayed overstated by every converted order's advance indefinitely, even though `Sale::recalculatePaymentTotals()` correctly netted the advance out on the subsidiary side (`contacts.balance`/`due_amount`), making the sale *look* fully settled operationally. Fixed by adding a Dr 2150/Cr 1100 clearing line to `ConfirmSaleAction::postJournal()` whenever the sale has a `sales_order_id`, sized to that order's advance (read from the same never-rewritten `account_transactions` row `Sale::recalculatePaymentTotals()` already reads) — verified against the seeded demo data (Receivable mismatch dropped by exactly the converted order's advance) and a new `SalesOrderTest.php` case.
+- **Found, not fixed — flagged for a follow-up task**: even after both fixes, `reconciliation:check` still reports a residual Receivable/Payable mismatch against the seeded demo data (which never exercises the path below, so it isn't the direct cause there, but is a real latent gap regardless). `RecordContactPaymentAction` — the standalone "Pay Due Amount" flow off the Contact Detail page, and exactly what the new Dashboard Quick Actions' "Receive Payment"/"Make Payment" buttons lead to — touches `AccountService` and `LedgerService` but has no `JournalService` dependency at all, so a payment recorded this way updates `contacts.balance`/`accounts.current_balance` correctly but never touches 1100/2100 in the General Ledger. Left unfixed rather than silently patched, since it touches a different already-shipped module (Contact/Account payments, Phase 2/4) than the one just discussed — a decision for the user. The residual demo-data mismatch's own root cause (likely Sale/Purchase Returns or another interaction) also hasn't been fully traced.
 
 ---
 
@@ -1631,6 +1657,15 @@ sales
 - `source: imported` → creates `sales`/`sale_items` rows for historical reporting (customer purchase history, past sales trends) **only** — no `stock_movements`, no `contact_ledger`, no `account_transactions` created.
 - `source: manual` → full normal flow as already designed.
 
+**Implemented as TASKS.md Phase 14, alongside Import Products/Contacts/Opening Stock (this doc's own "18. Import Tools" line item — no dedicated design section existed for those three beyond the sidebar listing, so their column layout and matching rules were designed fresh, following the same spirit as Import Sales above):**
+- Import Sales needed no new stock/ledger logic at all — it's built entirely on `CreateSaleAction` + `ConfirmSaleAction`'s pre-existing `source: imported` branch (Phase 4/6), the exact same path `DummyDataSeeder`'s own historical-record demo sale already exercises. The one real gap: `CreateSaleAction` always drew a fresh invoice number, with no way to carry a historical one forward — fixed by letting `$data['invoice_no']` override the auto-generated one when present (falls back to `Settings::current()->generateInvoiceNumber()` otherwise, so every existing caller is unaffected).
+- "Item Discount" from the field-mapping table above is **not** imported as a literal value — `sale_items.discount_amount`/`original_price` are always derived from `unit_price` vs. the product's *current* `selling_price` (`SaleTotals::sync`), and a historical sale's real selling price at the time rarely matches today's. Rather than bend that derivation to fit one imported field, the imported `unit_price` is trusted as the actual amount paid, and `original_price`/`discount_amount` on an imported item are a known, documented approximation (today's pricing, not the historical one) — same tier of accepted imprecision as "Order Total: validation only, not stored separately" already was.
+- A product/contact not found is never auto-created during Import Sales (matched by SKU/name, phone/email respectively) — an unresolved product skips the *whole* invoice group (a Sale can't be created with a missing line), while an unresolved customer is created on the spot (mirrors Import Sales' own "created if not found" rule for customers specifically).
+- Import Products auto-creates missing Category/Unit/Brand by name (`firstOrCreate`) rather than skip/error — unlike Products themselves (matched strictly by SKU, never auto-created), these three are already treated as cheap, freely-creatable lookups everywhere in the UI (any form's `LookupManagerModal` lets an operator add one inline).
+- Import Opening Stock is a separate upload from Import Products (matched by SKU against products that already exist) and reuses `Product::canSetOpeningStock()` — the exact same one-shot guard the Product edit form already enforces, so a SKU that already has any stock movement is skipped with a message pointing at Stock Adjustment instead.
+- **Undocumented gotcha found during implementation**: PhpSpreadsheet's CSV reader auto-detects any all-digit or leading-"+" cell as numeric, silently mangling phone numbers, invoice numbers, and zero-padded SKUs. Fixed by having all four Import classes implement `WithCustomValueBinder` (a shared `BindsCellsAsStrings` trait) so every CSV cell is read as a raw string — harmless, since every numeric field these imports need is cast with `(float)`/`(int)` in code regardless, and Laravel's `numeric` validation rule accepts numeric strings just as well.
+- All four imports run synchronously inside the HTTP request (not queued) — this app has no queue worker running by default for anything but Backup Restore (its one existing queued job), and an import's whole point is immediate created/skipped feedback on the same page, not a background status check.
+
 ---
 
 ## Phase 23: Additional Reports & Business Model Clarification
@@ -1888,6 +1923,12 @@ if (!$isFree) {
 ### Sale Item Detail View ✅
 Shows: current period + free services used/remaining in it, warranty expiry (Phase 21), installation status/date — all scoped to that specific sold unit via `sale_item_id`.
 
+**Implemented as TASKS.md Phase 12, plus V2 journal posting and a couple of scope boundaries the doc's snippets didn't need to spell out:**
+- `service_plan_templates` gets no chart-of-accounts sub-account of its own — it's pure scheduling metadata (period length + free quota per product), never posted to directly, unlike Account/ExpenseCategory/Asset/etc. which each represent (or roll up into) a real subsidiary ledger.
+- `sale_item_service_periods` are snapshotted from the product's *current* `service_plan_templates` inside `ConfirmSaleAction`, at the same moment stock/serials/warranty_expires_at are set — so a later edit to the product's service plan never retroactively changes units already sold.
+- The installation `service_request` that gets auto-created on confirm (when `installation_required` is set on the sale item) posts **no journal entry of its own** — its charge already moved as part of the sale's own total, so posting it again here would double-book it. This mirrors the still-open Phase 6 gap where `installation_charge` isn't yet summed into `sale.total_amount`; fixing that total is out of scope for this phase and would need to be done consistently across both places if picked up later.
+- Only `type = service` requests get money-movement treatment (`CreateServiceRequestAction`: free-quota check → Dr {account}/Cr **4200** Service Income when paid). `type = installation` requests are created directly (no Action) since they carry no independent charge to post.
+
 ---
 
 ## Phase 26: EMI/Installment Sale & Serial Number Tracking
@@ -1975,6 +2016,13 @@ sale_item_serials    -- ⚠️ superseded, see Phase 35 §12 — replaced by `se
 ```
 ~~Entry is fully optional — no validation requiring the count to match `quantity`; can be zero, partial, or complete.~~
 This lightweight design was later upgraded to a full lifecycle model once the target market was confirmed to benefit from purchase-through-warranty serial traceability — see Phase 35 §12 for the current, authoritative design.
+
+**Implemented as TASKS.md Phase 13, plus V2 journal posting and a schema placement choice the doc's snippets left open:**
+- `installment_count` lives directly on `sales` (set at creation alongside `financing_type`, not re-collected at confirm time) rather than being threaded through both `SaleConfirmController` (confirming an already-saved Draft later) and the immediate-confirm path in `SaleController::store()`/`update()` — one column, read once inside `ConfirmSaleAction`, instead of two call sites having to agree on an extra parameter.
+- The schedule is generated from `due_amount` *after* `Sale::recalculatePaymentTotals()` has already subtracted out any down payment collected at confirm time — so "down payment now, remainder on EMI" falls out for free without a separate down-payment field. The last installment absorbs the rounding remainder (e.g. ৳100 ÷ 3 → 33.33/33.33/33.34) so the schedule always sums back to exactly `due_amount`.
+- Paying an installment (`PayEmiInstallmentAction`) posts under the parent sale's own `reference_type: 'sale'` (same as `AddSalePaymentAction`'s later top-up payments) — not a separate `emi_installment` reference — so `Sale::recalculatePaymentTotals()` picks every installment payment up automatically without needing its own summing logic.
+- The overdue sweep (`emi:mark-overdue`, scheduled daily) only flips `pending → overdue` on the status column; it triggers no notification yet, since the notification system itself isn't built (this doc's own note above says it "extends the existing `due_payment` notification type" — that type doesn't exist yet either). Wiring the actual alert is left for whichever phase builds notifications.
+- The two-level toggle's Level-1 gate (`settings.emi_module_enabled`/`serial_number_module_enabled`) is read once as part of the existing shared Inertia `shop` prop (alongside `currency_symbol`) rather than a new shared key — every page already receives it for free, matching how `MoneyInput` already reads `shop.currency_symbol` today.
 
 ---
 
@@ -2964,6 +3012,8 @@ if (abs($contactReceivableTotal - $glReceivable) > 0.01) {
 }
 ```
 Same check pattern applies to Accounts Payable (2100) vs supplier dues, and Inventory (1200) vs stock valuation.
+
+**Implemented as `reconciliation:check` (TASKS.md Phase 15)** — built exactly as sketched above (logs a warning rather than an "alert," since no notification system exists yet). It immediately did its job: caught the Product-opening-stock gap and the Sales-Order-advance-vs-1100 gap (both now fixed, see Phase 14's implementation note) and surfaced a still-open `RecordContactPaymentAction`-vs-1100/2100 gap (documented there, not yet fixed) — proof the check catches real divergence, not just theoretical drift.
 
 ### Build Order impact ✅
 Chart of Accounts + Journal Entry + `JournalService` must be built **immediately after Accounts**, before any transaction module (Purchase, Sale, Expense...), since every one of those modules now posts journal entries as part of its core confirm logic.

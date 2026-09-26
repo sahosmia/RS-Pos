@@ -11,6 +11,8 @@ interface FormModalProps {
     processing?: boolean;
     onSubmit: FormEventHandler;
     children: ReactNode;
+    /** Overrides the dialog's default `max-w-lg` — e.g. `sm:max-w-4xl` for a content-heavy form (doc/corrections2.md #5). */
+    contentClassName?: string;
 }
 
 export default function FormModal({
@@ -22,10 +24,11 @@ export default function FormModal({
     processing = false,
     onSubmit,
     children,
+    contentClassName,
 }: FormModalProps) {
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent>
+            <DialogContent className={contentClassName}>
                 <DialogHeader>
                     <DialogTitle>{title}</DialogTitle>
                     {description && <DialogDescription>{description}</DialogDescription>}

@@ -4,6 +4,11 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
+/**
+ * Kept as its own migration (not folded into `create_accounts_table`) because
+ * `chart_of_accounts` is created later — folding this FK into
+ * `create_accounts_table` would run before its target table exists.
+ */
 return new class extends Migration
 {
     /**

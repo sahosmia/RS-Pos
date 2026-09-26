@@ -1,8 +1,8 @@
 <?php
 
-use App\Actions\Purchase\ConfirmPurchaseAction;
-use App\Actions\Sale\CancelSaleAction;
-use App\Actions\Sale\ConfirmSaleAction;
+use App\Actions\Purchases\Purchase\ConfirmPurchaseAction;
+use App\Actions\Sales\Sale\CancelSaleAction;
+use App\Actions\Sales\Sale\ConfirmSaleAction;
 use App\Enums\SerialNumberStatus;
 use App\Exceptions\InvalidSerialSelectionException;
 use App\Models\Contact;

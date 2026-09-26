@@ -17,8 +17,8 @@ return new class extends Migration
             $table->foreignId('account_type_id')->constrained()->restrictOnDelete();
             $table->string('account_sub_type')->nullable();
             $table->text('account_number')->nullable();
-            $table->decimal('opening_balance', 15, 2)->default(0);
-            $table->decimal('current_balance', 15, 2)->default(0);
+            $table->decimal('opening_balance', 19, 4)->default(0);
+            $table->decimal('current_balance', 19, 4)->default(0);
             $table->boolean('is_active')->default(true);
             $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();

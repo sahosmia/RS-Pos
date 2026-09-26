@@ -18,7 +18,7 @@ test('accounts page lists accounts with their balance', function () {
     $this->get('/accounts')
         ->assertOk()
         ->assertInertia(fn ($page) => $page
-            ->component('accounts/index')
+            ->component('accounting/accounts/index')
             ->where('accounts.0.name', 'Cash Drawer')
             ->where('accounts.0.current_balance', 2500)
             ->where('totalBalance', 2500));
@@ -187,7 +187,7 @@ test('statement carries earlier movement in and runs the balance forward', funct
     $this->get("/accounts/{$account->id}/statement?from=2026-02-01&to=2026-02-28")
         ->assertOk()
         ->assertInertia(fn ($page) => $page
-            ->component('accounts/statement')
+            ->component('accounting/accounts/statement')
             ->where('broughtForward', 500)
             ->where('transactions.0.balance', 1100)
             ->where('transactions.1.balance', 900)

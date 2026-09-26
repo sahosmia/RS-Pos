@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\AccountTransactionType;
+use App\Models\Concerns\LogsActivityDefaults;
 use Database\Factories\AccountFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -14,6 +15,8 @@ class Account extends Model
 {
     /** @use HasFactory<AccountFactory> */
     use HasFactory;
+
+    use LogsActivityDefaults;
 
     /**
      * `current_balance` is deliberately not fillable — it may only change

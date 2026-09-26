@@ -12,12 +12,12 @@ const breadcrumbs: BreadcrumbItem[] = [
 ];
 
 interface SalesCreateProps {
-    customers: CustomerOption[];
+    initialCustomer: CustomerOption | null;
     products: ProductOption[];
     accounts: Account[];
 }
 
-export default function SalesCreate({ customers, products, accounts }: SalesCreateProps) {
+export default function SalesCreate({ initialCustomer, products, accounts }: SalesCreateProps) {
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Add Sale" />
@@ -25,7 +25,7 @@ export default function SalesCreate({ customers, products, accounts }: SalesCrea
             <div className="space-y-6 px-4 py-6">
                 <HeadingSmall title="Add Sale" description="F2 = product search · F4 = payment · Enter = confirm · Esc = cancel" />
 
-                <SaleForm mode="create" customers={customers} products={products} accounts={accounts} />
+                <SaleForm mode="create" initialCustomer={initialCustomer} products={products} accounts={accounts} />
             </div>
         </AppLayout>
     );

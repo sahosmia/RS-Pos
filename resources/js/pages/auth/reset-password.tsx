@@ -1,12 +1,14 @@
 import { Head, useForm } from '@inertiajs/react';
-import { LoaderCircle } from 'lucide-react';
+import { ArrowLeft, KeyRound, LoaderCircle, ShieldCheck, Zap } from 'lucide-react';
 import { FormEventHandler } from 'react';
 
+import AuthSplitShell from '@/components/auth/auth-split-shell';
+import { FormInput } from '@/components/form/form-input';
 import InputError from '@/components/input-error';
+import TextLink from '@/components/text-link';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import AuthLayout from '@/layouts/auth-layout';
+import { PasswordInput } from '@/components/ui/password-input';
 
 interface ResetPasswordProps {
     token: string;
@@ -36,63 +38,75 @@ export default function ResetPassword({ token, email }: ResetPasswordProps) {
     };
 
     return (
-        <AuthLayout title="Reset password" description="Please enter your new password below">
-            <Head title="Reset password" />
+        <>
+            <Head title="Reset Password" />
 
-            <form onSubmit={submit}>
-                <div className="grid gap-6">
-                    <div className="grid gap-2">
-                        <Label htmlFor="email">Email</Label>
-                        <Input
+            <AuthSplitShell
+                heading="Reset password"
+                subheading="Please enter your new password below"
+                badge={{ icon: KeyRound, label: 'Account Credentials' }}
+                heroTitle="Set a new password for your account."
+                heroDescription="Ensure your new password is strong and secure to protect your store transaction data and terminal access."
+                features={[
+                    { icon: ShieldCheck, label: 'Secure Encryption', iconClassName: 'h-4 w-4 text-emerald-400' },
+                    { icon: Zap, label: 'Instant Update', iconClassName: 'h-4 w-4 text-amber-400' },
+                ]}
+            >
+                <form className="flex flex-col gap-5" onSubmit={submit}>
+                    <div className="grid gap-5">
+                        <FormInput
                             id="email"
+                            label="Email address"
                             type="email"
                             name="email"
                             autoComplete="email"
                             value={data.email}
-                            className="mt-1 block w-full"
                             readOnly
+                            className="bg-muted/50 cursor-not-allowed"
                             onChange={(e) => setData('email', e.target.value)}
+                            error={errors.email}
                         />
-                        <InputError message={errors.email} className="mt-2" />
-                    </div>
 
-                    <div className="grid gap-2">
-                        <Label htmlFor="password">Password</Label>
-                        <Input
-                            id="password"
-                            type="password"
-                            name="password"
-                            autoComplete="new-password"
-                            value={data.password}
-                            className="mt-1 block w-full"
-                            autoFocus
-                            onChange={(e) => setData('password', e.target.value)}
-                            placeholder="Password"
-                        />
-                        <InputError message={errors.password} />
-                    </div>
+                        <div className="grid gap-2">
+                            <Label htmlFor="password">New Password</Label>
+                            <PasswordInput
+                                id="password"
+                                name="password"
+                                autoComplete="new-password"
+                                value={data.password}
+                                autoFocus
+                                onChange={(e) => setData('password', e.target.value)}
+                                placeholder="••••••••"
+                            />
+                            <InputError message={errors.password} />
+                        </div>
 
-                    <div className="grid gap-2">
-                        <Label htmlFor="password_confirmation">Confirm password</Label>
-                        <Input
-                            id="password_confirmation"
-                            type="password"
-                            name="password_confirmation"
-                            autoComplete="new-password"
-                            value={data.password_confirmation}
-                            className="mt-1 block w-full"
-                            onChange={(e) => setData('password_confirmation', e.target.value)}
-                            placeholder="Confirm password"
-                        />
-                        <InputError message={errors.password_confirmation} className="mt-2" />
-                    </div>
+                        <div className="grid gap-2">
+                            <Label htmlFor="password_confirmation">Confirm Password</Label>
+                            <PasswordInput
+                                id="password_confirmation"
+                                name="password_confirmation"
+                                autoComplete="new-password"
+                                value={data.password_confirmation}
+                                onChange={(e) => setData('password_confirmation', e.target.value)}
+                                placeholder="••••••••"
+                            />
+                            <InputError message={errors.password_confirmation} />
+                        </div>
 
-                    <Button type="submit" className="mt-4 w-full" disabled={processing}>
-                        {processing && <LoaderCircle className="h-4 w-4 animate-spin" />}
-                        Reset password
-                    </Button>
+                        <Button type="submit" className="mt-2 h-11 w-full bg-indigo-600 hover:bg-indigo-700" disabled={processing}>
+                            {processing && <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />}
+                            Reset password
+                        </Button>
+                    </div>
+                </form>
+
+                <div className="text-muted-foreground text-center text-sm">
+                    <TextLink href={route('login')} className="inline-flex items-center gap-1">
+                        <ArrowLeft className="h-3.5 w-3.5" /> Return to log in
+                    </TextLink>
                 </div>
-            </form>
-        </AuthLayout>
+            </AuthSplitShell>
+        </>
     );
 }

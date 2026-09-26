@@ -1,14 +1,11 @@
-// Components
 import { Head, useForm } from '@inertiajs/react';
-import { LoaderCircle } from 'lucide-react';
+import { ArrowLeft, BarChart3, LoaderCircle, ShieldCheck, Zap } from 'lucide-react';
 import { FormEventHandler } from 'react';
 
-import InputError from '@/components/input-error';
+import AuthSplitShell from '@/components/auth/auth-split-shell';
+import { FormInput } from '@/components/form/form-input';
 import TextLink from '@/components/text-link';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import AuthLayout from '@/layouts/auth-layout';
 
 export default function ForgotPassword({ status }: { status?: string }) {
     const { data, setData, post, processing, errors } = useForm({
@@ -17,22 +14,33 @@ export default function ForgotPassword({ status }: { status?: string }) {
 
     const submit: FormEventHandler = (e) => {
         e.preventDefault();
-
         post(route('password.email'));
     };
 
     return (
-        <AuthLayout title="Forgot password" description="Enter your email to receive a password reset link">
-            <Head title="Forgot password" />
+        <>
+            <Head title="Forgot Password" />
 
-            {status && <div className="mb-4 text-center text-sm font-medium text-green-600">{status}</div>}
+            <AuthSplitShell
+                heading="Forgot password"
+                subheading="Enter your email to receive a password reset link"
+                badge={{ icon: ShieldCheck, label: 'Secure Password Recovery' }}
+                heroTitle="Forgot your password? No worries."
+                heroDescription="Enter your registered cashier or staff email address, and we will send you a password reset link to regain access."
+                features={[
+                    { icon: Zap, label: 'Instant Reset Link', iconClassName: 'h-4 w-4 text-amber-400' },
+                    { icon: BarChart3, label: 'Protected Terminal', iconClassName: 'h-4 w-4 text-emerald-400' },
+                ]}
+            >
+                {status && (
+                    <div className="rounded-md bg-green-500/10 p-3 text-center text-sm font-medium text-green-600 dark:text-green-400">{status}</div>
+                )}
 
-            <div className="space-y-6">
-                <form onSubmit={submit}>
-                    <div className="grid gap-2">
-                        <Label htmlFor="email">Email address</Label>
-                        <Input
+                <form className="flex flex-col gap-5" onSubmit={submit}>
+                    <div className="grid gap-5">
+                        <FormInput
                             id="email"
+                            label="Email address"
                             type="email"
                             name="email"
                             autoComplete="off"
@@ -40,24 +48,22 @@ export default function ForgotPassword({ status }: { status?: string }) {
                             autoFocus
                             onChange={(e) => setData('email', e.target.value)}
                             placeholder="email@example.com"
+                            error={errors.email}
                         />
 
-                        <InputError message={errors.email} />
-                    </div>
-
-                    <div className="my-6 flex items-center justify-start">
-                        <Button className="w-full" disabled={processing}>
-                            {processing && <LoaderCircle className="h-4 w-4 animate-spin" />}
+                        <Button type="submit" className="h-11 w-full bg-indigo-600 hover:bg-indigo-700" disabled={processing}>
+                            {processing && <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />}
                             Email password reset link
                         </Button>
                     </div>
                 </form>
 
-                <div className="text-muted-foreground space-x-1 text-center text-sm">
-                    <span>Or, return to</span>
-                    <TextLink href={route('login')}>log in</TextLink>
+                <div className="text-muted-foreground text-center text-sm">
+                    <TextLink href={route('login')} className="inline-flex items-center gap-1">
+                        <ArrowLeft className="h-3.5 w-3.5" /> Return to log in
+                    </TextLink>
                 </div>
-            </div>
-        </AuthLayout>
+            </AuthSplitShell>
+        </>
     );
 }

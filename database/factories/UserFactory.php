@@ -3,9 +3,11 @@
 namespace Database\Factories;
 
 use App\Models\User;
+use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
+use Spatie\Permission\Models\Permission;
 
 /**
  * @extends Factory<User>
@@ -27,10 +29,27 @@ class UserFactory extends Factory
         return [
             'name' => fake()->name(),
             'email' => fake()->unique()->safeEmail(),
+            'username' => fake()->unique()->userName(),
             'email_verified_at' => now(),
             'password' => static::$password ??= Hash::make('password'),
             'remember_token' => Str::random(10),
         ];
+    }
+
+    /**
+     * Factory users get every `module.action` permission, so tests of ordinary
+     * pages don't each have to set up access — the `module:` route middleware
+     * (corrections.md #9) would otherwise 403 them. Tests that exercise a
+     * restriction use `userWithPermissions()`, which narrows this down.
+     */
+    public function configure(): static
+    {
+        return $this->afterCreating(function (User $user) {
+            $names = collect(RolePermissionSeeder::MODULE_ACTIONS)
+                ->flatMap(fn (array $actions, string $module) => array_map(fn (string $action) => "{$module}.{$action}", $actions));
+
+            $user->syncPermissions($names->map(fn (string $name) => Permission::findOrCreate($name)));
+        });
     }
 
     /**
@@ -40,6 +59,13 @@ class UserFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'email_verified_at' => null,
+        ]);
+    }
+
+    public function inactive(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'is_active' => false,
         ]);
     }
 }

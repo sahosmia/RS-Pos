@@ -2,6 +2,7 @@ import HeadingSmall from '@/components/heading-small';
 import AddPaymentModal from '@/components/purchases/add-payment-modal';
 import ConfirmPurchaseModal from '@/components/purchases/confirm-purchase-modal';
 import ConfirmDialog from '@/components/shared/confirm-dialog';
+import ContactLink from '@/components/shared/contact-link';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useMoneyFormat } from '@/hooks/use-money-format';
@@ -10,6 +11,7 @@ import { type BreadcrumbItem } from '@/types';
 import { type Account, type PurchaseDetail } from '@/types/models';
 import { Head, Link, router } from '@inertiajs/react';
 import { useState } from 'react';
+import { toast } from 'sonner';
 
 interface PurchaseShowProps {
     purchase: PurchaseDetail;
@@ -31,6 +33,8 @@ export default function PurchaseShow({ purchase, accounts }: PurchaseShowProps) 
 
     const confirmDelete = () => {
         router.delete(route('purchases.destroy', purchase.id), {
+            onSuccess: () => toast.success(`"${purchase.invoice_no}" deleted.`),
+            onError: (errors) => toast.error(errors.purchase ?? 'Could not delete purchase.'),
             onFinish: () => setDeleting(false),
         });
     };
@@ -41,7 +45,14 @@ export default function PurchaseShow({ purchase, accounts }: PurchaseShowProps) 
 
             <div className="space-y-6 px-4 py-6">
                 <div className="flex flex-wrap items-start justify-between gap-4 print:hidden">
-                    <HeadingSmall title={purchase.invoice_no} description={`${purchase.supplier.name} • ${purchase.purchase_date}`} />
+                    <HeadingSmall
+                        title={purchase.invoice_no}
+                        description={
+                            <>
+                                <ContactLink id={purchase.supplier.id} name={purchase.supplier.name} /> • {purchase.purchase_date}
+                            </>
+                        }
+                    />
 
                     <div className="flex flex-wrap items-center gap-2">
                         <Badge variant="outline">{humanize(purchase.status)}</Badge>

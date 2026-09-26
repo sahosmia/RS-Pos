@@ -1,10 +1,17 @@
 <?php
 
+use App\Http\Middleware\EnsureModuleAccess;
 use App\Http\Middleware\HandleInertiaRequests;
+use App\Http\Middleware\SetLocale;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets;
+use Spatie\Permission\Middleware\PermissionMiddleware;
+use Spatie\Permission\Middleware\RoleMiddleware;
+use Spatie\Permission\Middleware\RoleOrPermissionMiddleware;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use Inertia\Inertia;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -14,10 +21,24 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->web(append: [
+            SetLocale::class,
             HandleInertiaRequests::class,
             AddLinkHeadersForPreloadedAssets::class,
         ]);
+
+        $middleware->alias([
+            'role' => RoleMiddleware::class,
+            'permission' => PermissionMiddleware::class,
+            'module' => EnsureModuleAccess::class,
+            'role_or_permission' => RoleOrPermissionMiddleware::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
-        //
+        $exceptions->render(function (NotFoundHttpException $e, $request) {
+            if ($request->wantsJson()) {
+                return null;
+            }
+
+            return Inertia::render('not-found')->toResponse($request)->setStatusCode(404);
+        });
     })->create();

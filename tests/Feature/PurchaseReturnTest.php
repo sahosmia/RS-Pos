@@ -1,8 +1,8 @@
 <?php
 
-use App\Actions\Purchase\ConfirmPurchaseAction;
-use App\Actions\PurchaseReturn\CreatePurchaseReturnAction;
-use App\Actions\PurchaseReturn\RefundPurchaseReturnAction;
+use App\Actions\Purchases\Purchase\ConfirmPurchaseAction;
+use App\Actions\Purchases\PurchaseReturn\CreatePurchaseReturnAction;
+use App\Actions\Purchases\PurchaseReturn\RefundPurchaseReturnAction;
 use App\Enums\SerialNumberStatus;
 use App\Exceptions\ReturnQuantityExceedsRemainingException;
 use App\Models\Account;
@@ -158,7 +158,7 @@ test('purchase returns and refund pages render', function () {
 
     $this->get("/purchase-returns/create?purchase_id={$purchase->id}")
         ->assertOk()
-        ->assertInertia(fn ($page) => $page->component('purchase-returns/create')->has('purchase.items', 1));
+        ->assertInertia(fn ($page) => $page->component('purchases/purchase-returns/create')->has('purchase.items', 1));
 
     $return = app(CreatePurchaseReturnAction::class)->execute([
         'purchase_id' => $purchase->id,
@@ -168,9 +168,9 @@ test('purchase returns and refund pages render', function () {
 
     $this->get('/purchase-returns')
         ->assertOk()
-        ->assertInertia(fn ($page) => $page->component('purchase-returns/index')->has('returns.data', 1));
+        ->assertInertia(fn ($page) => $page->component('purchases/purchase-returns/index')->has('returns.data', 1));
 
     $this->get("/purchase-returns/{$return->id}")
         ->assertOk()
-        ->assertInertia(fn ($page) => $page->component('purchase-returns/show')->where('return.total_amount', 50));
+        ->assertInertia(fn ($page) => $page->component('purchases/purchase-returns/show')->where('return.total_amount', 50));
 });

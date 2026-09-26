@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\SalesOrderStatus;
+use App\Models\Concerns\LogsActivityDefaults;
 use Database\Factories\SalesOrderFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -20,6 +21,8 @@ class SalesOrder extends Model
 {
     /** @use HasFactory<SalesOrderFactory> */
     use HasFactory;
+
+    use LogsActivityDefaults;
 
     /**
      * @var list<string>

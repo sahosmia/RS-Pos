@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\LogsActivityDefaults;
 use Database\Factories\PurchaseReturnFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -16,6 +17,8 @@ class PurchaseReturn extends Model
 {
     /** @use HasFactory<PurchaseReturnFactory> */
     use HasFactory;
+
+    use LogsActivityDefaults;
 
     /**
      * `total_amount` is deliberately not fillable — derived from its items

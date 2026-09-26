@@ -35,7 +35,7 @@ return [
 
     'no_backups_info' => 'Belum ada backup yang dibuat',
     'application_name' => 'Nama aplikasi',
-    'backup_name' => 'Nama cadangan',
+    'backup_name' => 'Nama cadangan',   
     'disk' => 'Disk',
     'newest_backup_size' => 'Ukuran cadangan terbaru',
     'number_of_backups' => 'Jumlah cadangan',

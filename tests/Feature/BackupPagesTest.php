@@ -1,7 +1,6 @@
 <?php
 
 use App\Jobs\RestoreDatabaseJob;
-use App\Models\User;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Storage;
@@ -11,7 +10,7 @@ beforeEach(function () {
 });
 
 test('the backups page lists files on the backup disk', function () {
-    $this->actingAs(User::factory()->create());
+    $this->actingAs(userWithPermissions(['backup.manage']));
 
     Storage::disk('local')->put(config('backup.backup.name').'/2026-01-01-00-00-00.zip', 'fake-zip-contents');
     Storage::disk('local')->put(config('backup.backup.name').'/2026-01-02-00-00-00.zip', 'fake-zip-contents-2');
@@ -22,7 +21,7 @@ test('the backups page lists files on the backup disk', function () {
 });
 
 test('deleting a backup removes it from the disk', function () {
-    $this->actingAs(User::factory()->create());
+    $this->actingAs(userWithPermissions(['backup.manage']));
     $path = config('backup.backup.name').'/2026-01-01-00-00-00.zip';
     Storage::disk('local')->put($path, 'fake-zip-contents');
 
@@ -32,19 +31,19 @@ test('deleting a backup removes it from the disk', function () {
 });
 
 test('deleting an unknown backup filename 404s', function () {
-    $this->actingAs(User::factory()->create());
+    $this->actingAs(userWithPermissions(['backup.manage']));
 
     $this->delete('/backups/does-not-exist.zip')->assertNotFound();
 });
 
 test('a path-traversal filename is rejected before any disk lookup', function () {
-    $this->actingAs(User::factory()->create());
+    $this->actingAs(userWithPermissions(['backup.manage']));
 
     $this->delete('/backups/'.urlencode('../../.env'))->assertNotFound();
 });
 
 test('restoring without typing RESTORE fails validation and dispatches nothing', function () {
-    $this->actingAs(User::factory()->create());
+    $this->actingAs(userWithPermissions(['backup.manage']));
     Bus::fake();
     $path = config('backup.backup.name').'/2026-01-01-00-00-00.zip';
     Storage::disk('local')->put($path, 'fake-zip-contents');
@@ -56,7 +55,7 @@ test('restoring without typing RESTORE fails validation and dispatches nothing',
 });
 
 test('uploading a non-zip file for restore fails validation', function () {
-    $this->actingAs(User::factory()->create());
+    $this->actingAs(userWithPermissions(['backup.manage']));
     Bus::fake();
 
     $this->post('/backups/upload-restore', [

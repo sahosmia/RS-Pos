@@ -3,12 +3,19 @@ import { UserInfo } from '@/components/user-info';
 import { useMobileNavigation } from '@/hooks/use-mobile-navigation';
 import { type User } from '@/types';
 import { Link } from '@inertiajs/react';
-import { LogOut, Settings } from 'lucide-react';
+import { Settings } from 'lucide-react';
 
 interface UserMenuContentProps {
     user: User;
 }
 
+/**
+ * The account/profile dropdown's contents — lives in the sticky top header
+ * (doc/corrections2.md #3, via `HeaderUserMenu`), not the sidebar. Logout
+ * isn't repeated here: it has its own dedicated, always-visible button
+ * pinned to the sidebar footer (`SidebarLogoutButton`), so it isn't
+ * duplicated in two places.
+ */
 export function UserMenuContent({ user }: UserMenuContentProps) {
     const cleanup = useMobileNavigation();
 
@@ -28,13 +35,6 @@ export function UserMenuContent({ user }: UserMenuContentProps) {
                     </Link>
                 </DropdownMenuItem>
             </DropdownMenuGroup>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem asChild>
-                <Link className="block w-full" method="post" href={route('logout')} as="button" onClick={cleanup}>
-                    <LogOut className="mr-2" />
-                    Log out
-                </Link>
-            </DropdownMenuItem>
         </>
     );
 }

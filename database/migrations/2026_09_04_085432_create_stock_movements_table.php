@@ -16,6 +16,8 @@ return new class extends Migration
             $table->foreignId('product_id')->constrained()->restrictOnDelete();
             $table->string('type');
             $table->decimal('quantity', 12, 2);
+            $table->decimal('unit_cost', 19, 4)->nullable();
+            $table->decimal('total_cost', 19, 4)->nullable();
             $table->string('reference_type')->nullable();
             $table->unsignedBigInteger('reference_id')->nullable();
             $table->text('note')->nullable();

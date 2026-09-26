@@ -16,7 +16,7 @@ return new class extends Migration
             $table->string('name');
             $table->string('sku')->unique();
             $table->string('barcode')->nullable()->unique();
-            $table->foreignId('category_id')->constrained()->restrictOnDelete();
+            $table->foreignId('category_id')->nullable()->constrained()->restrictOnDelete();
             $table->foreignId('brand_id')->nullable()->constrained()->nullOnDelete();
             $table->foreignId('unit_id')->constrained()->restrictOnDelete();
             $table->decimal('avg_cost', 15, 2)->default(0);
@@ -36,6 +36,7 @@ return new class extends Migration
             $table->index('category_id');
             $table->index('brand_id');
             $table->index('name');
+            $table->index(['is_active', 'name']);
         });
     }
 
