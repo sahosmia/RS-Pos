@@ -69,9 +69,9 @@ export default function QuickCreateMenu() {
     return (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
-                <Button size="sm" className="gap-1.5">
-                    <Plus className="size-4" />
-                    <span className="hidden sm:inline">Quick Create</span>
+                <Button variant="ghost" size="icon" className="h-9 w-9">
+                    <Plus className="size-5" />
+                    <span className="sr-only">Quick Create</span>
                 </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">

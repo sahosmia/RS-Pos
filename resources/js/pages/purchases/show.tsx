@@ -50,6 +50,7 @@ export default function PurchaseShow({ purchase, accounts }: PurchaseShowProps) 
                         description={
                             <>
                                 <ContactLink id={purchase.supplier.id} name={purchase.supplier.name} /> • {purchase.purchase_date}
+                                {purchase.creator && ` • Added by: ${purchase.creator.name}`}
                             </>
                         }
                     />

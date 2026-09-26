@@ -5,7 +5,7 @@ use App\Http\Controllers\Assets\AssetExportController;
 use App\Http\Controllers\Assets\AssetTransactionController;
 use Illuminate\Support\Facades\Route;
 
-Route::middleware(['auth', 'module:finance'])->group(function () {
+Route::middleware(['auth', 'module:asset'])->group(function () {
     // Registered before the resource route — `assets.show` (GET assets/{asset}) exists here,
     // so `export` would otherwise route-model-bind as a `{asset}` id.
     Route::get('assets/export', AssetExportController::class)->name('assets.export');

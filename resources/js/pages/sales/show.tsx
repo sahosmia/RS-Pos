@@ -114,6 +114,7 @@ export default function SaleShow({ sale, accounts, justConfirmed }: SaleShowProp
                         description={
                             <>
                                 <ContactLink id={sale.customer.id} name={sale.customer.name} /> • {sale.sale_date}
+                                {sale.creator && ` • Added by: ${sale.creator.name}`}
                             </>
                         }
                     />

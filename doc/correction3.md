@@ -105,7 +105,7 @@ Attempt to read property "value" on null
 - [ ] **12** asset and Liabilities alada menu hobe ar tab system hobe, alada separet menu hobe
 - [ ] **13** Roles & Permissions menu ta user managment hisebe thakbe akane users, roles alada submenu hobe, sidebar tai serial ta thik koro buisness setting theke
 - [ ] **14** header e quick create er button ta only + thakle hobe ato boro text lagbe na, ar bg tao normal thakbe
-- [ ] **15** Added by option thakte hobe kono
+- [ ] **15** Added by option thakte hobe kono purchess ba sales e
 - [ ] **16** Dashboard er je sales 30 days , sales year ai gulo full width hobe, 
 - [ ] **17** aktu details e bolo dashboard er kon card er ki kaj
 - [ ] **16**

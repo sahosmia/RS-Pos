@@ -16,6 +16,20 @@ import {
     type QuickAction,
 } from '@/types/models';
 import { Head, Link, router } from '@inertiajs/react';
+import {
+    AlertCircle,
+    ArrowDownLeft,
+    ArrowUpRight,
+    CreditCard,
+    HandCoins,
+    type LucideIcon,
+    Package,
+    Receipt,
+    RotateCcw,
+    ShoppingBag,
+    TrendingUp,
+    Wallet,
+} from 'lucide-react';
 
 interface DashboardProps {
     quickActions: QuickAction[];
@@ -34,11 +48,16 @@ function shortDayLabel(isoDate: string): string {
     return `${day} ${months[month - 1]}`;
 }
 
-function MetricCard({ label, value }: { label: string; value: string }) {
+function ColorfulMetricCard({ label, value, colorClass, icon: Icon }: { label: string; value: string; colorClass: string; icon: LucideIcon }) {
     return (
-        <div className="rounded-lg border p-4">
-            <p className="text-muted-foreground text-sm">{label}</p>
-            <p className="text-xl font-semibold tabular-nums">{value}</p>
+        <div className={`flex items-center justify-between gap-3 rounded-xl border p-4 shadow-xs transition-all hover:shadow-md ${colorClass}`}>
+            <div className="min-w-0">
+                <p className="text-xs font-semibold uppercase tracking-wider opacity-80">{label}</p>
+                <p className="mt-1 text-xl font-extrabold tabular-nums sm:text-2xl">{value}</p>
+            </div>
+            <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-current/10 p-2">
+                <Icon className="size-5" />
+            </div>
         </div>
     );
 }
@@ -70,17 +89,101 @@ export default function Dashboard({ quickActions, range, metrics, balances, sale
                     ))}
                 </div>
 
+                {/* 1. Sales Metrics */}
                 <div className="space-y-3">
-                    <h2 className="text-sm font-medium">{t('dashboard', 'sales_section')}</h2>
+                    <h2 className="text-sm font-semibold tracking-wide text-foreground">{t('dashboard', 'sales_section')}</h2>
                     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                        <MetricCard label={t('dashboard', 'total_sales')} value={money(metrics.totalSales)} />
-                        <MetricCard label={t('dashboard', 'net_sales')} value={money(metrics.netSales)} />
-                        <MetricCard label={t('dashboard', 'invoice_due')} value={money(metrics.invoiceDue)} />
-                        <MetricCard label={t('dashboard', 'total_sell_return')} value={money(metrics.totalSellReturn)} />
+                        <ColorfulMetricCard
+                            label={t('dashboard', 'total_sales')}
+                            value={money(metrics.totalSales)}
+                            icon={Receipt}
+                            colorClass="bg-emerald-50/60 border-emerald-200 text-emerald-950 dark:bg-emerald-950/20 dark:border-emerald-800 dark:text-emerald-100"
+                        />
+                        <ColorfulMetricCard
+                            label={t('dashboard', 'net_sales')}
+                            value={money(metrics.netSales)}
+                            icon={TrendingUp}
+                            colorClass="bg-teal-50/60 border-teal-200 text-teal-950 dark:bg-teal-950/20 dark:border-teal-800 dark:text-teal-100"
+                        />
+                        <ColorfulMetricCard
+                            label={t('dashboard', 'invoice_due')}
+                            value={money(metrics.invoiceDue)}
+                            icon={AlertCircle}
+                            colorClass="bg-amber-50/60 border-amber-200 text-amber-950 dark:bg-amber-950/20 dark:border-amber-800 dark:text-amber-100"
+                        />
+                        <ColorfulMetricCard
+                            label={t('dashboard', 'total_sell_return')}
+                            value={money(metrics.totalSellReturn)}
+                            icon={RotateCcw}
+                            colorClass="bg-rose-50/60 border-rose-200 text-rose-950 dark:bg-rose-950/20 dark:border-rose-800 dark:text-rose-100"
+                        />
                     </div>
                 </div>
 
-                <div className="grid gap-4 lg:grid-cols-2">
+                {/* 2. Purchases & Expenses Metrics */}
+                <div className="space-y-3">
+                    <h2 className="text-sm font-semibold tracking-wide text-foreground">{t('dashboard', 'purchases_expenses_section')}</h2>
+                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                        <ColorfulMetricCard
+                            label={t('dashboard', 'total_purchase')}
+                            value={money(metrics.totalPurchase)}
+                            icon={ShoppingBag}
+                            colorClass="bg-blue-50/60 border-blue-200 text-blue-950 dark:bg-blue-950/20 dark:border-blue-800 dark:text-blue-100"
+                        />
+                        <ColorfulMetricCard
+                            label={t('dashboard', 'purchase_due')}
+                            value={money(metrics.purchaseDue)}
+                            icon={CreditCard}
+                            colorClass="bg-orange-50/60 border-orange-200 text-orange-950 dark:bg-orange-950/20 dark:border-orange-800 dark:text-orange-100"
+                        />
+                        <ColorfulMetricCard
+                            label={t('dashboard', 'total_purchase_return')}
+                            value={money(metrics.totalPurchaseReturn)}
+                            icon={RotateCcw}
+                            colorClass="bg-pink-50/60 border-pink-200 text-pink-950 dark:bg-pink-950/20 dark:border-pink-800 dark:text-pink-100"
+                        />
+                        <ColorfulMetricCard
+                            label={t('dashboard', 'expense')}
+                            value={money(metrics.totalExpense)}
+                            icon={HandCoins}
+                            colorClass="bg-purple-50/60 border-purple-200 text-purple-950 dark:bg-purple-950/20 dark:border-purple-800 dark:text-purple-100"
+                        />
+                    </div>
+                </div>
+
+                {/* 3. Current Position Metrics */}
+                <div className="space-y-3">
+                    <h2 className="text-sm font-semibold tracking-wide text-foreground">{t('dashboard', 'current_position')}</h2>
+                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                        <ColorfulMetricCard
+                            label={t('dashboard', 'total_receivable')}
+                            value={money(balances.totalReceivable)}
+                            icon={ArrowDownLeft}
+                            colorClass="bg-cyan-50/60 border-cyan-200 text-cyan-950 dark:bg-cyan-950/20 dark:border-cyan-800 dark:text-cyan-100"
+                        />
+                        <ColorfulMetricCard
+                            label={t('dashboard', 'total_payable')}
+                            value={money(balances.totalPayable)}
+                            icon={ArrowUpRight}
+                            colorClass="bg-red-50/60 border-red-200 text-red-950 dark:bg-red-950/20 dark:border-red-800 dark:text-red-100"
+                        />
+                        <ColorfulMetricCard
+                            label={t('dashboard', 'cash_and_bank')}
+                            value={money(balances.cashAndBank)}
+                            icon={Wallet}
+                            colorClass="bg-indigo-50/60 border-indigo-200 text-indigo-950 dark:bg-indigo-950/20 dark:border-indigo-800 dark:text-indigo-100"
+                        />
+                        <ColorfulMetricCard
+                            label={t('dashboard', 'low_stock_products')}
+                            value={String(balances.lowStockCount)}
+                            icon={Package}
+                            colorClass="bg-violet-50/60 border-violet-200 text-violet-950 dark:bg-violet-950/20 dark:border-violet-800 dark:text-violet-100"
+                        />
+                    </div>
+                </div>
+
+                {/* 4. Full-width Sales Bar Charts */}
+                <div className="grid gap-4 grid-cols-1 pt-2">
                     <SalesBarChart
                         title="Sales — Last 30 Days"
                         data={salesLast30Days.map((point) => ({ key: point.date, label: shortDayLabel(point.date), total: point.total }))}
@@ -92,26 +195,6 @@ export default function Dashboard({ quickActions, range, metrics, balances, sale
                         data={salesCurrentFiscalYear.map((point) => ({ key: point.month, label: point.label, total: point.total }))}
                         labelEvery={2}
                     />
-                </div>
-
-                <div className="space-y-3">
-                    <h2 className="text-sm font-medium">{t('dashboard', 'purchases_expenses_section')}</h2>
-                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                        <MetricCard label={t('dashboard', 'total_purchase')} value={money(metrics.totalPurchase)} />
-                        <MetricCard label={t('dashboard', 'purchase_due')} value={money(metrics.purchaseDue)} />
-                        <MetricCard label={t('dashboard', 'total_purchase_return')} value={money(metrics.totalPurchaseReturn)} />
-                        <MetricCard label={t('dashboard', 'expense')} value={money(metrics.totalExpense)} />
-                    </div>
-                </div>
-
-                <div className="space-y-3">
-                    <h2 className="text-sm font-medium">{t('dashboard', 'current_position')}</h2>
-                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                        <MetricCard label={t('dashboard', 'total_receivable')} value={money(balances.totalReceivable)} />
-                        <MetricCard label={t('dashboard', 'total_payable')} value={money(balances.totalPayable)} />
-                        <MetricCard label={t('dashboard', 'cash_and_bank')} value={money(balances.cashAndBank)} />
-                        <MetricCard label={t('dashboard', 'low_stock_products')} value={String(balances.lowStockCount)} />
-                    </div>
                 </div>
             </div>
         </AppLayout>

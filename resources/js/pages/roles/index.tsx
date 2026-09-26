@@ -20,10 +20,10 @@ import { type BreadcrumbItem } from '@/types';
 import { type PermissionOption, type RoleListItem, type RoleUserListItem } from '@/types/models';
 import { Head, router } from '@inertiajs/react';
 import { ChevronDown, Pencil, Plus, Trash2 } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
-const breadcrumbs: BreadcrumbItem[] = [{ title: 'Roles & Permissions', href: '/roles' }];
+const breadcrumbs: BreadcrumbItem[] = [{ title: 'User Management', href: '/roles' }];
 
 interface RolesIndexProps {
     roles: RoleListItem[];
@@ -38,6 +38,26 @@ export default function RolesIndex({ roles, permissionsByModule, users }: RolesI
     const [userFormOpen, setUserFormOpen] = useState(false);
     const [editingUser, setEditingUser] = useState<RoleUserListItem | null>(null);
     const [deletingUser, setDeletingUser] = useState<RoleUserListItem | null>(null);
+    const [activeTab, setActiveTab] = useState('users');
+
+    const { url } = usePage();
+
+    useEffect(() => {
+        const params = new URLSearchParams(window.location.search);
+        const tab = params.get('tab');
+        if (tab === 'users' || tab === 'roles') {
+            setActiveTab(tab);
+        } else {
+            setActiveTab('users');
+        }
+    }, [url]);
+
+    const handleTabChange = (val: string) => {
+        setActiveTab(val);
+        const url = new URL(window.location.href);
+        url.searchParams.set('tab', val);
+        window.history.replaceState({}, '', url.toString());
+    };
 
     const allRoleNames = roles.map((role) => role.name);
 
@@ -117,12 +137,12 @@ export default function RolesIndex({ roles, permissionsByModule, users }: RolesI
             <Head title="Roles & Permissions" />
 
             <div className="space-y-6 px-4 py-6">
-                <HeadingSmall title="Roles & Permissions" description="কোন role-এ কোন permission থাকবে, আর কোন user কোন role পাবে" />
+                <HeadingSmall title="User Management" description="ইউজার তালিকা, ইউজারদের রোল ও বিভিন্ন পারমিশন পরিচালনা" />
 
-                <Tabs defaultValue="roles" className="w-full">
+                <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
                     <TabsList>
-                        <TabsTrigger value="roles">Roles</TabsTrigger>
                         <TabsTrigger value="users">Users</TabsTrigger>
+                        <TabsTrigger value="roles">Roles</TabsTrigger>
                     </TabsList>
 
                     <TabsContent value="roles" className="space-y-4">

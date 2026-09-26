@@ -28,8 +28,9 @@ import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
 import { type ColumnDef, type VisibilityState } from '@tanstack/react-table';
 import { FormEventHandler, useCallback, useMemo, useState } from 'react';
 import { toast } from 'sonner';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
-const breadcrumbs: BreadcrumbItem[] = [{ title: 'Company Loans', href: '/company-loans' }];
+const breadcrumbs: BreadcrumbItem[] = [{ title: 'Investors', href: '/investors' }, { title: 'Company Loans', href: '/company-loans' }];
 
 /** No `search`/`sort`/domain filters here — `CompanyLoanController::index()` doesn't accept any today. */
 interface CompanyLoanFilters extends TableFilterBase {
@@ -260,6 +261,13 @@ export default function CompanyLoansIndex({ loans, totalOutstanding, filters }: 
             <Head title="Company Loans" />
 
             <div className="space-y-6 px-4 py-6">
+                <Tabs value="/company-loans" onValueChange={(url) => router.visit(url)}>
+                    <TabsList>
+                        <TabsTrigger value="/investors">Investors</TabsTrigger>
+                        <TabsTrigger value="/company-loans">Company Loans</TabsTrigger>
+                    </TabsList>
+                </Tabs>
+
                 <div className="flex flex-wrap items-end justify-between gap-4">
                     <HeadingSmall title="Company Loans" description="ব্যাংক বা ব্যক্তির কাছ থেকে নেওয়া ঋণ" />
                     <Button onClick={openCreate}>Add Loan</Button>

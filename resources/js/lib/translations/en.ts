@@ -73,10 +73,11 @@ export interface Dictionary {
         journal_entries: string;
         accounting_periods: string;
         finance: string;
+        assets_liabilities: string;
         assets: string;
-        company_loans: string;
-        investors: string;
         other_liabilities: string;
+        investors: string;
+        company_loans: string;
         staff: string;
         service_warranty: string;
         service_requests: string;
@@ -92,6 +93,9 @@ export interface Dictionary {
         trending_products: string;
         import_tools: string;
         backups: string;
+        user_management: string;
+        users: string;
+        roles: string;
         roles_permissions: string;
         business_settings: string;
     };
@@ -503,10 +507,11 @@ const en: Dictionary = {
         journal_entries: 'Journal Entries',
         accounting_periods: 'Accounting Periods',
         finance: 'Finance',
+        assets_liabilities: 'Assets & Liabilities',
         assets: 'Assets',
-        company_loans: 'Company Loans',
-        investors: 'Investors',
         other_liabilities: 'Other Liabilities',
+        investors: 'Investors',
+        company_loans: 'Company Loans',
         staff: 'Staff',
         service_warranty: 'Service & Warranty',
         service_requests: 'Service Requests',
@@ -522,6 +527,9 @@ const en: Dictionary = {
         trending_products: 'Trending Products',
         import_tools: 'Import Tools',
         backups: 'Backups',
+        user_management: 'User Management',
+        users: 'Users',
+        roles: 'Roles',
         roles_permissions: 'Roles & Permissions',
         business_settings: 'Business Settings',
     },

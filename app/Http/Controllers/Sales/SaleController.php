@@ -110,7 +110,7 @@ class SaleController extends Controller
 
     public function show(Sale $sale): Response
     {
-        $sale->load(['customer:id,name,phone,balance', 'items.product:id,name,sku', 'items.serialNumbers', 'items' => fn ($query) => $query->orderBy('id')]);
+        $sale->load(['customer:id,name,phone,balance', 'creator:id,name', 'items.product:id,name,sku', 'items.serialNumbers', 'items' => fn ($query) => $query->orderBy('id')]);
 
         return Inertia::render('sales/show', [
             'sale' => $this->present($sale),
@@ -197,6 +197,7 @@ class SaleController extends Controller
             'id' => $sale->id,
             'invoice_no' => $sale->invoice_no,
             'customer' => $sale->customer->only(['id', 'name', 'phone', 'balance']),
+            'creator' => $sale->creator?->only(['id', 'name']),
             'sale_date' => $sale->sale_date->toDateString(),
             'subtotal' => $sale->subtotal,
             'discount_type' => $sale->discount_type,

@@ -84,6 +84,14 @@ class Sale extends Model
     }
 
     /**
+     * @return BelongsTo<User, $this>
+     */
+    public function creator(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
+
+    /**
      * Set only when ConvertSalesOrderToSaleAction created this sale from a
      * Sales Order booking.
      *

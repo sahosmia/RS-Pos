@@ -27,8 +27,9 @@ import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
 import { type ColumnDef, type VisibilityState } from '@tanstack/react-table';
 import { FormEventHandler, useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
-const breadcrumbs: BreadcrumbItem[] = [{ title: 'Assets', href: '/assets' }];
+const breadcrumbs: BreadcrumbItem[] = [{ title: 'Assets & Liabilities', href: '/assets' }, { title: 'Assets', href: '/assets' }];
 
 /** No `search`/`sort`/dropdown filters here — the backend's `AssetController::index()` doesn't accept any today. */
 interface AssetFilters extends TableFilterBase {
@@ -241,6 +242,13 @@ export default function AssetsIndex({ assets, totalValue, filters }: AssetsIndex
             <Head title="Assets" />
 
             <div className="space-y-6 px-4 py-6">
+                <Tabs value="/assets" onValueChange={(url) => router.visit(url)}>
+                    <TabsList>
+                        <TabsTrigger value="/assets">Assets</TabsTrigger>
+                        <TabsTrigger value="/other-liabilities">Other Liabilities</TabsTrigger>
+                    </TabsList>
+                </Tabs>
+
                 <div className="flex flex-wrap items-end justify-between gap-4">
                     <HeadingSmall title="Assets" description="দোকানের নিজস্ব সম্পদ — ফার্নিচার, গাড়ি, ইকুইপমেন্ট" />
                     <Button onClick={openCreate}>Add Asset</Button>

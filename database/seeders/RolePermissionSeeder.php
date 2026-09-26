@@ -28,6 +28,7 @@ class RolePermissionSeeder extends Seeder
         'expense' => ['view', 'create', 'edit', 'delete'],
         'account' => ['view', 'create', 'edit', 'delete', 'transfer'],
         'accounting' => ['view', 'create', 'edit'],
+        'asset' => ['view', 'create', 'edit', 'delete'],
         'finance' => ['view', 'create', 'edit', 'delete'],
         'staff' => ['view', 'create', 'edit', 'delete'],
         'service' => ['view', 'create', 'edit', 'delete'],
