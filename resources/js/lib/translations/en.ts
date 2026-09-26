@@ -93,6 +93,9 @@ export interface Dictionary {
         trending_products: string;
         import_tools: string;
         backups: string;
+        user_management: string;
+        users: string;
+        roles: string;
         roles_permissions: string;
         business_settings: string;
     };
@@ -524,6 +527,9 @@ const en: Dictionary = {
         trending_products: 'Trending Products',
         import_tools: 'Import Tools',
         backups: 'Backups',
+        user_management: 'User Management',
+        users: 'Users',
+        roles: 'Roles',
         roles_permissions: 'Roles & Permissions',
         business_settings: 'Business Settings',
     },

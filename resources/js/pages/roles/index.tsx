@@ -40,13 +40,17 @@ export default function RolesIndex({ roles, permissionsByModule, users }: RolesI
     const [deletingUser, setDeletingUser] = useState<RoleUserListItem | null>(null);
     const [activeTab, setActiveTab] = useState('users');
 
+    const { url } = usePage();
+
     useEffect(() => {
         const params = new URLSearchParams(window.location.search);
         const tab = params.get('tab');
         if (tab === 'users' || tab === 'roles') {
             setActiveTab(tab);
+        } else {
+            setActiveTab('users');
         }
-    }, []);
+    }, [url]);
 
     const handleTabChange = (val: string) => {
         setActiveTab(val);
