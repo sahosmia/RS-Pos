@@ -136,7 +136,7 @@ export default function DataTableToolbar({
             </div>
 
             {filterSlot && (
-                <CollapsibleContent className="-m-1 overflow-hidden p-1 data-[state=closed]:animate-[collapsible-up_200ms_ease-out] data-[state=open]:animate-[collapsible-down_200ms_ease-out]">
+                <CollapsibleContent className="-m-1 mt-2 overflow-hidden p-1 pt-2 data-[state=closed]:animate-[collapsible-up_200ms_ease-out] data-[state=open]:animate-[collapsible-down_200ms_ease-out]">
                     {filterSlot}
                 </CollapsibleContent>
             )}

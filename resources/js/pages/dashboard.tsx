@@ -21,10 +21,9 @@ import {
     ArrowDownLeft,
     ArrowUpRight,
     CreditCard,
-    DollarSign,
     HandCoins,
     type LucideIcon,
-    PackageWarning,
+    Package,
     Receipt,
     RotateCcw,
     ShoppingBag,
@@ -51,12 +50,14 @@ function shortDayLabel(isoDate: string): string {
 
 function ColorfulMetricCard({ label, value, colorClass, icon: Icon }: { label: string; value: string; colorClass: string; icon: LucideIcon }) {
     return (
-        <div className={`rounded-lg border p-4 shadow-xs transition-shadow hover:shadow-md ${colorClass}`}>
-            <div className="flex items-center justify-between gap-2">
-                <p className="text-xs font-medium opacity-85">{label}</p>
-                <Icon className="size-4 shrink-0 opacity-70" />
+        <div className={`flex items-center justify-between gap-3 rounded-xl border p-4 shadow-xs transition-all hover:shadow-md ${colorClass}`}>
+            <div className="min-w-0">
+                <p className="text-xs font-semibold uppercase tracking-wider opacity-80">{label}</p>
+                <p className="mt-1 text-xl font-extrabold tabular-nums sm:text-2xl">{value}</p>
             </div>
-            <p className="mt-1.5 text-xl font-bold tabular-nums sm:text-2xl">{value}</p>
+            <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-current/10 p-2">
+                <Icon className="size-5" />
+            </div>
         </div>
     );
 }
@@ -175,7 +176,7 @@ export default function Dashboard({ quickActions, range, metrics, balances, sale
                         <ColorfulMetricCard
                             label={t('dashboard', 'low_stock_products')}
                             value={String(balances.lowStockCount)}
-                            icon={PackageWarning}
+                            icon={Package}
                             colorClass="bg-violet-50/60 border-violet-200 text-violet-950 dark:bg-violet-950/20 dark:border-violet-800 dark:text-violet-100"
                         />
                     </div>
