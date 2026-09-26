@@ -96,7 +96,7 @@ class PurchaseController extends Controller
 
     public function show(Purchase $purchase): Response
     {
-        $purchase->load(['supplier:id,name,phone,balance', 'items.product:id,name,sku,track_serial_number', 'items' => fn ($query) => $query->orderBy('id')]);
+        $purchase->load(['supplier:id,name,phone,balance', 'creator:id,name', 'items.product:id,name,sku,track_serial_number', 'items' => fn ($query) => $query->orderBy('id')]);
 
         return Inertia::render('purchases/show', [
             'purchase' => $this->present($purchase),
@@ -168,6 +168,7 @@ class PurchaseController extends Controller
             'id' => $purchase->id,
             'invoice_no' => $purchase->invoice_no,
             'supplier' => $purchase->supplier->only(['id', 'name', 'phone', 'balance']),
+            'creator' => $purchase->creator?->only(['id', 'name']),
             'purchase_date' => $purchase->purchase_date->toDateString(),
             'total_amount' => $purchase->total_amount,
             'paid_amount' => $purchase->paid_amount,

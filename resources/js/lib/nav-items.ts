@@ -120,16 +120,25 @@ export function buildMainNavItems(emiModuleEnabled: boolean, t: ReturnType<typeo
             ],
         },
         {
-            key: 'finance',
-            title: t('nav', 'finance'),
+            key: 'assets_liabilities',
+            title: t('nav', 'assets_liabilities'),
             url: '/assets',
             icon: Landmark,
-            permission: 'finance.view',
+            permission: 'asset.view',
             items: [
                 { key: 'assets', title: t('nav', 'assets'), url: '/assets' },
-                { key: 'company_loans', title: t('nav', 'company_loans'), url: '/company-loans' },
-                { key: 'investors', title: t('nav', 'investors'), url: '/investors' },
                 { key: 'other_liabilities', title: t('nav', 'other_liabilities'), url: '/other-liabilities' },
+            ],
+        },
+        {
+            key: 'investor_menu',
+            title: t('nav', 'investors'),
+            url: '/investors',
+            icon: Wallet,
+            permission: 'finance.view',
+            items: [
+                { key: 'investors', title: t('nav', 'investors'), url: '/investors' },
+                { key: 'company_loans', title: t('nav', 'company_loans'), url: '/company-loans' },
             ],
         },
         {
@@ -187,11 +196,15 @@ export function buildMainNavItems(emiModuleEnabled: boolean, t: ReturnType<typeo
             permission: 'backup.manage',
         },
         {
-            key: 'roles_permissions',
-            title: t('nav', 'roles_permissions'),
+            key: 'user_management',
+            title: t('nav', 'user_management'),
             url: '/roles',
             icon: KeyRound,
             permission: 'role.manage',
+            items: [
+                { key: 'users', title: t('nav', 'users'), url: '/roles?tab=users' },
+                { key: 'roles', title: t('nav', 'roles'), url: '/roles?tab=roles' },
+            ],
         },
         {
             key: 'business_settings',

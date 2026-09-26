@@ -80,7 +80,7 @@ export default function Dashboard({ quickActions, range, metrics, balances, sale
                     </div>
                 </div>
 
-                <div className="grid gap-4 lg:grid-cols-2">
+                <div className="grid gap-4 grid-cols-1">
                     <SalesBarChart
                         title="Sales — Last 30 Days"
                         data={salesLast30Days.map((point) => ({ key: point.date, label: shortDayLabel(point.date), total: point.total }))}

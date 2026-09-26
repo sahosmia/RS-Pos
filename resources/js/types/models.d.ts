@@ -349,6 +349,7 @@ export interface PurchaseDetail {
     id: number;
     invoice_no: string;
     supplier: { id: number; name: string; phone: string; balance: number };
+    creator?: { id: number; name: string } | null;
     purchase_date: string;
     total_amount: number;
     paid_amount: number;
@@ -431,6 +432,7 @@ export interface SaleDetail {
     id: number;
     invoice_no: string;
     customer: { id: number; name: string; phone: string; balance: number };
+    creator?: { id: number; name: string } | null;
     sale_date: string;
     subtotal: number;
     discount_type: 'flat' | 'percentage' | null;

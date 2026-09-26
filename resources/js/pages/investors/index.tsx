@@ -23,8 +23,9 @@ import { type InvestorListItem, type Paginated } from '@/types/models';
 import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
 import { type ColumnDef, type VisibilityState } from '@tanstack/react-table';
 import { FormEventHandler, useCallback, useMemo, useState } from 'react';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
-const breadcrumbs: BreadcrumbItem[] = [{ title: 'Investors', href: '/investors' }];
+const breadcrumbs: BreadcrumbItem[] = [{ title: 'Investors', href: '/investors' }, { title: 'Investors', href: '/investors' }];
 
 /** No `search`/`sort` here — the backend's `InvestorController::index()` doesn't accept either today. */
 interface InvestorFilters extends TableFilterBase {
@@ -196,6 +197,13 @@ export default function InvestorsIndex({ investors, totalInvested, filters }: In
             <Head title="Investors" />
 
             <div className="space-y-6 px-4 py-6">
+                <Tabs value="/investors" onValueChange={(url) => router.visit(url)}>
+                    <TabsList>
+                        <TabsTrigger value="/investors">Investors</TabsTrigger>
+                        <TabsTrigger value="/company-loans">Company Loans</TabsTrigger>
+                    </TabsList>
+                </Tabs>
+
                 <div className="flex flex-wrap items-end justify-between gap-4">
                     <HeadingSmall title="Investors" description="দোকানে যারা মূলধন বিনিয়োগ করেছেন" />
                     <Button onClick={openCreate}>Add Investor</Button>

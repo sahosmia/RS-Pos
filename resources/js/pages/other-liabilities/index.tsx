@@ -26,8 +26,9 @@ import { type OtherLiabilityListItem, type Paginated } from '@/types/models';
 import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
 import { type ColumnDef, type VisibilityState } from '@tanstack/react-table';
 import { FormEventHandler, useCallback, useMemo, useState } from 'react';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
-const breadcrumbs: BreadcrumbItem[] = [{ title: 'Other Liabilities', href: '/other-liabilities' }];
+const breadcrumbs: BreadcrumbItem[] = [{ title: 'Assets & Liabilities', href: '/assets' }, { title: 'Other Liabilities', href: '/other-liabilities' }];
 
 /** No `search`/`sort` here — the backend's `OtherLiabilityController::index()` doesn't accept either today. */
 interface OtherLiabilityFilters extends TableFilterBase {
@@ -203,6 +204,13 @@ export default function OtherLiabilitiesIndex({ liabilities, totalBalance, filte
             <Head title="Other Liabilities" />
 
             <div className="space-y-6 px-4 py-6">
+                <Tabs value="/other-liabilities" onValueChange={(url) => router.visit(url)}>
+                    <TabsList>
+                        <TabsTrigger value="/assets">Assets</TabsTrigger>
+                        <TabsTrigger value="/other-liabilities">Other Liabilities</TabsTrigger>
+                    </TabsList>
+                </Tabs>
+
                 <div className="flex flex-wrap items-end justify-between gap-4">
                     <HeadingSmall title="Other Liabilities" description="Loan/Supplier/Expense-এর বাইরের অন্য দেনা" />
                     <Button onClick={openCreate}>Add Liability</Button>

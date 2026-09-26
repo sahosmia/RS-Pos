@@ -60,6 +60,14 @@ class Purchase extends Model
     }
 
     /**
+     * @return BelongsTo<User, $this>
+     */
+    public function creator(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
+
+    /**
      * @return HasMany<PurchaseItem, $this>
      */
     public function items(): HasMany
