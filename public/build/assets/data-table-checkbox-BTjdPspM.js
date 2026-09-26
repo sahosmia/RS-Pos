@@ -1,1 +1,0 @@
-import{j as m}from"./app-evpLOvc-.js";import{C as p}from"./checkbox-DBX0NVQ8.js";import{a as x}from"./createLucideIcon-BSGuvlCi.js";function i({checked:r,onCheckedChange:t,className:e,onClick:o,...s}){return m.jsx(p,{checked:r,onCheckedChange:a=>t(a===!0),onClick:a=>{a.stopPropagation(),o==null||o(a)},className:x("size-4",e),...s})}export{i as D};

@@ -1,6 +1,0 @@
-import{j as e,r as l,$ as a}from"./app-evpLOvc-.js";import{c as o,B as d,a as x}from"./createLucideIcon-BSGuvlCi.js";import{D as h,a as p,b as u,l as m,c as j}from"./dropdown-menu-BVtWg6dk.js";/**
- * @license lucide-react v0.475.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */const f=[["circle",{cx:"12",cy:"12",r:"1",key:"41hilf"}],["circle",{cx:"19",cy:"12",r:"1",key:"1wjl8i"}],["circle",{cx:"5",cy:"12",r:"1",key:"1pcz8c"}]],D=o("Ellipsis",f);function v({actions:i}){const r=i.filter(s=>!s.hidden);return r.length===0?null:e.jsxs(h,{children:[e.jsx(p,{asChild:!0,children:e.jsxs(d,{variant:"ghost",size:"icon",className:"size-8",children:[e.jsx(D,{className:"size-4"}),e.jsx("span",{className:"sr-only",children:"Open actions menu"})]})}),e.jsx(u,{align:"end",children:r.map((s,t)=>{const n=s.icon,c=e.jsxs(e.Fragment,{children:[n&&e.jsx(n,{}),s.label]});return e.jsxs(l.Fragment,{children:[s.separatorBefore&&t>0&&e.jsx(m,{}),e.jsx(j,{asChild:!!s.href,onClick:s.onClick,className:x(s.variant==="destructive"&&"text-destructive focus:text-destructive"),children:s.href?e.jsx(a,{href:s.href,children:c}):c})]},s.label)})})]})}export{v as D};

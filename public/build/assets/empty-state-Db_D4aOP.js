@@ -1,1 +1,0 @@
-import{j as e}from"./app-evpLOvc-.js";function m({title:r,description:t,children:s}){return e.jsxs("div",{className:"flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed p-10 text-center",children:[e.jsx("p",{className:"font-medium",children:r}),t&&e.jsx("p",{className:"text-muted-foreground text-sm",children:t}),s]})}export{m as E};

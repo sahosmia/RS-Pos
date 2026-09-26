@@ -1,6 +1,0 @@
-import{r as t,j as e}from"./app-evpLOvc-.js";import{I as p}from"./input-DrFa_L3E.js";import{c,a as d}from"./createLucideIcon-BSGuvlCi.js";import{E as m}from"./eye-CORmt1ZY.js";/**
- * @license lucide-react v0.475.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */const l=[["path",{d:"M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49",key:"ct8e1f"}],["path",{d:"M14.084 14.158a3 3 0 0 1-4.242-4.242",key:"151rxh"}],["path",{d:"M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143",key:"13bj9a"}],["path",{d:"m2 2 20 20",key:"1ooewy"}]],x=c("EyeOff",l),f=t.forwardRef(({className:a,...o},r)=>{const[s,i]=t.useState(!1);return e.jsxs("div",{className:"relative",children:[e.jsx(p,{type:s?"text":"password",className:d("pr-10",a),ref:r,...o}),e.jsx("button",{type:"button",tabIndex:-1,onClick:()=>i(n=>!n),className:"text-muted-foreground hover:text-foreground absolute inset-y-0 right-0 flex items-center px-3","aria-label":s?"Hide password":"Show password",children:s?e.jsx(x,{className:"size-4"}):e.jsx(m,{className:"size-4"})})]})});f.displayName="PasswordInput";export{f as P};
