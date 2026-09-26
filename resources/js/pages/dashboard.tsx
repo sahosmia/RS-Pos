@@ -34,11 +34,20 @@ function shortDayLabel(isoDate: string): string {
     return `${day} ${months[month - 1]}`;
 }
 
-function MetricCard({ label, value }: { label: string; value: string }) {
+function MetricItem({ label, value }: { label: string; value: string }) {
+    return (
+        <div>
+            <p className="text-muted-foreground text-xs">{label}</p>
+            <p className="text-lg font-semibold tabular-nums sm:text-xl">{value}</p>
+        </div>
+    );
+}
+
+function SectionCard({ title, children }: { title: string; children: React.ReactNode }) {
     return (
         <div className="rounded-lg border p-4">
-            <p className="text-muted-foreground text-sm">{label}</p>
-            <p className="text-xl font-semibold tabular-nums">{value}</p>
+            <h2 className="text-muted-foreground mb-3 text-xs font-semibold uppercase tracking-wider">{title}</h2>
+            <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">{children}</div>
         </div>
     );
 }
@@ -70,15 +79,12 @@ export default function Dashboard({ quickActions, range, metrics, balances, sale
                     ))}
                 </div>
 
-                <div className="space-y-3">
-                    <h2 className="text-sm font-medium">{t('dashboard', 'sales_section')}</h2>
-                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                        <MetricCard label={t('dashboard', 'total_sales')} value={money(metrics.totalSales)} />
-                        <MetricCard label={t('dashboard', 'net_sales')} value={money(metrics.netSales)} />
-                        <MetricCard label={t('dashboard', 'invoice_due')} value={money(metrics.invoiceDue)} />
-                        <MetricCard label={t('dashboard', 'total_sell_return')} value={money(metrics.totalSellReturn)} />
-                    </div>
-                </div>
+                <SectionCard title={t('dashboard', 'sales_section')}>
+                    <MetricItem label={t('dashboard', 'total_sales')} value={money(metrics.totalSales)} />
+                    <MetricItem label={t('dashboard', 'net_sales')} value={money(metrics.netSales)} />
+                    <MetricItem label={t('dashboard', 'invoice_due')} value={money(metrics.invoiceDue)} />
+                    <MetricItem label={t('dashboard', 'total_sell_return')} value={money(metrics.totalSellReturn)} />
+                </SectionCard>
 
                 <div className="grid gap-4 grid-cols-1">
                     <SalesBarChart
@@ -94,25 +100,19 @@ export default function Dashboard({ quickActions, range, metrics, balances, sale
                     />
                 </div>
 
-                <div className="space-y-3">
-                    <h2 className="text-sm font-medium">{t('dashboard', 'purchases_expenses_section')}</h2>
-                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                        <MetricCard label={t('dashboard', 'total_purchase')} value={money(metrics.totalPurchase)} />
-                        <MetricCard label={t('dashboard', 'purchase_due')} value={money(metrics.purchaseDue)} />
-                        <MetricCard label={t('dashboard', 'total_purchase_return')} value={money(metrics.totalPurchaseReturn)} />
-                        <MetricCard label={t('dashboard', 'expense')} value={money(metrics.totalExpense)} />
-                    </div>
-                </div>
+                <SectionCard title={t('dashboard', 'purchases_expenses_section')}>
+                    <MetricItem label={t('dashboard', 'total_purchase')} value={money(metrics.totalPurchase)} />
+                    <MetricItem label={t('dashboard', 'purchase_due')} value={money(metrics.purchaseDue)} />
+                    <MetricItem label={t('dashboard', 'total_purchase_return')} value={money(metrics.totalPurchaseReturn)} />
+                    <MetricItem label={t('dashboard', 'expense')} value={money(metrics.totalExpense)} />
+                </SectionCard>
 
-                <div className="space-y-3">
-                    <h2 className="text-sm font-medium">{t('dashboard', 'current_position')}</h2>
-                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                        <MetricCard label={t('dashboard', 'total_receivable')} value={money(balances.totalReceivable)} />
-                        <MetricCard label={t('dashboard', 'total_payable')} value={money(balances.totalPayable)} />
-                        <MetricCard label={t('dashboard', 'cash_and_bank')} value={money(balances.cashAndBank)} />
-                        <MetricCard label={t('dashboard', 'low_stock_products')} value={String(balances.lowStockCount)} />
-                    </div>
-                </div>
+                <SectionCard title={t('dashboard', 'current_position')}>
+                    <MetricItem label={t('dashboard', 'total_receivable')} value={money(balances.totalReceivable)} />
+                    <MetricItem label={t('dashboard', 'total_payable')} value={money(balances.totalPayable)} />
+                    <MetricItem label={t('dashboard', 'cash_and_bank')} value={money(balances.cashAndBank)} />
+                    <MetricItem label={t('dashboard', 'low_stock_products')} value={String(balances.lowStockCount)} />
+                </SectionCard>
             </div>
         </AppLayout>
     );
