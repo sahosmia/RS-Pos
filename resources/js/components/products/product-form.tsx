@@ -12,7 +12,8 @@ import { useTranslation } from '@/hooks/use-translation';
 import { type SharedData } from '@/types';
 import { type Brand, type Category, type ProductDetail, type ServicePlanPeriod, type Unit } from '@/types/models';
 import { router, useForm, usePage } from '@inertiajs/react';
-import { Plus, Trash2 } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Info, Plus, Trash2 } from 'lucide-react';
 import { FormEventHandler, useState } from 'react';
 import { toast } from 'sonner';
 
@@ -38,7 +39,7 @@ export default function ProductForm({ mode, product, categories, brands, units }
         barcode: product?.barcode ?? '',
         category_id: product?.category_id ?? null,
         brand_id: product?.brand_id ?? null,
-        unit_id: product?.unit_id ?? units[0]?.id ?? 0,
+        unit_id: product?.unit_id ?? 0,
         selling_price: product?.selling_price ?? 0,
         minimum_stock_level: product?.minimum_stock_level ?? 0,
         manage_stock: product?.manage_stock ?? true,
@@ -104,33 +105,43 @@ export default function ProductForm({ mode, product, categories, brands, units }
                 <section className="space-y-4 rounded-lg border p-4">
                     <h3 className="font-medium">{t('productForm', 'basic_info')}</h3>
 
-                    <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                         <FormInput
                             id="name"
                             label={t('productForm', 'product_name')}
                             value={form.data.name}
                             onChange={(e) => form.setData('name', e.target.value)}
                             error={form.errors.name}
+                            placeholder="e.g. Wireless Mouse, Samsung S23"
                             required
                         />
 
-                        <div className="grid gap-2">
-                            <FormInput
-                                id="sku"
-                                label={t('productForm', 'sku')}
-                                value={form.data.sku}
-                                onChange={(e) => form.setData('sku', e.target.value)}
-                                error={form.errors.sku}
-                            />
-                            <p className="text-muted-foreground text-xs">{t('productForm', 'sku_helper')}</p>
-                        </div>
-
                         <FormInput
-                            id="barcode"
-                            label={t('productForm', 'barcode')}
-                            value={form.data.barcode}
-                            onChange={(e) => form.setData('barcode', e.target.value)}
-                            error={form.errors.barcode}
+                            id="sku"
+                            label={
+                                <span className="inline-flex items-center gap-1">
+                                    <span>{t('productForm', 'sku')}</span>
+                                    <TooltipProvider>
+                                        <Tooltip>
+                                            <TooltipTrigger asChild>
+                                                <button
+                                                    type="button"
+                                                    className="text-muted-foreground hover:text-foreground inline-flex cursor-pointer items-center"
+                                                >
+                                                    <Info className="size-3.5" />
+                                                </button>
+                                            </TooltipTrigger>
+                                            <TooltipContent>
+                                                <p>{t('productForm', 'sku_helper')}</p>
+                                            </TooltipContent>
+                                        </Tooltip>
+                                    </TooltipProvider>
+                                </span>
+                            }
+                            value={form.data.sku}
+                            onChange={(e) => form.setData('sku', e.target.value)}
+                            error={form.errors.sku}
+                            placeholder="e.g. SKU-10001"
                         />
 
                         <div className="grid gap-2">
@@ -206,7 +217,7 @@ export default function ProductForm({ mode, product, categories, brands, units }
                 <section className="space-y-4 rounded-lg border p-4">
                     <h3 className="font-medium">{t('productForm', 'pricing_stock')}</h3>
 
-                    <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                         <div className="grid gap-2">
                             <Label htmlFor="selling_price" required>
                                 {t('productForm', 'selling_price')}
@@ -228,6 +239,7 @@ export default function ProductForm({ mode, product, categories, brands, units }
                             value={form.data.minimum_stock_level}
                             onChange={(e) => form.setData('minimum_stock_level', Number(e.target.value))}
                             error={form.errors.minimum_stock_level}
+                            placeholder="0"
                         />
 
                         {mode === 'edit' && product && (
@@ -238,7 +250,7 @@ export default function ProductForm({ mode, product, categories, brands, units }
                             </div>
                         )}
 
-                        <div className="flex items-center justify-between gap-4 rounded-lg border p-3 sm:col-span-2">
+                        <div className="flex items-center justify-between gap-4 rounded-lg border p-3 sm:col-span-2 lg:col-span-3">
                             <div className="space-y-0.5">
                                 <Label htmlFor="manage_stock">{t('productForm', 'manage_stock')}</Label>
                                 <p className="text-muted-foreground text-sm">{t('productForm', 'manage_stock_description')}</p>
@@ -261,6 +273,7 @@ export default function ProductForm({ mode, product, categories, brands, units }
                                         value={form.data.opening_stock}
                                         onChange={(e) => form.setData('opening_stock', Number(e.target.value))}
                                         error={form.errors.opening_stock}
+                                        placeholder="0"
                                     />
 
                                     <div className="grid gap-2">
@@ -292,6 +305,7 @@ export default function ProductForm({ mode, product, categories, brands, units }
                             value={form.data.warranty_period_months ?? ''}
                             onChange={(e) => form.setData('warranty_period_months', e.target.value ? Number(e.target.value) : null)}
                             error={form.errors.warranty_period_months}
+                            placeholder="e.g. 12"
                         />
                     </div>
 
@@ -344,6 +358,7 @@ export default function ProductForm({ mode, product, categories, brands, units }
                                             className="w-28"
                                             value={period.period_months}
                                             onChange={(e) => updateServicePeriod(index, { period_months: Number(e.target.value) })}
+                                            placeholder="12"
                                         />
                                     </div>
                                     <div className="grid gap-1">
@@ -355,6 +370,7 @@ export default function ProductForm({ mode, product, categories, brands, units }
                                             className="w-28"
                                             value={period.free_quota}
                                             onChange={(e) => updateServicePeriod(index, { free_quota: Number(e.target.value) })}
+                                            placeholder="0"
                                         />
                                     </div>
                                     <Button type="button" variant="ghost" size="icon" onClick={() => removeServicePeriod(index)}>

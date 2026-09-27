@@ -12,3 +12,11 @@
 - [x] **9** akane staff transition e payment account  niye amar mone hoi aktu problem ase, ata status er upor depend kore change hoi kono kono somoy ase na account select er option , abar advance ta return debar way nai, (jemon advance, loan, expence, loan return, return, salary), akaneo ai ledger ta ami whatsapp e send korte cai staff er whatsapp e so jodi taff er phone number niye na thaki nite hobe,
 
 - [x] **10** Title e Laravel Lekha dekai, akane shop name thakbe ar na thakle akane RS Pos Thakbe, ar ak jaigai change korle sob jaigai change hobe
+
+- [ ] **11** onek input filed e placeholeder nei, jemon product create e nai, prodct create e deko sku te "Leave blank to auto-generate one" ata ase, but ai gulo label er pase akta icon e hover korle tooltip e dekale valo hoi; unit abar defaulte select theke, akane please select option dite pari
+
+- **12** Product view thakbe, product stock movement history thakbe, akane kintu addjust er datao add hobe, create form er brand, category, unit er grid komano mane 1 row 3 korle valo hoi, achara aro onek filed ase 1 row 3 grid korle valo hoi
+
+- ***13** expence form e akta paymnent method e payment hobe, akane kono due thakbe na kono Landlord/Vendor  thakbe na,  kono multi payment select hobe na, so akane sudu category, account, amount, date (defaulte current date), note, atachment thakbe,
+
+**14** account e fund transfer korle  jodi kono account e oi poriman ammount na thake tahole to error message dibe, ar ata sob jaigai hobe, 

@@ -226,7 +226,13 @@ export default function ExpenseModal({ open, onOpenChange, categories, accounts,
 
             <div className="grid gap-2">
                 <Label htmlFor="note">Note</Label>
-                <Textarea id="note" value={form.data.note} onChange={(e) => form.setData('note', e.target.value)} rows={2} />
+                <Textarea
+                    id="note"
+                    value={form.data.note}
+                    onChange={(e) => form.setData('note', e.target.value)}
+                    rows={2}
+                    placeholder="Enter expense details or notes..."
+                />
                 <InputError message={form.errors.note} />
             </div>
         </FormModal>

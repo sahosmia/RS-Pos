@@ -95,6 +95,7 @@ export default function RoleFormModal({ open, onOpenChange, editing, permissions
                     onChange={(e) => form.setData('name', e.target.value)}
                     disabled={editing?.protected}
                     error={form.errors.name}
+                    placeholder="e.g. Sales Manager, Accountant"
                     required
                 />
                 {editing?.protected && <p className="text-muted-foreground text-xs">Admin role-এর নাম পরিবর্তন করা যায় না।</p>}

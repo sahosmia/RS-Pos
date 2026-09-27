@@ -138,6 +138,7 @@ export default function BusinessSettingsIndex({ settings }: { settings: Settings
                                 value={data.shop_name}
                                 onChange={(e) => setData('shop_name', e.target.value)}
                                 error={errors.shop_name}
+                                placeholder="e.g. My Retail Shop"
                                 required
                             />
 
@@ -147,6 +148,7 @@ export default function BusinessSettingsIndex({ settings }: { settings: Settings
                                 value={data.shop_address}
                                 onChange={(e) => setData('shop_address', e.target.value)}
                                 error={errors.shop_address}
+                                placeholder="e.g. 123 Main St, City"
                             />
 
                             <FormInput
@@ -155,6 +157,7 @@ export default function BusinessSettingsIndex({ settings }: { settings: Settings
                                 value={data.shop_phone}
                                 onChange={(e) => setData('shop_phone', e.target.value)}
                                 error={errors.shop_phone}
+                                placeholder="e.g. +8801700000000"
                             />
 
                             <FormInput
@@ -164,6 +167,7 @@ export default function BusinessSettingsIndex({ settings }: { settings: Settings
                                 value={data.currency_symbol}
                                 onChange={(e) => setData('currency_symbol', e.target.value)}
                                 error={errors.currency_symbol}
+                                placeholder="৳"
                                 required
                             />
                         </TabsContent>
@@ -199,6 +203,7 @@ export default function BusinessSettingsIndex({ settings }: { settings: Settings
                                     value={data.invoice_prefix}
                                     onChange={(e) => setData('invoice_prefix', e.target.value)}
                                     error={errors.invoice_prefix}
+                                    placeholder="e.g. INV-"
                                     required
                                 />
 
@@ -210,6 +215,7 @@ export default function BusinessSettingsIndex({ settings }: { settings: Settings
                                     value={data.invoice_next_number}
                                     onChange={(e) => setData('invoice_next_number', Number(e.target.value))}
                                     error={errors.invoice_next_number}
+                                    placeholder="1001"
                                     required
                                 />
                             </div>
@@ -221,6 +227,7 @@ export default function BusinessSettingsIndex({ settings }: { settings: Settings
                                     value={data.purchase_prefix}
                                     onChange={(e) => setData('purchase_prefix', e.target.value)}
                                     error={errors.purchase_prefix}
+                                    placeholder="e.g. PUR-"
                                     required
                                 />
 
@@ -232,6 +239,7 @@ export default function BusinessSettingsIndex({ settings }: { settings: Settings
                                     value={data.purchase_next_number}
                                     onChange={(e) => setData('purchase_next_number', Number(e.target.value))}
                                     error={errors.purchase_next_number}
+                                    placeholder="1001"
                                     required
                                 />
                             </div>
@@ -246,6 +254,7 @@ export default function BusinessSettingsIndex({ settings }: { settings: Settings
                                 value={data.fiscal_year_start_month}
                                 onChange={(e) => setData('fiscal_year_start_month', Number(e.target.value))}
                                 error={errors.fiscal_year_start_month}
+                                placeholder="1"
                                 required
                             />
                         </TabsContent>

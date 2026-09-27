@@ -164,6 +164,7 @@ export default function StaffIndex({ staff, investors }: StaffIndexProps) {
                     value={form.data.name}
                     onChange={(e) => form.setData('name', e.target.value)}
                     error={form.errors.name}
+                    placeholder="e.g. Rahman"
                     required
                 />
 
@@ -173,6 +174,7 @@ export default function StaffIndex({ staff, investors }: StaffIndexProps) {
                     value={form.data.phone}
                     onChange={(e) => form.setData('phone', e.target.value)}
                     error={form.errors.phone}
+                    placeholder="e.g. 01712345678"
                 />
 
                 <FormInput
@@ -181,6 +183,7 @@ export default function StaffIndex({ staff, investors }: StaffIndexProps) {
                     value={form.data.designation}
                     onChange={(e) => form.setData('designation', e.target.value)}
                     error={form.errors.designation}
+                    placeholder="e.g. Manager"
                 />
 
                 <FormInput
