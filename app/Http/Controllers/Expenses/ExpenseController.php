@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Expenses;
 
+use App\Actions\Expenses\Expense\AddExpensePaymentAction;
 use App\Actions\Expenses\Expense\CreateExpenseAction;
 use App\Actions\Expenses\Expense\UpdateExpenseAction;
 use App\Http\Controllers\Controller;
@@ -73,9 +74,16 @@ class ExpenseController extends Controller
         ]);
     }
 
-    public function store(StoreExpenseRequest $request, CreateExpenseAction $createExpense): RedirectResponse
+    public function store(StoreExpenseRequest $request, CreateExpenseAction $createExpense, AddExpensePaymentAction $addPayment): RedirectResponse
     {
-        $expense = $createExpense->execute($request->validated());
+        $data = $request->validated();
+        $expense = $createExpense->execute($data);
+
+        // `CreateExpenseAction` only ever records the accrual (Dr category/Cr
+        // Payable) — the form still asks for a single account paid in full
+        // immediately, so settle that here as the same separate payment step
+        // `AddExpensePaymentAction` already provides for later/partial pays.
+        $addPayment->execute($expense, [['account_id' => $data['account_id'], 'amount' => $expense->total_amount]]);
 
         if ($request->hasFile('attachment')) {
             $expense->addMediaFromRequest('attachment')->toMediaCollection('documents');

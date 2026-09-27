@@ -987,6 +987,13 @@ export interface DashboardMonthlySalesPoint {
     total: number;
 }
 
+export interface DashboardRevenueExpensePoint {
+    month: string;
+    label: string;
+    revenue: number;
+    expense: number;
+}
+
 /** Subset of `DateRangePresetValue` accepted by the best-sellers/purchases widget's own `period` filter. */
 export type BestSellersPeriodValue = 'today' | 'yesterday' | 'last_7_days' | 'last_30_days';
 

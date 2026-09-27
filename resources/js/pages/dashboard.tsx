@@ -1,8 +1,8 @@
 import BestSellersPurchasesWidget from '@/components/dashboard/best-sellers-purchases-widget';
+import RevenueExpenseChart from '@/components/dashboard/revenue-expense-chart';
 import SalesChart from '@/components/dashboard/sales-chart';
 import HeadingSmall from '@/components/heading-small';
 import DateRangeFilter from '@/components/shared/date-range-filter';
-import { Button } from '@/components/ui/button';
 import { useMoneyFormat } from '@/hooks/use-money-format';
 import { useTranslation } from '@/hooks/use-translation';
 import AppLayout from '@/layouts/app-layout';
@@ -16,9 +16,10 @@ import {
     type DashboardMonthlySalesPoint,
     type DashboardRange,
     type DashboardRecentTransactions,
+    type DashboardRevenueExpensePoint,
     type DateRangePresetValue,
 } from '@/types/models';
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, router } from '@inertiajs/react';
 import {
     AlertCircle,
     ArrowDownLeft,
@@ -40,6 +41,7 @@ interface DashboardProps {
     balances: DashboardBalances;
     salesLast30Days: DashboardDailySalesPoint[];
     salesCurrentFiscalYear: DashboardMonthlySalesPoint[];
+    monthlyRevenueVsExpense: DashboardRevenueExpensePoint[];
     bestSellers: DashboardBestSellerItem[];
     recentTransactions: DashboardRecentTransactions;
     bestSellersPeriod: BestSellersPeriodValue;
@@ -57,7 +59,7 @@ function ColorfulMetricCard({ label, value, colorClass, icon: Icon }: { label: s
     return (
         <div className={`flex items-center justify-between gap-3 rounded-xl border p-4 shadow-xs transition-all hover:shadow-md ${colorClass}`}>
             <div className="min-w-0">
-                <p className="text-xs font-semibold uppercase tracking-wider opacity-80">{label}</p>
+                <p className="text-xs font-semibold tracking-wider uppercase opacity-80">{label}</p>
                 <p className="mt-1 text-xl font-extrabold tabular-nums sm:text-2xl">{value}</p>
             </div>
             <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-current/10 p-2">
@@ -73,6 +75,7 @@ export default function Dashboard({
     balances,
     salesLast30Days,
     salesCurrentFiscalYear,
+    monthlyRevenueVsExpense,
     bestSellers,
     recentTransactions,
     bestSellersPeriod,
@@ -105,10 +108,8 @@ export default function Dashboard({
                     <DateRangeFilter range={range} onChange={changeRange} />
                 </div>
 
-               
-
                 <div className="space-y-3">
-                    <h2 className="text-sm font-semibold tracking-wide text-foreground">{t('dashboard', 'sales_section')}</h2>
+                    <h2 className="text-foreground text-sm font-semibold tracking-wide">{t('dashboard', 'sales_section')}</h2>
                     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                         <ColorfulMetricCard
                             label={t('dashboard', 'total_sales')}
@@ -138,7 +139,7 @@ export default function Dashboard({
                 </div>
 
                 <div className="space-y-3">
-                    <h2 className="text-sm font-semibold tracking-wide text-foreground">{t('dashboard', 'purchases_expenses_section')}</h2>
+                    <h2 className="text-foreground text-sm font-semibold tracking-wide">{t('dashboard', 'purchases_expenses_section')}</h2>
                     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                         <ColorfulMetricCard
                             label={t('dashboard', 'total_purchase')}
@@ -168,7 +169,7 @@ export default function Dashboard({
                 </div>
 
                 <div className="space-y-3">
-                    <h2 className="text-sm font-semibold tracking-wide text-foreground">{t('dashboard', 'current_position')}</h2>
+                    <h2 className="text-foreground text-sm font-semibold tracking-wide">{t('dashboard', 'current_position')}</h2>
                     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                         <ColorfulMetricCard
                             label={t('dashboard', 'total_receivable')}
@@ -207,11 +208,9 @@ export default function Dashboard({
                         data={salesCurrentFiscalYear.map((point) => ({ key: point.month, label: point.label, total: point.total }))}
                     />
 
-                    <BestSellersPurchasesWidget
-                        bestSellers={bestSellers}
-                        purchases={recentTransactions.purchases}
-                        period={bestSellersPeriod}
-                    />
+                    <RevenueExpenseChart title="Revenue vs Expense — Monthly" data={monthlyRevenueVsExpense} />
+
+                    <BestSellersPurchasesWidget bestSellers={bestSellers} purchases={recentTransactions.purchases} period={bestSellersPeriod} />
                 </div>
             </div>
         </AppLayout>

@@ -122,7 +122,8 @@ test('reversing a journal entry from the UI posts a mirrored entry and marks the
             ->where('entry.reversal_of.id', $original->id));
 
     $this->post("/journal-entries/{$original->id}/reverse", ['reason' => 'again'])
-        ->assertStatus(500);
+        ->assertRedirect()
+        ->assertSessionHasErrors(['error']);
 });
 
 test('the accounting periods page renders and closing a period locks it', function () {

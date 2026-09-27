@@ -1,5 +1,11 @@
 <?php
 
+use App\Exceptions\AlreadyReversedException;
+use App\Exceptions\AssetAlreadyDisposedException;
+use App\Exceptions\ClosedPeriodException;
+use App\Exceptions\InsufficientStockException;
+use App\Exceptions\InvalidSerialSelectionException;
+use App\Exceptions\ReturnQuantityExceedsRemainingException;
 use App\Http\Middleware\EnsureModuleAccess;
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\SetLocale;
@@ -40,5 +46,21 @@ return Application::configure(basePath: dirname(__DIR__))
             }
 
             return Inertia::render('not-found')->toResponse($request)->setStatusCode(404);
+        });
+
+        $exceptions->render(function (
+            InvalidSerialSelectionException|
+            InsufficientStockException|
+            ReturnQuantityExceedsRemainingException|
+            AssetAlreadyDisposedException|
+            ClosedPeriodException|
+            AlreadyReversedException $e,
+            $request
+        ) {
+            if ($request->wantsJson() && ! $request->header('X-Inertia')) {
+                return response()->json(['message' => $e->getMessage()], 422);
+            }
+
+            return back()->withErrors(['error' => $e->getMessage()])->with('error', $e->getMessage());
         });
     })->create();

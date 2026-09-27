@@ -157,6 +157,7 @@ class DashboardController extends Controller
         return Inertia::render('dashboard', [
             'salesLast30Days' => $this->salesLast30Days(),
             'salesCurrentFiscalYear' => $this->salesCurrentFiscalYear(),
+            'monthlyRevenueVsExpense' => $this->monthlyRevenueVsExpense(),
             'quickActions' => [
                 ['label' => __('dashboard.new_sale'), 'href' => route('sales.create')],
                 ['label' => __('dashboard.new_purchase'), 'href' => route('purchases.create')],
@@ -252,6 +253,45 @@ class DashboardController extends Controller
                     'month' => $key,
                     'label' => $month->format('M Y'),
                     'total' => round((float) ($byMonth->get($key)?->sum('total_amount') ?? 0), 2),
+                ];
+            })
+            ->values()
+            ->all();
+    }
+
+    /**
+     * One point per month of the shop's current fiscal year, revenue
+     * (confirmed sales) alongside expense — same fiscal-year window as
+     * {@see salesCurrentFiscalYear()}, just with a second series.
+     *
+     * @return list<array{month: string, label: string, revenue: float, expense: float}>
+     */
+    private function monthlyRevenueVsExpense(): array
+    {
+        $fiscalYear = FiscalYear::current(Settings::current()->fiscal_year_start_month);
+        $fyStart = $fiscalYear['start'];
+
+        $revenueByMonth = Sale::query()
+            ->where('status', SaleStatus::Confirmed)
+            ->whereBetween('sale_date', [$fiscalYear['start'], $fiscalYear['end']])
+            ->get(['sale_date', 'total_amount'])
+            ->groupBy(fn (Sale $sale) => $sale->sale_date->format('Y-m'));
+
+        $expenseByMonth = Expense::query()
+            ->whereBetween('expense_date', [$fiscalYear['start'], $fiscalYear['end']])
+            ->get(['expense_date', 'total_amount'])
+            ->groupBy(fn (Expense $expense) => $expense->expense_date->format('Y-m'));
+
+        return collect(range(0, 11))
+            ->map(function (int $i) use ($fyStart, $revenueByMonth, $expenseByMonth) {
+                $month = $fyStart->copy()->addMonths($i);
+                $key = $month->format('Y-m');
+
+                return [
+                    'month' => $key,
+                    'label' => $month->format('M Y'),
+                    'revenue' => round((float) ($revenueByMonth->get($key)?->sum('total_amount') ?? 0), 2),
+                    'expense' => round((float) ($expenseByMonth->get($key)?->sum('total_amount') ?? 0), 2),
                 ];
             })
             ->values()

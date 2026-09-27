@@ -52,6 +52,10 @@ class CreateSaleReturnAction
             $totalAmount = 0.0;
             $costTotal = 0.0;
 
+            $discountRatio = ($sale->subtotal > 0 && $sale->discount_amount > 0)
+                ? ($sale->discount_amount / $sale->subtotal)
+                : 0.0;
+
             foreach ($data['items'] as $itemData) {
                 /** @var SaleItem $saleItem */
                 $saleItem = $sale->items->firstWhere('id', (int) $itemData['sale_item_id']);
@@ -59,13 +63,16 @@ class CreateSaleReturnAction
 
                 $this->assertWithinRemaining($saleItem, $quantity);
 
-                $subtotal = round($quantity * $saleItem->unit_price, 2);
+                $rawSubtotal = round($quantity * $saleItem->unit_price, 2);
+                $discountPortion = round($rawSubtotal * $discountRatio, 2);
+                $subtotal = round($rawSubtotal - $discountPortion, 2);
+                $effectiveUnitPrice = $quantity > 0 ? round($subtotal / $quantity, 4) : $saleItem->unit_price;
 
                 $return->items()->create([
                     'sale_item_id' => $saleItem->id,
                     'product_id' => $saleItem->product_id,
                     'quantity' => $quantity,
-                    'unit_price' => $saleItem->unit_price,
+                    'unit_price' => $effectiveUnitPrice,
                     'subtotal' => $subtotal,
                 ]);
 

@@ -74,6 +74,14 @@ class Purchase extends Model
     }
 
     /**
+     * @return HasMany<PurchaseReturn, $this>
+     */
+    public function returns(): HasMany
+    {
+        return $this->hasMany(PurchaseReturn::class);
+    }
+
+    /**
      * Draft/Ordered carry no stock movement or ledger entry yet, so they
      * stay freely editable. Once Received (or Cancelled), corrections must
      * go through a Stock Adjustment instead of direct edit.

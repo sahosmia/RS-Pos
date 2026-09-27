@@ -113,7 +113,7 @@ export default function EmiInstallmentsIndex({ installments, accounts, filters }
     const submitPay: FormEventHandler = (e) => {
         e.preventDefault();
 
-        if (!paying) {
+        if (!paying || payForm.processing) {
             return;
         }
 

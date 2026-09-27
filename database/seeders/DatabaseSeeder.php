@@ -25,12 +25,12 @@ class DatabaseSeeder extends Seeder
             RolePermissionSeeder::class,
             AccountTypeSeeder::class,
                 ChartOfAccountSeeder::class,
-            //     AccountingPeriodSeeder::class,
-            //     MiscTransactionCategorySeeder::class,
-            //     CashBookSeeder::class,
-            //     StaffTransactionTypeSeeder::class,
-            InitialDataSeeder::class,
-        //     DummyDataSeeder::class,
+                 AccountingPeriodSeeder::class,
+                MiscTransactionCategorySeeder::class,
+             CashBookSeeder::class,
+                StaffTransactionTypeSeeder::class,
+            // InitialDataSeeder::class,
+            DummyDataSeeder::class,
             HomeApplianceProductSeeder::class,
         ]);
     }

@@ -1,5 +1,6 @@
 <?php
 
+use App\Actions\Expenses\Expense\AddExpensePaymentAction;
 use App\Actions\Expenses\Expense\CreateExpenseAction;
 use App\Actions\Expenses\ExpenseCategory\CreateExpenseCategoryAction;
 use App\Models\Account;
@@ -29,12 +30,19 @@ test('creating an expense deducts money from account and posts a balanced journa
     $accountType = AccountType::factory()->create();
     $account = Account::factory()->create(['account_type_id' => $accountType->id, 'current_balance' => 5000]);
 
+    // Create is a pure accrual (Dr category/Cr Payable) — paying it down (Dr
+    // Payable/Cr account) is always a separate step, same split Purchase's
+    // confirm/pay-due already uses. The Expense form posts a single account
+    // paid in full and the controller chains these two calls itself; this
+    // test exercises the same two-action sequence directly.
     $expense = app(CreateExpenseAction::class)->execute([
         'expense_category_id' => $category->id,
-        'account_id' => $account->id,
         'total_amount' => 3000,
         'expense_date' => '2026-03-05',
     ]);
+
+    app(AddExpensePaymentAction::class)->execute($expense, [['account_id' => $account->id, 'amount' => 3000]]);
+    $expense->refresh();
 
     expect($expense->total_amount)->toBe(3000.0)
         ->and($expense->paid_amount)->toBe(3000.0)
@@ -42,9 +50,10 @@ test('creating an expense deducts money from account and posts a balanced journa
         ->and($expense->payment_status->value)->toBe('paid')
         ->and($account->fresh()->current_balance)->toBe(2000.0);
 
-    $entry = JournalEntry::where('reference_type', 'expense')->where('reference_id', $expense->id)->firstOrFail();
+    $entries = JournalEntry::where('reference_type', 'expense')->where('reference_id', $expense->id)->get();
 
-    expect($entry->lines->sum('debit'))->toBe($entry->lines->sum('credit'))
+    expect($entries)->toHaveCount(2) // the accrual entry, then the payment entry
+        ->and($entries->every(fn (JournalEntry $entry) => $entry->lines->sum('debit') === $entry->lines->sum('credit')))->toBeTrue()
         ->and($category->chartOfAccount->fresh()->balance)->toBe(3000.0);
 });
 
@@ -54,12 +63,15 @@ test('expense pages render', function () {
     $accountType = AccountType::factory()->create();
     $account = Account::factory()->create(['account_type_id' => $accountType->id, 'current_balance' => 5000]);
 
-    app(CreateExpenseAction::class)->execute([
+    // Through the real endpoint (not the Action directly) — the form still
+    // posts a single account_id, which the controller settles as a separate
+    // full payment right after creating the accrual.
+    $this->post('/expenses', [
         'expense_category_id' => $category->id,
         'account_id' => $account->id,
         'total_amount' => 750,
         'expense_date' => '2026-03-05',
-    ]);
+    ])->assertSessionDoesntHaveErrors();
 
     $this->get('/expenses')
         ->assertOk()

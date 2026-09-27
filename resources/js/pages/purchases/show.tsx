@@ -25,6 +25,7 @@ export default function PurchaseShow({ purchase, accounts }: PurchaseShowProps) 
     const [confirmOpen, setConfirmOpen] = useState(false);
     const [paymentOpen, setPaymentOpen] = useState(false);
     const [deleting, setDeleting] = useState(false);
+    const [cancelling, setCancelling] = useState(false);
 
     const breadcrumbs: BreadcrumbItem[] = [
         { title: 'Purchases', href: '/purchases' },
@@ -37,6 +38,18 @@ export default function PurchaseShow({ purchase, accounts }: PurchaseShowProps) 
             onError: (errors) => toast.error(errors.purchase ?? 'Could not delete purchase.'),
             onFinish: () => setDeleting(false),
         });
+    };
+
+    const confirmCancel = () => {
+        router.post(
+            route('purchases.cancel', purchase.id),
+            {},
+            {
+                onSuccess: () => toast.success(`"${purchase.invoice_no}" cancelled.`),
+                onError: (errors) => toast.error(errors.purchase ?? 'Could not cancel purchase.'),
+                onFinish: () => setCancelling(false),
+            },
+        );
     };
 
     return (
@@ -76,9 +89,14 @@ export default function PurchaseShow({ purchase, accounts }: PurchaseShowProps) 
                         )}
 
                         {purchase.status === 'received' && (
-                            <Button variant="outline" asChild>
-                                <Link href={`/purchase-returns/create?purchase_id=${purchase.id}`}>Return</Link>
-                            </Button>
+                            <>
+                                <Button variant="outline" onClick={() => setCancelling(true)}>
+                                    Cancel Purchase
+                                </Button>
+                                <Button variant="outline" asChild>
+                                    <Link href={`/purchase-returns/create?purchase_id=${purchase.id}`}>Return</Link>
+                                </Button>
+                            </>
                         )}
 
                         {purchase.status === 'received' && purchase.due_amount > 0 && (
@@ -151,6 +169,15 @@ export default function PurchaseShow({ purchase, accounts }: PurchaseShowProps) 
                 description={`"${purchase.invoice_no}" মুছে ফেলা হবে।`}
                 confirmLabel="Delete"
                 onConfirm={confirmDelete}
+            />
+
+            <ConfirmDialog
+                open={cancelling}
+                onOpenChange={setCancelling}
+                title="Cancel purchase?"
+                description={`"${purchase.invoice_no}" বাতিল করা হবে এবং সমস্ত হিসাব ও স্টক রিভার্স করা হবে।`}
+                confirmLabel="Cancel Purchase"
+                onConfirm={confirmCancel}
             />
         </AppLayout>
     );

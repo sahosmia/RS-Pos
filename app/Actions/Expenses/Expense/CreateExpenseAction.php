@@ -2,80 +2,51 @@
 
 namespace App\Actions\Expenses\Expense;
 
-use App\Enums\AccountTransactionType;
-use App\Models\Account;
+use App\Enums\ContactLedgerType;
 use App\Models\Expense;
-use App\Services\AccountService;
-use App\Services\ChartOfAccountResolver;
-use App\Services\JournalService;
-use Carbon\Carbon;
+use App\Services\LedgerService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Creates an expense with direct cash outflow from a single account. No due/vendor.
+ * Creates an expense as a pure accrual — Dr {category}/Cr Accounts Payable,
+ * via {@see PostExpenseJournalAction} (same shape {@see UpdateExpenseAction}
+ * posts on a correction). No cash moves here; that's always a separate step
+ * through {@see AddExpensePaymentAction}, same as a Purchase's confirm vs.
+ * pay-due split.
  */
 class CreateExpenseAction
 {
     public function __construct(
-        private AccountService $accounts,
-        private JournalService $journal,
-        private ChartOfAccountResolver $chartOfAccounts,
+        private LedgerService $ledger,
+        private PostExpenseJournalAction $postJournal,
     ) {}
 
     /**
-     * @param  array{expense_category_id: int, account_id: int, total_amount: float|string, expense_date: string, note?: string|null}  $data
+     * @param  array{expense_category_id: int, contact_id?: int|null, total_amount: float|string, expense_date: string, due_date?: string|null, note?: string|null}  $data
      */
     public function execute(array $data): Expense
     {
         return DB::transaction(function () use ($data) {
-            $amount = round((float) $data['total_amount'], 2);
-            $expenseDate = Carbon::parse($data['expense_date']);
-
             $expense = Expense::create([
                 'expense_category_id' => $data['expense_category_id'],
-                'contact_id' => null,
-                'total_amount' => $amount,
+                'contact_id' => $data['contact_id'] ?? null,
+                'total_amount' => round((float) $data['total_amount'], 2),
                 'expense_date' => $data['expense_date'],
-                'due_date' => null,
+                'due_date' => $data['due_date'] ?? null,
                 'note' => $data['note'] ?? null,
                 'created_by' => Auth::id(),
             ]);
 
-            $account = Account::findOrFail($data['account_id']);
+            if ($expense->contact_id) {
+                $expense->loadMissing('contact');
+                $this->ledger->recordContact($expense->contact, ContactLedgerType::ExpenseDue, -$expense->total_amount, 'expense', $expense->id);
+            }
 
-            // Record money outflow on the account
-            $this->accounts->record(
-                $account,
-                AccountTransactionType::Expense,
-                -$amount,
-                $expenseDate,
-                'expense',
-                $expense->id,
-                $data['note'] ?? null,
-            );
-
-            // Journal posting: Dr {expense category's sub-account} / Cr {paying account}
-            $expense->loadMissing('category.chartOfAccount');
-            $categoryAccount = $expense->category->chartOfAccount;
-            $payingAccountChart = $this->chartOfAccounts->forAccount($account);
-
-            $lines = [
-                ['chart_of_account_id' => $categoryAccount->id, 'debit' => $amount, 'credit' => 0],
-                ['chart_of_account_id' => $payingAccountChart->id, 'debit' => 0, 'credit' => $amount],
-            ];
-
-            $this->journal->post(
-                $expenseDate,
-                "Expense: {$expense->category->name}",
-                $lines,
-                'expense',
-                $expense->id,
-            );
-
+            $this->postJournal->execute($expense);
             $expense->recalculatePaymentTotals();
 
-            return $expense->fresh(['category']);
+            return $expense->fresh(['category', 'contact']);
         });
     }
 }
