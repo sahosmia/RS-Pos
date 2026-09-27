@@ -73,6 +73,7 @@ export default function StockAdjustmentModal({ product, onOpenChange }: StockAdj
                     value={form.data.quantity}
                     onChange={(e) => form.setData('quantity', Number(e.target.value))}
                     error={form.errors.quantity}
+                    placeholder="0"
                     required
                 />
                 {product && (

@@ -19,14 +19,10 @@ Route::middleware(['auth', 'module:product'])->group(function () {
     Route::resource('brands', BrandController::class)
         ->only(['index', 'store', 'update', 'destroy']);
 
-    // Registered before the resource group only for readability — no route conflict either way
-    // since `products.show` (GET products/{product}) doesn't exist.
     Route::get('products/export', ProductExportController::class)->name('products.export');
     Route::get('products/search', ProductSearchController::class)->name('products.search');
 
-    // No product detail/show page yet — only the list, create and edit forms.
-    Route::resource('products', ProductController::class)
-        ->except(['show']);
+    Route::resource('products', ProductController::class);
 
     Route::post('products/{product}/stock-adjustments', [StockAdjustmentController::class, 'store'])
         ->name('stock-adjustments.store');

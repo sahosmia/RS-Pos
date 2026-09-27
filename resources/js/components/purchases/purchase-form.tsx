@@ -217,6 +217,7 @@ export default function PurchaseForm({ mode, purchase, initialSupplier, initialP
                                             min={0}
                                             value={item.quantity}
                                             onChange={(e) => updateItem(index, { quantity: Number(e.target.value) })}
+                                            placeholder="1"
                                             className="text-right"
                                         />
                                     </td>

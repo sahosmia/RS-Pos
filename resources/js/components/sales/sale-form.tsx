@@ -488,6 +488,7 @@ export default function SaleForm({ mode, sale, initialCustomer, products, accoun
                                                     min={0}
                                                     value={item.quantity}
                                                     onChange={(e) => updateItem(index, { quantity: Number(e.target.value) })}
+                                                    placeholder="1"
                                                     className="text-right"
                                                 />
                                             </td>
@@ -566,6 +567,7 @@ export default function SaleForm({ mode, sale, initialCustomer, products, accoun
                                 min={0}
                                 value={form.data.discount_value}
                                 onChange={(e) => form.setData('discount_value', Number(e.target.value))}
+                                placeholder="0.00"
                             />
                         )}
                     </div>
@@ -595,6 +597,7 @@ export default function SaleForm({ mode, sale, initialCustomer, products, accoun
                                     value={form.data.installment_count ?? ''}
                                     onChange={(e) => form.setData('installment_count', e.target.value ? Number(e.target.value) : null)}
                                     error={form.errors.installment_count}
+                                    placeholder="e.g. 12"
                                 />
                             )}
 
@@ -702,6 +705,7 @@ export default function SaleForm({ mode, sale, initialCustomer, products, accoun
                                     min={0}
                                     value={cartSheet.quantity}
                                     onChange={(e) => setCartSheet({ ...cartSheet, quantity: Number(e.target.value) })}
+                                    placeholder="1"
                                 />
                                 <div className="grid gap-2">
                                     <Label htmlFor="cart-price">Price</Label>

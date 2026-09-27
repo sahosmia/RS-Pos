@@ -72,7 +72,15 @@ export default function QuickAddCustomerModal({ open, onOpenChange, onCreated }:
 
     return (
         <FormModal open={open} onOpenChange={onOpenChange} title="Add Customer" processing={processing} onSubmit={submit}>
-            <FormInput id="quick_customer_name" label="Name" value={name} onChange={(e) => setName(e.target.value)} error={errors.name} required />
+            <FormInput
+                id="quick_customer_name"
+                label="Name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                error={errors.name}
+                placeholder="e.g. John Doe"
+                required
+            />
 
             <FormInput
                 id="quick_customer_phone"
@@ -80,6 +88,7 @@ export default function QuickAddCustomerModal({ open, onOpenChange, onCreated }:
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 error={errors.phone}
+                placeholder="e.g. 01712345678"
                 required
             />
         </FormModal>

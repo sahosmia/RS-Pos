@@ -72,6 +72,62 @@ class ProductController extends Controller
         return to_route('products.index');
     }
 
+    public function show(Product $product): Response
+    {
+        $product->load(['category', 'brand', 'unit']);
+
+        $movements = $product->stockMovements()
+            ->latest('id')
+            ->paginate(20)
+            ->through(fn ($movement) => [
+                'id' => $movement->id,
+                'type' => $movement->type->value,
+                'type_label' => match ($movement->type->value) {
+                    'opening_stock' => 'Opening Stock',
+                    'purchase' => 'Purchase',
+                    'sale' => 'Sale',
+                    'sale_return' => 'Sale Return',
+                    'purchase_return' => 'Purchase Return',
+                    'adjustment_increase' => 'Adjustment (Increase)',
+                    'adjustment_decrease' => 'Adjustment (Decrease)',
+                    default => $movement->type->value,
+                },
+                'is_increase' => $movement->type->increasesStock(),
+                'quantity' => $movement->quantity,
+                'unit_cost' => $movement->unit_cost,
+                'total_cost' => $movement->total_cost,
+                'reference_type' => $movement->reference_type,
+                'reference_id' => $movement->reference_id,
+                'note' => $movement->note,
+                'created_at' => $movement->created_at->toDateTimeString(),
+            ]);
+
+        return Inertia::render('products/show', [
+            'product' => [
+                'id' => $product->id,
+                'name' => $product->name,
+                'sku' => $product->sku,
+                'category' => $product->category?->only(['id', 'name']),
+                'brand' => $product->brand?->only(['id', 'name']),
+                'unit' => $product->unit->only(['id', 'name']),
+                'avg_cost' => $product->avg_cost,
+                'selling_price' => $product->selling_price,
+                'current_stock' => $product->current_stock,
+                'minimum_stock_level' => $product->minimum_stock_level,
+                'stock_status' => $product->stock_status,
+                'profit_margin' => $product->profit_margin,
+                'manage_stock' => $product->manage_stock,
+                'warranty_period_months' => $product->warranty_period_months,
+                'has_installation_service' => $product->has_installation_service,
+                'track_serial_number' => $product->track_serial_number,
+                'is_for_sale' => $product->is_for_sale,
+                'is_active' => $product->is_active,
+                'image_url' => $product->getFirstMediaUrl('images') ?: null,
+            ],
+            'movements' => $movements,
+        ]);
+    }
+
     public function edit(Product $product): Response
     {
         return Inertia::render('products/edit', [

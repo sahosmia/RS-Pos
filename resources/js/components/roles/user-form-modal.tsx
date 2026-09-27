@@ -78,6 +78,7 @@ export default function UserFormModal({ open, onOpenChange, editing, roles }: Us
                 value={form.data.name}
                 onChange={(e) => form.setData('name', e.target.value)}
                 error={form.errors.name}
+                placeholder="e.g. John Doe"
                 required
             />
 
@@ -88,6 +89,7 @@ export default function UserFormModal({ open, onOpenChange, editing, roles }: Us
                 value={form.data.email}
                 onChange={(e) => form.setData('email', e.target.value)}
                 error={form.errors.email}
+                placeholder="john@example.com"
                 required
             />
 
@@ -110,7 +112,7 @@ export default function UserFormModal({ open, onOpenChange, editing, roles }: Us
                 error={form.errors.password}
                 required={!editing}
                 autoComplete="new-password"
-                placeholder={editing ? 'Leave blank to keep unchanged' : undefined}
+                placeholder={editing ? 'Leave blank to keep unchanged' : '••••••••'}
             />
 
             <FormSelect

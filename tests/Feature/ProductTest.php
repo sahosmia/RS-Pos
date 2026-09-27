@@ -239,6 +239,25 @@ test('a category name only has to be unique within its own parent', function () 
         ->assertSessionHasErrors('name');
 });
 
+test('product show page renders with stock movement history', function () {
+    $this->actingAs(User::factory()->create());
+    $product = Product::factory()->create(['name' => 'Microwave Oven', 'current_stock' => 15]);
+    StockMovement::factory()->create([
+        'product_id' => $product->id,
+        'type' => StockMovementType::AdjustmentIncrease,
+        'quantity' => 15,
+        'note' => 'Count adjustment',
+    ]);
+
+    $this->get("/products/{$product->id}")
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('products/show')
+            ->where('product.name', 'Microwave Oven')
+            ->where('movements.data.0.quantity', 15)
+            ->where('movements.data.0.type', 'adjustment_increase'));
+});
+
 test('a brand in use by a product cannot be deleted', function () {
     $this->actingAs(User::factory()->create());
     $brand = Brand::factory()->create();

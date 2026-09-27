@@ -161,6 +161,7 @@ export default function LookupManagerModal({
                                         value={editForm.data.name}
                                         onChange={(e) => editForm.setData('name', e.target.value)}
                                         error={editForm.errors.name}
+                                        placeholder={t('lookupManager', 'new_name_placeholder')}
                                         required
                                     />
                                     {parentOptions && (
