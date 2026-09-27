@@ -2,8 +2,8 @@
 
 namespace App\Actions\Sales\Sale;
 
-use App\Enums\AccountTransactionType;
 use App\Enums\ContactLedgerType;
+use App\Enums\EmiInstallmentStatus;
 use App\Enums\SaleSource;
 use App\Enums\SaleStatus;
 use App\Enums\SerialNumberStatus;
@@ -16,6 +16,7 @@ use App\Services\JournalService;
 use App\Services\LedgerService;
 use App\Services\StockService;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 /**
  * Reverses a Confirmed sale via new compensating entries (never edits or
@@ -32,8 +33,18 @@ class CancelSaleAction
         private JournalService $journal,
     ) {}
 
+    /**
+     * @throws ValidationException When a SaleReturn already exists against
+     *                             this sale — see the guard below.
+     */
     public function execute(Sale $sale): Sale
     {
+        if ($sale->returns()->exists()) {
+            throw ValidationException::withMessages([
+                'sale' => ['This sale has a return recorded against it and can no longer be cancelled as a whole — the return already reversed the returned portion; cancelling now would double-reverse it. Contact an admin if further correction is needed.'],
+            ]);
+        }
+
         return DB::transaction(function () use ($sale) {
             $sale->load('items.product', 'customer');
 
@@ -55,6 +66,7 @@ class CancelSaleAction
                 }
 
                 $this->reverseJournalEntry($sale);
+                $this->voidPendingEmiInstallments($sale);
             }
 
             $sale->update(['status' => SaleStatus::Cancelled]);
@@ -64,21 +76,29 @@ class CancelSaleAction
     }
 
     /**
-     * One reversing transaction per original account_transaction, so each
-     * account's balance moves back by exactly what it received.
+     * One reversing transaction per original account_transaction tagged to
+     * this sale, so each account's balance moves back by exactly what it
+     * received — regardless of *how* it was received. This deliberately has
+     * no `type` filter: a confirm-time/AddSalePaymentAction payment is typed
+     * `SalePayment`, but a PayEmiInstallmentAction payment is typed
+     * `EmiPayment` — both move real cash against this sale and both must be
+     * reversed on a full cancel, or the account's cached balance stays
+     * inflated relative to the books forever. Each reversal keeps the
+     * original transaction's own type rather than hardcoding one, so an
+     * EMI reversal still reads as an EMI movement (not a phantom sale
+     * payment) in any type-based reporting.
      */
     private function reverseAccountPayments(Sale $sale): void
     {
         $original = AccountTransaction::query()
             ->where('reference_type', 'sale')
             ->where('reference_id', $sale->id)
-            ->where('type', AccountTransactionType::SalePayment)
             ->get();
 
         foreach ($original as $transaction) {
             $this->accounts->record(
                 $transaction->account,
-                AccountTransactionType::SalePayment,
+                $transaction->type,
                 -$transaction->amount,
                 today(),
                 'sale',
@@ -86,6 +106,21 @@ class CancelSaleAction
                 'Sale cancelled',
             );
         }
+    }
+
+    /**
+     * Every installment that hasn't already been Paid is dead once the
+     * parent sale is cancelled — voided rather than deleted, so a Paid
+     * sibling's history (and this row's own due_date/amount) survives.
+     * `PayEmiInstallmentAction`/`PayEmiInstallmentRequest` also refuse to
+     * pay a Cancelled sale's installment directly, but this is what stops
+     * one from ever being payable in the first place after cancellation.
+     */
+    private function voidPendingEmiInstallments(Sale $sale): void
+    {
+        $sale->emiInstallments()
+            ->where('status', '!=', EmiInstallmentStatus::Paid)
+            ->update(['status' => EmiInstallmentStatus::Cancelled]);
     }
 
     /**

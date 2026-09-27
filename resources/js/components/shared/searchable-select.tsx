@@ -247,7 +247,7 @@ export default function SearchableSelect<T extends SearchableSelectOption>({
                     id={id}
                     disabled={disabled}
                     onClick={openDropdown}
-                    className="border-input bg-background ring-offset-background placeholder:text-muted-foreground focus:ring-ring flex h-10 w-full items-center justify-between rounded-md border px-3 py-2 text-left text-sm focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:cursor-not-allowed disabled:opacity-50"
+                    className="border-input bg-background placeholder:text-muted-foreground flex h-10 w-full items-center justify-between rounded-md border px-3 py-2 text-left text-sm transition-colors duration-200 focus-visible:border-primary focus-visible:outline-hidden disabled:cursor-not-allowed disabled:opacity-50"
                 >
                     <span className={cn('truncate', !value && 'text-muted-foreground')}>{value ? getLabel(value) : placeholder}</span>
                     <span className="ml-2 flex shrink-0 items-center gap-1">

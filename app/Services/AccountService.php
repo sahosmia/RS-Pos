@@ -8,6 +8,7 @@ use App\Models\AccountTransaction;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 /**
  * The only place an account's cached balance is allowed to move.
@@ -34,6 +35,17 @@ class AccountService
         ?string $note = null,
     ): AccountTransaction {
         return DB::transaction(function () use ($account, $type, $amount, $operationDate, $referenceType, $referenceId, $note) {
+            // Re-fetch fresh account inside transaction for atomic balance check
+            $account = Account::where('id', $account->id)->lockForUpdate()->firstOrFail();
+
+            if ($amount < 0 && ($account->current_balance + $amount) < -0.0001) {
+                throw ValidationException::withMessages([
+                    'amount' => ["Insufficient balance in account '{$account->name}'. Current balance: ৳".number_format($account->current_balance, 2)],
+                    'account_id' => ["Insufficient balance in account '{$account->name}'."],
+                    'from_account_id' => ["Insufficient balance in account '{$account->name}'."],
+                ]);
+            }
+
             $transaction = $account->transactions()->create([
                 'type' => $type,
                 'amount' => $amount,

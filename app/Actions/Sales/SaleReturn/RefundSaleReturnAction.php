@@ -11,6 +11,7 @@ use App\Services\ChartOfAccountResolver;
 use App\Services\JournalService;
 use App\Services\LedgerService;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 /**
  * "Refund Payment" — separate from creating the return, since a return
@@ -29,11 +30,26 @@ class RefundSaleReturnAction
 
     /**
      * @param  array<int, array{account_id: int|string, amount: float|string}>  $payments
+     *
+     * @throws ValidationException
      */
     public function execute(SaleReturn $return, array $payments): SaleReturn
     {
         return DB::transaction(function () use ($return, $payments) {
+            // Re-fetch fresh + locked inside the transaction so two concurrent
+            // refund submissions can't both read the same refunded_amount and
+            // both slip under the cap.
+            $return = SaleReturn::where('id', $return->id)->lockForUpdate()->firstOrFail();
             $return->loadMissing('customer');
+
+            $requested = round(array_sum(array_map(fn (array $payment) => abs((float) $payment['amount']), $payments)), 2);
+            $remaining = round($return->total_amount - $return->refunded_amount, 2);
+
+            if ($requested - $remaining > 0.0001) {
+                throw ValidationException::withMessages([
+                    'payments' => ['Already refunded ৳'.number_format($return->refunded_amount, 2).' of ৳'.number_format($return->total_amount, 2).' for this return — ৳'.number_format(max($remaining, 0), 2).' remaining.'],
+                ]);
+            }
 
             $negatedPayments = array_map(fn (array $payment) => [
                 'account_id' => $payment['account_id'],
@@ -51,6 +67,8 @@ class RefundSaleReturnAction
             $this->ledger->recordContact($return->customer, ContactLedgerType::PaymentMade, $refunded, 'sale_return', $return->id);
 
             $this->postJournal($return, $payments);
+
+            $return->increment('refunded_amount', $refunded);
 
             return $return->fresh();
         });

@@ -8,6 +8,7 @@ use App\Models\Account;
 use App\Models\AccountType;
 use App\Models\Contact;
 use App\Models\ContactLedger;
+use App\Models\JournalEntry;
 use App\Models\Product;
 use App\Models\Sale;
 use App\Models\SerialNumber;
@@ -113,6 +114,44 @@ test('item-level and invoice-level discounts combine correctly', function () {
         ->and($sale->total_amount)->toBe(1620.0);
 });
 
+test('a per-item percentage discount and an invoice-level flat discount combine correctly', function () {
+    $this->actingAs(User::factory()->create());
+    $customer = Contact::factory()->create();
+    $product = Product::factory()->create(['selling_price' => 500]);
+
+    // Item-level: 20% off the 500 selling price -> unit_price 400 (SaleTotals
+    // derives this from discount_type/discount_value, the supplied unit_price
+    // is ignored). Invoice-level: a flat 150 off the post-item-discount subtotal.
+    $this->post('/sales', [
+        'customer_id' => $customer->id,
+        'sale_date' => '2026-03-01',
+        'status' => 'draft',
+        'discount_type' => 'flat',
+        'discount_value' => 150,
+        'items' => [
+            [
+                'product_id' => $product->id,
+                'quantity' => 3,
+                'unit_price' => 500,
+                'discount_type' => 'percentage',
+                'discount_value' => 20,
+            ],
+        ],
+    ])->assertRedirect();
+
+    $sale = Sale::query()->firstOrFail();
+    $item = $sale->items()->first();
+
+    expect($item->discount_type->value)->toBe('percentage')
+        ->and($item->discount_value)->toBe(20.0)
+        ->and($item->unit_price)->toBe(400.0)
+        ->and($item->discount_amount)->toBe(100.0) // 500 - 400 per unit
+        ->and($sale->subtotal)->toBe(1200.0) // 3 * 400
+        ->and($sale->discount_amount)->toBe(150.0) // flat 150 off 1200
+        ->and($sale->total_amount)->toBe(1050.0)
+        ->and($sale->due_amount)->toBe(1050.0);
+});
+
 test('a historical record skips stock, ledger, and account effects', function () {
     $this->actingAs(User::factory()->create());
     $customer = Contact::factory()->create();
@@ -149,6 +188,46 @@ test('cancelling a confirmed sale reverses stock, ledger, and account effects', 
         ->and($customer->fresh()->balance)->toBe(0.0)
         ->and($account->fresh()->current_balance)->toBe(0.0)
         ->and($sale->fresh()->status)->toBe(SaleStatus::Cancelled);
+});
+
+test('cancelling a sale that already has a return against it is rejected, leaving stock, ledger, and journal untouched', function () {
+    $this->actingAs(User::factory()->create());
+    $customer = Contact::factory()->create();
+    $product = Product::factory()->create(['current_stock' => 10, 'selling_price' => 100, 'avg_cost' => 60]);
+    $account = Account::factory()->create(['account_type_id' => AccountType::factory(), 'current_balance' => 0]);
+    $sale = Sale::factory()->create(['customer_id' => $customer->id]);
+    $sale->items()->create(['product_id' => $product->id, 'quantity' => 5, 'unit_price' => 100, 'original_price' => 100, 'subtotal' => 500]);
+    $sale->forceFill(['total_amount' => 500, 'due_amount' => 500])->save();
+
+    $this->post("/sales/{$sale->id}/confirm", ['payments' => [['account_id' => $account->id, 'amount' => 500]]]);
+    expect($product->fresh()->current_stock)->toBe(5.0);
+
+    $saleItem = $sale->items()->first();
+
+    // Partial return: only 2 of the 5 sold units come back.
+    $this->post('/sale-returns', [
+        'sale_id' => $sale->id,
+        'return_date' => now()->toDateString(),
+        'items' => [
+            ['sale_item_id' => $saleItem->id, 'quantity' => 2],
+        ],
+    ])->assertRedirect();
+
+    $stockAfterReturn = $product->fresh()->current_stock;
+    $customerBalanceAfterReturn = $customer->fresh()->balance;
+    $accountBalanceAfterReturn = $account->fresh()->current_balance;
+    $journalCountAfterReturn = JournalEntry::where('reference_type', 'sale')->where('reference_id', $sale->id)->where('status', 'posted')->count();
+
+    // Attempting to cancel the whole sale now must be rejected outright —
+    // not partially reversed — since the return already reversed the
+    // returned portion of stock/ledger/journal.
+    $this->post("/sales/{$sale->id}/cancel")->assertSessionHasErrors('sale');
+
+    expect($product->fresh()->current_stock)->toBe($stockAfterReturn)
+        ->and($customer->fresh()->balance)->toBe($customerBalanceAfterReturn)
+        ->and($account->fresh()->current_balance)->toBe($accountBalanceAfterReturn)
+        ->and($sale->fresh()->status)->toBe(SaleStatus::Confirmed)
+        ->and(JournalEntry::where('reference_type', 'sale')->where('reference_id', $sale->id)->where('status', 'posted')->count())->toBe($journalCountAfterReturn);
 });
 
 test('adding a payment to a confirmed sale further reduces the due', function () {

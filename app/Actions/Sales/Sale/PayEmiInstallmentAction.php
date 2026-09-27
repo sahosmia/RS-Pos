@@ -5,6 +5,7 @@ namespace App\Actions\Sales\Sale;
 use App\Enums\AccountTransactionType;
 use App\Enums\ContactLedgerType;
 use App\Enums\EmiInstallmentStatus;
+use App\Enums\SaleStatus;
 use App\Models\Account;
 use App\Models\EmiInstallment;
 use App\Services\AccountService;
@@ -12,6 +13,7 @@ use App\Services\ChartOfAccountResolver;
 use App\Services\JournalService;
 use App\Services\LedgerService;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 /**
  * Settles one EMI installment — same GL shape as AddSalePaymentAction (Dr
@@ -36,6 +38,19 @@ class PayEmiInstallmentAction
 
         return DB::transaction(function () use ($installment, $accountId, $amount) {
             $sale = $installment->sale()->with('customer')->firstOrFail();
+
+            // Belt-and-suspenders alongside PayEmiInstallmentRequest's own
+            // check: a Cancelled sale's remaining installments are voided by
+            // CancelSaleAction, but any caller reaching this Action directly
+            // (bypassing the request) must be stopped here too — otherwise
+            // real money would move against a sale that's already been
+            // reversed in full.
+            if ($sale->status !== SaleStatus::Confirmed) {
+                throw ValidationException::withMessages([
+                    'installment' => ['This installment belongs to a sale that is no longer confirmed and can no longer be paid.'],
+                ]);
+            }
+
             $account = Account::findOrFail($accountId);
 
             $this->accounts->record($account, AccountTransactionType::EmiPayment, $amount, today(), 'sale', $sale->id);

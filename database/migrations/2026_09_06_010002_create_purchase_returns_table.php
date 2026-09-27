@@ -17,6 +17,7 @@ return new class extends Migration
             $table->foreignId('supplier_id')->constrained('contacts')->restrictOnDelete();
             $table->date('return_date');
             $table->decimal('total_amount', 19, 4)->default(0);
+            $table->decimal('refunded_amount', 19, 4)->default(0);
             $table->text('reason')->nullable();
             $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();

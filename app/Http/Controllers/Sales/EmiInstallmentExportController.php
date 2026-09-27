@@ -42,7 +42,7 @@ class EmiInstallmentExportController extends Controller
             'columns.*' => ['string', Rule::in(array_keys(self::COLUMN_LABELS))],
             'ids' => ['required_if:scope,selected', 'array'],
             'ids.*' => ['integer'],
-            'status' => ['nullable', 'in:pending,paid,overdue'],
+            'status' => ['nullable', 'in:pending,paid,overdue,cancelled'],
             'search' => ['nullable', 'string', 'max:255'],
             'page' => ['nullable', 'integer', 'min:1'],
             'per_page' => ['nullable', 'string', 'max:10'],

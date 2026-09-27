@@ -18,6 +18,8 @@ return new class extends Migration
             $table->decimal('quantity', 12, 2);
             $table->decimal('original_price', 19, 4);
             $table->decimal('unit_price', 19, 4);
+            $table->string('discount_type')->nullable();
+            $table->decimal('discount_value', 19, 4)->default(0);
             $table->decimal('discount_amount', 19, 4)->default(0);
             $table->decimal('cost_at_sale', 19, 4)->default(0);
             $table->decimal('subtotal', 19, 4);

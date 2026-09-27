@@ -20,3 +20,16 @@
 - ***13** expence form e akta paymnent method e payment hobe, akane kono due thakbe na kono Landlord/Vendor  thakbe na,  kono multi payment select hobe na, so akane sudu category, account, amount, date (defaulte current date), note, atachment thakbe,
 
 **14** account e fund transfer korle  jodi kono account e oi poriman ammount na thake tahole to error message dibe, ar ata sob jaigai hobe, 
+------------------------------------------------------------
+**15** Sales form er date alawys upore thakbe, ar qutation validity date additional info te thakbe, cutomer select input filed ta 1 row by 3 grid e ano, akane add customer er poriborte + icon dekeo, 
+
+
+**16** header e full screen icon add korbe sathe toggle click able with functionality, Header fixed thakbe, 
+**17** Kono page load er jonno akta loading dekabe middel e
+**18** input filed er focus -visiblity thakbe na, ar akane border color change hobe theme color wise, ata smothely transition hobe
+
+
+**19** sales form e protita selected item  er pashe akta edit icon thekbe, akane click korle discount modal open hobe, onake flat, none, persenct, amount show hobe, thik ai vabe sub total totla discount er akacne discount er pashe edit cion thakbe click korle oi modal open hobe, akane akta discount aappy hobe spacific item er upor ar akta apply hobe puro tar upor, ar akon discount er je design ase oi ta thakbe na,  ai vabe Financing add kora gele valo hoto 
+
+**20** Dashbaord a akta 
+

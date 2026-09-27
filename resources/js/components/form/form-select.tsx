@@ -1,7 +1,9 @@
+import { LabelTooltip } from '@/components/form/label-tooltip';
 import InputError from '@/components/input-error';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { type LucideIcon } from 'lucide-react';
+import React from 'react';
 
 export interface SelectOption {
     label: string;
@@ -10,7 +12,8 @@ export interface SelectOption {
 
 interface FormSelectProps {
     id: string;
-    label?: string;
+    label?: React.ReactNode;
+    tooltip?: React.ReactNode;
     value: string | number | null | undefined;
     onChange: (value: string | null) => void;
     options: SelectOption[];
@@ -26,6 +29,7 @@ interface FormSelectProps {
 export function FormSelect({
     id,
     label,
+    tooltip,
     value,
     onChange,
     options,
@@ -42,7 +46,7 @@ export function FormSelect({
         <div className="grid gap-2">
             {label && (
                 <Label htmlFor={id} required={required}>
-                    {label}
+                    <LabelTooltip label={label} tooltip={tooltip} />
                 </Label>
             )}
             <Select

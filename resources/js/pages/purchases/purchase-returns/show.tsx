@@ -17,6 +17,7 @@ interface PurchaseReturnShowProps {
 export default function PurchaseReturnShow({ return: purchaseReturn, accounts }: PurchaseReturnShowProps) {
     const money = useMoneyFormat();
     const [refundOpen, setRefundOpen] = useState(false);
+    const fullyRefunded = purchaseReturn.remaining_refundable <= 0;
 
     const breadcrumbs: BreadcrumbItem[] = [
         { title: 'Purchase Returns', href: '/purchase-returns' },
@@ -44,13 +45,19 @@ export default function PurchaseReturnShow({ return: purchaseReturn, accounts }:
                         </Link>
                     </div>
 
-                    <Button onClick={() => setRefundOpen(true)}>Refund Payment</Button>
+                    {!fullyRefunded && <Button onClick={() => setRefundOpen(true)}>Refund Payment</Button>}
                 </div>
 
-                <div className="grid gap-4 sm:grid-cols-3">
+                <div className="grid gap-4 sm:grid-cols-4">
                     <div className="rounded-lg border p-4">
                         <p className="text-muted-foreground text-sm">Return Amount</p>
                         <p className="text-xl font-semibold tabular-nums">{money(purchaseReturn.total_amount)}</p>
+                    </div>
+                    <div className="rounded-lg border p-4">
+                        <p className="text-muted-foreground text-sm">Refunded / Remaining</p>
+                        <p className="text-xl font-semibold tabular-nums">
+                            {money(purchaseReturn.refunded_amount)} / {money(purchaseReturn.remaining_refundable)}
+                        </p>
                     </div>
                     <div className="rounded-lg border p-4">
                         <p className="text-muted-foreground text-sm">Supplier Balance</p>

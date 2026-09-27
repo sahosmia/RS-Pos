@@ -1,5 +1,5 @@
 import { FormInput } from '@/components/form/form-input';
-import AccountPaymentRows, { type PaymentRow } from '@/components/shared/account-payment-rows';
+import AccountPaymentRows, { paymentRowsError, type PaymentRow } from '@/components/shared/account-payment-rows';
 import FormModal from '@/components/shared/form-modal';
 import { Label } from '@/components/ui/label';
 import { useMoneyFormat } from '@/hooks/use-money-format';
@@ -28,10 +28,7 @@ export default function ConfirmPurchaseModal({ open, onOpenChange, purchase, acc
     const form = useForm({
         payments: [] as PaymentRow[],
         credit_applied: 0,
-        serial_numbers: Object.fromEntries(serialTrackedItems.map((item) => [item.id, Array(item.quantity).fill('')])) as Record<
-            number,
-            string[]
-        >,
+        serial_numbers: Object.fromEntries(serialTrackedItems.map((item) => [item.id, Array(item.quantity).fill('')])) as Record<number, string[]>,
     });
 
     const setSerial = (itemId: number, unitIndex: number, value: string) => {
@@ -53,6 +50,8 @@ export default function ConfirmPurchaseModal({ open, onOpenChange, purchase, acc
                 setRows([]);
                 form.setData('credit_applied', 0);
             },
+            onError: (errors) =>
+                toast.error(paymentRowsError(errors) ?? errors.credit_applied ?? 'Could not confirm the purchase — check the form for errors.'),
         });
     };
 
@@ -81,6 +80,7 @@ export default function ConfirmPurchaseModal({ open, onOpenChange, purchase, acc
                         max={suggestedCredit}
                         value={form.data.credit_applied}
                         onChange={(e) => form.setData('credit_applied', Number(e.target.value))}
+                        error={form.errors.credit_applied}
                     />
                     <p className="text-muted-foreground text-xs">নতুন cash payment ছাড়াই আগের credit থেকে বকেয়া কমাতে পারেন</p>
                 </div>
@@ -108,7 +108,13 @@ export default function ConfirmPurchaseModal({ open, onOpenChange, purchase, acc
                 </div>
             )}
 
-            <AccountPaymentRows accounts={accounts} rows={rows} onChange={setRows} total={purchase.total_amount - form.data.credit_applied} />
+            <AccountPaymentRows
+                accounts={accounts}
+                rows={rows}
+                onChange={setRows}
+                total={purchase.total_amount - form.data.credit_applied}
+                error={paymentRowsError(form.errors)}
+            />
         </FormModal>
     );
 }

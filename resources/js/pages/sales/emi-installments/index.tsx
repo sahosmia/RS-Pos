@@ -69,6 +69,7 @@ const statusVariant: Record<EmiInstallmentStatusValue, 'secondary' | 'outline' |
     pending: 'outline',
     paid: 'secondary',
     overdue: 'destructive',
+    cancelled: 'destructive',
 };
 
 const humanize = (value: string) => value.replaceAll('_', ' ').replace(/\b\w/g, (character) => character.toUpperCase());
@@ -280,6 +281,7 @@ export default function EmiInstallmentsIndex({ installments, accounts, filters }
                                         <SelectItem value="pending">Pending</SelectItem>
                                         <SelectItem value="paid">Paid</SelectItem>
                                         <SelectItem value="overdue">Overdue</SelectItem>
+                                        <SelectItem value="cancelled">Cancelled</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>

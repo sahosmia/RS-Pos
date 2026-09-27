@@ -1,5 +1,5 @@
 import { FormInput } from '@/components/form/form-input';
-import AccountPaymentRows, { type PaymentRow } from '@/components/shared/account-payment-rows';
+import AccountPaymentRows, { paymentRowsError, type PaymentRow } from '@/components/shared/account-payment-rows';
 import FormModal from '@/components/shared/form-modal';
 import { useMoneyFormat } from '@/hooks/use-money-format';
 import { type Account, type PurchaseDetail } from '@/types/models';
@@ -39,6 +39,8 @@ export default function AddPaymentModal({ open, onOpenChange, purchase, accounts
                 setRows([]);
                 form.setData('credit_applied', 0);
             },
+            onError: (errors) =>
+                toast.error(paymentRowsError(errors) ?? errors.credit_applied ?? 'Could not record the payment — check the form for errors.'),
         });
     };
 
@@ -62,10 +64,17 @@ export default function AddPaymentModal({ open, onOpenChange, purchase, accounts
                     max={suggestedCredit}
                     value={form.data.credit_applied}
                     onChange={(e) => form.setData('credit_applied', Number(e.target.value))}
+                    error={form.errors.credit_applied}
                 />
             )}
 
-            <AccountPaymentRows accounts={accounts} rows={rows} onChange={setRows} total={purchase.due_amount - form.data.credit_applied} />
+            <AccountPaymentRows
+                accounts={accounts}
+                rows={rows}
+                onChange={setRows}
+                total={purchase.due_amount - form.data.credit_applied}
+                error={paymentRowsError(form.errors)}
+            />
         </FormModal>
     );
 }

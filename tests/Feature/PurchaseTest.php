@@ -179,6 +179,59 @@ test('adding a payment to a received purchase further reduces the due', function
         ->and($supplier->fresh()->balance)->toBe(0.0);
 });
 
+test('confirming rejects credit_applied greater than the supplier available credit', function () {
+    $this->actingAs(User::factory()->create());
+    $supplier = Contact::factory()->supplier()->create(['balance' => 100]);
+    $product = Product::factory()->create(['current_stock' => 0]);
+    $purchase = Purchase::factory()->create(['supplier_id' => $supplier->id]);
+    $purchase->items()->create(['product_id' => $product->id, 'quantity' => 10, 'unit_price' => 100, 'subtotal' => 1000]);
+    $purchase->forceFill(['total_amount' => 1000, 'due_amount' => 1000])->save();
+
+    $this->post("/purchases/{$purchase->id}/confirm", [
+        'credit_applied' => 500,
+    ])->assertSessionHasErrors('credit_applied');
+
+    expect($purchase->fresh()->status)->toBe(PurchaseStatus::Draft)
+        ->and($purchase->fresh()->due_amount)->toBe(1000.0)
+        ->and($supplier->fresh()->balance)->toBe(100.0)
+        ->and(ContactLedger::query()->count())->toBe(0)
+        ->and(StockMovement::query()->count())->toBe(0);
+});
+
+test('adding a payment rejects credit_applied greater than the supplier available credit', function () {
+    $this->actingAs(User::factory()->create());
+    $supplier = Contact::factory()->supplier()->create(['balance' => 100]);
+    $product = Product::factory()->create(['current_stock' => 0]);
+    $purchase = Purchase::factory()->received()->create(['supplier_id' => $supplier->id]);
+    $purchase->items()->create(['product_id' => $product->id, 'quantity' => 10, 'unit_price' => 100, 'subtotal' => 1000]);
+    $purchase->forceFill(['total_amount' => 1000, 'due_amount' => 1000])->save();
+
+    $this->post("/purchases/{$purchase->id}/payments", [
+        'credit_applied' => 500,
+    ])->assertSessionHasErrors('credit_applied');
+
+    expect($purchase->fresh()->due_amount)->toBe(1000.0)
+        ->and($supplier->fresh()->balance)->toBe(100.0)
+        ->and(ContactLedger::query()->count())->toBe(0);
+});
+
+test('confirming rejects credit_applied greater than the due amount even when within the supplier credit', function () {
+    $this->actingAs(User::factory()->create());
+    $supplier = Contact::factory()->supplier()->create(['balance' => 5000]);
+    $product = Product::factory()->create(['current_stock' => 0]);
+    $purchase = Purchase::factory()->create(['supplier_id' => $supplier->id]);
+    $purchase->items()->create(['product_id' => $product->id, 'quantity' => 10, 'unit_price' => 100, 'subtotal' => 1000]);
+    $purchase->forceFill(['total_amount' => 1000, 'due_amount' => 1000])->save();
+
+    $this->post("/purchases/{$purchase->id}/confirm", [
+        'credit_applied' => 1500,
+    ])->assertSessionHasErrors('credit_applied');
+
+    expect($purchase->fresh()->status)->toBe(PurchaseStatus::Draft)
+        ->and($supplier->fresh()->balance)->toBe(5000.0)
+        ->and(ContactLedger::query()->count())->toBe(0);
+});
+
 test('the supplier field rejects a customer-only contact', function () {
     $this->actingAs(User::factory()->create());
     $customer = Contact::factory()->create(); // type: customer

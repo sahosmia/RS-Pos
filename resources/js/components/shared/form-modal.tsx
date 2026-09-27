@@ -34,7 +34,22 @@ export default function FormModal({
                     {description && <DialogDescription>{description}</DialogDescription>}
                 </DialogHeader>
 
-                <form onSubmit={onSubmit} className="space-y-4">
+                {/*
+                 * Radix's Dialog portals this <form> to document.body, so in the real DOM it's
+                 * never nested inside a page's own <form> — but React re-plays bubbling along the
+                 * *component* tree for portaled content, not the DOM tree. Any FormModal rendered
+                 * as a JSX child of another <form> (e.g. a discount/financing modal inside the
+                 * Sale form) would otherwise have its Apply button's submit event bubble up and
+                 * trigger that outer form's onSubmit too. stopPropagation keeps this modal's
+                 * submit local to itself regardless of where it's rendered from.
+                 */}
+                <form
+                    onSubmit={(e) => {
+                        e.stopPropagation();
+                        onSubmit(e);
+                    }}
+                    className="space-y-4"
+                >
                     {children}
 
                     <DialogFooter className="gap-2">

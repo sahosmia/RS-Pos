@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Expenses;
 
-use App\Actions\Expenses\Expense\AddExpensePaymentAction;
 use App\Actions\Expenses\Expense\CreateExpenseAction;
 use App\Actions\Expenses\Expense\UpdateExpenseAction;
 use App\Http\Controllers\Controller;
@@ -74,18 +73,12 @@ class ExpenseController extends Controller
         ]);
     }
 
-    public function store(StoreExpenseRequest $request, CreateExpenseAction $createExpense, AddExpensePaymentAction $addPayment): RedirectResponse
+    public function store(StoreExpenseRequest $request, CreateExpenseAction $createExpense): RedirectResponse
     {
         $expense = $createExpense->execute($request->validated());
 
         if ($request->hasFile('attachment')) {
             $expense->addMediaFromRequest('attachment')->toMediaCollection('documents');
-        }
-
-        $payments = $request->validated('payments');
-
-        if (! empty($payments)) {
-            $addPayment->execute($expense, $payments);
         }
 
         return back();

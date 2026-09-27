@@ -1,7 +1,7 @@
 import { FormInput } from '@/components/form/form-input';
 import HeadingSmall from '@/components/heading-small';
 import InputError from '@/components/input-error';
-import AccountPaymentRows, { type PaymentRow } from '@/components/shared/account-payment-rows';
+import AccountPaymentRows, { paymentRowsError, type PaymentRow } from '@/components/shared/account-payment-rows';
 import MoneyInput from '@/components/shared/money-input';
 import ProductSearchInput, { type ProductOption } from '@/components/shared/product-search-input';
 import SearchableSelect from '@/components/shared/searchable-select';
@@ -15,6 +15,7 @@ import { type Account, type CustomerOption } from '@/types/models';
 import { Head, useForm } from '@inertiajs/react';
 import { Trash2 } from 'lucide-react';
 import { FormEventHandler, useState } from 'react';
+import { toast } from 'sonner';
 
 interface SalesOrdersCreateProps {
     /** The already-picked customer's data — `null` for a fresh create form. */
@@ -83,7 +84,9 @@ export default function SalesOrdersCreate({ initialCustomer, products, accounts 
             payments,
         }));
 
-        form.post(route('sales-orders.store'));
+        form.post(route('sales-orders.store'), {
+            onError: (errors) => toast.error(paymentRowsError(errors) ?? 'Could not save the sales order — check the form for errors.'),
+        });
     };
 
     return (
@@ -202,6 +205,7 @@ export default function SalesOrdersCreate({ initialCustomer, products, accounts 
                         onChange={setPayments}
                         label="Advance Payment (optional)"
                         emptyHint="কোনো advance না নিলে পুরো অর্ডারটাই বকেয়া/বুকিং হিসেবে থাকবে"
+                        error={paymentRowsError(form.errors)}
                     />
                     {advanceTotal > totalAmount && totalAmount > 0 && (
                         <p className="text-destructive text-xs">Advance total ({money(advanceTotal)}) অর্ডারের total-এর চেয়ে বেশি হয়ে গেছে।</p>

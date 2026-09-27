@@ -19,7 +19,7 @@ class EmiInstallmentController extends Controller
     public function index(Request $request): Response
     {
         $validated = $request->validate([
-            'status' => ['nullable', 'in:pending,paid,overdue'],
+            'status' => ['nullable', 'in:pending,paid,overdue,cancelled'],
             'search' => ['nullable', 'string', 'max:255'],
             'per_page' => ['nullable', 'string', 'max:10'],
         ]);

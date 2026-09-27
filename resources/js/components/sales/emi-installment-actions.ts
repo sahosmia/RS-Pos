@@ -13,7 +13,7 @@ export function getEmiInstallmentActions(installment: EmiInstallmentListItem, { 
             label: 'Pay',
             icon: Wallet,
             onClick: () => onPay(installment),
-            hidden: installment.status === 'paid',
+            hidden: installment.status === 'paid' || installment.status === 'cancelled',
         },
     ];
 }

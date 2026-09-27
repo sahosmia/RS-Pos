@@ -91,6 +91,8 @@ class SaleReturnController extends Controller
                 'customer' => $saleReturn->customer->only(['id', 'name', 'phone', 'balance']),
                 'return_date' => $saleReturn->return_date->toDateString(),
                 'total_amount' => $saleReturn->total_amount,
+                'refunded_amount' => $saleReturn->refunded_amount,
+                'remaining_refundable' => round($saleReturn->total_amount - $saleReturn->refunded_amount, 2),
                 'reason' => $saleReturn->reason,
                 'items' => $saleReturn->items->map(fn ($item) => [
                     'id' => $item->id,

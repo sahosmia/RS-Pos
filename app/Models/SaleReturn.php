@@ -21,8 +21,9 @@ class SaleReturn extends Model
     use LogsActivityDefaults;
 
     /**
-     * `total_amount` is deliberately not fillable — derived from its items
-     * by CreateSaleReturnAction.
+     * `total_amount`/`refunded_amount` are deliberately not fillable —
+     * `total_amount` is derived from its items by CreateSaleReturnAction,
+     * `refunded_amount` only ever moves through RefundSaleReturnAction.
      *
      * @var list<string>
      */
@@ -42,6 +43,7 @@ class SaleReturn extends Model
         return [
             'return_date' => 'date',
             'total_amount' => 'float',
+            'refunded_amount' => 'float',
         ];
     }
 

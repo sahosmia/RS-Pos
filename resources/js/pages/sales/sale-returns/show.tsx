@@ -17,6 +17,7 @@ interface SaleReturnShowProps {
 export default function SaleReturnShow({ return: saleReturn, accounts }: SaleReturnShowProps) {
     const money = useMoneyFormat();
     const [refundOpen, setRefundOpen] = useState(false);
+    const fullyRefunded = saleReturn.remaining_refundable <= 0;
 
     const breadcrumbs: BreadcrumbItem[] = [
         { title: 'Sale Returns', href: '/sale-returns' },
@@ -43,13 +44,19 @@ export default function SaleReturnShow({ return: saleReturn, accounts }: SaleRet
                         </Link>
                     </div>
 
-                    <Button onClick={() => setRefundOpen(true)}>Refund Payment</Button>
+                    {!fullyRefunded && <Button onClick={() => setRefundOpen(true)}>Refund Payment</Button>}
                 </div>
 
-                <div className="grid gap-4 sm:grid-cols-3">
+                <div className="grid gap-4 sm:grid-cols-4">
                     <div className="rounded-lg border p-4">
                         <p className="text-muted-foreground text-sm">Return Amount</p>
                         <p className="text-xl font-semibold tabular-nums">{money(saleReturn.total_amount)}</p>
+                    </div>
+                    <div className="rounded-lg border p-4">
+                        <p className="text-muted-foreground text-sm">Refunded / Remaining</p>
+                        <p className="text-xl font-semibold tabular-nums">
+                            {money(saleReturn.refunded_amount)} / {money(saleReturn.remaining_refundable)}
+                        </p>
                     </div>
                     <div className="rounded-lg border p-4">
                         <p className="text-muted-foreground text-sm">Customer Balance</p>

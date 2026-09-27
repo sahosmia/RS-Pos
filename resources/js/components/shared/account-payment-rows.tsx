@@ -1,3 +1,4 @@
+import InputError from '@/components/input-error';
 import ConfirmDialog from '@/components/shared/confirm-dialog';
 import MoneyInput from '@/components/shared/money-input';
 import { Button } from '@/components/ui/button';
@@ -13,6 +14,18 @@ export interface PaymentRow {
     [key: string]: number | undefined;
     account_id: number;
     amount: number;
+}
+
+/**
+ * `AccountService::record()` throws validation errors under flat `amount`/
+ * `account_id` keys — keys no caller's `useForm<T>()` shape declares (they
+ * only declare `payments`/`credit_applied`/etc.), so `form.errors` is typed
+ * without them even though Laravel puts them in the error bag at runtime.
+ * One cast here instead of one in every payment-form caller.
+ */
+export function paymentRowsError(errors: object): string | undefined {
+    const bag = errors as Record<string, string | undefined>;
+    return bag.amount ?? bag.account_id;
 }
 
 interface AccountPaymentRowsProps {
@@ -32,6 +45,15 @@ interface AccountPaymentRowsProps {
      * out.
      */
     total?: number;
+    /**
+     * Backend validation error to surface under the rows — most commonly
+     * `AccountService::record()`'s "insufficient balance" message, thrown
+     * under the flat `amount`/`account_id` keys regardless of which split
+     * row actually triggered it (it has no idea it's being called from
+     * inside a `payments[]` loop), so this is one message for the whole
+     * block rather than a per-row error.
+     */
+    error?: string;
 }
 
 const findDefaultAccount = (accounts: Account[]): Account | undefined => accounts.find((account) => account.is_default) ?? accounts[0];
@@ -44,6 +66,7 @@ export default function AccountPaymentRows({
     label = 'Payment (optional)',
     emptyHint = 'এখনো কোনো account যোগ করা হয়নি — না দিলে পুরোটা বকেয়া থাকবে',
     total,
+    error,
 }: AccountPaymentRowsProps) {
     const money = useMoneyFormat();
 
@@ -64,18 +87,37 @@ export default function AccountPaymentRows({
 
     const [pendingAccountChange, setPendingAccountChange] = useState<{ index: number; nextAccountId: number } | null>(null);
 
+    // The amount we last *programmatically* set the auto-filled row to — lets
+    // the effect below tell "total changed, keep following it" apart from
+    // "the person typed their own number in, stop touching this row".
+    const autoSyncedAmountRef = useRef<number | null>(null);
+
     useEffect(() => {
-        if (userClearedRef.current || rows.length > 0 || !total || total <= 0) {
+        if (userClearedRef.current || !total || total <= 0) {
             return;
         }
 
-        const account = findDefaultAccount(accounts);
-        if (account) {
-            onChange([{ account_id: account.id, amount: total }]);
-            autoFilledIndexRef.current = 0;
+        if (rows.length === 0) {
+            const account = findDefaultAccount(accounts);
+            if (account) {
+                autoSyncedAmountRef.current = total;
+                onChange([{ account_id: account.id, amount: total }]);
+                autoFilledIndexRef.current = 0;
+            }
+            return;
+        }
+
+        // Keep the single auto-filled row's amount following `total` as it
+        // changes (another product added, a discount applied, quantity
+        // edited, ...) — but only while the row still holds exactly what we
+        // last auto-set it to; the moment the person types their own amount
+        // in, this stops overriding them.
+        if (rows.length === 1 && autoFilledIndexRef.current === 0 && rows[0].amount === autoSyncedAmountRef.current && rows[0].amount !== total) {
+            autoSyncedAmountRef.current = total;
+            onChange([{ ...rows[0], amount: total }]);
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [total, rows.length]);
+    }, [total, rows]);
 
     const sumOfRows = rows.reduce((sum, row) => sum + (row.amount || 0), 0);
     const remaining = total !== undefined ? Math.max(total - sumOfRows, 0) : 0;
@@ -164,6 +206,8 @@ export default function AccountPaymentRows({
                     Add Account
                 </Button>
             )}
+
+            <InputError message={error} />
 
             <ConfirmDialog
                 open={pendingAccountChange !== null}

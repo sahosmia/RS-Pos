@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\DiscountType;
 use Database\Factories\SaleItemFactory;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -23,6 +24,8 @@ class SaleItem extends Model
         'quantity',
         'original_price',
         'unit_price',
+        'discount_type',
+        'discount_value',
         'discount_amount',
         'cost_at_sale',
         'subtotal',
@@ -41,6 +44,8 @@ class SaleItem extends Model
             'quantity' => 'float',
             'original_price' => 'float',
             'unit_price' => 'float',
+            'discount_type' => DiscountType::class,
+            'discount_value' => 'float',
             'discount_amount' => 'float',
             'cost_at_sale' => 'float',
             'subtotal' => 'float',

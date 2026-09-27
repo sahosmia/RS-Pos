@@ -91,6 +91,8 @@ class PurchaseReturnController extends Controller
                 'supplier' => $purchaseReturn->supplier->only(['id', 'name', 'phone', 'balance']),
                 'return_date' => $purchaseReturn->return_date->toDateString(),
                 'total_amount' => $purchaseReturn->total_amount,
+                'refunded_amount' => $purchaseReturn->refunded_amount,
+                'remaining_refundable' => round($purchaseReturn->total_amount - $purchaseReturn->refunded_amount, 2),
                 'reason' => $purchaseReturn->reason,
                 'items' => $purchaseReturn->items->map(fn ($item) => [
                     'id' => $item->id,

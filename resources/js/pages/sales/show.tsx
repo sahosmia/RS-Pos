@@ -47,6 +47,7 @@ export default function SaleShow({ sale, accounts, justConfirmed }: SaleShowProp
             route('sales.cancel', sale.id),
             {},
             {
+                onError: (errors) => toast.error(errors.sale ?? 'Could not cancel the sale — check for errors.'),
                 onFinish: () => {
                     setUndoing(false);
                     setShowUndo(false);
@@ -193,7 +194,15 @@ export default function SaleShow({ sale, accounts, justConfirmed }: SaleShowProp
                                         )}
                                     </td>
                                     <td className="px-4 py-2 text-right tabular-nums">{item.quantity}</td>
-                                    <td className="px-4 py-2 text-right tabular-nums">{money(item.unit_price)}</td>
+                                    <td className="px-4 py-2 text-right tabular-nums">
+                                        {money(item.unit_price)}
+                                        {item.discount_amount > 0 && (
+                                            <div className="text-muted-foreground text-xs">
+                                                Discount {item.discount_type === 'percentage' ? `(${item.discount_value}%)` : ''}: -
+                                                {money(item.discount_amount)}
+                                            </div>
+                                        )}
+                                    </td>
                                     <td className="px-4 py-2 text-right tabular-nums">{money(item.subtotal)}</td>
                                 </tr>
                             ))}

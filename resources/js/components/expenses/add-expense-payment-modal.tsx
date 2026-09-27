@@ -1,4 +1,4 @@
-import AccountPaymentRows, { type PaymentRow } from '@/components/shared/account-payment-rows';
+import AccountPaymentRows, { paymentRowsError, type PaymentRow } from '@/components/shared/account-payment-rows';
 import FormModal from '@/components/shared/form-modal';
 import { useMoneyFormat } from '@/hooks/use-money-format';
 import { type Account, type ExpenseListItem } from '@/types/models';
@@ -31,6 +31,7 @@ export default function AddExpensePaymentModal({ open, onOpenChange, expense, ac
                 onOpenChange(false);
                 setRows([]);
             },
+            onError: (errors) => toast.error(paymentRowsError(errors) ?? 'Could not record the payment — check the form for errors.'),
         });
     };
 
@@ -51,6 +52,7 @@ export default function AddExpensePaymentModal({ open, onOpenChange, expense, ac
                 label="Payment"
                 emptyHint="অন্তত একটা account যোগ করুন"
                 total={expense.due_amount}
+                error={paymentRowsError(form.errors)}
             />
         </FormModal>
     );

@@ -1,6 +1,8 @@
 <?php
 
+use App\Actions\Sales\Sale\PayEmiInstallmentAction;
 use App\Enums\EmiInstallmentStatus;
+use App\Enums\SaleStatus;
 use App\Models\Account;
 use App\Models\AccountType;
 use App\Models\ChartOfAccount;
@@ -12,6 +14,7 @@ use App\Models\Sale;
 use App\Models\Settings;
 use App\Models\User;
 use Illuminate\Support\Carbon;
+use Illuminate\Validation\ValidationException;
 
 beforeEach(function () {
     Settings::factory()->create();
@@ -150,6 +153,84 @@ test('an already-paid installment cannot be paid again', function () {
 
     expect($account->fresh()->current_balance)->toBe(0.0);
 });
+
+test('cancelling an EMI sale reverses the down payment and the paid installment, and voids the remaining schedule', function () {
+    $this->actingAs(User::factory()->create());
+    $customer = Contact::factory()->create();
+    $product = Product::factory()->create(['selling_price' => 1000, 'current_stock' => 10]);
+    $account = Account::factory()->create(['account_type_id' => AccountType::factory(), 'current_balance' => 0]);
+
+    $this->post('/sales', [
+        'customer_id' => $customer->id,
+        'sale_date' => '2026-03-01',
+        'status' => 'confirmed',
+        'financing_type' => 'emi',
+        'installment_count' => 3,
+        'items' => [
+            ['product_id' => $product->id, 'quantity' => 3, 'unit_price' => 1000],
+        ],
+        'payments' => [['account_id' => $account->id, 'amount' => 900]],
+    ])->assertRedirect();
+
+    $sale = Sale::query()->firstOrFail();
+    $installments = EmiInstallment::where('sale_id', $sale->id)->orderBy('installment_number')->get();
+    expect($account->fresh()->current_balance)->toBe(900.0);
+
+    // Pay the first installment (700) via the same account.
+    $this->post(route('emi-installments.pay', $installments[0]->id), [
+        'account_id' => $account->id,
+        'amount' => 700,
+    ])->assertRedirect();
+
+    expect($account->fresh()->current_balance)->toBe(1600.0) // 900 down payment + 700 EMI payment
+        ->and($sale->fresh()->due_amount)->toBe(1400.0);
+
+    // Cancel the sale — both the down payment (SalePayment) and the
+    // installment payment (EmiPayment) must be reversed, not just the down
+    // payment, or the account's cached balance would stay inflated by 700
+    // forever.
+    $this->post("/sales/{$sale->id}/cancel")->assertRedirect();
+
+    expect($account->fresh()->current_balance)->toBe(0.0) // fully restored to its pre-sale balance
+        ->and($customer->fresh()->balance)->toBe(0.0)
+        ->and($sale->fresh()->status)->toBe(SaleStatus::Cancelled);
+
+    // The already-paid installment keeps its history; the two still-pending
+    // ones are voided rather than staying payable against a dead sale.
+    expect($installments[0]->fresh()->status)->toBe(EmiInstallmentStatus::Paid)
+        ->and($installments[0]->fresh()->paid_amount)->toBe(700.0)
+        ->and($installments[1]->fresh()->status)->toBe(EmiInstallmentStatus::Cancelled)
+        ->and($installments[2]->fresh()->status)->toBe(EmiInstallmentStatus::Cancelled);
+
+    // The journal is fully reversed — nothing posted remains for this sale.
+    expect(JournalEntry::where('reference_type', 'sale')->where('reference_id', $sale->id)->where('status', 'posted')->count())->toBe(0);
+
+    // A remaining installment can no longer be paid against the cancelled sale.
+    $accountBalanceBeforeAttempt = $account->fresh()->current_balance;
+
+    $this->post(route('emi-installments.pay', $installments[1]->id), [
+        'account_id' => $account->id,
+        'amount' => 700,
+    ])->assertSessionHasErrors('installment');
+
+    expect($account->fresh()->current_balance)->toBe($accountBalanceBeforeAttempt)
+        ->and($installments[1]->fresh()->status)->toBe(EmiInstallmentStatus::Cancelled);
+});
+
+test('PayEmiInstallmentAction itself refuses to pay an installment of a cancelled sale, even called directly', function () {
+    $this->actingAs(User::factory()->create());
+    $customer = Contact::factory()->create();
+    $account = Account::factory()->create(['account_type_id' => AccountType::factory(), 'current_balance' => 0]);
+    $sale = Sale::factory()->create(['customer_id' => $customer->id, 'status' => SaleStatus::Cancelled]);
+    $installment = EmiInstallment::factory()->create([
+        'sale_id' => $sale->id,
+        'amount' => 500,
+        'paid_amount' => 0,
+        'status' => EmiInstallmentStatus::Cancelled,
+    ]);
+
+    app(PayEmiInstallmentAction::class)->execute($installment, $account->id, 500);
+})->throws(ValidationException::class);
 
 test('the daily overdue sweep marks only pending installments past their due date', function () {
     $sale = Sale::factory()->confirmed()->create(['customer_id' => Contact::factory()]);

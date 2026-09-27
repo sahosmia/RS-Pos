@@ -388,7 +388,11 @@ export interface SaleFormItem {
     [key: string]: number | string | boolean | string[] | null | undefined;
     product_id: number;
     quantity: number;
+    /** The editable per-line base price a discount is computed against — defaults to the product's catalog price, but can be overridden per sale. */
+    original_price: number;
     unit_price: number;
+    discount_type: 'flat' | 'percentage' | null;
+    discount_value: number;
     installation_required: boolean;
     installation_charge: number | null;
     note: string | null;
@@ -408,7 +412,7 @@ export interface SaleFormDetail {
     items: SaleFormItem[];
 }
 
-export type EmiInstallmentStatusValue = 'pending' | 'paid' | 'overdue';
+export type EmiInstallmentStatusValue = 'pending' | 'paid' | 'overdue' | 'cancelled';
 
 export interface EmiInstallmentListItem {
     id: number;
@@ -427,6 +431,8 @@ export interface SaleItemDetail {
     quantity: number;
     original_price: number;
     unit_price: number;
+    discount_type: 'flat' | 'percentage' | null;
+    discount_value: number;
     discount_amount: number;
     subtotal: number;
     installation_required: boolean;
@@ -703,6 +709,8 @@ export interface SaleReturnDetail {
     customer: { id: number; name: string; phone: string; balance: number };
     return_date: string;
     total_amount: number;
+    refunded_amount: number;
+    remaining_refundable: number;
     reason: string | null;
     items: SaleReturnItemDetail[];
 }
@@ -744,6 +752,8 @@ export interface PurchaseReturnDetail {
     supplier: { id: number; name: string; phone: string; balance: number };
     return_date: string;
     total_amount: number;
+    refunded_amount: number;
+    remaining_refundable: number;
     reason: string | null;
     items: PurchaseReturnItemDetail[];
 }

@@ -2,6 +2,8 @@
 
 namespace App\Http\Requests\Purchases\Purchase;
 
+use App\Models\Purchase;
+use App\Rules\CreditAppliedWithinAvailableRule;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
@@ -22,11 +24,14 @@ class PurchasePaymentRequest extends FormRequest
      */
     public function rules(): array
     {
+        /** @var Purchase|null $purchase */
+        $purchase = $this->route('purchase');
+
         return [
             'payments' => ['nullable', 'array'],
             'payments.*.account_id' => ['required', 'integer', 'exists:accounts,id'],
             'payments.*.amount' => ['required', 'numeric', 'min:0.01'],
-            'credit_applied' => ['nullable', 'numeric', 'min:0'],
+            'credit_applied' => ['nullable', 'numeric', 'min:0', new CreditAppliedWithinAvailableRule($purchase)],
             // Keyed by purchase_item_id — the serial number of each unit
             // received, only relevant for a track_serial_number product.
             'serial_numbers' => ['nullable', 'array'],

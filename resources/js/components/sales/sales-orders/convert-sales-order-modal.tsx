@@ -1,9 +1,10 @@
-import AccountPaymentRows, { type PaymentRow } from '@/components/shared/account-payment-rows';
+import AccountPaymentRows, { paymentRowsError, type PaymentRow } from '@/components/shared/account-payment-rows';
 import FormModal from '@/components/shared/form-modal';
 import { useMoneyFormat } from '@/hooks/use-money-format';
 import { type Account, type SalesOrderDetail } from '@/types/models';
 import { useForm } from '@inertiajs/react';
 import { FormEventHandler, useState } from 'react';
+import { toast } from 'sonner';
 
 interface ConvertSalesOrderModalProps {
     open: boolean;
@@ -29,6 +30,7 @@ export default function ConvertSalesOrderModal({ open, onOpenChange, order, acco
                 onOpenChange(false);
                 setRows([]);
             },
+            onError: (errors) => toast.error(paymentRowsError(errors) ?? 'Could not convert the order — check the form for errors.'),
         });
     };
 
@@ -48,6 +50,7 @@ export default function ConvertSalesOrderModal({ open, onOpenChange, order, acco
                 onChange={setRows}
                 label="Additional Payment (optional)"
                 emptyHint="বাকি টাকা এখন না নিলে Sale-এ due হিসেবে থেকে যাবে"
+                error={paymentRowsError(form.errors)}
             />
         </FormModal>
     );

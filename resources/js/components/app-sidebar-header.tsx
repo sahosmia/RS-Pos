@@ -1,4 +1,5 @@
 import { Breadcrumbs } from '@/components/breadcrumbs';
+import { FullscreenToggle } from '@/components/fullscreen-toggle';
 import GlobalSearchDialog from '@/components/global-search-dialog';
 import HeaderUserMenu from '@/components/header-user-menu';
 import QuickCreateMenu from '@/components/quick-create-menu';
@@ -19,7 +20,7 @@ import { type BreadcrumbItem as BreadcrumbItemType } from '@/types';
  */
 export function AppSidebarHeader({ breadcrumbs = [] }: { breadcrumbs?: BreadcrumbItemType[] }) {
     return (
-        <header className="border-sidebar-border/50 flex h-16 shrink-0 items-center gap-2 border-b px-3 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12 sm:px-4 md:px-6">
+        <header className="border-sidebar-border/50 sticky top-0 z-20 flex h-16 shrink-0 items-center gap-2 border-b bg-background px-3 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12 sm:px-4 md:px-6">
             <div className="flex min-w-0 flex-1 items-center gap-2">
                 <SidebarTrigger className="-ml-1 shrink-0" />
                 <Breadcrumbs breadcrumbs={breadcrumbs} />
@@ -27,6 +28,7 @@ export function AppSidebarHeader({ breadcrumbs = [] }: { breadcrumbs?: Breadcrum
             <div className="ml-auto flex shrink-0 items-center gap-2 sm:gap-3">
                 <QuickCreateMenu />
                 <GlobalSearchDialog />
+                <FullscreenToggle />
                 <Separator orientation="vertical" className="hidden h-6 sm:block" />
                 <HeaderUserMenu />
             </div>

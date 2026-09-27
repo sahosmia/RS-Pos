@@ -16,6 +16,7 @@ use App\Models\SaleReturn;
 use App\Models\SerialNumber;
 use App\Models\Settings;
 use App\Models\User;
+use Illuminate\Validation\ValidationException;
 
 beforeEach(function () {
     Settings::factory()->create();
@@ -178,6 +179,96 @@ test('refunding a sale return that was already fully paid settles the customer b
 
     $refundEntry = JournalEntry::where('reference_type', 'sale_return_refund')->where('reference_id', $return->id)->firstOrFail();
     expect($refundEntry->lines->sum('debit'))->toBe($refundEntry->lines->sum('credit'));
+});
+
+test('a second full refund attempt on an already fully refunded return is rejected', function () {
+    $this->actingAs(User::factory()->create());
+    $customer = Contact::factory()->create();
+    $product = Product::factory()->create(['current_stock' => 5, 'avg_cost' => 60]);
+    $accountType = AccountType::factory()->create();
+    $account = Account::factory()->create(['account_type_id' => $accountType->id, 'current_balance' => 0]);
+
+    $sale = Sale::factory()->create(['customer_id' => $customer->id]);
+    $sale->items()->create(['product_id' => $product->id, 'quantity' => 1, 'unit_price' => 200, 'original_price' => 200, 'subtotal' => 200]);
+    $sale->forceFill(['total_amount' => 200, 'due_amount' => 200])->save();
+    app(ConfirmSaleAction::class)->execute($sale, [['account_id' => $account->id, 'amount' => 200]]);
+
+    $saleItem = $sale->items()->firstOrFail();
+    $return = app(CreateSaleReturnAction::class)->execute([
+        'sale_id' => $sale->id,
+        'return_date' => '2026-03-05',
+        'items' => [['sale_item_id' => $saleItem->id, 'quantity' => 1]],
+    ]);
+
+    app(RefundSaleReturnAction::class)->execute($return, [['account_id' => $account->id, 'amount' => 200]]);
+
+    expect($return->fresh()->refunded_amount)->toBe(200.0);
+
+    $attempt = fn () => app(RefundSaleReturnAction::class)->execute($return->fresh(), [['account_id' => $account->id, 'amount' => 200]]);
+
+    expect($attempt)->toThrow(ValidationException::class);
+
+    // The rejected second refund must not have moved anything.
+    expect($return->fresh()->refunded_amount)->toBe(200.0)
+        ->and($account->fresh()->current_balance)->toBe(0.0)
+        ->and($customer->fresh()->balance)->toBe(0.0);
+});
+
+test('two partial refunds that together stay within the total both succeed', function () {
+    $this->actingAs(User::factory()->create());
+    $customer = Contact::factory()->create();
+    $product = Product::factory()->create(['current_stock' => 5, 'avg_cost' => 60]);
+    $accountType = AccountType::factory()->create();
+    $account = Account::factory()->create(['account_type_id' => $accountType->id, 'current_balance' => 0]);
+
+    $sale = Sale::factory()->create(['customer_id' => $customer->id]);
+    $sale->items()->create(['product_id' => $product->id, 'quantity' => 1, 'unit_price' => 200, 'original_price' => 200, 'subtotal' => 200]);
+    $sale->forceFill(['total_amount' => 200, 'due_amount' => 200])->save();
+    app(ConfirmSaleAction::class)->execute($sale, [['account_id' => $account->id, 'amount' => 200]]);
+
+    $saleItem = $sale->items()->firstOrFail();
+    $return = app(CreateSaleReturnAction::class)->execute([
+        'sale_id' => $sale->id,
+        'return_date' => '2026-03-05',
+        'items' => [['sale_item_id' => $saleItem->id, 'quantity' => 1]],
+    ]);
+
+    app(RefundSaleReturnAction::class)->execute($return, [['account_id' => $account->id, 'amount' => 120]]);
+    expect($return->fresh()->refunded_amount)->toBe(120.0);
+
+    app(RefundSaleReturnAction::class)->execute($return->fresh(), [['account_id' => $account->id, 'amount' => 80]]);
+    expect($return->fresh()->refunded_amount)->toBe(200.0)
+        ->and($account->fresh()->current_balance)->toBe(0.0);
+});
+
+test('a partial refund followed by one that would exceed the total is rejected', function () {
+    $this->actingAs(User::factory()->create());
+    $customer = Contact::factory()->create();
+    $product = Product::factory()->create(['current_stock' => 5, 'avg_cost' => 60]);
+    $accountType = AccountType::factory()->create();
+    $account = Account::factory()->create(['account_type_id' => $accountType->id, 'current_balance' => 0]);
+
+    $sale = Sale::factory()->create(['customer_id' => $customer->id]);
+    $sale->items()->create(['product_id' => $product->id, 'quantity' => 1, 'unit_price' => 200, 'original_price' => 200, 'subtotal' => 200]);
+    $sale->forceFill(['total_amount' => 200, 'due_amount' => 200])->save();
+    app(ConfirmSaleAction::class)->execute($sale, [['account_id' => $account->id, 'amount' => 200]]);
+
+    $saleItem = $sale->items()->firstOrFail();
+    $return = app(CreateSaleReturnAction::class)->execute([
+        'sale_id' => $sale->id,
+        'return_date' => '2026-03-05',
+        'items' => [['sale_item_id' => $saleItem->id, 'quantity' => 1]],
+    ]);
+
+    app(RefundSaleReturnAction::class)->execute($return, [['account_id' => $account->id, 'amount' => 120]]);
+    expect($return->fresh()->refunded_amount)->toBe(120.0);
+
+    $attempt = fn () => app(RefundSaleReturnAction::class)->execute($return->fresh(), [['account_id' => $account->id, 'amount' => 100]]);
+
+    expect($attempt)->toThrow(ValidationException::class);
+
+    expect($return->fresh()->refunded_amount)->toBe(120.0)
+        ->and($account->fresh()->current_balance)->toBe(80.0);
 });
 
 test('sale returns and refund pages render', function () {
