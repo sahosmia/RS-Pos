@@ -8,6 +8,12 @@ test('guests are redirected to the login page', function () {
     $this->patch('/locale', ['locale' => 'en'])->assertRedirect('/login');
 });
 
+test('default user locale is english', function () {
+    $user = User::factory()->create();
+
+    expect($user->fresh()->locale)->toBe(Locale::En);
+});
+
 test('a user can switch their locale', function () {
     $user = User::factory()->create(['locale' => 'bn']);
 

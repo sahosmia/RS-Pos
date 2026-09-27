@@ -56,7 +56,7 @@ export interface User {
     name: string;
     email: string;
     avatar?: string;
-    /** UI language preference (Phase 33 §4) — 'en' or 'bn', default 'bn'. */
+    /** UI language preference (Phase 33 §4) — 'en' or 'bn', default 'en'. */
     locale: string;
     /** Personal accent-color override — null means "use the shop's global theme_color". */
     theme_color: string | null;

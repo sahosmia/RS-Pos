@@ -17,7 +17,7 @@ class SetLocale
 {
     public function handle(Request $request, Closure $next): Response
     {
-        $locale = $request->user()?->locale ?? Locale::Bn;
+        $locale = $request->user()?->locale ?? Locale::En;
 
         App::setLocale($locale instanceof Locale ? $locale->value : $locale);
 

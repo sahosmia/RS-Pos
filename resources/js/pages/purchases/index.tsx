@@ -1,6 +1,7 @@
 import { FormInput } from '@/components/form/form-input';
 import HeadingSmall from '@/components/heading-small';
 import { getPurchaseActions } from '@/components/purchases/purchase-actions';
+import StatCards from '@/components/shared/stat-cards';
 import ConfirmDialog from '@/components/shared/confirm-dialog';
 import ContactLink from '@/components/shared/contact-link';
 import EmptyState from '@/components/shared/empty-state';
@@ -25,6 +26,7 @@ import { formatDate } from '@/lib/format-date';
 import { type BreadcrumbItem, type SharedData } from '@/types';
 import { type Paginated, type PaymentStatusValue, type PurchaseListItem, type PurchaseStatusValue, type SupplierOption } from '@/types/models';
 import { Head, Link, router, usePage } from '@inertiajs/react';
+import { ArrowDownCircle, ArrowUpCircle, DollarSign, ShoppingBag } from 'lucide-react';
 import { type ColumnDef, type VisibilityState } from '@tanstack/react-table';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
@@ -41,8 +43,16 @@ interface PurchaseFilters extends TableFilterBase {
     per_page: number | 'all';
 }
 
+export interface PurchaseStats {
+    total_purchases: number;
+    total_amount: number;
+    total_paid: number;
+    total_due: number;
+}
+
 interface PurchasesIndexProps {
     purchases: Paginated<PurchaseListItem>;
+    stats: PurchaseStats;
     /** The currently-filtered supplier's own label, or `null` when no supplier filter is active. */
     initialSupplier: SupplierOption | null;
     filters: PurchaseFilters;
@@ -84,7 +94,7 @@ const paymentStatusVariant: Record<PaymentStatusValue, 'secondary' | 'outline' |
 
 const humanize = (value: string) => value.replaceAll('_', ' ').replace(/\b\w/g, (character) => character.toUpperCase());
 
-export default function PurchasesIndex({ purchases, initialSupplier, filters }: PurchasesIndexProps) {
+export default function PurchasesIndex({ purchases, stats, initialSupplier, filters }: PurchasesIndexProps) {
     const { shop } = usePage<SharedData>().props;
     const money = useMoneyFormat();
     const [viewMode, setViewMode] = useTableViewMode();
@@ -269,6 +279,37 @@ export default function PurchasesIndex({ purchases, initialSupplier, filters }: 
                         <Link href={route('purchases.create')}>Add Purchase</Link>
                     </Button>
                 </div>
+
+                {stats && (
+                    <StatCards
+                        cards={[
+                            {
+                                label: 'Total Purchases',
+                                value: stats.total_purchases.toLocaleString(),
+                                icon: ShoppingBag,
+                                tone: 'text-sky-600 bg-sky-100 dark:text-sky-400 dark:bg-sky-500/15',
+                            },
+                            {
+                                label: 'Total Amount',
+                                value: money(stats.total_amount),
+                                icon: DollarSign,
+                                tone: 'text-violet-600 bg-violet-100 dark:text-violet-400 dark:bg-violet-500/15',
+                            },
+                            {
+                                label: 'Total Paid',
+                                value: money(stats.total_paid),
+                                icon: ArrowDownCircle,
+                                tone: 'text-emerald-600 bg-emerald-100 dark:text-emerald-400 dark:bg-emerald-500/15',
+                            },
+                            {
+                                label: 'Total Due',
+                                value: money(stats.total_due),
+                                icon: ArrowUpCircle,
+                                tone: 'text-rose-600 bg-rose-100 dark:text-rose-400 dark:bg-rose-500/15',
+                            },
+                        ]}
+                    />
+                )}
 
                 <DataTableToolbar
                     search={search}

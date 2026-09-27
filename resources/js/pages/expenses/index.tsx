@@ -3,6 +3,7 @@ import { getExpenseActions } from '@/components/expenses/expense-actions';
 import ExpenseModal from '@/components/expenses/expense-modal';
 import HeadingSmall from '@/components/heading-small';
 import LookupManagerModal from '@/components/products/lookup-manager-modal';
+import StatCards from '@/components/shared/stat-cards';
 import ContactLink from '@/components/shared/contact-link';
 import EmptyState from '@/components/shared/empty-state';
 import { Badge } from '@/components/ui/badge';
@@ -25,6 +26,7 @@ import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem, type SharedData } from '@/types';
 import { type Account, type ExpenseCategoryOption, type ExpenseListItem, type Paginated, type PaymentStatusValue } from '@/types/models';
 import { Head, usePage } from '@inertiajs/react';
+import { ArrowDownCircle, ArrowUpCircle, DollarSign, Receipt } from 'lucide-react';
 import { type ColumnDef, type VisibilityState } from '@tanstack/react-table';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
@@ -39,8 +41,16 @@ interface ExpenseFilters extends TableFilterBase {
     per_page: number | 'all';
 }
 
+export interface ExpenseStats {
+    total_expenses: number;
+    total_amount: number;
+    total_paid: number;
+    total_due: number;
+}
+
 interface ExpensesIndexProps {
     expenses: Paginated<ExpenseListItem>;
+    stats: ExpenseStats;
     categories: ExpenseCategoryOption[];
     accounts: Account[];
     filters: ExpenseFilters;
@@ -74,7 +84,7 @@ const paymentStatusVariant: Record<PaymentStatusValue, 'secondary' | 'outline' |
 
 const humanize = (value: string) => value.replaceAll('_', ' ').replace(/\b\w/g, (character) => character.toUpperCase());
 
-export default function ExpensesIndex({ expenses, categories, accounts, filters }: ExpensesIndexProps) {
+export default function ExpensesIndex({ expenses, stats, categories, accounts, filters }: ExpensesIndexProps) {
     const { shop } = usePage<SharedData>().props;
     const money = useMoneyFormat();
     const [viewMode, setViewMode] = useTableViewMode();
@@ -234,6 +244,37 @@ export default function ExpensesIndex({ expenses, categories, accounts, filters 
                         <Button onClick={() => setAddOpen(true)}>Add Expense</Button>
                     </div>
                 </div>
+
+                {stats && (
+                    <StatCards
+                        cards={[
+                            {
+                                label: 'Total Expenses',
+                                value: stats.total_expenses.toLocaleString(),
+                                icon: Receipt,
+                                tone: 'text-sky-600 bg-sky-100 dark:text-sky-400 dark:bg-sky-500/15',
+                            },
+                            {
+                                label: 'Total Amount',
+                                value: money(stats.total_amount),
+                                icon: DollarSign,
+                                tone: 'text-violet-600 bg-violet-100 dark:text-violet-400 dark:bg-violet-500/15',
+                            },
+                            {
+                                label: 'Total Paid',
+                                value: money(stats.total_paid),
+                                icon: ArrowDownCircle,
+                                tone: 'text-emerald-600 bg-emerald-100 dark:text-emerald-400 dark:bg-emerald-500/15',
+                            },
+                            {
+                                label: 'Total Due',
+                                value: money(stats.total_due),
+                                icon: ArrowUpCircle,
+                                tone: 'text-rose-600 bg-rose-100 dark:text-rose-400 dark:bg-rose-500/15',
+                            },
+                        ]}
+                    />
+                )}
 
                 <DataTableToolbar
                     activeFilterCount={activeFilterCount}

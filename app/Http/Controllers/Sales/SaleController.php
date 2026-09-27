@@ -56,8 +56,17 @@ class SaleController extends Controller
             'can_edit' => $sale->canEdit(),
         ]);
 
+        $statsQuery = SaleQuery::filtered($validated, $request->user());
+        $stats = [
+            'total_sales' => (clone $statsQuery)->count(),
+            'total_amount' => (float) (clone $statsQuery)->sum('total_amount'),
+            'total_paid' => (float) (clone $statsQuery)->sum('paid_amount'),
+            'total_due' => (float) (clone $statsQuery)->sum('due_amount'),
+        ];
+
         return Inertia::render('sales/index', [
             'sales' => $sales,
+            'stats' => $stats,
             'accounts' => SalesFormOptions::activeAccounts(),
             // Only the currently-filtered customer's own label, not every customer —
             // the filter itself searches async (see `ContactSearchController`).

@@ -32,8 +32,17 @@ class ProductController extends Controller
 
         $products = $products->through(fn (Product $product) => ProductListResource::make($product)->resolve());
 
+        $statsQuery = ProductQuery::filtered($filters);
+        $stats = [
+            'total_products' => (clone $statsQuery)->count(),
+            'total_stock' => (float) (clone $statsQuery)->where('manage_stock', true)->sum('current_stock'),
+            'total_stock_value' => (float) ((clone $statsQuery)->where('manage_stock', true)->selectRaw('COALESCE(SUM(current_stock * avg_cost), 0) as aggregate')->value('aggregate') ?? 0.0),
+            'low_stock_count' => (clone $statsQuery)->where('manage_stock', true)->whereColumn('current_stock', '<=', 'minimum_stock_level')->count(),
+        ];
+
         return Inertia::render('products/index', [
             'products' => $products,
+            'stats' => $stats,
             ...ProductFormOptions::forIndex(),
             'filters' => [
                 ...$filters,

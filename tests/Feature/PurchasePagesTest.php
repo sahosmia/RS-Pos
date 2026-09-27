@@ -12,11 +12,16 @@ beforeEach(function () {
 
 test('the purchases list page renders', function () {
     $this->actingAs(userWithPermissions(['purchase.view_all']));
-    Purchase::factory()->create(['supplier_id' => Contact::factory()->supplier()]);
+    Purchase::factory()->create(['supplier_id' => Contact::factory()->supplier(), 'total_amount' => 2000, 'paid_amount' => 1500, 'due_amount' => 500]);
 
     $this->get('/purchases')
         ->assertOk()
-        ->assertInertia(fn ($page) => $page->component('purchases/index'));
+        ->assertInertia(fn ($page) => $page
+            ->component('purchases/index')
+            ->where('stats.total_purchases', 1)
+            ->where('stats.total_amount', 2000)
+            ->where('stats.total_paid', 1500)
+            ->where('stats.total_due', 500));
 });
 
 test('the purchases list search matches by invoice number or supplier name', function () {

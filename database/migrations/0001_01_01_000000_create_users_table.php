@@ -20,7 +20,7 @@ return new class extends Migration
             $table->string('username')->nullable()->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
-            $table->string('locale')->default('bn');
+            $table->string('locale')->default('en');
             // Null = no personal override, falls back to the shop's global theme_color.
             $table->string('theme_color')->nullable();
             $table->string('appearance')->default('system');

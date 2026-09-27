@@ -12,11 +12,16 @@ beforeEach(function () {
 
 test('the sales list page renders', function () {
     $this->actingAs(userWithPermissions(['sale.view_all']));
-    Sale::factory()->create(['customer_id' => Contact::factory()]);
+    Sale::factory()->create(['customer_id' => Contact::factory(), 'total_amount' => 1000, 'paid_amount' => 600, 'due_amount' => 400]);
 
     $this->get('/sales')
         ->assertOk()
-        ->assertInertia(fn ($page) => $page->component('sales/index'));
+        ->assertInertia(fn ($page) => $page
+            ->component('sales/index')
+            ->where('stats.total_sales', 1)
+            ->where('stats.total_amount', 1000)
+            ->where('stats.total_paid', 600)
+            ->where('stats.total_due', 400));
 });
 
 test('the sales list search matches by invoice number or customer name', function () {
