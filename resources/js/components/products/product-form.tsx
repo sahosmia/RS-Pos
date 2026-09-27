@@ -12,8 +12,7 @@ import { useTranslation } from '@/hooks/use-translation';
 import { type SharedData } from '@/types';
 import { type Brand, type Category, type ProductDetail, type ServicePlanPeriod, type Unit } from '@/types/models';
 import { router, useForm, usePage } from '@inertiajs/react';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Info, Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2 } from 'lucide-react';
 import { FormEventHandler, useState } from 'react';
 import { toast } from 'sonner';
 
@@ -118,26 +117,8 @@ export default function ProductForm({ mode, product, categories, brands, units }
 
                         <FormInput
                             id="sku"
-                            label={
-                                <span className="inline-flex items-center gap-1">
-                                    <span>{t('productForm', 'sku')}</span>
-                                    <TooltipProvider>
-                                        <Tooltip>
-                                            <TooltipTrigger asChild>
-                                                <button
-                                                    type="button"
-                                                    className="text-muted-foreground hover:text-foreground inline-flex cursor-pointer items-center"
-                                                >
-                                                    <Info className="size-3.5" />
-                                                </button>
-                                            </TooltipTrigger>
-                                            <TooltipContent>
-                                                <p>{t('productForm', 'sku_helper')}</p>
-                                            </TooltipContent>
-                                        </Tooltip>
-                                    </TooltipProvider>
-                                </span>
-                            }
+                            label={t('productForm', 'sku')}
+                            tooltip={t('productForm', 'sku_helper')}
                             value={form.data.sku}
                             onChange={(e) => form.setData('sku', e.target.value)}
                             error={form.errors.sku}

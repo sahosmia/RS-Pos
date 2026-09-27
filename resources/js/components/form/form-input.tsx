@@ -1,3 +1,4 @@
+import { LabelTooltip } from '@/components/form/label-tooltip';
 import InputError from '@/components/input-error';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -8,18 +9,19 @@ import React from 'react';
 interface FormInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
     id: string;
     label?: React.ReactNode;
+    tooltip?: React.ReactNode;
     error?: string;
     required?: boolean;
     /** Optional leading icon — purely visual, doesn't affect layout when omitted. */
     icon?: LucideIcon;
 }
 
-export function FormInput({ id, label, error, required, className, icon: Icon, ...props }: FormInputProps) {
+export function FormInput({ id, label, tooltip, error, required, className, icon: Icon, ...props }: FormInputProps) {
     return (
         <div className="grid gap-2">
             {label && (
                 <Label htmlFor={id} required={required}>
-                    {label}
+                    <LabelTooltip label={label} tooltip={tooltip} />
                 </Label>
             )}
             {Icon ? (
