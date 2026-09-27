@@ -7,7 +7,7 @@ const dictionaries = { en, bn };
 
 /**
  * Per-user UI language (erp-design-decisions.md Phase 33 §4). Reads
- * `auth.user.locale` (server-persisted, defaults to 'bn') rather than a
+ * `auth.user.locale` (server-persisted, defaults to 'en') rather than a
  * client-only preference like `useAppearance`, since the same value also
  * drives server-rendered strings via Laravel's `__()`.
  *
@@ -16,7 +16,7 @@ const dictionaries = { en, bn };
  */
 export function useTranslation() {
     const { auth } = usePage<SharedData>().props;
-    const locale = auth.user.locale === 'en' ? 'en' : 'bn';
+    const locale = auth.user?.locale === 'bn' ? 'bn' : 'en';
     const dictionary: Dictionary = dictionaries[locale];
 
     function t<Section extends keyof Dictionary>(section: Section, key: keyof Dictionary[Section]): string {

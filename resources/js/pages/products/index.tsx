@@ -2,6 +2,7 @@ import HeadingSmall from '@/components/heading-small';
 import { getProductActions } from '@/components/products/product-actions';
 import ProductFilters from '@/components/products/product-filters';
 import ProductGridCard from '@/components/products/product-grid-card';
+import ProductStatCards from '@/components/products/product-stat-cards';
 import StockAdjustmentModal from '@/components/products/stock-adjustment-modal';
 import ConfirmDialog from '@/components/shared/confirm-dialog';
 import EmptyState from '@/components/shared/empty-state';
@@ -24,7 +25,7 @@ import { toast } from 'sonner';
 import { getExportColumns, getVisibilityColumns, useProductColumns } from './table/columns';
 import { type ProductsIndexProps } from './types';
 
-export default function ProductsIndex({ products, categories, brands, filters }: ProductsIndexProps) {
+export default function ProductsIndex({ products, stats, categories, brands, filters }: ProductsIndexProps) {
     const { shop } = usePage<SharedData>().props;
     const { t } = useTranslation();
     const breadcrumbs: BreadcrumbItem[] = [{ title: t('productsPage', 'title'), href: '/products' }];
@@ -111,6 +112,8 @@ export default function ProductsIndex({ products, categories, brands, filters }:
                         </Button>
                     </div>
                 </div>
+
+                {stats && <ProductStatCards stats={stats} />}
 
                 <DataTableToolbar
                     search={search}

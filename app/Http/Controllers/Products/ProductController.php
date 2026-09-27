@@ -16,6 +16,7 @@ use App\Models\Settings;
 use App\Queries\Product\ProductFormOptions;
 use App\Queries\Product\ProductQuery;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -32,8 +33,23 @@ class ProductController extends Controller
 
         $products = $products->through(fn (Product $product) => ProductListResource::make($product)->resolve());
 
+        $statsQuery = ProductQuery::filtered($filters);
+        $stats = [
+            'total_products' => (clone $statsQuery)->count(),
+            'total_stock' => (float) (clone $statsQuery)->where('manage_stock', true)->sum('current_stock'),
+            // `->selectRaw(...)->value(...)` doesn't go through Eloquent's aggregate()
+            // machinery, so it can't reset the base query's `withExists` select or
+            // `orderBy` — mixing that leftover non-aggregated select with a raw SUM
+            // and no GROUP BY is what MySQL error 1140 was coming from. `->sum()`
+            // (like `total_stock` above) goes through the real aggregate path, which
+            // clears both automatically, and already coalesces a null sum to 0.
+            'total_stock_value' => (float) (clone $statsQuery)->where('manage_stock', true)->sum(DB::raw('current_stock * avg_cost')),
+            'low_stock_count' => (clone $statsQuery)->where('manage_stock', true)->whereColumn('current_stock', '<=', 'minimum_stock_level')->count(),
+        ];
+
         return Inertia::render('products/index', [
             'products' => $products,
+            'stats' => $stats,
             ...ProductFormOptions::forIndex(),
             'filters' => [
                 ...$filters,

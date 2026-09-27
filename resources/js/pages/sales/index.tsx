@@ -9,6 +9,7 @@ import { getSaleActions } from '@/components/sales/sale-actions';
 import ViewSalePaymentsModal from '@/components/sales/view-sale-payments-modal';
 import ContactLink from '@/components/shared/contact-link';
 import HeadingSmall from '@/components/heading-small';
+import StatCards from '@/components/shared/stat-cards';
 import ConfirmDialog from '@/components/shared/confirm-dialog';
 import EmptyState from '@/components/shared/empty-state';
 import SearchableSelect from '@/components/shared/searchable-select';
@@ -26,7 +27,7 @@ import { formatDate } from '@/lib/format-date';
 import { type BreadcrumbItem, type SharedData } from '@/types';
 import { type Account, type CustomerOption, type Paginated, type PaymentStatusValue, type SaleListItem, type SaleStatusValue } from '@/types/models';
 import { Head, Link, router, usePage } from '@inertiajs/react';
-import { CalendarRange } from 'lucide-react';
+import { ArrowDownCircle, ArrowUpCircle, CalendarRange, DollarSign, ShoppingCart } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { getExportColumns, getVisibilityColumns, humanize, paymentStatusColor, statusColor, useSaleColumns } from './table/columns';
@@ -87,15 +88,23 @@ interface SaleFilters extends TableFilterBase {
     per_page: number | 'all';
 }
 
+export interface SaleStats {
+    total_sales: number;
+    total_amount: number;
+    total_paid: number;
+    total_due: number;
+}
+
 interface SalesIndexProps {
     sales: Paginated<SaleListItem>;
+    stats: SaleStats;
     accounts: Account[];
     /** The currently-filtered customer's own label, or `null` when no customer filter is active. */
     initialCustomer: CustomerOption | null;
     filters: SaleFilters;
 }
 
-export default function SalesIndex({ sales, accounts, initialCustomer, filters }: SalesIndexProps) {
+export default function SalesIndex({ sales, stats, accounts, initialCustomer, filters }: SalesIndexProps) {
     const { shop } = usePage<SharedData>().props;
     const money = useMoneyFormat();
     const [viewMode, setViewMode] = useTableViewMode();
@@ -226,6 +235,37 @@ export default function SalesIndex({ sales, accounts, initialCustomer, filters }
                         <Link href={route('sales.create')}>Add Sale</Link>
                     </Button>
                 </div>
+
+                {stats && (
+                    <StatCards
+                        cards={[
+                            {
+                                label: 'Total Sales',
+                                value: stats.total_sales.toLocaleString(),
+                                icon: ShoppingCart,
+                                tone: 'text-sky-600 bg-sky-100 dark:text-sky-400 dark:bg-sky-500/15',
+                            },
+                            {
+                                label: 'Total Amount',
+                                value: money(stats.total_amount),
+                                icon: DollarSign,
+                                tone: 'text-violet-600 bg-violet-100 dark:text-violet-400 dark:bg-violet-500/15',
+                            },
+                            {
+                                label: 'Total Paid',
+                                value: money(stats.total_paid),
+                                icon: ArrowDownCircle,
+                                tone: 'text-emerald-600 bg-emerald-100 dark:text-emerald-400 dark:bg-emerald-500/15',
+                            },
+                            {
+                                label: 'Total Due',
+                                value: money(stats.total_due),
+                                icon: ArrowUpCircle,
+                                tone: 'text-rose-600 bg-rose-100 dark:text-rose-400 dark:bg-rose-500/15',
+                            },
+                        ]}
+                    />
+                )}
 
                 <DataTableToolbar
                     search={search}

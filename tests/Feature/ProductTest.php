@@ -13,16 +13,34 @@ test('guests are redirected to the login page', function () {
     $this->get('/products')->assertRedirect('/login');
 });
 
-test('products page lists products with their stock status', function () {
+test('products page lists products with their stock status and summary stats', function () {
     $this->actingAs(User::factory()->create());
-    Product::factory()->create(['name' => 'Split AC 1.5 Ton', 'current_stock' => 2, 'minimum_stock_level' => 5]);
+    Product::factory()->create([
+        'name' => 'Split AC 1.5 Ton',
+        'current_stock' => 2,
+        'avg_cost' => 1000,
+        'minimum_stock_level' => 5,
+        'manage_stock' => true,
+    ]);
+    Product::factory()->create([
+        'name' => 'Smart TV 55',
+        'current_stock' => 10,
+        'avg_cost' => 2000,
+        'minimum_stock_level' => 3,
+        'manage_stock' => true,
+    ]);
 
     $this->get('/products')
         ->assertOk()
         ->assertInertia(fn ($page) => $page
             ->component('products/index')
-            ->where('products.data.0.name', 'Split AC 1.5 Ton')
-            ->where('products.data.0.stock_status', 'low_stock'));
+            ->where('products.data.0.name', 'Smart TV 55')
+            ->where('products.data.1.name', 'Split AC 1.5 Ton')
+            ->where('products.data.1.stock_status', 'low_stock')
+            ->where('stats.total_products', 2)
+            ->where('stats.total_stock', 12)
+            ->where('stats.total_stock_value', 22000)
+            ->where('stats.low_stock_count', 1));
 });
 
 test('per_page controls how many products come back per page, defaulting to the configured default', function () {

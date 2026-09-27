@@ -157,5 +157,11 @@ test('expense pages render', function () {
 
     $this->get('/expenses')
         ->assertOk()
-        ->assertInertia(fn ($page) => $page->component('expenses/index')->has('expenses.data', 1));
+        ->assertInertia(fn ($page) => $page
+            ->component('expenses/index')
+            ->has('expenses.data', 1)
+            ->where('stats.total_expenses', 1)
+            ->where('stats.total_amount', 750)
+            ->where('stats.total_paid', 0)
+            ->where('stats.total_due', 750));
 });

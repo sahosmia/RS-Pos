@@ -1,3 +1,4 @@
+import { type ProductStats } from '@/components/products/product-stat-cards';
 import { type Brand, type Category, type DateRangePresetValue, type Paginated, type ProductListItem, type StockStatus, type Unit } from '@/types/models';
 
 /** Matches `ProductQuery::filterRules()`'s `sort` whitelist exactly — the backend rejects anything else. */
@@ -19,6 +20,7 @@ export interface ProductFilters {
 
 export interface ProductsIndexProps {
     products: Paginated<ProductListItem>;
+    stats: ProductStats;
     categories: Category[];
     brands: Brand[];
     units: Unit[];

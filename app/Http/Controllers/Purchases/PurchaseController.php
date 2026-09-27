@@ -54,8 +54,17 @@ class PurchaseController extends Controller
             'can_edit' => $purchase->canEdit(),
         ]);
 
+        $statsQuery = PurchaseQuery::filtered($validated, $request->user());
+        $stats = [
+            'total_purchases' => (clone $statsQuery)->count(),
+            'total_amount' => (float) (clone $statsQuery)->sum('total_amount'),
+            'total_paid' => (float) (clone $statsQuery)->sum('paid_amount'),
+            'total_due' => (float) (clone $statsQuery)->sum('due_amount'),
+        ];
+
         return Inertia::render('purchases/index', [
             'purchases' => $purchases,
+            'stats' => $stats,
             // Only the currently-filtered supplier's own label, not every supplier —
             // the filter itself searches async (see `ContactSearchController`).
             'initialSupplier' => isset($validated['supplier_id'])

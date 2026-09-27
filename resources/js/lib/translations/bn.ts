@@ -224,6 +224,10 @@ const bn: Dictionary = {
         delete_title: 'পণ্য ডিলিট করবেন?',
         delete_description: 'মুছে ফেলা হবে। stock movement থাকলে এটা করা যাবে না।',
         item_label: 'পণ্য',
+        total_products: 'মোট পণ্য',
+        total_stock: 'মোট স্টক',
+        total_stock_value: 'স্টকের মোট মূল্য',
+        low_stock_products: 'কম স্টকের পণ্য',
     },
     stockAdjustment: {
         title: 'স্টক অ্যাডজাস্ট করুন',

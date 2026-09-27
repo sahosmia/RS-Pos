@@ -51,8 +51,17 @@ class ExpenseController extends Controller
             'attachment' => $this->attachmentFor($expense),
         ]);
 
+        $statsQuery = ExpenseQuery::filtered($validated);
+        $stats = [
+            'total_expenses' => (clone $statsQuery)->count(),
+            'total_amount' => (float) (clone $statsQuery)->sum('total_amount'),
+            'total_paid' => (float) (clone $statsQuery)->sum('paid_amount'),
+            'total_due' => (float) (clone $statsQuery)->sum('due_amount'),
+        ];
+
         return Inertia::render('expenses/index', [
             'expenses' => $expenses,
+            'stats' => $stats,
             'categories' => ExpenseCategory::query()->orderBy('name')->get(['id', 'name', 'parent_id']),
             'accounts' => Account::query()->active()->orderBy('name')->get(['id', 'name', 'current_balance', 'is_default']),
             'filters' => [

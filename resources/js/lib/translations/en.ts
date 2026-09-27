@@ -223,6 +223,10 @@ export interface Dictionary {
         delete_title: string;
         delete_description: string;
         item_label: string;
+        total_products: string;
+        total_stock: string;
+        total_stock_value: string;
+        low_stock_products: string;
     };
     stockAdjustment: {
         title: string;
@@ -662,6 +666,10 @@ const en: Dictionary = {
         delete_title: 'Delete product?',
         delete_description: 'will be deleted. Cannot be done if it has stock movement.',
         item_label: 'products',
+        total_products: 'Total Products',
+        total_stock: 'Total Stock',
+        total_stock_value: 'Total Stock Value',
+        low_stock_products: 'Low Stock Products',
     },
     stockAdjustment: {
         title: 'Adjust Stock',

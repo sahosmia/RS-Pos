@@ -15,18 +15,12 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->string('email')->unique();
-            // Nullable so older seeded rows don't need a backfill — new users always
-            // get one (see StoreUserRequest) since login accepts either this or email.
             $table->string('username')->nullable()->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
-            $table->string('locale')->default('bn');
-            // Null = no personal override, falls back to the shop's global theme_color.
+            $table->string('locale')->default('en');
             $table->string('theme_color')->nullable();
             $table->string('appearance')->default('system');
-            // Deactivating (instead of deleting) keeps `created_by` history on every
-            // record intact — see `DeleteUserAction`, which blocks deleting a user
-            // who has any of that history at all.
             $table->boolean('is_active')->default(true);
             $table->rememberToken();
             $table->timestamps();
