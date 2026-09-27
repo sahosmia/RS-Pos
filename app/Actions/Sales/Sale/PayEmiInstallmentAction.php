@@ -32,11 +32,28 @@ class PayEmiInstallmentAction
 
     public function execute(EmiInstallment $installment, int|string $accountId, float $amount): EmiInstallment
     {
-        if ($installment->status === EmiInstallmentStatus::Paid) {
-            return $installment;
-        }
-
         return DB::transaction(function () use ($installment, $accountId, $amount) {
+            $installment = EmiInstallment::where('id', $installment->id)->lockForUpdate()->firstOrFail();
+
+            if ($installment->status === EmiInstallmentStatus::Paid) {
+                throw ValidationException::withMessages([
+                    'amount' => ['This installment has already been paid.'],
+                ]);
+            }
+
+            $remaining = round($installment->amount - $installment->paid_amount, 2);
+            if ($remaining <= 0.0) {
+                throw ValidationException::withMessages([
+                    'amount' => ['This installment has already been fully paid.'],
+                ]);
+            }
+
+            if ($amount > $remaining + 0.0001) {
+                throw ValidationException::withMessages([
+                    'amount' => ['Payment amount cannot exceed the remaining installment due of ৳'.number_format($remaining, 2).'.'],
+                ]);
+            }
+
             $sale = $installment->sale()->with('customer')->firstOrFail();
 
             // Belt-and-suspenders alongside PayEmiInstallmentRequest's own
@@ -69,9 +86,12 @@ class PayEmiInstallmentAction
                 $sale->id,
             );
 
+            $newPaidAmount = round($installment->paid_amount + $amount, 2);
+            $isFullyPaid = $newPaidAmount >= round($installment->amount, 2) - 0.0001;
+
             $installment->update([
-                'paid_amount' => $amount,
-                'status' => EmiInstallmentStatus::Paid,
+                'paid_amount' => $newPaidAmount,
+                'status' => $isFullyPaid ? EmiInstallmentStatus::Paid : $installment->status,
                 'paid_at' => now(),
                 'account_id' => $accountId,
             ]);

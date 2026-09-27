@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Purchases\PurchaseCancelController;
 use App\Http\Controllers\Purchases\PurchaseConfirmController;
 use App\Http\Controllers\Purchases\PurchaseController;
 use App\Http\Controllers\Purchases\PurchaseExportController;
@@ -17,6 +18,7 @@ Route::middleware(['auth', 'module:purchase'])->group(function () {
         ->name('purchases.')
         ->group(function () {
             Route::post('confirm', [PurchaseConfirmController::class, 'store'])->name('confirm');
+            Route::post('cancel', [PurchaseCancelController::class, 'store'])->name('cancel');
             Route::post('payments', [PurchasePaymentController::class, 'store'])->name('payments.store');
         });
 });

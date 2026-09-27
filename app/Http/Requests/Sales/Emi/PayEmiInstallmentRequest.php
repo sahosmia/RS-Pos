@@ -38,8 +38,21 @@ class PayEmiInstallmentRequest extends FormRequest
             /** @var EmiInstallment|null $installment */
             $installment = $this->route('emiInstallment');
 
-            if ($installment && $installment->sale->status !== SaleStatus::Confirmed) {
-                $validator->errors()->add('installment', 'This installment belongs to a sale that is no longer confirmed and can no longer be paid.');
+            if ($installment) {
+                if ($installment->sale->status !== SaleStatus::Confirmed) {
+                    $validator->errors()->add('installment', 'This installment belongs to a sale that is no longer confirmed and can no longer be paid.');
+                }
+
+                $remaining = round((float) $installment->amount - (float) $installment->paid_amount, 2);
+
+                if ($remaining <= 0) {
+                    $validator->errors()->add('amount', 'This installment has already been fully paid.');
+                } else {
+                    $amount = (float) $this->input('amount', 0);
+                    if ($amount > $remaining + 0.0001) {
+                        $validator->errors()->add('amount', 'Payment amount cannot exceed the remaining installment due of ৳'.number_format($remaining, 2).'.');
+                    }
+                }
             }
         });
     }

@@ -2,10 +2,12 @@
 
 namespace App\Http\Requests\Purchases\Purchase;
 
+use App\Enums\PurchaseStatus;
 use App\Models\Purchase;
 use App\Rules\CreditAppliedWithinAvailableRule;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Validator;
 
 /**
  * Shared shape for both "confirm with an initial payment" and "add a later
@@ -38,5 +40,27 @@ class PurchasePaymentRequest extends FormRequest
             'serial_numbers.*' => ['array'],
             'serial_numbers.*.*' => ['string'],
         ];
+    }
+
+    public function withValidator(Validator $validator): void
+    {
+        $validator->after(function (Validator $validator) {
+            /** @var Purchase|null $purchase */
+            $purchase = $this->route('purchase');
+            if (! $purchase) {
+                return;
+            }
+
+            $payments = $this->input('payments', []);
+            $totalPayment = array_sum(array_map(fn ($p) => (float) ($p['amount'] ?? 0), $payments));
+            $creditApplied = (float) $this->input('credit_applied', 0);
+            $totalPaid = $totalPayment + $creditApplied;
+
+            $maxAllowed = $purchase->status === PurchaseStatus::Received ? (float) $purchase->due_amount : (float) $purchase->total_amount;
+
+            if ($totalPaid > $maxAllowed + 0.0001) {
+                $validator->errors()->add('payments', 'Payment amount cannot exceed the remaining due amount of ৳'.number_format($maxAllowed, 2).'.');
+            }
+        });
     }
 }

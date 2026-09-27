@@ -34,7 +34,7 @@ test('HasLedger::recalculateLedgerBalance re-derives current_value from the tran
     $asset = app(CreateAssetAction::class)->execute(['name' => 'Office Furniture', 'opening_value' => 50000]);
 
     $accountType = AccountType::factory()->create();
-    $account = Account::factory()->create(['account_type_id' => $accountType->id, 'current_balance' => 0]);
+    $account = Account::factory()->create(['account_type_id' => $accountType->id, 'current_balance' => 100000]);
     app(AddAssetTransactionAction::class)->execute($asset, ['type' => 'addition', 'amount' => 10000, 'account_id' => $account->id]);
 
     // Force the cached column out of sync, then prove recalculation repairs it from the ledger.
@@ -109,7 +109,7 @@ test('the opening value can be corrected before any other transaction, and is lo
     expect($asset->fresh()->current_value)->toBe(15000.0);
 
     $accountType = AccountType::factory()->create();
-    $account = Account::factory()->create(['account_type_id' => $accountType->id, 'current_balance' => 0]);
+    $account = Account::factory()->create(['account_type_id' => $accountType->id, 'current_balance' => 100000]);
     app(AddAssetTransactionAction::class)->execute($asset->fresh(), ['type' => 'addition', 'amount' => 1000, 'account_id' => $account->id]);
 
     expect($asset->fresh()->canEditOpeningValue())->toBeFalse();

@@ -196,7 +196,7 @@ test('confirming a purchase with a cash payment adds a balanced payable/cash pai
     $supplier = Contact::factory()->supplier()->create();
     $product = Product::factory()->create(['current_stock' => 0]);
     $cashType = AccountType::factory()->create(['name' => 'Cash']);
-    $cash = Account::factory()->create(['account_type_id' => $cashType->id, 'current_balance' => 0]);
+    $cash = Account::factory()->create(['account_type_id' => $cashType->id, 'current_balance' => 1000]);
     $purchase = Purchase::factory()->create(['supplier_id' => $supplier->id]);
     $purchase->items()->create(['product_id' => $product->id, 'quantity' => 5, 'unit_price' => 100, 'original_price' => 100, 'subtotal' => 500]);
     $purchase->forceFill(['total_amount' => 500, 'due_amount' => 500])->save();
