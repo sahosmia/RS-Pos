@@ -13,12 +13,10 @@ interface UseTableExportOptions<TFilters extends TableFilterBase> {
 }
 
 /**
- * Builds the export URL for the all/selected export dialog and navigates to
- * it — every list page's export endpoint (Products, Sales, Purchases, ...)
- * takes the same `format`/`scope`/`columns[]` shape plus whatever filters are
- * in effect, so this never needs to know what the domain-specific filters
- * mean. There's no "this page" scope (doc/corrections2.md #7): with rows
- * checked, `scope` is always `'selected'`; with none checked, it's `'all'`.
+ * Builds the export URL and navigates to it — every list page's export endpoint
+ * takes the same `format`/`scope`/`columns[]` shape, so this never needs to know
+ * what the domain-specific filters mean. No "this page" scope (doc/corrections2.md
+ * #7): `scope` is `'selected'` when rows are checked, else `'all'`.
  */
 export function useTableExport<TFilters extends TableFilterBase>({
     routeName,

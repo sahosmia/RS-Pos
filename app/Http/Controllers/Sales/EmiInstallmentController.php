@@ -43,7 +43,7 @@ class EmiInstallmentController extends Controller
 
         return Inertia::render('sales/emi-installments/index', [
             'installments' => $installments,
-            'accounts' => Account::query()->active()->orderBy('name')->get(['id', 'name', 'current_balance']),
+            'accounts' => Account::query()->active()->orderBy('name')->get(['id', 'name', 'current_balance', 'is_default']),
             'filters' => [
                 'status' => $validated['status'] ?? null,
                 'search' => $validated['search'] ?? null,

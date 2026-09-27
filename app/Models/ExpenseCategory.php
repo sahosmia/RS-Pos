@@ -25,6 +25,7 @@ class ExpenseCategory extends Model
      */
     protected $fillable = [
         'name',
+        'parent_id',
         'chart_of_account_id',
     ];
 
@@ -34,6 +35,22 @@ class ExpenseCategory extends Model
     public function chartOfAccount(): BelongsTo
     {
         return $this->belongsTo(ChartOfAccount::class);
+    }
+
+    /**
+     * @return BelongsTo<ExpenseCategory, $this>
+     */
+    public function parent(): BelongsTo
+    {
+        return $this->belongsTo(ExpenseCategory::class, 'parent_id');
+    }
+
+    /**
+     * @return HasMany<ExpenseCategory, $this>
+     */
+    public function children(): HasMany
+    {
+        return $this->hasMany(ExpenseCategory::class, 'parent_id');
     }
 
     /**

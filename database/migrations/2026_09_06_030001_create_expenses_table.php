@@ -20,6 +20,7 @@ return new class extends Migration
             $table->decimal('due_amount', 19, 4)->default(0);
             $table->string('payment_status')->default('due');
             $table->date('expense_date');
+            $table->date('due_date')->nullable();
             $table->text('note')->nullable();
             $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();

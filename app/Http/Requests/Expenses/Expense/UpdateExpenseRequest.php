@@ -8,17 +8,12 @@ use Illuminate\Foundation\Http\FormRequest;
 
 class UpdateExpenseRequest extends FormRequest
 {
-    /**
-     * Determine if the user is authorized to make this request.
-     */
     public function authorize(): bool
     {
         return true;
     }
 
     /**
-     * Get the validation rules that apply to the request.
-     *
      * @return array<string, ValidationRule|array<mixed>|string>
      */
     public function rules(): array
@@ -28,7 +23,9 @@ class UpdateExpenseRequest extends FormRequest
             'contact_id' => ['nullable', 'integer', 'exists:contacts,id', new ContactMustBeTypeRule('supplier')],
             'total_amount' => ['required', 'numeric', 'min:0.01'],
             'expense_date' => ['required', 'date'],
+            'due_date' => ['nullable', 'date', 'after_or_equal:expense_date'],
             'note' => ['nullable', 'string', 'max:1000'],
+            'attachment' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png,webp', 'max:10240'],
         ];
     }
 }

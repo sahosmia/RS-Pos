@@ -18,14 +18,9 @@ class ContactLedger extends Model
     /** @use HasFactory<ContactLedgerFactory> */
     use HasFactory;
 
-    /**
-     * The table associated with the model.
-     */
     protected $table = 'contact_ledger';
 
     /**
-     * The attributes that are mass assignable.
-     *
      * @var list<string>
      */
     protected $fillable = [
@@ -39,8 +34,6 @@ class ContactLedger extends Model
     ];
 
     /**
-     * Get the attributes that should be cast.
-     *
      * @return array<string, string>
      */
     protected function casts(): array

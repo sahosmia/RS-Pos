@@ -15,7 +15,12 @@ test('a user without the module permission gets 403 on its pages', function (str
 })->with([
     '/expenses', '/accounts', '/assets', '/staff', '/contacts', '/reports/profit-loss',
     '/imports', '/business-settings', '/service-requests', '/journal-entries',
+    '/bills/receive', '/bills/pay', '/bills/discount',
 ]);
+
+test('contact.payment opens the standalone bills pages', function (string $url) {
+    $this->actingAs(userWithPermissions(['contact.payment']))->get($url)->assertOk();
+})->with(['/bills/receive', '/bills/pay', '/bills/discount']);
 
 test('view permission opens the list but not write actions', function () {
     $user = userWithPermissions(['expense.view']);

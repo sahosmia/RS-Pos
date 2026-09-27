@@ -16,10 +16,8 @@ interface FinancialPositionProps {
 }
 
 /**
- * A second, simpler balance sheet next to Reports → Balance Sheet — this one
- * is built straight from each module's own balance+ledger (see
- * `FinancialPositionReport`), not the Chart of Accounts, and answers "what
- * did we own/owe as of this date" for any past date, not just today.
+ * Simpler sibling to Reports → Balance Sheet: built from each module's own balance+ledger
+ * (see `FinancialPositionReport`), not the Chart of Accounts, so it works for any past date.
  */
 export default function FinancialPosition({ report: initialReport }: FinancialPositionProps) {
     const money = useMoneyFormat();

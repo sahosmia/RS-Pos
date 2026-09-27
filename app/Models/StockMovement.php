@@ -19,8 +19,6 @@ class StockMovement extends Model
     use HasFactory;
 
     /**
-     * The attributes that are mass assignable.
-     *
      * @var list<string>
      */
     protected $fillable = [
@@ -36,8 +34,6 @@ class StockMovement extends Model
     ];
 
     /**
-     * Get the attributes that should be cast.
-     *
      * @return array<string, string>
      */
     protected function casts(): array

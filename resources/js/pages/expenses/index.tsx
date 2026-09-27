@@ -340,13 +340,14 @@ export default function ExpensesIndex({ expenses, categories, accounts, filters 
                 />
             </div>
 
-            <ExpenseModal open={addOpen} onOpenChange={setAddOpen} categories={categories} />
+            <ExpenseModal open={addOpen} onOpenChange={setAddOpen} categories={categories} accounts={accounts} />
 
             {editing && (
                 <ExpenseModal
                     open={editing !== null}
                     onOpenChange={(open) => !open && setEditing(null)}
                     categories={categories}
+                    accounts={accounts}
                     expense={editing}
                 />
             )}
@@ -363,6 +364,7 @@ export default function ExpensesIndex({ expenses, categories, accounts, filters 
                 storeRouteName="expense-categories.store"
                 updateRouteName="expense-categories.update"
                 destroyRouteName="expense-categories.destroy"
+                parentOptions={categories}
             />
         </AppLayout>
     );

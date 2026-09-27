@@ -18,14 +18,8 @@ use Illuminate\Console\Command;
  */
 class MarkOverdueEmiInstallments extends Command
 {
-    /**
-     * @var string
-     */
     protected $signature = 'emi:mark-overdue';
 
-    /**
-     * @var string
-     */
     protected $description = 'Mark pending EMI installments past their due date as overdue';
 
     public function handle(): void

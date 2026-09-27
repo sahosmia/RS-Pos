@@ -12,6 +12,7 @@ namespace App\Enums;
  * `Expense` (Salary Charge) — Dr Salary expense / Cr Staff Payable (2250), no cash.
  * `Settlement` (Salary Payment) — Dr Staff Payable (2250) / Cr {account}, cash out.
  * `Advance` (Advance/Loan Given) — Dr Staff Advances (1300) / Cr {account}, cash out.
+ * `AdvanceReturn` (Advance Return) — Dr {account} / Cr Staff Advances (1300), cash in — the reverse of `Advance`.
  * `Adjustment` — a situational correction against Opening Balance Equity (3300).
  */
 enum StaffTransactionNature: string
@@ -19,5 +20,6 @@ enum StaffTransactionNature: string
     case Expense = 'expense';
     case Settlement = 'settlement';
     case Advance = 'advance';
+    case AdvanceReturn = 'advance_return';
     case Adjustment = 'adjustment';
 }

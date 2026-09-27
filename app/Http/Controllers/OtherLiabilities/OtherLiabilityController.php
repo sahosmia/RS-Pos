@@ -93,7 +93,7 @@ class OtherLiabilityController extends Controller
                 'current_balance' => $otherLiability->current_balance,
             ],
             'transactions' => $rows,
-            'accounts' => Account::query()->active()->orderBy('name')->get(['id', 'name', 'current_balance']),
+            'accounts' => Account::query()->active()->orderBy('name')->get(['id', 'name', 'current_balance', 'is_default']),
         ]);
     }
 

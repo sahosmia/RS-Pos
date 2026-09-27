@@ -29,7 +29,7 @@ trait HasLedger
      * Record one ledger movement and move the cached balance by the same
      * amount — the only route to either.
      *
-     * @return Model&static Actually the related transaction model; typed loosely since each model's own transactions() return type differs.
+     * @return Model The created transaction row — typed loosely since each model's transactions() relation returns a different subclass.
      */
     public function addLedgerTransaction(string $type, float $amount, ?int $accountId = null, ?string $note = null): Model
     {

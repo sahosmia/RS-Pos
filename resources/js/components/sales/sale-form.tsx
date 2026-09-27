@@ -355,7 +355,7 @@ export default function SaleForm({ mode, sale, initialCustomer, products, accoun
                                 setCustomer(next);
                                 form.setData('customer_id', next?.id ?? 0);
                             }}
-                            getLabel={(option) => option.name}
+                            getLabel={(option) => option.display_name}
                             getSublabel={(option) => option.phone ?? ''}
                             searchUrl={route('contacts.search')}
                             searchParams={{ type: 'customer' }}

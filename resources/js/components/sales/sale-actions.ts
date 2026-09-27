@@ -11,12 +11,10 @@ interface SaleActionHandlers {
 /**
  * Row actions shared by the table's action menu and the mobile card.
  *
- * A few items from the original wishlist aren't here — "Edit Shipping",
- * "Delivery Challan"/"Delivery Note" and "Invoice URL" — because there's
- * nothing in the schema/routes for them yet (no shipping fields on `sales`,
- * no delivery-document template, no public/signed invoice link). See the
- * chat summary for the full reasoning; adding them is a schema/route change,
- * not a UI-only one.
+ * "Edit Shipping", "Delivery Challan"/"Delivery Note" and "Invoice URL" are
+ * intentionally absent — there's no schema/routes for them yet (no shipping
+ * fields on `sales`, no delivery-document template, no public/signed invoice
+ * link), so adding them is a schema/route change, not a UI-only one.
  */
 export function getSaleActions(sale: SaleListItem, { onDelete, onAddPayment, onViewPayments }: SaleActionHandlers): RowAction[] {
     return [

@@ -16,7 +16,7 @@ class CreateExpenseCategoryAction
     ) {}
 
     /**
-     * @param  array{name: string}  $data
+     * @param  array{name: string, parent_id?: int|null}  $data
      */
     public function execute(array $data): ExpenseCategory
     {
@@ -25,6 +25,7 @@ class CreateExpenseCategoryAction
 
             return ExpenseCategory::create([
                 'name' => $data['name'],
+                'parent_id' => $data['parent_id'] ?? null,
                 'chart_of_account_id' => $chartOfAccount->id,
             ]);
         });

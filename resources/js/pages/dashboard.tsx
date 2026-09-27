@@ -1,4 +1,5 @@
-import SalesBarChart from '@/components/dashboard/sales-bar-chart';
+import BestSellersPurchasesWidget from '@/components/dashboard/best-sellers-purchases-widget';
+import SalesChart from '@/components/dashboard/sales-chart';
 import HeadingSmall from '@/components/heading-small';
 import DateRangeFilter from '@/components/shared/date-range-filter';
 import { Button } from '@/components/ui/button';
@@ -7,13 +8,15 @@ import { useTranslation } from '@/hooks/use-translation';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import {
+    type BestSellersPeriodValue,
     type DashboardBalances,
+    type DashboardBestSellerItem,
     type DashboardDailySalesPoint,
     type DashboardMetrics,
     type DashboardMonthlySalesPoint,
     type DashboardRange,
+    type DashboardRecentTransactions,
     type DateRangePresetValue,
-    type QuickAction,
 } from '@/types/models';
 import { Head, Link, router } from '@inertiajs/react';
 import {
@@ -32,20 +35,22 @@ import {
 } from 'lucide-react';
 
 interface DashboardProps {
-    quickActions: QuickAction[];
     range: DashboardRange;
     metrics: DashboardMetrics;
     balances: DashboardBalances;
     salesLast30Days: DashboardDailySalesPoint[];
     salesCurrentFiscalYear: DashboardMonthlySalesPoint[];
+    bestSellers: DashboardBestSellerItem[];
+    recentTransactions: DashboardRecentTransactions;
+    bestSellersPeriod: BestSellersPeriodValue;
 }
 
-/** `2026-07-26` → `26 Jul` — short enough for 30 bars to sit under without colliding. */
+/** `2026-09-26` → `26 Sep 2026` — full date format matching the design specs. */
 function shortDayLabel(isoDate: string): string {
-    const [, month, day] = isoDate.split('-').map(Number);
+    const [year, month, day] = isoDate.split('-').map(Number);
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
-    return `${day} ${months[month - 1]}`;
+    return `${day} ${months[month - 1]} ${year}`;
 }
 
 function ColorfulMetricCard({ label, value, colorClass, icon: Icon }: { label: string; value: string; colorClass: string; icon: LucideIcon }) {
@@ -62,13 +67,32 @@ function ColorfulMetricCard({ label, value, colorClass, icon: Icon }: { label: s
     );
 }
 
-export default function Dashboard({ quickActions, range, metrics, balances, salesLast30Days, salesCurrentFiscalYear }: DashboardProps) {
+export default function Dashboard({
+    range,
+    metrics,
+    balances,
+    salesLast30Days,
+    salesCurrentFiscalYear,
+    bestSellers,
+    recentTransactions,
+    bestSellersPeriod,
+}: DashboardProps) {
     const money = useMoneyFormat();
     const { t } = useTranslation();
     const breadcrumbs: BreadcrumbItem[] = [{ title: t('dashboard', 'title'), href: '/dashboard' }];
 
-    const changeRange = (next: { preset: DateRangePresetValue; from?: string; to?: string }) => {
-        router.get(route('dashboard'), next, { preserveState: true, preserveScroll: true, only: ['range', 'metrics'] });
+    // `DateRangeFilter`'s onChange is typed for the general (nullable) case, but this
+    // page never passes `allowClear`, so `next.preset` is never actually null here.
+    const changeRange = (next: { preset: DateRangePresetValue | null; from?: string | null; to?: string | null }) => {
+        if (!next.preset) {
+            return;
+        }
+
+        router.get(
+            route('dashboard'),
+            { preset: next.preset, from: next.from ?? undefined, to: next.to ?? undefined },
+            { preserveState: true, preserveScroll: true, only: ['range', 'metrics'] },
+        );
     };
 
     return (
@@ -81,15 +105,8 @@ export default function Dashboard({ quickActions, range, metrics, balances, sale
                     <DateRangeFilter range={range} onChange={changeRange} />
                 </div>
 
-                <div className="flex flex-wrap gap-2">
-                    {quickActions.map((action) => (
-                        <Button key={action.label} variant="outline" asChild>
-                            <Link href={action.href}>{action.label}</Link>
-                        </Button>
-                    ))}
-                </div>
+               
 
-                {/* 1. Sales Metrics */}
                 <div className="space-y-3">
                     <h2 className="text-sm font-semibold tracking-wide text-foreground">{t('dashboard', 'sales_section')}</h2>
                     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -120,7 +137,6 @@ export default function Dashboard({ quickActions, range, metrics, balances, sale
                     </div>
                 </div>
 
-                {/* 2. Purchases & Expenses Metrics */}
                 <div className="space-y-3">
                     <h2 className="text-sm font-semibold tracking-wide text-foreground">{t('dashboard', 'purchases_expenses_section')}</h2>
                     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -151,7 +167,6 @@ export default function Dashboard({ quickActions, range, metrics, balances, sale
                     </div>
                 </div>
 
-                {/* 3. Current Position Metrics */}
                 <div className="space-y-3">
                     <h2 className="text-sm font-semibold tracking-wide text-foreground">{t('dashboard', 'current_position')}</h2>
                     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -182,18 +197,20 @@ export default function Dashboard({ quickActions, range, metrics, balances, sale
                     </div>
                 </div>
 
-                {/* 4. Full-width Sales Bar Charts */}
-                <div className="grid gap-4 grid-cols-1 pt-2">
-                    <SalesBarChart
-                        title="Sales — Last 30 Days"
+                <div className="grid grid-cols-1 gap-6 pt-2">
+                    <SalesChart
+                        title="Sales Last 30 Days"
                         data={salesLast30Days.map((point) => ({ key: point.date, label: shortDayLabel(point.date), total: point.total }))}
-                        labelEvery={5}
                     />
-                    <SalesBarChart
+                    <SalesChart
                         title="Sales — Current Fiscal Year"
-                        description="By month"
                         data={salesCurrentFiscalYear.map((point) => ({ key: point.month, label: point.label, total: point.total }))}
-                        labelEvery={2}
+                    />
+
+                    <BestSellersPurchasesWidget
+                        bestSellers={bestSellers}
+                        purchases={recentTransactions.purchases}
+                        period={bestSellersPeriod}
                     />
                 </div>
             </div>

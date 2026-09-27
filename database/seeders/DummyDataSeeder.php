@@ -52,16 +52,7 @@ use Illuminate\Database\Seeder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Artisan;
 
-/**
- * Realistic demo data across every module built so far, so the UI has
- * something to browse instead of empty tables. Always goes through the same
- * Actions the controllers use (never a raw ::create() for anything with
- * stock/ledger/account/journal side effects), so it's internally consistent
- * the same way real usage would produce it — not a shortcut, the actual
- * flow. Safe to run repeatedly on a fresh `migrate:fresh --seed`; not
- * idempotent against a database that already has real data (home-appliance
- * shop scenario, matching the domain this app is designed for).
- */
+
 class DummyDataSeeder extends Seeder
 {
     public function run(): void
@@ -140,6 +131,7 @@ class DummyDataSeeder extends Seeder
                 'name' => 'Cash in Hand',
                 'account_type_id' => $typeIds['Cash'],
                 'opening_balance' => 100000,
+                'is_default' => true,
             ]),
             'bank' => $createAccount->execute([
                 'name' => 'City Bank Ltd — Current A/C',

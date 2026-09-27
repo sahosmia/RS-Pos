@@ -18,7 +18,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { type PermissionOption, type RoleListItem, type RoleUserListItem } from '@/types/models';
-import { Head, router } from '@inertiajs/react';
+import { Head, router, usePage } from '@inertiajs/react';
 import { ChevronDown, Pencil, Plus, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
@@ -42,6 +42,8 @@ export default function RolesIndex({ roles, permissionsByModule, users }: RolesI
 
     const { url } = usePage();
 
+    // Depends on Inertia's `url`, not just mount: a link elsewhere to `?tab=roles` reuses this
+    // same page instance instead of remounting it, so the tab must resync on every navigation.
     useEffect(() => {
         const params = new URLSearchParams(window.location.search);
         const tab = params.get('tab');

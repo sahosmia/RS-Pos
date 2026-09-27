@@ -8,7 +8,7 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
 
-        <title inertia>{{ config('app.name', 'Laravel') }}</title>
+        <title inertia>{{ \App\Models\Settings::currentOrNull()?->shop_name ?: 'RS Pos' }}</title>
 
         @if ($appearance === 'system')
             {{-- 'system' can't be resolved server-side — inline + render-blocking so it still applies before first paint (no flash) --}}

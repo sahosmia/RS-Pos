@@ -100,7 +100,7 @@ class AssetController extends Controller
                 'purchase_date' => $asset->purchase_date?->toDateString(),
             ],
             'transactions' => $rows,
-            'accounts' => Account::query()->active()->orderBy('name')->get(['id', 'name', 'current_balance']),
+            'accounts' => Account::query()->active()->orderBy('name')->get(['id', 'name', 'current_balance', 'is_default']),
         ]);
     }
 

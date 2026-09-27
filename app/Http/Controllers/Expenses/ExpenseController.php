@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Expenses;
 
+use App\Actions\Expenses\Expense\AddExpensePaymentAction;
 use App\Actions\Expenses\Expense\CreateExpenseAction;
 use App\Actions\Expenses\Expense\UpdateExpenseAction;
 use App\Http\Controllers\Controller;
@@ -44,14 +45,16 @@ class ExpenseController extends Controller
             'due_amount' => $expense->due_amount,
             'payment_status' => $expense->payment_status,
             'expense_date' => $expense->expense_date->toDateString(),
+            'due_date' => $expense->due_date?->toDateString(),
             'note' => $expense->note,
             'can_edit' => $expense->canEdit(),
+            'attachment' => $this->attachmentFor($expense),
         ]);
 
         return Inertia::render('expenses/index', [
             'expenses' => $expenses,
-            'categories' => ExpenseCategory::query()->orderBy('name')->get(['id', 'name']),
-            'accounts' => Account::query()->active()->orderBy('name')->get(['id', 'name', 'current_balance']),
+            'categories' => ExpenseCategory::query()->orderBy('name')->get(['id', 'name', 'parent_id']),
+            'accounts' => Account::query()->active()->orderBy('name')->get(['id', 'name', 'current_balance', 'is_default']),
             'filters' => [
                 'from' => $validated['from'] ?? null,
                 'to' => $validated['to'] ?? null,
@@ -62,9 +65,19 @@ class ExpenseController extends Controller
         ]);
     }
 
-    public function store(StoreExpenseRequest $request, CreateExpenseAction $createExpense): RedirectResponse
+    public function store(StoreExpenseRequest $request, CreateExpenseAction $createExpense, AddExpensePaymentAction $addPayment): RedirectResponse
     {
-        $createExpense->execute($request->validated());
+        $expense = $createExpense->execute($request->validated());
+
+        if ($request->hasFile('attachment')) {
+            $expense->addMediaFromRequest('attachment')->toMediaCollection('documents');
+        }
+
+        $payments = $request->validated('payments');
+
+        if (! empty($payments)) {
+            $addPayment->execute($expense, $payments);
+        }
 
         return back();
     }
@@ -77,6 +90,24 @@ class ExpenseController extends Controller
 
         $updateExpense->execute($expense, $request->validated());
 
+        if ($request->hasFile('attachment')) {
+            $expense->addMediaFromRequest('attachment')->toMediaCollection('documents');
+        }
+
         return back();
+    }
+
+    /**
+     * @return array{url: string, name: string}|null
+     */
+    private function attachmentFor(Expense $expense): ?array
+    {
+        $media = $expense->getFirstMedia('documents');
+
+        if ($media === null) {
+            return null;
+        }
+
+        return ['url' => $media->getUrl(), 'name' => $media->file_name];
     }
 }

@@ -9,12 +9,15 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Facades\DB;
+use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\InteractsWithMedia;
 
-class Expense extends Model
+class Expense extends Model implements HasMedia
 {
     /** @use HasFactory<ExpenseFactory> */
     use HasFactory;
 
+    use InteractsWithMedia;
     use LogsActivityDefaults;
 
     /**
@@ -29,6 +32,7 @@ class Expense extends Model
         'contact_id',
         'total_amount',
         'expense_date',
+        'due_date',
         'note',
         'created_by',
     ];
@@ -40,11 +44,23 @@ class Expense extends Model
     {
         return [
             'expense_date' => 'date',
+            'due_date' => 'date',
             'total_amount' => 'float',
             'paid_amount' => 'float',
             'due_amount' => 'float',
             'payment_status' => PaymentStatus::class,
         ];
+    }
+
+    /**
+     * A single optional receipt/bill attachment — same polymorphic `media`
+     * table Contact's document uploads already use, no dedicated column.
+     */
+    public function registerMediaCollections(): void
+    {
+        $this->addMediaCollection('documents')
+            ->acceptsMimeTypes(['application/pdf', 'image/jpeg', 'image/png', 'image/webp'])
+            ->singleFile();
     }
 
     /**

@@ -22,6 +22,6 @@ class SalesFormOptions
      */
     public static function activeAccounts(): Collection
     {
-        return Account::query()->active()->orderBy('name')->get(['id', 'name', 'current_balance']);
+        return Account::query()->active()->orderBy('name')->get(['id', 'name', 'current_balance', 'is_default']);
     }
 }

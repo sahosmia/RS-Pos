@@ -1,7 +1,7 @@
 import { FormInput } from '@/components/form/form-input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { type DashboardRange, type DateRangePresetValue } from '@/types/models';
+import { type DateRangePresetValue } from '@/types/models';
 import { useEffect, useState } from 'react';
 
 const PRESETS: { value: DateRangePresetValue; label: string }[] = [
@@ -17,10 +17,30 @@ const PRESETS: { value: DateRangePresetValue; label: string }[] = [
     { value: 'custom', label: 'Custom Range' },
 ];
 
+/** UI-only sentinel for the "All Time" option — never a real `DateRangePresetValue`. */
+const CLEAR_VALUE = 'all_time';
+
+export interface DateRangeFilterValue {
+    preset: DateRangePresetValue | null;
+    from: string | null;
+    to: string | null;
+}
+
 interface DateRangeFilterProps {
-    range: DashboardRange;
-    /** Fires with the new preset, plus an explicit `from`/`to` only once a custom range is applied. */
-    onChange: (next: { preset: DateRangePresetValue; from?: string; to?: string }) => void;
+    range: DateRangeFilterValue;
+    /**
+     * Fires with the new preset, plus an explicit `from`/`to` only once a custom
+     * range is applied. `preset: null` (clearing back to "All Time") only ever
+     * fires when `allowClear` is set.
+     */
+    onChange: (next: { preset: DateRangePresetValue | null; from?: string | null; to?: string | null }) => void;
+    /**
+     * Adds an "All Time" option that clears the filter back to `preset: null` —
+     * for list pages where the date filter is optional (e.g. Products). Off by
+     * default so pages that always have an active range (the dashboard) keep
+     * their current behavior unchanged.
+     */
+    allowClear?: boolean;
 }
 
 /**
@@ -33,26 +53,33 @@ interface DateRangeFilterProps {
  * only after a round-trip; it re-syncs from the server's `range` whenever
  * that changes from elsewhere (e.g. browser back/forward).
  */
-export default function DateRangeFilter({ range, onChange }: DateRangeFilterProps) {
+export default function DateRangeFilter({ range, onChange, allowClear = false }: DateRangeFilterProps) {
     const [isCustom, setIsCustom] = useState(range.preset === 'custom');
-    const [customFrom, setCustomFrom] = useState(range.from);
-    const [customTo, setCustomTo] = useState(range.to);
+    const [customFrom, setCustomFrom] = useState(range.from ?? '');
+    const [customTo, setCustomTo] = useState(range.to ?? '');
 
     useEffect(() => {
         setIsCustom(range.preset === 'custom');
-        setCustomFrom(range.from);
-        setCustomTo(range.to);
+        setCustomFrom(range.from ?? '');
+        setCustomTo(range.to ?? '');
     }, [range.preset, range.from, range.to]);
 
-    const selectPreset = (preset: DateRangePresetValue) => {
-        if (preset === 'custom') {
+    const selectPreset = (value: string) => {
+        if (value === CLEAR_VALUE) {
+            setIsCustom(false);
+            onChange({ preset: null, from: null, to: null });
+
+            return;
+        }
+
+        if (value === 'custom') {
             setIsCustom(true);
 
             return;
         }
 
         setIsCustom(false);
-        onChange({ preset });
+        onChange({ preset: value as DateRangePresetValue });
     };
 
     const applyCustomRange = () => {
@@ -64,11 +91,12 @@ export default function DateRangeFilter({ range, onChange }: DateRangeFilterProp
     return (
         <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:items-end">
             <div className="grid gap-1.5">
-                <Select value={isCustom ? 'custom' : range.preset} onValueChange={(value) => selectPreset(value as DateRangePresetValue)}>
+                <Select value={isCustom ? 'custom' : (range.preset ?? CLEAR_VALUE)} onValueChange={selectPreset}>
                     <SelectTrigger className="w-full sm:w-56">
                         <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
+                        {allowClear && <SelectItem value={CLEAR_VALUE}>All Time</SelectItem>}
                         {PRESETS.map((preset) => (
                             <SelectItem key={preset.value} value={preset.value}>
                                 {preset.label}

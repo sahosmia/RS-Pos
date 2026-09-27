@@ -10,9 +10,6 @@ use Inertia\Response;
 
 class BusinessSettingsController extends Controller
 {
-    /**
-     * Show the shop's business settings page.
-     */
     public function edit(): Response
     {
         $settings = Settings::current();
@@ -27,9 +24,6 @@ class BusinessSettingsController extends Controller
         ]);
     }
 
-    /**
-     * Update the shop's business settings.
-     */
     public function update(UpdateBusinessSettingsRequest $request): RedirectResponse
     {
         $settings = Settings::current();

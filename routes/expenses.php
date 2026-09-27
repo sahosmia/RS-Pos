@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth', 'module:expense'])->group(function () {
     Route::resource('expense-categories', ExpenseCategoryController::class)
-        ->only(['store', 'update', 'destroy']);
+        ->only(['index', 'store', 'update', 'destroy']);
 
     // No `expenses.show` registered below, so no route-model-binding conflict either way.
     Route::get('expenses/export', ExpenseExportController::class)->name('expenses.export');

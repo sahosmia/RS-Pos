@@ -49,6 +49,7 @@ export default function AccountsIndex({ accounts, accountTypes, totalBalance }: 
         account_number: '',
         opening_balance: 0,
         is_active: true as boolean,
+        is_default: false as boolean,
     });
 
     const transferForm = useForm({
@@ -68,6 +69,7 @@ export default function AccountsIndex({ accounts, accountTypes, totalBalance }: 
             account_number: '',
             opening_balance: 0,
             is_active: true,
+            is_default: false,
         });
         setEditing(null);
         setAccountModalOpen(true);
@@ -82,6 +84,7 @@ export default function AccountsIndex({ accounts, accountTypes, totalBalance }: 
             account_number: account.account_number ?? '',
             opening_balance: account.opening_balance,
             is_active: account.is_active,
+            is_default: account.is_default,
         });
         setEditing(account);
         setAccountModalOpen(true);
@@ -253,6 +256,18 @@ export default function AccountsIndex({ accounts, accountTypes, totalBalance }: 
                         </p>
                     )}
                     <InputError message={accountForm.errors.opening_balance} />
+                </div>
+
+                <div className="flex items-center justify-between gap-4 rounded-lg border p-3">
+                    <div className="space-y-0.5">
+                        <Label htmlFor="is_default">Is default</Label>
+                        <p className="text-muted-foreground text-sm">পেমেন্ট ফর্মে এই account প্রথম row-এ অটো সিলেক্ট হবে</p>
+                    </div>
+                    <Switch
+                        id="is_default"
+                        checked={accountForm.data.is_default}
+                        onCheckedChange={(checked) => accountForm.setData('is_default', checked)}
+                    />
                 </div>
 
                 {editing && (

@@ -19,9 +19,6 @@ enum StockMovementType: string
     case AdjustmentIncrease = 'adjustment_increase';
     case AdjustmentDecrease = 'adjustment_decrease';
 
-    /**
-     * Whether this type adds to stock (true) or removes from it (false).
-     */
     public function increasesStock(): bool
     {
         return match ($this) {

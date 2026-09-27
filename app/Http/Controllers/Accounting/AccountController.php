@@ -42,6 +42,7 @@ class AccountController extends Controller
                 'opening_balance' => $account->opening_balance,
                 'current_balance' => $account->current_balance,
                 'is_active' => $account->is_active,
+                'is_default' => $account->is_default,
                 'can_delete' => $account->transactions_count === 0,
                 'can_edit_opening_balance' => $account->movements_count === 0,
             ]),

@@ -81,9 +81,7 @@ export function useTableFilters<TFilters extends TableFilterBase>({
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [search]);
 
-    // Pressing Enter (or any other immediate-submit trigger) should win over an
-    // already-scheduled debounce — otherwise the debounced timeout still fires
-    // afterward and issues a second, identical request.
+    // Cancel any pending debounce first, or it still fires afterward and duplicates this request.
     const submitSearchNow = useCallback(() => {
         if (pendingSearchTimeout.current !== null) {
             clearTimeout(pendingSearchTimeout.current);

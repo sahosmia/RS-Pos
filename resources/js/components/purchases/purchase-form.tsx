@@ -141,7 +141,7 @@ export default function PurchaseForm({ mode, purchase, initialSupplier, initialP
                             setSupplier(next);
                             form.setData('supplier_id', next?.id ?? 0);
                         }}
-                        getLabel={(option) => option.name}
+                        getLabel={(option) => option.display_name}
                         getSublabel={(option) => option.phone ?? ''}
                         searchUrl={route('contacts.search')}
                         searchParams={{ type: 'supplier' }}

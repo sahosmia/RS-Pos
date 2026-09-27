@@ -101,7 +101,7 @@ class CompanyLoanController extends Controller
                 'start_date' => $companyLoan->start_date->toDateString(),
             ],
             'transactions' => $rows,
-            'accounts' => Account::query()->active()->orderBy('name')->get(['id', 'name', 'current_balance']),
+            'accounts' => Account::query()->active()->orderBy('name')->get(['id', 'name', 'current_balance', 'is_default']),
         ]);
     }
 

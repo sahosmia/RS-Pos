@@ -1,6 +1,7 @@
 import { type useTranslation } from '@/hooks/use-translation';
 import { type NavItem } from '@/types';
 import {
+    Banknote,
     BarChart3,
     BookText,
     DatabaseBackup,
@@ -78,6 +79,18 @@ export function buildMainNavItems(emiModuleEnabled: boolean, t: ReturnType<typeo
             ],
         },
         {
+            key: 'bills',
+            title: t('nav', 'bills'),
+            url: '/bills/receive',
+            icon: Banknote,
+            permission: 'contact.payment',
+            items: [
+                { key: 'bill_receive', title: t('nav', 'bill_receive'), url: '/bills/receive' },
+                { key: 'bill_pay', title: t('nav', 'bill_pay'), url: '/bills/pay' },
+                { key: 'add_discount', title: t('nav', 'add_discount'), url: '/bills/discount' },
+            ],
+        },
+        {
             key: 'purchases',
             title: t('nav', 'purchases'),
             url: '/purchases',
@@ -95,6 +108,10 @@ export function buildMainNavItems(emiModuleEnabled: boolean, t: ReturnType<typeo
             url: '/expenses',
             icon: HandCoins,
             permission: 'expense.view',
+            items: [
+                { key: 'expenses', title: t('nav', 'expenses'), url: '/expenses' },
+                { key: 'expense_categories', title: t('nav', 'expense_categories'), url: '/expense-categories' },
+            ],
         },
         {
             key: 'payment_accounts',

@@ -53,6 +53,7 @@ class HandleInertiaRequests extends Middleware
                 $settings = Settings::currentOrNull();
 
                 return [
+                    'shop_name' => $settings?->shop_name,
                     'currency_symbol' => $settings?->currency_symbol ?? '৳',
                     'emi_module_enabled' => (bool) $settings?->emi_module_enabled,
                     'serial_number_module_enabled' => (bool) $settings?->serial_number_module_enabled,

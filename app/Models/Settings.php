@@ -34,8 +34,6 @@ class Settings extends Model
     public const ACTIVITY_LOG_RETENTION_OPTIONS = [3, 6, 12, 18];
 
     /**
-     * The attributes that are mass assignable.
-     *
      * @var list<string>
      */
     protected $fillable = [
@@ -67,8 +65,6 @@ class Settings extends Model
     ];
 
     /**
-     * Get the attributes that should be cast.
-     *
      * @return array<string, string>
      */
     protected function casts(): array
@@ -139,9 +135,6 @@ class Settings extends Model
         return $settings;
     }
 
-    /**
-     * Get the single settings row.
-     */
     public static function current(): self
     {
         return self::currentOrNull() ?? throw (new ModelNotFoundException)->setModel(static::class);

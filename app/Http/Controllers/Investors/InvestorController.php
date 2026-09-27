@@ -94,7 +94,7 @@ class InvestorController extends Controller
                 'total_invested' => $investor->total_invested,
             ],
             'transactions' => $rows,
-            'accounts' => Account::query()->active()->orderBy('name')->get(['id', 'name', 'current_balance']),
+            'accounts' => Account::query()->active()->orderBy('name')->get(['id', 'name', 'current_balance', 'is_default']),
         ]);
     }
 

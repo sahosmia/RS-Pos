@@ -51,7 +51,7 @@ class SalesOrderController extends Controller
             // Only the currently-filtered customer's own label, not every customer —
             // the filter itself searches async (see `ContactSearchController`).
             'initialCustomer' => isset($validated['customer_id'])
-                ? Contact::query()->find($validated['customer_id'], ['id', 'name', 'phone', 'business_name', 'balance'])
+                ? Contact::query()->find($validated['customer_id'])?->only(['id', 'name', 'display_name', 'phone', 'business_name', 'balance'])
                 : null,
             'filters' => [
                 'from' => $validated['from'] ?? null,

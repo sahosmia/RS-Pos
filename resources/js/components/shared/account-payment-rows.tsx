@@ -1,3 +1,4 @@
+import ConfirmDialog from '@/components/shared/confirm-dialog';
 import MoneyInput from '@/components/shared/money-input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -5,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useMoneyFormat } from '@/hooks/use-money-format';
 import { type Account } from '@/types/models';
 import { Plus, Trash2 } from 'lucide-react';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 /** Index signature needed so this array satisfies Inertia's FormDataConvertible constraint in useForm(). */
 export interface PaymentRow {
@@ -23,18 +24,17 @@ interface AccountPaymentRowsProps {
     /**
      * The amount this payment should cover, when the caller has one (a
      * sale/purchase due, a return total, an EMI down payment, ...). Given
-     * this, the first row auto-fills with "Cash in Hand" (matched by name —
-     * there's no dedicated "default account" flag in the schema, so a shop
-     * without one just falls back to its first account) and the full total;
-     * a second "Add Account" row defaults to whatever's left over instead of
-     * 0; and the Add Account button hides once the rows already add up to
-     * the total, since there's nothing left to split out.
+     * this, the first row auto-fills with the account flagged `is_default`
+     * (falling back to the first account if a shop hasn't set one yet) and
+     * the full total; a second "Add Account" row defaults to whatever's
+     * left over instead of 0; and the Add Account button hides once the
+     * rows already add up to the total, since there's nothing left to split
+     * out.
      */
     total?: number;
 }
 
-const findDefaultAccount = (accounts: Account[]): Account | undefined =>
-    accounts.find((account) => account.name.trim().toLowerCase() === 'cash in hand') ?? accounts[0];
+const findDefaultAccount = (accounts: Account[]): Account | undefined => accounts.find((account) => account.is_default) ?? accounts[0];
 
 /** One or more {account, amount} rows — the multi-account split payment shape used across Account/Purchase/Sale/Contact payments. */
 export default function AccountPaymentRows({
@@ -55,6 +55,15 @@ export default function AccountPaymentRows({
     // block auto-fill the next time the same modal is reused.
     const userClearedRef = useRef(false);
 
+    // Tracks which row index (if any) currently holds the auto-filled default
+    // account — only *that* row's account gets swapped through a confirmation
+    // dialog; rows added later via "Add Account" have no "previous" to warn
+    // about. Cleared once the row is confirmed away from the default, or once
+    // it's removed.
+    const autoFilledIndexRef = useRef<number | null>(null);
+
+    const [pendingAccountChange, setPendingAccountChange] = useState<{ index: number; nextAccountId: number } | null>(null);
+
     useEffect(() => {
         if (userClearedRef.current || rows.length > 0 || !total || total <= 0) {
             return;
@@ -63,6 +72,7 @@ export default function AccountPaymentRows({
         const account = findDefaultAccount(accounts);
         if (account) {
             onChange([{ account_id: account.id, amount: total }]);
+            autoFilledIndexRef.current = 0;
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [total, rows.length]);
@@ -84,8 +94,42 @@ export default function AccountPaymentRows({
         if (next.length === 0) {
             userClearedRef.current = true;
         }
+
+        if (autoFilledIndexRef.current !== null) {
+            if (index === autoFilledIndexRef.current) {
+                autoFilledIndexRef.current = null;
+            } else if (index < autoFilledIndexRef.current) {
+                autoFilledIndexRef.current -= 1;
+            }
+        }
+
         onChange(next);
     };
+
+    /** Routes the auto-filled first row's account change through a confirmation dialog; every other row changes immediately. */
+    const changeAccount = (index: number, nextAccountId: number) => {
+        if (index === autoFilledIndexRef.current && rows[index]?.account_id !== nextAccountId) {
+            setPendingAccountChange({ index, nextAccountId });
+            return;
+        }
+
+        update(index, { account_id: nextAccountId });
+    };
+
+    const confirmAccountChange = () => {
+        if (pendingAccountChange) {
+            update(pendingAccountChange.index, { account_id: pendingAccountChange.nextAccountId });
+            // The row no longer holds the default account, so further changes
+            // to it need no more warning.
+            autoFilledIndexRef.current = null;
+        }
+        setPendingAccountChange(null);
+    };
+
+    const previousAccountName = pendingAccountChange
+        ? (accounts.find((account) => account.id === rows[pendingAccountChange.index]?.account_id)?.name ?? '')
+        : '';
+    const nextAccountName = pendingAccountChange ? (accounts.find((account) => account.id === pendingAccountChange.nextAccountId)?.name ?? '') : '';
 
     return (
         <div className="grid gap-2">
@@ -95,10 +139,7 @@ export default function AccountPaymentRows({
 
             {rows.map((row, index) => (
                 <div key={index} className="flex items-center gap-2">
-                    <Select
-                        value={row.account_id ? String(row.account_id) : ''}
-                        onValueChange={(value) => update(index, { account_id: Number(value) })}
-                    >
+                    <Select value={row.account_id ? String(row.account_id) : ''} onValueChange={(value) => changeAccount(index, Number(value))}>
                         <SelectTrigger className="flex-1">
                             <SelectValue placeholder="Select an account" />
                         </SelectTrigger>
@@ -123,6 +164,15 @@ export default function AccountPaymentRows({
                     Add Account
                 </Button>
             )}
+
+            <ConfirmDialog
+                open={pendingAccountChange !== null}
+                onOpenChange={(open) => !open && setPendingAccountChange(null)}
+                title="Change payment account?"
+                description={`You're changing the payment account from ${previousAccountName} to ${nextAccountName}.`}
+                confirmLabel="Change Account"
+                onConfirm={confirmAccountChange}
+            />
         </div>
     );
 }

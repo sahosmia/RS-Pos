@@ -45,11 +45,8 @@ function initialState(userId: number | undefined, freshLogin: boolean): StoredSt
 
     const stored = readStored(userId);
 
-    // A fresh login lands on the Dashboard, which has no active submenu item —
-    // whichever group was last left open has nothing to do with this visit, so
-    // it starts collapsed instead of showing a stale expansion from last time.
-    // The collapsed/expanded flag itself isn't touched — that's a real, stable
-    // preference, not workflow-specific like which submenu was open.
+    // Fresh login lands on Dashboard (no active submenu), so stale group expansion
+    // is dropped — but the open/collapsed flag is a stable preference and stays.
     return freshLogin ? { ...stored, groups: [] } : stored;
 }
 

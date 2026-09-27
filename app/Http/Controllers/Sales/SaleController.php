@@ -62,7 +62,7 @@ class SaleController extends Controller
             // Only the currently-filtered customer's own label, not every customer —
             // the filter itself searches async (see `ContactSearchController`).
             'initialCustomer' => isset($validated['customer_id'])
-                ? Contact::query()->find($validated['customer_id'], ['id', 'name', 'phone', 'business_name', 'balance'])
+                ? Contact::query()->find($validated['customer_id'])?->only(['id', 'name', 'display_name', 'phone', 'business_name', 'balance'])
                 : null,
             'filters' => [
                 'search' => $validated['search'] ?? null,
@@ -148,7 +148,7 @@ class SaleController extends Controller
                     'serial_numbers' => [],
                 ]),
             ],
-            'initialCustomer' => $sale->customer->only(['id', 'name', 'phone', 'business_name', 'balance']),
+            'initialCustomer' => $sale->customer->only(['id', 'name', 'display_name', 'phone', 'business_name', 'balance']),
             'products' => SalesFormOptions::productsForSale(),
             'accounts' => SalesFormOptions::activeAccounts(),
         ]);

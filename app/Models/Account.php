@@ -31,6 +31,7 @@ class Account extends Model
         'account_number',
         'opening_balance',
         'is_active',
+        'is_default',
         'created_by',
         'chart_of_account_id',
     ];
@@ -47,6 +48,7 @@ class Account extends Model
             'opening_balance' => 'float',
             'current_balance' => 'float',
             'is_active' => 'boolean',
+            'is_default' => 'boolean',
         ];
     }
 

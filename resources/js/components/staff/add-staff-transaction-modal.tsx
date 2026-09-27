@@ -34,7 +34,7 @@ export default function AddStaffTransactionModal({ open, onOpenChange, staffId, 
     }, [open]);
 
     const selectedType = transactionTypes.find((type) => type.id === form.data.staff_transaction_type_id);
-    const needsAccount = selectedType ? ['settlement', 'advance'].includes(selectedType.nature) : false;
+    const needsAccount = selectedType ? ['settlement', 'advance', 'advance_return'].includes(selectedType.nature) : false;
 
     const typeOptions = transactionTypes.map((type) => ({ value: String(type.id), label: type.name }));
     const accountOptions = accounts.map((account) => ({ value: String(account.id), label: account.name }));

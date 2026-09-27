@@ -80,9 +80,9 @@ export function useContactColumns({ selection, contactActions }: UseContactColum
                 cell: ({ row }) => (
                     <>
                         <Link href={route('contacts.show', row.original.id)} className="font-medium underline-offset-2 hover:underline">
-                            {row.original.name}
+                            {row.original.display_name}
                         </Link>
-                        {row.original.business_name && <div className="text-muted-foreground text-xs">{row.original.business_name}</div>}
+                        {row.original.business_name && <div className="text-muted-foreground text-xs">{row.original.name}</div>}
                     </>
                 ),
             },

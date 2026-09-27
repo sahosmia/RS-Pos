@@ -104,7 +104,7 @@ export default function SalesOrdersCreate({ initialCustomer, products, accounts 
                                     setCustomer(next);
                                     form.setData('customer_id', next?.id ?? 0);
                                 }}
-                                getLabel={(option) => option.name}
+                                getLabel={(option) => option.display_name}
                                 getSublabel={(option) => option.phone ?? ''}
                                 searchUrl={route('contacts.search')}
                                 searchParams={{ type: 'customer' }}

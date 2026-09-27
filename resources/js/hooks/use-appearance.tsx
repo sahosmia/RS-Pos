@@ -15,14 +15,10 @@ const applyTheme = (appearance: Appearance) => {
 const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
 
 /**
- * DB-persisted per-user preference (corrections.md #7) — the initial value
- * is already applied with no flash by `AppearanceComposer` (app.blade.php),
- * so this hook only needs to handle switching it afterwards and keeping
- * 'system' in sync with live OS theme changes. `auth.user` can be null on
- * guest pages (this hook is consumed by the globally-mounted `<Toaster>`),
- * hence the fallback to 'system'.
+ * Keeps the `dark` class in sync with live OS theme changes while the
+ * preference is 'system'. The initial value is already applied flash-free
+ * by `AppearanceComposer` (app.blade.php); this only handles changes after that.
  */
-/** Keeps the `dark` class in step with live OS theme changes while the preference is 'system'. */
 function useSystemThemeSync(appearance: Appearance) {
     useEffect(() => {
         if (appearance !== 'system') {

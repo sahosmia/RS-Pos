@@ -22,8 +22,6 @@ class CashBook extends Model
     protected $fillable = [];
 
     /**
-     * Get the attributes that should be cast.
-     *
      * @return array<string, string>
      */
     protected function casts(): array
@@ -33,9 +31,6 @@ class CashBook extends Model
         ];
     }
 
-    /**
-     * Get the single cash book row.
-     */
     public static function current(): self
     {
         return static::query()->firstOrFail();

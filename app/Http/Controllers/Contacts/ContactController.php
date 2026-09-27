@@ -61,6 +61,7 @@ class ContactController extends Controller
         $contacts->getCollection()->transform(fn (Contact $contact) => [
             'id' => $contact->id,
             'name' => $contact->name,
+            'display_name' => $contact->display_name,
             'prefix' => $contact->prefix,
             'first_name' => $contact->first_name,
             'middle_name' => $contact->middle_name,
@@ -88,7 +89,7 @@ class ContactController extends Controller
             'contacts' => $contacts,
             'stats' => $stats,
             'customerGroups' => $this->customerGroupOptions(),
-            'accounts' => Account::query()->active()->orderBy('name')->get(['id', 'name', 'current_balance']),
+            'accounts' => Account::query()->active()->orderBy('name')->get(['id', 'name', 'current_balance', 'is_default']),
             'filters' => [
                 'search' => $validated['search'] ?? null,
                 'type' => $validated['type'] ?? null,
@@ -112,6 +113,7 @@ class ContactController extends Controller
             return response()->json([
                 'id' => $contact->id,
                 'name' => $contact->name,
+                'display_name' => $contact->display_name,
                 'phone' => $contact->phone,
                 'business_name' => $contact->business_name,
                 'balance' => $contact->balance,
@@ -166,6 +168,7 @@ class ContactController extends Controller
             'contact' => [
                 'id' => $contact->id,
                 'name' => $contact->name,
+                'display_name' => $contact->display_name,
                 'prefix' => $contact->prefix,
                 'first_name' => $contact->first_name,
                 'middle_name' => $contact->middle_name,
@@ -191,7 +194,7 @@ class ContactController extends Controller
             'ledgerFilters' => ['from' => $from->toDateString(), 'to' => $to->toDateString()],
             'payments' => $payments,
             'documents' => $documents,
-            'accounts' => Account::query()->active()->orderBy('name')->get(['id', 'name', 'current_balance']),
+            'accounts' => Account::query()->active()->orderBy('name')->get(['id', 'name', 'current_balance', 'is_default']),
             'customerGroups' => $this->customerGroupOptions(),
             'purchases' => $contact->purchases()
                 ->orderByDesc('purchase_date')

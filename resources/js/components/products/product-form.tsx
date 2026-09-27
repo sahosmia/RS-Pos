@@ -84,6 +84,7 @@ export default function ProductForm({ mode, product, categories, brands, units }
         };
 
         if (mode === 'edit' && product) {
+            // Multipart (image upload) can't be sent as a real PATCH, so POST with a spoofed method Laravel understands.
             form.transform((data) => ({ ...data, _method: 'patch' }));
             form.post(route('products.update', product.id), options);
         } else {

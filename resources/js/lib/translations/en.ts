@@ -61,10 +61,15 @@ export interface Dictionary {
         supplier: string;
         customer: string;
         customer_group: string;
+        bills: string;
+        bill_receive: string;
+        bill_pay: string;
+        add_discount: string;
         purchases: string;
         add_purchase: string;
         purchase_returns: string;
         expenses: string;
+        expense_categories: string;
         payment_accounts: string;
         accounts: string;
         petty_cash: string;
@@ -495,10 +500,15 @@ const en: Dictionary = {
         supplier: 'Supplier',
         customer: 'Customer',
         customer_group: 'Customer Group',
+        bills: 'Bills',
+        bill_receive: 'Bill Receive',
+        bill_pay: 'Bill Pay',
+        add_discount: 'Add Discount',
         purchases: 'Purchases',
         add_purchase: 'Add Purchase',
         purchase_returns: 'Purchase Returns',
         expenses: 'Expenses',
+        expense_categories: 'Categories',
         payment_accounts: 'Payment Accounts',
         accounts: 'Accounts',
         petty_cash: 'Petty Cash',

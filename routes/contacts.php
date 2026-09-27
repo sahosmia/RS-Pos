@@ -1,5 +1,8 @@
 <?php
 
+use App\Http\Controllers\Contacts\BillDiscountController;
+use App\Http\Controllers\Contacts\BillPayController;
+use App\Http\Controllers\Contacts\BillReceiveController;
 use App\Http\Controllers\Contacts\ContactController;
 use App\Http\Controllers\Contacts\ContactDocumentController;
 use App\Http\Controllers\Contacts\ContactDueWaiverController;
@@ -45,6 +48,17 @@ Route::middleware(['auth', 'module:contact,payment'])
     ->group(function () {
         Route::post('payments', [ContactPaymentController::class, 'store'])->name('payments.store');
         Route::post('due-waivers', [ContactDueWaiverController::class, 'store'])->name('due-waivers.store');
+    });
+
+// Sidebar "Bills" menu — the same one-off actions above, just contact-first
+// (search, then settle) instead of already being on that contact's page.
+Route::middleware(['auth', 'module:contact,payment'])
+    ->prefix('bills')
+    ->name('bills.')
+    ->group(function () {
+        Route::get('receive', BillReceiveController::class)->name('receive');
+        Route::get('pay', BillPayController::class)->name('pay');
+        Route::get('discount', BillDiscountController::class)->name('discount');
     });
 
 Route::middleware(['auth', 'module:contact,delete'])

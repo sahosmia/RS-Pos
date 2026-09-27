@@ -57,6 +57,7 @@ class AddStaffTransactionAction
                 StaffTransactionNature::Expense => $this->postExpense($staff, $amount),
                 StaffTransactionNature::Settlement => $this->postSettlement($staff, $amount, $data),
                 StaffTransactionNature::Advance => $this->postAdvance($staff, $amount, $data, $type),
+                StaffTransactionNature::AdvanceReturn => $this->postAdvanceReturn($staff, $amount, $data),
                 StaffTransactionNature::Adjustment => $this->postAdjustment($staff, $delta, $balanceBefore),
             };
 
@@ -114,6 +115,25 @@ class AddStaffTransactionAction
         $this->journal->post(today(), "{$type->name}: {$staff->name}", [
             ['chart_of_account_id' => $staffAdvances->id, 'debit' => $amount, 'credit' => 0],
             ['chart_of_account_id' => $this->chartOfAccounts->forAccount($account)->id, 'debit' => 0, 'credit' => $amount],
+        ], 'staff', $staff->id);
+    }
+
+    /**
+     * Advance Return — cash back in from the staff member, repaying what
+     * `postAdvance` sent out. Exact mirror of `postAdvance`: same accounts,
+     * opposite direction (Dr {account} / Cr Staff Advances 1300).
+     *
+     * @param  array{account_id?: int|string|null}  $data
+     */
+    private function postAdvanceReturn(Staff $staff, float $amount, array $data): void
+    {
+        $account = Account::findOrFail($data['account_id']);
+        $this->accounts->record($account, AccountTransactionType::StaffAdvanceReturn, $amount, today(), 'staff', $staff->id);
+
+        $staffAdvances = $this->chartOfAccounts->code('1300');
+        $this->journal->post(today(), "Advance return: {$staff->name}", [
+            ['chart_of_account_id' => $this->chartOfAccounts->forAccount($account)->id, 'debit' => $amount, 'credit' => 0],
+            ['chart_of_account_id' => $staffAdvances->id, 'debit' => 0, 'credit' => $amount],
         ], 'staff', $staff->id);
     }
 

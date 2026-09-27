@@ -5,10 +5,16 @@ import AddStaffTransactionModal from '@/components/staff/add-staff-transaction-m
 import { Button } from '@/components/ui/button';
 import { useMoneyFormat } from '@/hooks/use-money-format';
 import AppLayout from '@/layouts/app-layout';
+import { openWhatsapp } from '@/lib/sale-whatsapp-message';
 import { type BreadcrumbItem } from '@/types';
 import { type Account, type StaffDetail, type StaffLedgerRow, type StaffTransactionTypeOption } from '@/types/models';
 import { Head } from '@inertiajs/react';
+import { MessageCircle } from 'lucide-react';
 import { useState } from 'react';
+import { toast } from 'sonner';
+
+/** Most recent entries first, capped so the message stays short enough to actually read on WhatsApp. */
+const RECENT_LEDGER_ENTRIES = 5;
 
 interface StaffShowProps {
     staffMember: StaffDetail;
@@ -33,6 +39,29 @@ export default function StaffShow({ staffMember, transactions, transactionTypes,
         amount: transaction.amount,
         balance: transaction.balance,
     }));
+
+    /** `transactions` is oldest-first (see StaffController::show) — reverse for a most-recent-first WhatsApp summary. */
+    const sendLedgerViaWhatsapp = () => {
+        if (!staffMember.phone) {
+            toast.error('এই স্টাফের কোনো ফোন নাম্বার নেই — Staff লিস্ট থেকে এডিট করে আগে ফোন নাম্বার যোগ করুন।');
+            return;
+        }
+
+        const recentEntries = [...transactions].reverse().slice(0, RECENT_LEDGER_ENTRIES);
+
+        const lines = [
+            `স্টাফ লেজার — ${staffMember.name}`,
+            '',
+            `বর্তমান ব্যালেন্স: ${money(staffMember.balance)} (${staffMember.balance_label})`,
+            '',
+            'সাম্প্রতিক লেনদেন:',
+            ...recentEntries.map(
+                (entry) => `${entry.created_at} — ${entry.type.name}: ${money(entry.amount)} (ব্যালেন্স: ${money(entry.balance)})`,
+            ),
+        ];
+
+        openWhatsapp(staffMember.phone, lines.join('\n'));
+    };
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>

@@ -55,11 +55,8 @@ export default function SaleShow({ sale, accounts, justConfirmed }: SaleShowProp
         );
     };
 
-    // The Sales list's "Print Invoice" and "Send WhatsApp Notification" row
-    // actions can't run window.print()/open a wa.me link from the list itself
-    // (this page has the actual invoice/customer data) — they link here with
-    // `?print=1`/`?whatsapp=1` instead, and this fires the action once on
-    // arrival.
+    // The list page lacks the invoice/customer data needed to print or WhatsApp, so it
+    // links here with `?print=1`/`?whatsapp=1` and this fires the action once on arrival.
     useEffect(() => {
         const params = new URLSearchParams(window.location.search);
         const wantsPrint = params.get('print') === '1';

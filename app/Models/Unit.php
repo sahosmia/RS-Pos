@@ -16,8 +16,6 @@ class Unit extends Model
     use LogsActivityDefaults;
 
     /**
-     * The attributes that are mass assignable.
-     *
      * @var list<string>
      */
     protected $fillable = [

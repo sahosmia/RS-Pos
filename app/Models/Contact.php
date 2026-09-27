@@ -52,8 +52,6 @@ class Contact extends Model implements HasMedia
     ];
 
     /**
-     * Get the attributes that should be cast.
-     *
      * @return array<string, string>
      */
     protected function casts(): array
@@ -94,6 +92,21 @@ class Contact extends Model implements HasMedia
     protected function email(): Attribute
     {
         return Attribute::make(set: fn (?string $value) => $value ? strtolower(trim($value)) : null);
+    }
+
+    /**
+     * The name shown first wherever a contact is labeled — a business
+     * contact's business_name takes priority, with `name` (the contact
+     * person) as the secondary/fallback. Falls back to `name` when no
+     * business_name is set.
+     *
+     * @return Attribute<string, never>
+     */
+    protected function displayName(): Attribute
+    {
+        return Attribute::make(
+            get: fn () => $this->business_name ?: $this->name,
+        );
     }
 
     /**

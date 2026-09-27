@@ -21,14 +21,8 @@ use Illuminate\Support\Facades\Log;
  */
 class CheckReconciliation extends Command
 {
-    /**
-     * @var string
-     */
     protected $signature = 'reconciliation:check';
 
-    /**
-     * @var string
-     */
     protected $description = 'Compare subsidiary ledger totals against their General Ledger counterparts and log any mismatch';
 
     private const TOLERANCE = 0.01;

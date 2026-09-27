@@ -22,12 +22,9 @@ interface QuickCreateGroup {
     items: QuickCreateItem[];
 }
 
-// Resources with a dedicated /create page link straight there. Contacts,
-// Expenses and Assets create through a modal on their own index page instead
-// (no standalone create route), so these link to that index with
-// `?quick_create=1` — each page auto-opens its Add modal on arrival when it
-// sees that flag (see the `useEffect` in each page's index.tsx). Built inside
-// the component (not at module scope) since it calls Ziggy's `route()`.
+// Contacts/Expenses/Assets have no standalone create route, so they link to their
+// index with `?quick_create=1`, which auto-opens that page's Add modal (see its
+// `useEffect`). Built inside the component, not at module scope, since it calls Ziggy's `route()`.
 function buildGroups(): QuickCreateGroup[] {
     return [
         {

@@ -100,7 +100,7 @@ class PurchaseReturnController extends Controller
                     'subtotal' => $item->subtotal,
                 ]),
             ],
-            'accounts' => Account::query()->active()->orderBy('name')->get(['id', 'name', 'current_balance']),
+            'accounts' => Account::query()->active()->orderBy('name')->get(['id', 'name', 'current_balance', 'is_default']),
         ]);
     }
 }

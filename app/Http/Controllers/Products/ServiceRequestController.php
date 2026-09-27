@@ -94,7 +94,7 @@ class ServiceRequestController extends Controller
             'query' => $search,
             'items' => $items,
             'staff' => Staff::query()->orderBy('name')->get(['id', 'name']),
-            'accounts' => Account::query()->active()->orderBy('name')->get(['id', 'name', 'current_balance']),
+            'accounts' => Account::query()->active()->orderBy('name')->get(['id', 'name', 'current_balance', 'is_default']),
         ]);
     }
 

@@ -65,7 +65,7 @@ export default function ContactShow({ contact, ledger, ledgerFilters, payments, 
 
     const breadcrumbs: BreadcrumbItem[] = [
         { title: t('contactsPage', 'title'), href: '/contacts' },
-        { title: contact.name, href: `/contacts/${contact.id}` },
+        { title: contact.display_name, href: `/contacts/${contact.id}` },
     ];
 
     const documentForm = useForm<{ file: File | null }>({ file: null });
@@ -98,14 +98,21 @@ export default function ContactShow({ contact, ledger, ledgerFilters, payments, 
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title={contact.name} />
+            <Head title={contact.display_name} />
 
             <div className="space-y-6 px-4 py-6">
                 <div className="w-full max-w-xs print:hidden">
                     <SearchableSelect<CustomerOption>
-                        value={{ id: contact.id, name: contact.name, phone: contact.phone, business_name: contact.business_name, balance: contact.balance }}
+                        value={{
+                            id: contact.id,
+                            name: contact.name,
+                            display_name: contact.display_name,
+                            phone: contact.phone,
+                            business_name: contact.business_name,
+                            balance: contact.balance,
+                        }}
                         onChange={(next) => next && next.id !== contact.id && router.visit(route('contacts.show', next.id))}
-                        getLabel={(option) => option.name}
+                        getLabel={(option) => option.display_name}
                         getSublabel={(option) => option.phone ?? ''}
                         searchUrl={route('contacts.search')}
                         placeholder="Switch to another contact"
@@ -114,7 +121,7 @@ export default function ContactShow({ contact, ledger, ledgerFilters, payments, 
 
                 <div className="flex flex-wrap items-start justify-between gap-4 print:hidden">
                     <HeadingSmall
-                        title={contact.name}
+                        title={contact.display_name}
                         description={`${contact.phone}${contact.email ? ' • ' + contact.email : ''}${contact.customer_group ? ' • ' + contact.customer_group.name : ''}`}
                     />
 
@@ -351,7 +358,14 @@ export default function ContactShow({ contact, ledger, ledgerFilters, payments, 
                 onSuccess={() => router.reload()}
             />
 
-            <PayDueModal open={payModalOpen} onOpenChange={setPayModalOpen} contact={contact} accounts={accounts} />
+            <PayDueModal
+                open={payModalOpen}
+                onOpenChange={setPayModalOpen}
+                contact={contact}
+                accounts={accounts}
+                sales={sales}
+                purchases={purchases}
+            />
 
             <WaiveDueModal open={waiveModalOpen} onOpenChange={setWaiveModalOpen} contact={contact} />
         </AppLayout>

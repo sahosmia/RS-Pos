@@ -59,7 +59,7 @@ class PurchaseController extends Controller
             // Only the currently-filtered supplier's own label, not every supplier —
             // the filter itself searches async (see `ContactSearchController`).
             'initialSupplier' => isset($validated['supplier_id'])
-                ? Contact::query()->find($validated['supplier_id'], ['id', 'name', 'phone', 'business_name', 'balance'])
+                ? Contact::query()->find($validated['supplier_id'])?->only(['id', 'name', 'display_name', 'phone', 'business_name', 'balance'])
                 : null,
             'filters' => [
                 'search' => $validated['search'] ?? null,
@@ -100,7 +100,7 @@ class PurchaseController extends Controller
 
         return Inertia::render('purchases/show', [
             'purchase' => $this->present($purchase),
-            'accounts' => Account::query()->active()->orderBy('name')->get(['id', 'name', 'current_balance']),
+            'accounts' => Account::query()->active()->orderBy('name')->get(['id', 'name', 'current_balance', 'is_default']),
         ]);
     }
 
@@ -129,7 +129,7 @@ class PurchaseController extends Controller
                     'unit_price' => $item->unit_price,
                 ]),
             ],
-            'initialSupplier' => $purchase->supplier->only(['id', 'name', 'phone', 'business_name', 'balance']),
+            'initialSupplier' => $purchase->supplier->only(['id', 'name', 'display_name', 'phone', 'business_name', 'balance']),
             'initialProducts' => $initialProducts,
         ]);
     }

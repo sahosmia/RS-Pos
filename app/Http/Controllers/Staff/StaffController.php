@@ -88,6 +88,7 @@ class StaffController extends Controller
             'staffMember' => [
                 'id' => $staff->id,
                 'name' => $staff->name,
+                'phone' => $staff->phone,
                 'designation' => $staff->designation,
                 'salary_amount' => $staff->salary_amount,
                 'balance' => $staff->balance,
@@ -95,7 +96,7 @@ class StaffController extends Controller
             ],
             'transactions' => $rows,
             'transactionTypes' => StaffTransactionType::query()->orderBy('name')->get(['id', 'name', 'effect_on_balance', 'nature']),
-            'accounts' => Account::query()->active()->orderBy('name')->get(['id', 'name', 'current_balance']),
+            'accounts' => Account::query()->active()->orderBy('name')->get(['id', 'name', 'current_balance', 'is_default']),
         ]);
     }
 

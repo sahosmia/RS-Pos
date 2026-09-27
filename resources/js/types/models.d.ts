@@ -33,6 +33,7 @@ export interface Account {
     account_sub_type: string | null;
     current_balance: number;
     is_active: boolean;
+    is_default: boolean;
 }
 
 export interface AccountListItem {
@@ -45,6 +46,7 @@ export interface AccountListItem {
     opening_balance: number;
     current_balance: number;
     is_active: boolean;
+    is_default: boolean;
     can_delete: boolean;
     /** Opening balance locks as soon as any other movement is recorded. */
     can_edit_opening_balance: boolean;
@@ -202,8 +204,10 @@ export interface CustomerGroupListItem {
  * The structured-identity fields the Contact create/edit modal captures —
  * shared by `ContactListItem` (the primary "open for edit" source, on the
  * list page) and `ContactDetail` (the contact show page, which can also
- * open the same modal). `name` stays the single always-populated display
+ * open the same modal). `name` stays the single always-populated identity
  * field; these are additional structure the backend composes it from.
+ * `display_name` (business_name when set, else name) is the one to render
+ * as the primary label — see the Contact model's `display_name` accessor.
  */
 interface ContactProfileFields {
     prefix: ContactPrefixValue | null;
@@ -218,6 +222,7 @@ interface ContactProfileFields {
 export interface ContactListItem extends ContactProfileFields {
     id: number;
     name: string;
+    display_name: string;
     phone: string;
     email: string | null;
     address: string | null;
@@ -237,6 +242,7 @@ export interface ContactListItem extends ContactProfileFields {
 export interface ContactDetail extends ContactProfileFields {
     id: number;
     name: string;
+    display_name: string;
     phone: string;
     email: string | null;
     address: string | null;
@@ -332,6 +338,7 @@ export interface PurchaseProductOption {
 export interface SupplierOption {
     id: number;
     name: string;
+    display_name: string;
     phone: string | null;
     business_name: string | null;
     balance: number;
@@ -461,6 +468,7 @@ export interface SalePaymentHistoryEntry {
 export interface CustomerOption {
     id: number;
     name: string;
+    display_name: string;
     phone: string | null;
     business_name: string | null;
     balance: number;
@@ -642,6 +650,21 @@ export interface SalesOrderItemDetail {
 export interface ExpenseCategoryOption {
     id: number;
     name: string;
+    parent_id: number | null;
+}
+
+export interface ExpenseCategoryListItem {
+    id: number;
+    name: string;
+    parent_id: number | null;
+    parent: { id: number; name: string } | null;
+    expenses_count: number;
+    can_delete: boolean;
+}
+
+export interface ExpenseAttachment {
+    url: string;
+    name: string;
 }
 
 export interface ExpenseListItem {
@@ -653,8 +676,10 @@ export interface ExpenseListItem {
     due_amount: number;
     payment_status: PaymentStatusValue;
     expense_date: string;
+    due_date: string | null;
     note: string | null;
     can_edit: boolean;
+    attachment: ExpenseAttachment | null;
 }
 
 export interface SalesOrderDetail {
@@ -810,7 +835,7 @@ export interface OtherLiabilityDetail {
 
 export type StaffStatusValue = 'active' | 'inactive';
 export type BalanceEffectValue = 'increase' | 'decrease';
-export type StaffTransactionNatureValue = 'expense' | 'settlement' | 'advance' | 'adjustment';
+export type StaffTransactionNatureValue = 'expense' | 'settlement' | 'advance' | 'advance_return' | 'adjustment';
 
 export interface StaffTransactionTypeOption {
     id: number;
@@ -835,6 +860,7 @@ export interface StaffListItem {
 export interface StaffDetail {
     id: number;
     name: string;
+    phone: string | null;
     designation: string | null;
     salary_amount: number;
     balance: number;
@@ -949,6 +975,34 @@ export interface DashboardMonthlySalesPoint {
     month: string;
     label: string;
     total: number;
+}
+
+/** Subset of `DateRangePresetValue` accepted by the best-sellers/purchases widget's own `period` filter. */
+export type BestSellersPeriodValue = 'today' | 'yesterday' | 'last_7_days' | 'last_30_days';
+
+export interface DashboardBestSellerItem {
+    id: number;
+    name: string;
+    sku: string;
+    quantity: number;
+    total_amount: number;
+}
+
+/** Shared row shape for `recentTransactions.{sales,purchases,expenses}` on the dashboard. */
+export interface DashboardRecentTransactionRow {
+    id: number;
+    invoice_no: string;
+    party_name: string;
+    amount: number;
+    status: string;
+    date: string;
+    href: string;
+}
+
+export interface DashboardRecentTransactions {
+    sales: DashboardRecentTransactionRow[];
+    purchases: DashboardRecentTransactionRow[];
+    expenses: DashboardRecentTransactionRow[];
 }
 
 export interface ChartOfAccountLine {

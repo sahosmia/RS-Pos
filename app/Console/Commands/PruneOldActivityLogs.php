@@ -14,14 +14,8 @@ use Spatie\Activitylog\Models\Activity;
  */
 class PruneOldActivityLogs extends Command
 {
-    /**
-     * @var string
-     */
     protected $signature = 'activitylog:prune-old';
 
-    /**
-     * @var string
-     */
     protected $description = "Delete activity log entries older than the shop's configured retention window";
 
     public function handle(): void

@@ -20,6 +20,7 @@ return new class extends Migration
             $table->decimal('opening_balance', 19, 4)->default(0);
             $table->decimal('current_balance', 19, 4)->default(0);
             $table->boolean('is_active')->default(true);
+            $table->boolean('is_default')->default(false);
             $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();
         });

@@ -23,14 +23,21 @@ class CreateAccountAction
     ) {}
 
     /**
-     * @param  array{name: string, account_type_id: int, account_sub_type?: string|null, account_number?: string|null, opening_balance?: float|string|null}  $data
+     * @param  array{name: string, account_type_id: int, account_sub_type?: string|null, account_number?: string|null, opening_balance?: float|string|null, is_default?: bool}  $data
      */
     public function execute(array $data): Account
     {
         return DB::transaction(function () use ($data) {
             $openingBalance = (float) ($data['opening_balance'] ?? 0);
+            $isDefault = (bool) ($data['is_default'] ?? false);
             $accountType = AccountType::findOrFail($data['account_type_id']);
             $chartOfAccount = $this->createSubAccount($accountType, $data['name']);
+
+            // Only one account can be the default — unset it everywhere else
+            // before this one claims it.
+            if ($isDefault) {
+                Account::query()->where('is_default', true)->update(['is_default' => false]);
+            }
 
             $account = Account::create([
                 'name' => $data['name'],
@@ -38,6 +45,7 @@ class CreateAccountAction
                 'account_sub_type' => $data['account_sub_type'] ?? null,
                 'account_number' => $data['account_number'] ?? null,
                 'opening_balance' => $openingBalance,
+                'is_default' => $isDefault,
                 'created_by' => Auth::id(),
                 'chart_of_account_id' => $chartOfAccount->id,
             ]);

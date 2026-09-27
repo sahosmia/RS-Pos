@@ -43,6 +43,7 @@ class ContactSearchController extends Controller
             'data' => $contacts->map(fn (Contact $contact) => [
                 'id' => $contact->id,
                 'name' => $contact->name,
+                'display_name' => $contact->display_name,
                 'phone' => $contact->phone,
                 'business_name' => $contact->business_name,
                 'balance' => (float) $contact->balance,

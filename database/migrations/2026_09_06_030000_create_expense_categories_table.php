@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('name')->unique();
             $table->foreignId('chart_of_account_id')->constrained()->restrictOnDelete();
+            $table->foreignId('parent_id')->nullable()->constrained('expense_categories')->nullOnDelete();
             $table->timestamps();
         });
     }

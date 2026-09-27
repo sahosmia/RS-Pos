@@ -26,14 +26,8 @@ use Illuminate\Console\Command;
  */
 class GenerateDailyNotifications extends Command
 {
-    /**
-     * @var string
-     */
     protected $signature = 'notifications:generate';
 
-    /**
-     * @var string
-     */
     protected $description = 'Generate low-stock and due-payment notifications for the shop owner';
 
     public function handle(): void

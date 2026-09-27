@@ -35,6 +35,8 @@ export interface SharedData {
     /** True for exactly the one page render right after logging in (flashed, not persisted) — see `useSidebarState`. */
     freshLogin: boolean;
     shop: {
+        /** Editable at `business-settings`; falls back to `null` before it's ever been set — see `app.tsx`'s page-title fallback. */
+        shop_name: string | null;
         currency_symbol: string;
         emi_module_enabled: boolean;
         serial_number_module_enabled: boolean;
@@ -63,5 +65,5 @@ export interface User {
     email_verified_at: string | null;
     created_at: string;
     updated_at: string;
-    [key: string]: unknown; // This allows for additional properties...
+    [key: string]: unknown;
 }

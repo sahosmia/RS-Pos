@@ -23,6 +23,7 @@ class StaffTransactionTypeSeeder extends Seeder
             ['Salary Payment', BalanceEffect::Increase, StaffTransactionNature::Settlement],
             ['Advance Given', BalanceEffect::Increase, StaffTransactionNature::Advance],
             ['Loan Given', BalanceEffect::Increase, StaffTransactionNature::Advance],
+            ['Advance Return', BalanceEffect::Decrease, StaffTransactionNature::AdvanceReturn],
             ['Adjustment (Increase)', BalanceEffect::Increase, StaffTransactionNature::Adjustment],
             ['Adjustment (Decrease)', BalanceEffect::Decrease, StaffTransactionNature::Adjustment],
         ])->each(fn (array $row) => StaffTransactionType::query()->firstOrCreate(

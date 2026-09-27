@@ -26,7 +26,6 @@ export const paymentStatusColor: Record<PaymentStatusValue, string> = {
 
 export const humanize = (value: string) => value.replaceAll('_', ' ').replace(/\b\w/g, (character) => character.toUpperCase());
 
-/** The Table view's toggleable columns. */
 export const getVisibilityColumns = (): DataTableColumnOption[] => [
     { id: 'invoice', label: 'Invoice' },
     { id: 'customer', label: 'Customer' },
