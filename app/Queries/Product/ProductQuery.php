@@ -21,7 +21,7 @@ class ProductQuery
         $dateRange = self::resolveDateRange($filters);
 
         return Product::query()
-            ->with(['category:id,name', 'brand:id,name', 'unit:id,name'])
+            ->with(['category:id,name', 'brand:id,name', 'unit:id,name', 'media'])
             ->withExists('stockMovements as has_stock_movements') // fixes the N+1 in §3
             ->when($filters['search'] ?? null, fn (Builder $q, string $search) => $q->where(
                 fn (Builder $q) => $q->where('name', 'like', "%{$search}%")

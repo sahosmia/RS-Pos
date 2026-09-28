@@ -59,11 +59,11 @@ class CancelPurchaseAction
                     }
                 }
 
-                if ($purchase->due_amount !== 0.0) {
+                if (abs($purchase->due_amount) > 0.001) {
                     $this->ledger->recordContact($purchase->supplier, ContactLedgerType::Adjustment, -$purchase->due_amount, 'purchase', $purchase->id, 'Purchase cancelled');
                 }
 
-                if ($purchase->paid_amount > 0.0) {
+                if (abs($purchase->paid_amount) > 0.001) {
                     $this->reverseAccountPayments($purchase);
                 }
 

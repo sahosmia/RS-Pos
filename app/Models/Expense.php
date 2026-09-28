@@ -4,19 +4,20 @@ namespace App\Models;
 
 use App\Enums\PaymentStatus;
 use App\Models\Concerns\LogsActivityDefaults;
+use App\Traits\HasAccountTransactions;
 use Database\Factories\ExpenseFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Support\Facades\DB;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 
 class Expense extends Model implements HasMedia
 {
+    use HasAccountTransactions;
+
     /** @use HasFactory<ExpenseFactory> */
     use HasFactory;
-
     use InteractsWithMedia;
     use LogsActivityDefaults;
 
@@ -100,10 +101,7 @@ class Expense extends Model implements HasMedia
      */
     public function recalculatePaymentTotals(): void
     {
-        $paidViaAccounts = abs((float) DB::table('account_transactions')
-            ->where('reference_type', 'expense')
-            ->where('reference_id', $this->id)
-            ->sum('amount'));
+        $paidViaAccounts = $this->sumAccountTransactions('expense', $this->id);
 
         $paidAmount = round($paidViaAccounts, 2);
         $dueAmount = round($this->total_amount - $paidAmount, 2);

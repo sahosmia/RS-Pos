@@ -19,7 +19,7 @@ class StoreStockAdjustmentRequest extends FormRequest
     {
         return [
             'quantity' => ['required', 'numeric', 'min:0'],
-            'reason' => ['nullable', 'string', 'max:255'],
+            'reason' => ['required', 'string', 'max:255'],
         ];
     }
 }

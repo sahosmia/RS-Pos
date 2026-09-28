@@ -9,18 +9,19 @@ use App\Enums\SalePaymentType;
 use App\Enums\SaleSource;
 use App\Enums\SaleStatus;
 use App\Models\Concerns\LogsActivityDefaults;
+use App\Traits\HasAccountTransactions;
 use Database\Factories\SaleFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Support\Facades\DB;
 
 class Sale extends Model
 {
+    use HasAccountTransactions;
+
     /** @use HasFactory<SaleFactory> */
     use HasFactory;
-
     use LogsActivityDefaults;
 
     /**
@@ -157,16 +158,10 @@ class Sale extends Model
      */
     public function recalculatePaymentTotals(): void
     {
-        $paidViaAccounts = abs((float) DB::table('account_transactions')
-            ->where('reference_type', 'sale')
-            ->where('reference_id', $this->id)
-            ->sum('amount'));
+        $paidViaAccounts = $this->sumAccountTransactions('sale', $this->id);
 
         $advanceCarried = $this->sales_order_id
-            ? abs((float) DB::table('account_transactions')
-                ->where('reference_type', 'sales_order')
-                ->where('reference_id', $this->sales_order_id)
-                ->sum('amount'))
+            ? $this->sumAccountTransactions('sales_order', $this->sales_order_id)
             : 0.0;
 
         $paidAmount = round($paidViaAccounts + $advanceCarried, 2);

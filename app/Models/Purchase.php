@@ -6,6 +6,7 @@ use App\Enums\DiscountType;
 use App\Enums\PaymentStatus;
 use App\Enums\PurchaseStatus;
 use App\Models\Concerns\LogsActivityDefaults;
+use App\Traits\HasAccountTransactions;
 use Database\Factories\PurchaseFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -15,9 +16,10 @@ use Illuminate\Support\Facades\DB;
 
 class Purchase extends Model
 {
+    use HasAccountTransactions;
+
     /** @use HasFactory<PurchaseFactory> */
     use HasFactory;
-
     use LogsActivityDefaults;
 
     /**
@@ -105,10 +107,7 @@ class Purchase extends Model
      */
     public function recalculatePaymentTotals(): void
     {
-        $paidViaAccounts = abs((float) DB::table('account_transactions')
-            ->where('reference_type', 'purchase')
-            ->where('reference_id', $this->id)
-            ->sum('amount'));
+        $paidViaAccounts = $this->sumAccountTransactions('purchase', $this->id);
 
         $creditApplied = abs((float) DB::table('contact_ledger')
             ->where('reference_type', 'purchase')

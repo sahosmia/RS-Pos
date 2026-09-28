@@ -237,6 +237,15 @@ test('stock adjustment corrects the current stock to the counted quantity', func
         ->and($movement->quantity)->toBe(3.0);
 });
 
+test('stock adjustment requires a reason', function () {
+    $this->actingAs(User::factory()->create());
+    $product = Product::factory()->create(['category_id' => Category::factory(), 'unit_id' => Unit::factory(), 'current_stock' => 10]);
+
+    $this->post("/products/{$product->id}/stock-adjustments", [
+        'quantity' => 7,
+    ])->assertSessionHasErrors('reason');
+});
+
 test('a product with stock movements cannot be deleted', function () {
     $this->actingAs(User::factory()->create());
     $product = Product::factory()->create(['category_id' => Category::factory(), 'unit_id' => Unit::factory()]);
