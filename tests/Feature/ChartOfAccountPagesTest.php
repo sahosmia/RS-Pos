@@ -40,6 +40,23 @@ test('an account with journal lines cannot be deleted', function () {
     expect(ChartOfAccount::find($inventory->id))->not->toBeNull();
 });
 
+test('an account with a non-zero balance cannot be deactivated', function () {
+    $this->actingAs(User::factory()->create());
+    $coa = ChartOfAccount::where('code', '1200')->firstOrFail();
+    $coa->forceFill(['balance' => 500.0])->save();
+
+    $this->patch("/chart-of-accounts/{$coa->id}", [
+        'code' => $coa->code,
+        'name' => $coa->name,
+        'type' => $coa->type->value,
+        'normal_balance' => $coa->normal_balance->value,
+        'parent_id' => $coa->parent_id,
+        'is_active' => false,
+    ])->assertSessionHasErrors('is_active');
+
+    expect($coa->fresh()->is_active)->toBeTrue();
+});
+
 test('the general ledger page shows a posted line with the running balance', function () {
     $this->actingAs(User::factory()->create());
     $cashType = AccountType::factory()->create(['name' => 'Cash']);

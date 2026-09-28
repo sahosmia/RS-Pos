@@ -1,7 +1,11 @@
 <?php
 
+use App\Enums\StockMovementType;
 use App\Models\Contact;
+use App\Models\ContactLedger;
+use App\Models\Product;
 use App\Models\Settings;
+use App\Models\StockMovement;
 use Illuminate\Support\Facades\Log;
 
 beforeEach(function () {
@@ -18,6 +22,47 @@ test('reconciliation check logs a warning when the subsidiary ledger diverges fr
         ->withArgs(fn (string $message) => str_contains($message, 'Accounts Receivable'));
 
     $this->artisan('reconciliation:check')->assertSuccessful();
+});
+
+test('recalculateBalance on Contact and recalculateStock on Product restore correct figures from transaction logs', function () {
+    $contact = Contact::factory()->create(['balance' => 9999]); // desynced balance
+    ContactLedger::factory()->create(['contact_id' => $contact->id, 'amount' => 500]);
+    ContactLedger::factory()->create(['contact_id' => $contact->id, 'amount' => -200]);
+
+    $contact->recalculateBalance();
+    expect($contact->fresh()->balance)->toBe(300.0);
+
+    $product = Product::factory()->create(['current_stock' => 9999]); // desynced stock
+    StockMovement::factory()->create([
+        'product_id' => $product->id,
+        'type' => StockMovementType::Purchase,
+        'quantity' => 50,
+    ]);
+    StockMovement::factory()->create([
+        'product_id' => $product->id,
+        'type' => StockMovementType::Sale,
+        'quantity' => 15,
+    ]);
+
+    $product->recalculateStock();
+    expect($product->fresh()->current_stock)->toBe(35.0);
+});
+
+test('reconciliation check with --fix recalculates balances and stock before checking', function () {
+    $contact = Contact::factory()->create(['balance' => 9999]);
+    ContactLedger::factory()->create(['contact_id' => $contact->id, 'amount' => 0]);
+
+    $product = Product::factory()->create(['current_stock' => 9999]);
+    StockMovement::factory()->create([
+        'product_id' => $product->id,
+        'type' => StockMovementType::OpeningStock,
+        'quantity' => 0,
+    ]);
+
+    $this->artisan('reconciliation:check', ['--fix' => true])->assertSuccessful();
+
+    expect($contact->fresh()->balance)->toBe(0.0)
+        ->and($product->fresh()->current_stock)->toBe(0.0);
 });
 
 test('reconciliation check finds nothing to report when there is no data at all', function () {

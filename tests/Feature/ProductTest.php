@@ -150,6 +150,27 @@ test('sku must be unique', function () {
     ])->assertSessionHasErrors('sku');
 });
 
+test('product name must be unique', function () {
+    $this->actingAs(User::factory()->create());
+    $category = Category::factory()->create();
+    $unit = Unit::factory()->create();
+    Product::factory()->create(['name' => 'Existing Product Name', 'sku' => 'UNIQUE-SKU-1']);
+
+    $this->post('/products', [
+        'name' => 'Existing Product Name',
+        'sku' => 'UNIQUE-SKU-2',
+        'category_id' => $category->id,
+        'unit_id' => $unit->id,
+        'selling_price' => 1000,
+        'manage_stock' => true,
+        'is_for_sale' => true,
+        'is_active' => true,
+        'has_installation_service' => false,
+        'emi_available' => false,
+        'track_serial_number' => false,
+    ])->assertSessionHasErrors('name');
+});
+
 test('opening stock is rejected once the product already has a stock movement', function () {
     $this->actingAs(User::factory()->create());
     $product = Product::factory()->create(['category_id' => Category::factory(), 'unit_id' => Unit::factory()]);

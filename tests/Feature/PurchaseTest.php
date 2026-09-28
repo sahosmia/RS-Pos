@@ -102,6 +102,26 @@ test('avg_cost is set directly to the purchase price when stock starts at zero',
     expect($product->fresh()->avg_cost)->toBe(120.0);
 });
 
+test('confirming a purchase with invoice discount adjusts product avg_cost based on effective net price', function () {
+    $this->actingAs(User::factory()->create());
+    $supplier = Contact::factory()->supplier()->create();
+    $product = Product::factory()->create(['current_stock' => 0, 'avg_cost' => 0]);
+
+    // Subtotal = 1000, discount = 100, total_amount = 900.
+    // Effective unit price for 10 units = 900 / 10 = 90.
+    $purchase = Purchase::factory()->create(['supplier_id' => $supplier->id, 'discount_type' => 'flat', 'discount_value' => 100]);
+    $purchase->items()->create(['product_id' => $product->id, 'quantity' => 10, 'unit_price' => 100, 'subtotal' => 1000]);
+    $purchase->forceFill(['subtotal' => 1000, 'discount_amount' => 100, 'total_amount' => 900, 'due_amount' => 900])->save();
+
+    $this->post("/purchases/{$purchase->id}/confirm", []);
+
+    expect($product->fresh()->avg_cost)->toBe(90.0)
+        ->and($product->fresh()->current_stock)->toBe(10.0);
+
+    $movement = StockMovement::query()->where('product_id', $product->id)->firstOrFail();
+    expect($movement->unit_cost)->toBe(90.0);
+});
+
 test('confirming with a split payment reduces due and moves account balances', function () {
     $this->actingAs(User::factory()->create());
     $supplier = Contact::factory()->supplier()->create();

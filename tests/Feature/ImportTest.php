@@ -103,3 +103,21 @@ test('re-importing the same invoice number is skipped, not duplicated', function
 
     expect(Sale::query()->where('invoice_no', 'OLD-INV-002')->count())->toBe(1);
 });
+
+test('a row with database constraint failure is captured in skipped result without crashing', function () {
+    Product::factory()->create(['name' => 'Existing Product', 'sku' => 'SKU-EXISTS-999', 'barcode' => 'BAR-DUP-123']);
+
+    $csv = "name,sku,category,unit,brand,selling_price,barcode\n".
+        "Valid Product,SKU-VALID-100,Cat1,Pcs,,500,BAR-UNIQUE-001\n".
+        "Bad Barcode Product,SKU-FAIL-101,Cat1,Pcs,,500,BAR-DUP-123\n";
+
+    $response = $this->post(route('imports.products'), ['file' => uploadCsv('products.csv', $csv)])
+        ->assertRedirect(route('imports.index'));
+
+    $result = session('importResult');
+
+    expect($result['created'])->toBe(1)
+        ->and($result['skipped'])->toBe(1)
+        ->and(Product::query()->where('sku', 'SKU-VALID-100')->exists())->toBeTrue()
+        ->and(Product::query()->where('sku', 'SKU-FAIL-101')->exists())->toBeFalse();
+});

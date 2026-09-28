@@ -207,6 +207,18 @@ class Contact extends Model implements HasMedia
     }
 
     /**
+     * Re-calculates and saves the cached balance from the contact's ledger entries.
+     */
+    public function recalculateBalance(): void
+    {
+        $total = (float) $this->ledgerEntries()->sum('amount');
+
+        $this->forceFill([
+            'balance' => round($total, 2),
+        ])->save();
+    }
+
+    /**
      * Contact documents (ID copy, agreement, etc.) — no custom column, just
      * the package's polymorphic `media` table.
      */

@@ -45,4 +45,26 @@ class UpdateContactRequest extends FormRequest
             'opening_balance' => ['nullable', 'numeric', new ContactOpeningBalanceEditable($contact)],
         ];
     }
+
+    public function withValidator($validator): void
+    {
+        $validator->after(function ($validator) {
+            /** @var Contact|null $contact */
+            $contact = $this->route('contact');
+
+            if (! $contact) {
+                return;
+            }
+
+            $newType = $this->input('type');
+
+            if ($newType === 'supplier' && ($contact->sales()->exists() || $contact->salesOrders()->exists())) {
+                $validator->errors()->add('type', 'This contact has customer transaction history and must retain customer status.');
+            }
+
+            if ($newType === 'customer' && $contact->purchases()->exists()) {
+                $validator->errors()->add('type', 'This contact has supplier transaction history and must retain supplier status.');
+            }
+        });
+    }
 }

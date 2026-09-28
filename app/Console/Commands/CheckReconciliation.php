@@ -21,7 +21,7 @@ use Illuminate\Support\Facades\Log;
  */
 class CheckReconciliation extends Command
 {
-    protected $signature = 'reconciliation:check';
+    protected $signature = 'reconciliation:check {--fix : Recalculate contact balances and product stocks before checking}';
 
     protected $description = 'Compare subsidiary ledger totals against their General Ledger counterparts and log any mismatch';
 
@@ -29,6 +29,13 @@ class CheckReconciliation extends Command
 
     public function handle(): void
     {
+        if ($this->option('fix')) {
+            $this->info('Recalculating contact balances and product stocks...');
+            Contact::query()->each(fn (Contact $c) => $c->recalculateBalance());
+            Product::query()->each(fn (Product $p) => $p->recalculateStock());
+            $this->info('Recalculation complete.');
+        }
+
         $this->checkReceivable();
         $this->checkPayable();
         $this->checkInventory();
