@@ -22,11 +22,13 @@ class CompanyLoanController extends Controller
     {
         $validated = $request->validate([
             'per_page' => ['nullable', 'string', 'max:10'],
+            'sort' => ['nullable', 'string', 'max:50'],
+            'direction' => ['nullable', 'in:asc,desc'],
         ]);
 
         $resolvedPerPage = Settings::resolveRequestedPerPage($validated['per_page'] ?? null);
 
-        $loans = CompanyLoanQuery::filtered()
+        $loans = CompanyLoanQuery::filtered($validated)
             ->paginate($resolvedPerPage ?? Settings::MAX_UNPAGINATED_ROWS)
             ->withQueryString();
 
@@ -44,6 +46,8 @@ class CompanyLoanController extends Controller
             'loans' => $loans,
             'totalOutstanding' => (float) CompanyLoan::query()->sum('outstanding_balance'),
             'filters' => [
+                'sort' => $validated['sort'] ?? 'lender_name',
+                'direction' => $validated['direction'] ?? 'asc',
                 'per_page' => $resolvedPerPage ?? 'all',
             ],
         ]);

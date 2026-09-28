@@ -1,5 +1,6 @@
 import DataTable from '@/components/data-table/data-table';
 import DataTableCheckbox from '@/components/data-table/data-table-checkbox';
+import DataTableColumnHeader from '@/components/data-table/data-table-column-header';
 import DataTablePagination from '@/components/data-table/data-table-pagination';
 import DataTableRowActions from '@/components/data-table/data-table-row-actions';
 import DataTableToolbar from '@/components/data-table/data-table-toolbar';
@@ -28,7 +29,6 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 
 const breadcrumbs: BreadcrumbItem[] = [{ title: 'Sales Order', href: '/sales-orders' }];
 
-/** No `search`/`sort` here — the backend's `SalesOrderController::index()` doesn't accept either today. */
 interface SalesOrderFilters extends TableFilterBase {
     from: string | null;
     to: string | null;
@@ -89,7 +89,7 @@ export default function SalesOrdersIndex({ orders, initialCustomer, filters }: S
         setCustomer(initialCustomer);
     }, [initialCustomer]);
 
-    const { isLoading, applyFilters, activeFilterCount, canReset, resetFilters } = useTableFilters({
+    const { isLoading, applyFilters, handleSort, activeFilterCount, canReset, resetFilters } = useTableFilters({
         routeName: 'sales-orders.index',
         filters,
         emptyFilters: { from: null, to: null, customer_id: null, status: null },
@@ -150,7 +150,15 @@ export default function SalesOrdersIndex({ orders, initialCustomer, filters }: S
             },
             {
                 id: 'order_no',
-                header: 'Order No',
+                header: () => (
+                    <DataTableColumnHeader
+                        title="Order No"
+                        sortKey="order_no"
+                        currentSort={filters.sort ?? ''}
+                        currentDirection={filters.direction ?? 'desc'}
+                        onSort={handleSort}
+                    />
+                ),
                 cell: ({ row }) => (
                     <Link href={route('sales-orders.show', row.original.id)} className="font-medium underline-offset-2 hover:underline">
                         {row.original.order_no}
@@ -164,7 +172,15 @@ export default function SalesOrdersIndex({ orders, initialCustomer, filters }: S
             },
             {
                 id: 'order_date',
-                header: 'Order Date',
+                header: () => (
+                    <DataTableColumnHeader
+                        title="Order Date"
+                        sortKey="order_date"
+                        currentSort={filters.sort ?? ''}
+                        currentDirection={filters.direction ?? 'desc'}
+                        onSort={handleSort}
+                    />
+                ),
                 meta: { cellClassName: 'whitespace-nowrap' },
                 cell: ({ row }) => formatDate(row.original.order_date),
             },
@@ -176,13 +192,31 @@ export default function SalesOrdersIndex({ orders, initialCustomer, filters }: S
             },
             {
                 id: 'total',
-                header: 'Total',
+                header: () => (
+                    <DataTableColumnHeader
+                        title="Total"
+                        sortKey="total_amount"
+                        currentSort={filters.sort ?? ''}
+                        currentDirection={filters.direction ?? 'desc'}
+                        onSort={handleSort}
+                        align="right"
+                    />
+                ),
                 meta: { headerClassName: 'text-right', cellClassName: 'text-right tabular-nums' },
                 cell: ({ row }) => money(row.original.total_amount),
             },
             {
                 id: 'advance',
-                header: 'Advance',
+                header: () => (
+                    <DataTableColumnHeader
+                        title="Advance"
+                        sortKey="advance_paid"
+                        currentSort={filters.sort ?? ''}
+                        currentDirection={filters.direction ?? 'desc'}
+                        onSort={handleSort}
+                        align="right"
+                    />
+                ),
                 meta: { headerClassName: 'text-right', cellClassName: 'text-right tabular-nums' },
                 cell: ({ row }) => money(row.original.advance_paid),
             },
@@ -194,11 +228,19 @@ export default function SalesOrdersIndex({ orders, initialCustomer, filters }: S
             },
             {
                 id: 'status',
-                header: 'Status',
+                header: () => (
+                    <DataTableColumnHeader
+                        title="Status"
+                        sortKey="status"
+                        currentSort={filters.sort ?? ''}
+                        currentDirection={filters.direction ?? 'desc'}
+                        onSort={handleSort}
+                    />
+                ),
                 cell: ({ row }) => <Badge variant={statusVariant[row.original.status]}>{humanize(row.original.status)}</Badge>,
             },
         ],
-        [money, selection],
+        [money, selection, filters.sort, filters.direction, handleSort],
     );
 
     const renderGridCard = useCallback(

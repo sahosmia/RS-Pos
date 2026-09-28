@@ -1,5 +1,6 @@
 import DataTable from '@/components/data-table/data-table';
 import DataTableCheckbox from '@/components/data-table/data-table-checkbox';
+import DataTableColumnHeader from '@/components/data-table/data-table-column-header';
 import DataTablePagination from '@/components/data-table/data-table-pagination';
 import DataTableToolbar from '@/components/data-table/data-table-toolbar';
 import { type DataTableColumnOption } from '@/components/data-table/types';
@@ -34,7 +35,6 @@ const breadcrumbs: BreadcrumbItem[] = [
     },
 ];
 
-/** No `search`/`sort` here — the backend's `CashBookController::index()` doesn't accept either today. */
 interface CashBookFilters extends TableFilterBase {
     category_id: number | null;
     per_page: number | 'all';
@@ -83,7 +83,7 @@ export default function CashBookIndex({ cashBook, entries, categories, filters, 
 
     const categoryOptions = categories.filter((category) => category.type === entryForm.data.type);
 
-    const { isLoading, applyFilters, activeFilterCount, canReset, resetFilters } = useTableFilters({
+    const { isLoading, applyFilters, handleSort, activeFilterCount, canReset, resetFilters } = useTableFilters({
         routeName: 'cash-book.index',
         filters,
         emptyFilters: { category_id: null },
@@ -148,23 +148,54 @@ export default function CashBookIndex({ cashBook, entries, categories, filters, 
                     />
                 ),
             },
-            { id: 'date', header: 'Date', meta: { cellClassName: 'whitespace-nowrap' }, cell: ({ row }) => formatDate(row.original.entry_date) },
+            {
+                id: 'date',
+                header: () => (
+                    <DataTableColumnHeader
+                        title="Date"
+                        sortKey="entry_date"
+                        currentSort={filters.sort ?? ''}
+                        currentDirection={filters.direction ?? 'desc'}
+                        onSort={handleSort}
+                    />
+                ),
+                meta: { cellClassName: 'whitespace-nowrap' },
+                cell: ({ row }) => formatDate(row.original.entry_date),
+            },
             { id: 'category', header: 'Category', cell: ({ row }) => row.original.category?.name ?? 'Opening Balance' },
             { id: 'note', header: 'Note', cell: ({ row }) => <span className="text-muted-foreground">{row.original.note}</span> },
             {
                 id: 'in',
-                header: 'In',
+                header: () => (
+                    <DataTableColumnHeader
+                        title="In"
+                        sortKey="amount"
+                        currentSort={filters.sort ?? ''}
+                        currentDirection={filters.direction ?? 'desc'}
+                        onSort={handleSort}
+                        align="right"
+                    />
+                ),
                 meta: { headerClassName: 'text-right', cellClassName: 'text-right tabular-nums' },
                 cell: ({ row }) => (row.original.type === 'expense' ? '' : money(row.original.amount)),
             },
             {
                 id: 'out',
-                header: 'Out',
+                header: () => (
+                    <DataTableColumnHeader
+                        title="Out"
+                        sortKey="amount"
+                        currentSort={filters.sort ?? ''}
+                        currentDirection={filters.direction ?? 'desc'}
+                        onSort={handleSort}
+                        align="right"
+                    />
+                ),
                 meta: { headerClassName: 'text-right', cellClassName: 'text-right tabular-nums' },
                 cell: ({ row }) => (row.original.type === 'expense' ? money(row.original.amount) : ''),
             },
         ],
-        [money, selection],
+        [money, selection, filters.sort, filters.direction, handleSort],
     );
 
     const renderGridCard = (entry: CashBookEntry) => (

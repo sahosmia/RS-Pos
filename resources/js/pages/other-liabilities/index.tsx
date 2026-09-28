@@ -9,6 +9,7 @@ import MoneyInput from '@/components/shared/money-input';
 import { Button } from '@/components/ui/button';
 import DataTable from '@/components/data-table/data-table';
 import DataTableCheckbox from '@/components/data-table/data-table-checkbox';
+import DataTableColumnHeader from '@/components/data-table/data-table-column-header';
 import DataTablePagination from '@/components/data-table/data-table-pagination';
 import DataTableRowActions from '@/components/data-table/data-table-row-actions';
 import DataTableToolbar from '@/components/data-table/data-table-toolbar';
@@ -30,7 +31,6 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const breadcrumbs: BreadcrumbItem[] = [{ title: 'Assets & Liabilities', href: '/assets' }, { title: 'Other Liabilities', href: '/other-liabilities' }];
 
-/** No `search`/`sort` here — the backend's `OtherLiabilityController::index()` doesn't accept either today. */
 interface OtherLiabilityFilters extends TableFilterBase {
     per_page: number | 'all';
 }
@@ -64,7 +64,7 @@ export default function OtherLiabilitiesIndex({ liabilities, totalBalance, filte
 
     const form = useForm({ name: '', opening_amount: 0 });
 
-    const { isLoading, applyFilters, activeFilterCount, canReset, resetFilters } = useTableFilters({
+    const { isLoading, applyFilters, handleSort, activeFilterCount, canReset, resetFilters } = useTableFilters({
         routeName: 'other-liabilities.index',
         filters,
         emptyFilters: {},
@@ -156,7 +156,15 @@ export default function OtherLiabilitiesIndex({ liabilities, totalBalance, filte
             },
             {
                 id: 'name',
-                header: 'Name',
+                header: () => (
+                    <DataTableColumnHeader
+                        title="Name"
+                        sortKey="name"
+                        currentSort={filters.sort ?? ''}
+                        currentDirection={filters.direction ?? 'asc'}
+                        onSort={handleSort}
+                    />
+                ),
                 cell: ({ row }) => (
                     <Link href={route('other-liabilities.show', row.original.id)} className="font-medium underline-offset-2 hover:underline">
                         {row.original.name}
@@ -165,12 +173,21 @@ export default function OtherLiabilitiesIndex({ liabilities, totalBalance, filte
             },
             {
                 id: 'current_balance',
-                header: 'Current Balance',
+                header: () => (
+                    <DataTableColumnHeader
+                        title="Current Balance"
+                        sortKey="current_balance"
+                        currentSort={filters.sort ?? ''}
+                        currentDirection={filters.direction ?? 'asc'}
+                        onSort={handleSort}
+                        align="right"
+                    />
+                ),
                 meta: { headerClassName: 'text-right', cellClassName: 'text-right tabular-nums' },
                 cell: ({ row }) => money(row.original.current_balance),
             },
         ],
-        [money, selection, openEdit],
+        [money, selection, openEdit, filters.sort, filters.direction, handleSort],
     );
 
     const renderGridCard = useCallback(

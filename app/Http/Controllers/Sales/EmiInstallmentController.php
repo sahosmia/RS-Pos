@@ -22,6 +22,8 @@ class EmiInstallmentController extends Controller
             'status' => ['nullable', 'in:pending,paid,overdue,cancelled'],
             'search' => ['nullable', 'string', 'max:255'],
             'per_page' => ['nullable', 'string', 'max:10'],
+            'sort' => ['nullable', 'string', 'max:50'],
+            'direction' => ['nullable', 'in:asc,desc'],
         ]);
 
         $resolvedPerPage = Settings::resolveRequestedPerPage($validated['per_page'] ?? null);
@@ -47,6 +49,8 @@ class EmiInstallmentController extends Controller
             'filters' => [
                 'status' => $validated['status'] ?? null,
                 'search' => $validated['search'] ?? null,
+                'sort' => $validated['sort'] ?? 'due_date',
+                'direction' => $validated['direction'] ?? 'asc',
                 'per_page' => $resolvedPerPage ?? 'all',
             ],
         ]);

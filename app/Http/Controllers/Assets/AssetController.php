@@ -23,11 +23,13 @@ class AssetController extends Controller
     {
         $validated = $request->validate([
             'per_page' => ['nullable', 'string', 'max:10'],
+            'sort' => ['nullable', 'string', 'max:50'],
+            'direction' => ['nullable', 'in:asc,desc'],
         ]);
 
         $resolvedPerPage = Settings::resolveRequestedPerPage($validated['per_page'] ?? null);
 
-        $assets = AssetQuery::filtered()
+        $assets = AssetQuery::filtered($validated)
             ->paginate($resolvedPerPage ?? Settings::MAX_UNPAGINATED_ROWS)
             ->withQueryString();
 
@@ -46,6 +48,8 @@ class AssetController extends Controller
             'assets' => $assets,
             'totalValue' => (float) Asset::query()->sum('current_value'),
             'filters' => [
+                'sort' => $validated['sort'] ?? 'name',
+                'direction' => $validated['direction'] ?? 'asc',
                 'per_page' => $resolvedPerPage ?? 'all',
             ],
         ]);

@@ -122,7 +122,7 @@ export default function SalesIndex({ sales, stats, accounts, initialCustomer, fi
         setCustomer(initialCustomer);
     }, [initialCustomer]);
 
-    const { search, setSearch, isLoading, isSearching, submitSearchNow, applyFilters, activeFilterCount, canReset, resetFilters } = useTableFilters({
+    const { search, setSearch, isLoading, isSearching, submitSearchNow, applyFilters, handleSort, activeFilterCount, canReset, resetFilters } = useTableFilters({
         routeName: 'sales.index',
         filters,
         emptyFilters: { from: null, to: null, customer_id: null, status: null, payment_status: null },
@@ -177,7 +177,16 @@ export default function SalesIndex({ sales, stats, accounts, initialCustomer, fi
         return ids;
     }, [columnVisibility]);
 
-    const columns = useSaleColumns({ money, selection, onDelete: setDeleting, onAddPayment: setAddingPayment, onViewPayments: setViewingPayments });
+    const columns = useSaleColumns({
+        sort: filters.sort,
+        direction: filters.direction,
+        onSort: handleSort,
+        money,
+        selection,
+        onDelete: setDeleting,
+        onAddPayment: setAddingPayment,
+        onViewPayments: setViewingPayments,
+    });
 
     const renderGridCard = useCallback(
         (sale: SaleListItem) => {

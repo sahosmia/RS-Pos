@@ -24,6 +24,8 @@ class PurchaseReturnController extends Controller
             'from' => ['nullable', 'date'],
             'to' => ['nullable', 'date', 'after_or_equal:from'],
             'per_page' => ['nullable', 'string', 'max:10'],
+            'sort' => ['nullable', 'string', 'max:50'],
+            'direction' => ['nullable', 'in:asc,desc'],
         ]);
 
         $resolvedPerPage = Settings::resolveRequestedPerPage($validated['per_page'] ?? null);
@@ -45,6 +47,8 @@ class PurchaseReturnController extends Controller
             'filters' => [
                 'from' => $validated['from'] ?? null,
                 'to' => $validated['to'] ?? null,
+                'sort' => $validated['sort'] ?? 'return_date',
+                'direction' => $validated['direction'] ?? 'desc',
                 'per_page' => $resolvedPerPage ?? 'all',
             ],
         ]);

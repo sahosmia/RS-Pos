@@ -22,11 +22,13 @@ class InvestorController extends Controller
     {
         $validated = $request->validate([
             'per_page' => ['nullable', 'string', 'max:10'],
+            'sort' => ['nullable', 'string', 'max:50'],
+            'direction' => ['nullable', 'in:asc,desc'],
         ]);
 
         $resolvedPerPage = Settings::resolveRequestedPerPage($validated['per_page'] ?? null);
 
-        $investors = InvestorQuery::filtered()
+        $investors = InvestorQuery::filtered($validated)
             ->paginate($resolvedPerPage ?? Settings::MAX_UNPAGINATED_ROWS)
             ->withQueryString();
 
@@ -41,6 +43,8 @@ class InvestorController extends Controller
             'investors' => $investors,
             'totalInvested' => (float) Investor::query()->sum('total_invested'),
             'filters' => [
+                'sort' => $validated['sort'] ?? 'name',
+                'direction' => $validated['direction'] ?? 'asc',
                 'per_page' => $resolvedPerPage ?? 'all',
             ],
         ]);

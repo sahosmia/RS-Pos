@@ -25,6 +25,8 @@ class CashBookController extends Controller
         $validated = $request->validate([
             'category_id' => ['nullable', 'integer', 'exists:misc_transaction_categories,id'],
             'per_page' => ['nullable', 'string', 'max:10'],
+            'sort' => ['nullable', 'string', 'max:50'],
+            'direction' => ['nullable', 'in:asc,desc'],
         ]);
 
         $categoryId = $validated['category_id'] ?? null;
@@ -32,12 +34,14 @@ class CashBookController extends Controller
 
         return Inertia::render('accounting/cash-book/index', [
             'cashBook' => CashBook::current(),
-            'entries' => CashBookQuery::filtered(['category_id' => $categoryId])
+            'entries' => CashBookQuery::filtered($validated)
                 ->paginate($resolvedPerPage ?? Settings::MAX_UNPAGINATED_ROWS)
                 ->withQueryString(),
             'categories' => MiscTransactionCategory::query()->orderBy('name')->get(['id', 'name', 'type']),
             'filters' => [
                 'category_id' => $categoryId,
+                'sort' => $validated['sort'] ?? 'entry_date',
+                'direction' => $validated['direction'] ?? 'desc',
                 'per_page' => $resolvedPerPage ?? 'all',
             ],
             'openingBalanceSet' => CashBookEntry::query()->exists(),

@@ -15,16 +15,26 @@ class PurchaseReturnQuery
      * Purchases, so this doesn't either — only the date-range filter
      * carries over.
      *
-     * @param  array{from?: ?string, to?: ?string}  $filters
+     * @param  array{from?: ?string, to?: ?string, sort?: ?string, direction?: ?string}  $filters
      * @return Builder<PurchaseReturn>
      */
     public static function filtered(array $filters): Builder
     {
+        $sort = $filters['sort'] ?? 'return_date';
+        $direction = $filters['direction'] ?? 'desc';
+        $allowedSorts = ['return_no', 'return_date', 'total_amount', 'refund_status', 'created_at'];
+        if (! in_array($sort, $allowedSorts, true)) {
+            $sort = 'return_date';
+        }
+        if (! in_array($direction, ['asc', 'desc'], true)) {
+            $direction = 'desc';
+        }
+
         return PurchaseReturn::query()
             ->with('supplier:id,name', 'purchase:id,invoice_no')
             ->when($filters['from'] ?? null, fn (Builder $q, string $from) => $q->whereDate('return_date', '>=', $from))
             ->when($filters['to'] ?? null, fn (Builder $q, string $to) => $q->whereDate('return_date', '<=', $to))
-            ->orderByDesc('return_date')
+            ->orderBy($sort, $direction)
             ->orderByDesc('id');
     }
 }

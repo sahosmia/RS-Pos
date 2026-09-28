@@ -11,12 +11,22 @@ class EmiInstallmentQuery
      * Shared by the EMI Installments list page and its export endpoint so the
      * two never drift apart.
      *
-     * @param  array{status?: ?string, search?: ?string}  $filters
+     * @param  array{status?: ?string, search?: ?string, sort?: ?string, direction?: ?string}  $filters
      * @return Builder<EmiInstallment>
      */
     public static function filtered(array $filters): Builder
     {
         $search = $filters['search'] ?? '';
+
+        $sort = $filters['sort'] ?? 'due_date';
+        $direction = $filters['direction'] ?? 'asc';
+        $allowedSorts = ['installment_number', 'due_date', 'amount', 'status', 'created_at'];
+        if (! in_array($sort, $allowedSorts, true)) {
+            $sort = 'due_date';
+        }
+        if (! in_array($direction, ['asc', 'desc'], true)) {
+            $direction = 'asc';
+        }
 
         return EmiInstallment::query()
             ->with(['sale:id,invoice_no,customer_id', 'sale.customer:id,name'])
@@ -27,7 +37,7 @@ class EmiInstallmentQuery
                         ->orWhereHas('customer', fn (Builder $query) => $query->where('name', 'like', "%{$search}%"));
                 });
             })
-            ->orderBy('due_date')
+            ->orderBy($sort, $direction)
             ->orderBy('installment_number');
     }
 }

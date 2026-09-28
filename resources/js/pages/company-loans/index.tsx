@@ -7,6 +7,7 @@ import FormModal from '@/components/shared/form-modal';
 import MoneyInput from '@/components/shared/money-input';
 import DataTable from '@/components/data-table/data-table';
 import DataTableCheckbox from '@/components/data-table/data-table-checkbox';
+import DataTableColumnHeader from '@/components/data-table/data-table-column-header';
 import DataTablePagination from '@/components/data-table/data-table-pagination';
 import DataTableRowActions from '@/components/data-table/data-table-row-actions';
 import DataTableToolbar from '@/components/data-table/data-table-toolbar';
@@ -32,7 +33,6 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const breadcrumbs: BreadcrumbItem[] = [{ title: 'Investors', href: '/investors' }, { title: 'Company Loans', href: '/company-loans' }];
 
-/** No `search`/`sort`/domain filters here — `CompanyLoanController::index()` doesn't accept any today. */
 interface CompanyLoanFilters extends TableFilterBase {
     per_page: number | 'all';
 }
@@ -69,7 +69,7 @@ export default function CompanyLoansIndex({ loans, totalOutstanding, filters }: 
     const [editing, setEditing] = useState<CompanyLoanListItem | null>(null);
     const [deleting, setDeleting] = useState<CompanyLoanListItem | null>(null);
 
-    const { isLoading, applyFilters } = useTableFilters({
+    const { isLoading, applyFilters, handleSort, activeFilterCount, canReset, resetFilters } = useTableFilters({
         routeName: 'company-loans.index',
         filters,
     });
@@ -191,7 +191,15 @@ export default function CompanyLoansIndex({ loans, totalOutstanding, filters }: 
             },
             {
                 id: 'lender',
-                header: 'Lender',
+                header: () => (
+                    <DataTableColumnHeader
+                        title="Lender"
+                        sortKey="lender_name"
+                        currentSort={filters.sort ?? ''}
+                        currentDirection={filters.direction ?? 'asc'}
+                        onSort={handleSort}
+                    />
+                ),
                 cell: ({ row }) => (
                     <Link href={route('company-loans.show', row.original.id)} className="font-medium underline-offset-2 hover:underline">
                         {row.original.lender_name}
@@ -200,7 +208,16 @@ export default function CompanyLoansIndex({ loans, totalOutstanding, filters }: 
             },
             {
                 id: 'loan_amount',
-                header: 'Loan Amount',
+                header: () => (
+                    <DataTableColumnHeader
+                        title="Loan Amount"
+                        sortKey="loan_amount"
+                        currentSort={filters.sort ?? ''}
+                        currentDirection={filters.direction ?? 'asc'}
+                        onSort={handleSort}
+                        align="right"
+                    />
+                ),
                 meta: { headerClassName: 'text-right', cellClassName: 'text-right tabular-nums' },
                 cell: ({ row }) => money(row.original.loan_amount),
             },
@@ -212,7 +229,16 @@ export default function CompanyLoansIndex({ loans, totalOutstanding, filters }: 
             },
             {
                 id: 'outstanding_balance',
-                header: 'Outstanding',
+                header: () => (
+                    <DataTableColumnHeader
+                        title="Outstanding"
+                        sortKey="current_balance"
+                        currentSort={filters.sort ?? ''}
+                        currentDirection={filters.direction ?? 'asc'}
+                        onSort={handleSort}
+                        align="right"
+                    />
+                ),
                 meta: { headerClassName: 'text-right', cellClassName: 'text-right tabular-nums' },
                 cell: ({ row }) => money(row.original.outstanding_balance),
             },
@@ -223,7 +249,7 @@ export default function CompanyLoansIndex({ loans, totalOutstanding, filters }: 
                 cell: ({ row }) => row.original.start_date,
             },
         ],
-        [money, selection, openEdit],
+        [money, selection, openEdit, filters.sort, filters.direction, handleSort],
     );
 
     const renderGridCard = useCallback(
@@ -279,9 +305,9 @@ export default function CompanyLoansIndex({ loans, totalOutstanding, filters }: 
                 </div>
 
                 <DataTableToolbar
-                    activeFilterCount={0}
-                    canReset={false}
-                    onReset={() => {}}
+                    activeFilterCount={activeFilterCount}
+                    canReset={canReset}
+                    onReset={resetFilters}
                     viewMode={viewMode}
                     onViewModeChange={setViewMode}
                     visibilityColumns={getVisibilityColumns()}
@@ -302,10 +328,18 @@ export default function CompanyLoansIndex({ loans, totalOutstanding, filters }: 
                     viewMode={viewMode}
                     columnVisibility={columnVisibility}
                     loading={isLoading}
+                    canReset={canReset}
                     emptyState={
                         <EmptyState title="No loans yet" description="প্রথম loan যোগ করুন">
                             <Button className="mt-2" onClick={openCreate}>
                                 Add Loan
+                            </Button>
+                        </EmptyState>
+                    }
+                    filteredEmptyState={
+                        <EmptyState title="No loans match your filters" description="অন্য filter দিয়ে আবার চেষ্টা করুন">
+                            <Button className="mt-2" variant="outline" onClick={resetFilters}>
+                                Clear filters
                             </Button>
                         </EmptyState>
                     }

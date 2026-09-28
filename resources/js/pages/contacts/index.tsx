@@ -114,6 +114,7 @@ export default function ContactsIndex({ contacts, stats, customerGroups, account
         isSearching,
         applyFilters,
         submitSearchNow,
+        handleSort,
         activeFilterCount,
         canReset,
         resetFilters,
@@ -252,7 +253,13 @@ export default function ContactsIndex({ contacts, stats, customerGroups, account
         [openEdit, t],
     );
 
-    const columns = useContactColumns({ selection, contactActions });
+    const columns = useContactColumns({
+        sort: filters.sort,
+        direction: filters.direction,
+        onSort: handleSort,
+        selection,
+        contactActions,
+    });
 
     const renderGridCard = useCallback(
         (contact: ContactListItem) => {

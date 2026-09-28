@@ -1,3 +1,4 @@
+import DataTableColumnHeader from '@/components/data-table/data-table-column-header';
 import DataTableRowActions, { type RowAction } from '@/components/data-table/data-table-row-actions';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -29,6 +30,9 @@ export const activeColor = (isActive: boolean) =>
     isActive ? statusTone.success : 'border-transparent bg-slate-100 text-slate-600 dark:bg-slate-500/15 dark:text-slate-400';
 
 interface UseContactColumnsOptions {
+    sort?: string;
+    direction?: 'asc' | 'desc';
+    onSort?: (key: string) => void;
     selection: {
         isSelected: (id: number) => boolean;
         toggle: (id: number, checked: boolean) => void;
@@ -40,7 +44,7 @@ interface UseContactColumnsOptions {
 }
 
 /** Column definitions for the Contacts table — kept next to the page, not inside the generic DataTable. */
-export function useContactColumns({ selection, contactActions }: UseContactColumnsOptions) {
+export function useContactColumns({ sort, direction, onSort, selection, contactActions }: UseContactColumnsOptions) {
     const { t } = useTranslation();
     const typeLabel = useContactTypeLabel();
     const money = useMoneyFormat();
@@ -71,12 +75,28 @@ export function useContactColumns({ selection, contactActions }: UseContactColum
             },
             {
                 id: 'contact_id',
-                header: t('contactColumns', 'contact_id'),
+                header: onSort ? () => (
+                    <DataTableColumnHeader
+                        title={t('contactColumns', 'contact_id')}
+                        sortKey="contact_code"
+                        currentSort={sort ?? ''}
+                        currentDirection={direction ?? 'asc'}
+                        onSort={onSort}
+                    />
+                ) : t('contactColumns', 'contact_id'),
                 cell: ({ row }) => row.original.contact_code ?? '—',
             },
             {
                 id: 'name',
-                header: t('common', 'name'),
+                header: onSort ? () => (
+                    <DataTableColumnHeader
+                        title={t('common', 'name')}
+                        sortKey="name"
+                        currentSort={sort ?? ''}
+                        currentDirection={direction ?? 'asc'}
+                        onSort={onSort}
+                    />
+                ) : t('common', 'name'),
                 cell: ({ row }) => (
                     <>
                         <Link href={route('contacts.show', row.original.id)} className="font-medium underline-offset-2 hover:underline">
@@ -103,7 +123,15 @@ export function useContactColumns({ selection, contactActions }: UseContactColum
             },
             {
                 id: 'type',
-                header: t('contactsPage', 'type'),
+                header: onSort ? () => (
+                    <DataTableColumnHeader
+                        title={t('contactsPage', 'type')}
+                        sortKey="type"
+                        currentSort={sort ?? ''}
+                        currentDirection={direction ?? 'asc'}
+                        onSort={onSort}
+                    />
+                ) : t('contactsPage', 'type'),
                 cell: ({ row }) => (
                     <>
                         <Badge variant="outline" className={typeColor[row.original.type]}>
@@ -115,7 +143,16 @@ export function useContactColumns({ selection, contactActions }: UseContactColum
             },
             {
                 id: 'balance',
-                header: t('contactColumns', 'balance'),
+                header: onSort ? () => (
+                    <DataTableColumnHeader
+                        title={t('contactColumns', 'balance')}
+                        sortKey="balance"
+                        currentSort={sort ?? ''}
+                        currentDirection={direction ?? 'asc'}
+                        onSort={onSort}
+                        align="right"
+                    />
+                ) : t('contactColumns', 'balance'),
                 meta: { headerClassName: 'text-right', cellClassName: 'text-right tabular-nums' },
                 // Payable shows negative, receivable positive, settled 0 — `balance` is already
                 // signed that way (see LedgerService), so no word label is needed here.
@@ -131,6 +168,6 @@ export function useContactColumns({ selection, contactActions }: UseContactColum
                 ),
             },
         ],
-        [selection, contactActions, t, typeLabel, money],
+        [selection, contactActions, t, typeLabel, money, sort, direction, onSort],
     );
 }

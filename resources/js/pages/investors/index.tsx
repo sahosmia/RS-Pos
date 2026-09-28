@@ -7,6 +7,7 @@ import FormModal from '@/components/shared/form-modal';
 import { Button } from '@/components/ui/button';
 import DataTable from '@/components/data-table/data-table';
 import DataTableCheckbox from '@/components/data-table/data-table-checkbox';
+import DataTableColumnHeader from '@/components/data-table/data-table-column-header';
 import DataTablePagination from '@/components/data-table/data-table-pagination';
 import DataTableRowActions from '@/components/data-table/data-table-row-actions';
 import DataTableToolbar from '@/components/data-table/data-table-toolbar';
@@ -27,7 +28,6 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const breadcrumbs: BreadcrumbItem[] = [{ title: 'Investors', href: '/investors' }, { title: 'Investors', href: '/investors' }];
 
-/** No `search`/`sort` here — the backend's `InvestorController::index()` doesn't accept either today. */
 interface InvestorFilters extends TableFilterBase {
     per_page: number | 'all';
 }
@@ -60,7 +60,7 @@ export default function InvestorsIndex({ investors, totalInvested, filters }: In
 
     const form = useForm({ name: '' });
 
-    const { isLoading, applyFilters, activeFilterCount, canReset, resetFilters } = useTableFilters({
+    const { isLoading, applyFilters, handleSort, activeFilterCount, canReset, resetFilters } = useTableFilters({
         routeName: 'investors.index',
         filters,
         emptyFilters: {},
@@ -152,7 +152,15 @@ export default function InvestorsIndex({ investors, totalInvested, filters }: In
             },
             {
                 id: 'name',
-                header: 'Name',
+                header: () => (
+                    <DataTableColumnHeader
+                        title="Name"
+                        sortKey="name"
+                        currentSort={filters.sort ?? ''}
+                        currentDirection={filters.direction ?? 'asc'}
+                        onSort={handleSort}
+                    />
+                ),
                 cell: ({ row }) => (
                     <Link href={route('investors.show', row.original.id)} className="font-medium underline-offset-2 hover:underline">
                         {row.original.name}
@@ -161,12 +169,21 @@ export default function InvestorsIndex({ investors, totalInvested, filters }: In
             },
             {
                 id: 'total',
-                header: 'Total Invested',
+                header: () => (
+                    <DataTableColumnHeader
+                        title="Total Invested"
+                        sortKey="current_balance"
+                        currentSort={filters.sort ?? ''}
+                        currentDirection={filters.direction ?? 'asc'}
+                        onSort={handleSort}
+                        align="right"
+                    />
+                ),
                 meta: { headerClassName: 'text-right', cellClassName: 'text-right tabular-nums' },
                 cell: ({ row }) => money(row.original.total_invested),
             },
         ],
-        [money, selection, openEdit],
+        [money, selection, openEdit, filters.sort, filters.direction, handleSort],
     );
 
     const renderGridCard = useCallback(

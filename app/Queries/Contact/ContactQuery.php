@@ -12,11 +12,21 @@ class ContactQuery
      * never drift apart — an export must return exactly the rows the list
      * page shows for the same filters.
      *
-     * @param  array{search?: ?string, type?: ?string, customer_group_id?: ?int}  $filters
+     * @param  array{search?: ?string, type?: ?string, customer_group_id?: ?int, sort?: ?string, direction?: ?string}  $filters
      * @return Builder<Contact>
      */
     public static function filtered(array $filters): Builder
     {
+        $sort = $filters['sort'] ?? 'name';
+        $direction = $filters['direction'] ?? 'asc';
+        $allowedSorts = ['name', 'contact_code', 'type', 'balance', 'created_at'];
+        if (! in_array($sort, $allowedSorts, true)) {
+            $sort = 'name';
+        }
+        if (! in_array($direction, ['asc', 'desc'], true)) {
+            $direction = 'asc';
+        }
+
         return Contact::query()
             ->with('customerGroup:id,name')
             ->when($filters['search'] ?? null, fn (Builder $query, string $search) => $query->where(function (Builder $query) use ($search) {
@@ -32,6 +42,6 @@ class ContactQuery
                 };
             })
             ->when($filters['customer_group_id'] ?? null, fn (Builder $query, int $id) => $query->where('customer_group_id', $id))
-            ->orderBy('name');
+            ->orderBy($sort, $direction);
     }
 }

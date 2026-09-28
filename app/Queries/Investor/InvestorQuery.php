@@ -9,16 +9,25 @@ class InvestorQuery
 {
     /**
      * Shared by the Investors list page and its export endpoint so the two
-     * never drift apart. No filters exist on this list today — this only
-     * centralizes the `transactions_count` eager-load and ordering both call
-     * sites need, so a future filter has one place to land.
+     * never drift apart.
      *
+     * @param  array{sort?: ?string, direction?: ?string}  $filters
      * @return Builder<Investor>
      */
-    public static function filtered(): Builder
+    public static function filtered(array $filters = []): Builder
     {
+        $sort = $filters['sort'] ?? 'name';
+        $direction = $filters['direction'] ?? 'asc';
+        $allowedSorts = ['name', 'phone', 'current_balance', 'created_at'];
+        if (! in_array($sort, $allowedSorts, true)) {
+            $sort = 'name';
+        }
+        if (! in_array($direction, ['asc', 'desc'], true)) {
+            $direction = 'asc';
+        }
+
         return Investor::query()
             ->withCount('transactions')
-            ->orderBy('name');
+            ->orderBy($sort, $direction);
     }
 }

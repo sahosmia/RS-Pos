@@ -13,7 +13,7 @@ class SaleQuery
      * drift apart — an export must return exactly the rows the list page
      * shows for the same filters.
      *
-     * @param  array{search?: ?string, from?: ?string, to?: ?string, customer_id?: ?int, status?: ?string, payment_status?: ?string}  $filters
+     * @param  array{search?: ?string, from?: ?string, to?: ?string, customer_id?: ?int, status?: ?string, payment_status?: ?string, sort?: ?string, direction?: ?string}  $filters
      * @return Builder<Sale>
      */
     public static function filtered(array $filters, User $user): Builder
@@ -24,6 +24,16 @@ class SaleQuery
             $query = Sale::where('created_by', $user->id);
         } else {
             abort(403);
+        }
+
+        $sort = $filters['sort'] ?? 'sale_date';
+        $direction = $filters['direction'] ?? 'desc';
+        $allowedSorts = ['invoice_no', 'sale_date', 'total_amount', 'due_amount', 'payment_status', 'status', 'created_at'];
+        if (! in_array($sort, $allowedSorts, true)) {
+            $sort = 'sale_date';
+        }
+        if (! in_array($direction, ['asc', 'desc'], true)) {
+            $direction = 'desc';
         }
 
         return $query
@@ -37,7 +47,7 @@ class SaleQuery
             ->when($filters['customer_id'] ?? null, fn (Builder $q, int $id) => $q->where('customer_id', $id))
             ->when($filters['status'] ?? null, fn (Builder $q, string $status) => $q->where('status', $status))
             ->when($filters['payment_status'] ?? null, fn (Builder $q, string $status) => $q->where('payment_status', $status))
-            ->orderByDesc('sale_date')
+            ->orderBy($sort, $direction)
             ->orderByDesc('id');
     }
 }
