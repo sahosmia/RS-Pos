@@ -178,49 +178,77 @@ export default function SalesIndex({ sales, stats, accounts, initialCustomer, fi
     const columns = useSaleColumns({ money, selection, onDelete: setDeleting, onAddPayment: setAddingPayment, onViewPayments: setViewingPayments });
 
     const renderGridCard = useCallback(
-        (sale: SaleListItem) => (
-            <div className="rounded-lg border p-3">
-                <div className="flex items-start justify-between gap-2">
-                    <div className="flex min-w-0 items-center gap-3">
-                        <DataTableCheckbox checked={selection.isSelected(sale.id)} onCheckedChange={(checked) => selection.toggle(sale.id, checked)} />
-                        <div className="min-w-0">
-                            <Link href={route('sales.show', sale.id)} className="truncate font-medium underline-offset-2 hover:underline">
-                                {sale.invoice_no}
-                            </Link>
-                            {sale.source === 'imported' && (
-                                <Badge variant="outline" className="ml-2">
-                                    Historical
-                                </Badge>
-                            )}
-                            <div className="text-muted-foreground text-xs">
-                                <ContactLink id={sale.customer.id} name={sale.customer.name} />
+        (sale: SaleListItem) => {
+            const isPaid = sale.payment_status === 'paid';
+            const isDue = sale.payment_status === 'due' || sale.due_amount > 0;
+
+            const accentBorder = isPaid
+                ? 'border-l-emerald-500'
+                : isDue
+                  ? 'border-l-rose-500'
+                  : 'border-l-amber-500';
+
+            return (
+                <div
+                    className={cn(
+                        'group rounded-xl border border-l-4 bg-card p-4 transition-all hover:border-primary/30 hover:shadow-md',
+                        accentBorder,
+                        selection.isSelected(sale.id) && 'border-primary/40 bg-primary/5 ring-1 ring-primary/20',
+                    )}
+                >
+                    <div className="flex items-start justify-between gap-2">
+                        <div className="flex min-w-0 items-start gap-3">
+                            <DataTableCheckbox
+                                checked={selection.isSelected(sale.id)}
+                                onCheckedChange={(checked) => selection.toggle(sale.id, checked)}
+                                className="mt-1"
+                            />
+                            <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-sky-500/10 text-sky-600 ring-1 ring-sky-500/20 dark:text-sky-400">
+                                <ShoppingCart className="size-5" />
+                            </div>
+                            <div className="min-w-0">
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                    <Link href={route('sales.show', sale.id)} className="truncate font-semibold text-foreground underline-offset-2 hover:underline">
+                                        {sale.invoice_no}
+                                    </Link>
+                                    {sale.source === 'imported' && (
+                                        <Badge variant="outline" className="text-[10px] px-1 py-0">
+                                            Historical
+                                        </Badge>
+                                    )}
+                                </div>
+                                <div className="text-muted-foreground truncate text-xs">
+                                    <ContactLink id={sale.customer.id} name={sale.customer.name} />
+                                </div>
+                                <div className="text-muted-foreground truncate text-xs">{formatDate(sale.sale_date)}</div>
                             </div>
                         </div>
-                    </div>
-                    <div className="flex shrink-0 items-center gap-1">
-                        <span className="font-medium tabular-nums">{money(sale.total_amount)}</span>
                         <DataTableRowActions
                             actions={getSaleActions(sale, { onDelete: setDeleting, onAddPayment: setAddingPayment, onViewPayments: setViewingPayments })}
                         />
                     </div>
-                </div>
 
-                <div className="mt-2 flex items-center justify-between gap-2">
-                    <span className="text-muted-foreground text-xs whitespace-nowrap">
-                        {formatDate(sale.sale_date)}
-                        {sale.due_amount > 0 && ` · Due ${money(sale.due_amount)}`}
-                    </span>
-                    <div className="flex shrink-0 gap-1">
-                        <Badge variant="outline" className={paymentStatusColor[sale.payment_status]}>
-                            {humanize(sale.payment_status)}
-                        </Badge>
-                        <Badge variant="outline" className={statusColor[sale.status]}>
-                            {humanize(sale.status)}
-                        </Badge>
+                    <div className="mt-3 flex items-center justify-between gap-2 border-t pt-3">
+                        <div className="flex flex-wrap items-center gap-1">
+                            <Badge variant="outline" className={paymentStatusColor[sale.payment_status]}>
+                                {humanize(sale.payment_status)}
+                            </Badge>
+                            <Badge variant="outline" className={statusColor[sale.status]}>
+                                {humanize(sale.status)}
+                            </Badge>
+                        </div>
+                        <div className="text-right">
+                            <div className="font-semibold tabular-nums text-foreground">{money(sale.total_amount)}</div>
+                            {sale.due_amount > 0 && (
+                                <div className="text-rose-600 dark:text-rose-400 text-xs font-medium tabular-nums">
+                                    Due: {money(sale.due_amount)}
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
-            </div>
-        ),
+            );
+        },
         [money, selection],
     );
 

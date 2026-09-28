@@ -230,41 +230,67 @@ export default function PurchasesIndex({ purchases, stats, initialSupplier, filt
     );
 
     const renderGridCard = useCallback(
-        (purchase: PurchaseListItem) => (
-            <div className="rounded-lg border p-3">
-                <div className="flex items-start justify-between gap-2">
-                    <div className="flex min-w-0 items-center gap-3">
-                        <DataTableCheckbox
-                            checked={selection.isSelected(purchase.id)}
-                            onCheckedChange={(checked) => selection.toggle(purchase.id, checked)}
-                        />
-                        <div className="min-w-0">
-                            <Link href={route('purchases.show', purchase.id)} className="truncate font-medium underline-offset-2 hover:underline">
-                                {purchase.invoice_no}
-                            </Link>
-                            <div className="text-muted-foreground text-xs">
-                                <ContactLink id={purchase.supplier.id} name={purchase.supplier.name} />
+        (purchase: PurchaseListItem) => {
+            const isPaid = purchase.payment_status === 'paid';
+            const isDue = purchase.payment_status === 'due' || purchase.due_amount > 0;
+
+            const accentBorder = isPaid
+                ? 'border-l-emerald-500'
+                : isDue
+                  ? 'border-l-rose-500'
+                  : 'border-l-purple-500';
+
+            return (
+                <div
+                    className={cn(
+                        'group rounded-xl border border-l-4 bg-card p-4 transition-all hover:border-primary/30 hover:shadow-md',
+                        accentBorder,
+                        selection.isSelected(purchase.id) && 'border-primary/40 bg-primary/5 ring-1 ring-primary/20',
+                    )}
+                >
+                    <div className="flex items-start justify-between gap-2">
+                        <div className="flex min-w-0 items-start gap-3">
+                            <DataTableCheckbox
+                                checked={selection.isSelected(purchase.id)}
+                                onCheckedChange={(checked) => selection.toggle(purchase.id, checked)}
+                                className="mt-1"
+                            />
+                            <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-purple-500/10 text-purple-600 ring-1 ring-purple-500/20 dark:text-purple-400">
+                                <ShoppingBag className="size-5" />
+                            </div>
+                            <div className="min-w-0">
+                                <Link
+                                    href={route('purchases.show', purchase.id)}
+                                    className="block truncate font-semibold text-foreground underline-offset-2 hover:underline"
+                                >
+                                    {purchase.invoice_no}
+                                </Link>
+                                <div className="text-muted-foreground truncate text-xs">
+                                    <ContactLink id={purchase.supplier.id} name={purchase.supplier.name} />
+                                </div>
+                                <div className="text-muted-foreground truncate text-xs">{formatDate(purchase.purchase_date)}</div>
                             </div>
                         </div>
-                    </div>
-                    <div className="flex shrink-0 items-center gap-1">
-                        <span className="font-medium tabular-nums">{money(purchase.total_amount)}</span>
                         <DataTableRowActions actions={getPurchaseActions(purchase, { onDelete: setDeleting })} />
                     </div>
-                </div>
 
-                <div className="mt-2 flex items-center justify-between gap-2">
-                    <span className="text-muted-foreground text-xs whitespace-nowrap">
-                        {formatDate(purchase.purchase_date)}
-                        {purchase.due_amount > 0 && ` · Due ${money(purchase.due_amount)}`}
-                    </span>
-                    <div className="flex shrink-0 gap-1">
-                        <Badge variant={paymentStatusVariant[purchase.payment_status]}>{humanize(purchase.payment_status)}</Badge>
-                        <Badge variant={statusVariant[purchase.status]}>{humanize(purchase.status)}</Badge>
+                    <div className="mt-3 flex items-center justify-between gap-2 border-t pt-3">
+                        <div className="flex flex-wrap items-center gap-1">
+                            <Badge variant={paymentStatusVariant[purchase.payment_status]}>{humanize(purchase.payment_status)}</Badge>
+                            <Badge variant={statusVariant[purchase.status]}>{humanize(purchase.status)}</Badge>
+                        </div>
+                        <div className="text-right">
+                            <div className="font-semibold tabular-nums text-foreground">{money(purchase.total_amount)}</div>
+                            {purchase.due_amount > 0 && (
+                                <div className="text-rose-600 dark:text-rose-400 text-xs font-medium tabular-nums">
+                                    Due: {money(purchase.due_amount)}
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
-            </div>
-        ),
+            );
+        },
         [money, selection],
     );
 
