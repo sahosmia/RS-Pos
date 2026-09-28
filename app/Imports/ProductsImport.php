@@ -10,6 +10,7 @@ use App\Models\Product;
 use App\Models\Unit;
 use App\Support\ImportResult;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Maatwebsite\Excel\Concerns\ToCollection;
 use Maatwebsite\Excel\Concerns\WithCustomValueBinder;
@@ -61,25 +62,31 @@ class ProductsImport implements ToCollection, WithCustomValueBinder, WithHeading
                 continue;
             }
 
-            $category = Category::query()->firstOrCreate(['name' => trim($data['category'])]);
-            $unit = Unit::query()->firstOrCreate(['name' => trim($data['unit'])]);
-            $brand = ! empty($data['brand']) ? Brand::query()->firstOrCreate(['name' => trim($data['brand'])]) : null;
+            try {
+                DB::transaction(function () use ($data) {
+                    $category = Category::query()->firstOrCreate(['name' => trim($data['category'])]);
+                    $unit = Unit::query()->firstOrCreate(['name' => trim($data['unit'])]);
+                    $brand = ! empty($data['brand']) ? Brand::query()->firstOrCreate(['name' => trim($data['brand'])]) : null;
 
-            $this->createProduct->execute([
-                'name' => $data['name'],
-                'sku' => $data['sku'],
-                'barcode' => $data['barcode'] ?? null,
-                'category_id' => $category->id,
-                'brand_id' => $brand?->id,
-                'unit_id' => $unit->id,
-                'selling_price' => $data['selling_price'],
-                'minimum_stock_level' => $data['minimum_stock_level'] ?? 0,
-                'opening_stock' => $data['opening_stock'] ?? 0,
-                'opening_stock_cost' => $data['opening_stock_cost'] ?? 0,
-                'warranty_period_months' => $data['warranty_period_months'] ?? null,
-            ]);
+                    $this->createProduct->execute([
+                        'name' => $data['name'],
+                        'sku' => $data['sku'],
+                        'barcode' => $data['barcode'] ?? null,
+                        'category_id' => $category->id,
+                        'brand_id' => $brand?->id,
+                        'unit_id' => $unit->id,
+                        'selling_price' => $data['selling_price'],
+                        'minimum_stock_level' => $data['minimum_stock_level'] ?? 0,
+                        'opening_stock' => $data['opening_stock'] ?? 0,
+                        'opening_stock_cost' => $data['opening_stock_cost'] ?? 0,
+                        'warranty_period_months' => $data['warranty_period_months'] ?? null,
+                    ]);
+                });
 
-            $this->result->addCreated();
+                $this->result->addCreated();
+            } catch (\Throwable $e) {
+                $this->result->addSkipped("Row {$rowNumber}: ".$e->getMessage());
+            }
         }
     }
 }

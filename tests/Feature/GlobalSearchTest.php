@@ -16,7 +16,8 @@ test('a blank query is rejected', function () {
 });
 
 test('search matches products, contacts and sales by name/sku/invoice and groups them by module', function () {
-    $this->actingAs(User::factory()->create());
+    $user = userWithPermissions(['product.view', 'contact.view', 'sale.view_all']);
+    $this->actingAs($user);
 
     $product = Product::factory()->create(['name' => 'Split AC 1.5 Ton', 'sku' => 'AC-SPLIT-15']);
     Product::factory()->create(['name' => 'Refrigerator 300L', 'sku' => 'FRIDGE-300']);
@@ -39,8 +40,25 @@ test('search matches products, contacts and sales by name/sku/invoice and groups
         ->assertJsonCount(0, 'expenses');
 });
 
+test('search filters out modules where user lacks permission', function () {
+    $user = userWithPermissions(['product.view']);
+    $this->actingAs($user);
+
+    Product::factory()->create(['name' => 'Split AC 1.5 Ton', 'sku' => 'AC-SPLIT-15']);
+    Contact::factory()->create(['name' => 'Split Traders Ltd']);
+    Sale::factory()->create(['invoice_no' => 'SPLIT-2026-001']);
+
+    $response = $this->getJson('/global-search?q=split')->assertOk();
+
+    $response->assertJsonCount(1, 'products')
+        ->assertJsonCount(0, 'contacts')
+        ->assertJsonCount(0, 'sales')
+        ->assertJsonCount(0, 'purchases')
+        ->assertJsonCount(0, 'expenses');
+});
+
 test('search results include a url to the record page', function () {
-    $this->actingAs(User::factory()->create());
+    $this->actingAs(userWithPermissions(['product.view']));
 
     $product = Product::factory()->create(['name' => 'Split AC 1.5 Ton', 'sku' => 'AC-SPLIT-15']);
 

@@ -23,7 +23,9 @@ class BalanceSheetController extends Controller
 {
     public function __invoke(): Response
     {
-        $accounts = ChartOfAccount::query()->active()->get();
+        $accounts = ChartOfAccount::query()
+            ->where(fn ($q) => $q->where('is_active', true)->orWhere('balance', '!=', 0))
+            ->get();
 
         $byCode = fn (string $code) => (float) ($accounts->firstWhere('code', $code)->balance ?? 0);
 

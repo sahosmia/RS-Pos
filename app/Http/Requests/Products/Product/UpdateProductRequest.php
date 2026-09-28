@@ -37,7 +37,7 @@ class UpdateProductRequest extends FormRequest
         $product = $this->route('product');
 
         return [
-            'name' => ['required', 'string', 'max:255'],
+            'name' => ['required', 'string', 'max:255', Rule::unique('products', 'name')->ignore($product->id)],
             'sku' => ['nullable', 'string', 'max:255', Rule::unique('products', 'sku')->ignore($product->id)],
             'barcode' => ['nullable', 'string', 'max:255', Rule::unique('products', 'barcode')->ignore($product->id)],
             'category_id' => ['nullable', 'integer', 'exists:categories,id'],

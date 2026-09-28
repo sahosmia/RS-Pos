@@ -11,6 +11,8 @@ use App\Models\Contact;
 use App\Models\ContactLedger;
 use App\Models\CustomerGroup;
 use App\Models\MessageLog;
+use App\Models\Purchase;
+use App\Models\Sale;
 use App\Models\User;
 
 test('guests are redirected to the login page', function () {
@@ -177,6 +179,31 @@ test('contact id must be unique on update, ignoring the contact being updated', 
         'entity_type' => $contact->entity_type->value,
         'is_active' => true,
     ])->assertSessionDoesntHaveErrors('contact_code');
+});
+
+test('contact type cannot be changed when sales or purchases history exists', function () {
+    $this->actingAs(User::factory()->create());
+    $customer = Contact::factory()->create(['type' => 'customer']);
+    Sale::factory()->create(['customer_id' => $customer->id]);
+
+    $this->patch("/contacts/{$customer->id}", [
+        'name' => $customer->name,
+        'phone' => $customer->phone,
+        'type' => 'supplier',
+        'entity_type' => $customer->entity_type->value,
+        'is_active' => true,
+    ])->assertSessionHasErrors('type');
+
+    $supplier = Contact::factory()->supplier()->create(['type' => 'supplier']);
+    Purchase::factory()->create(['supplier_id' => $supplier->id]);
+
+    $this->patch("/contacts/{$supplier->id}", [
+        'name' => $supplier->name,
+        'phone' => $supplier->phone,
+        'type' => 'customer',
+        'entity_type' => $supplier->entity_type->value,
+        'is_active' => true,
+    ])->assertSessionHasErrors('type');
 });
 
 test('opening balance is rejected once the contact already has a ledger entry', function () {

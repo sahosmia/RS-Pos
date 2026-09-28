@@ -57,11 +57,11 @@ class CancelSaleAction
                     }
                 }
 
-                if ($sale->due_amount !== 0.0) {
+                if (abs($sale->due_amount) > 0.001) {
                     $this->ledger->recordContact($sale->customer, ContactLedgerType::Adjustment, -$sale->due_amount, 'sale', $sale->id, 'Sale cancelled');
                 }
 
-                if ($sale->paid_amount > 0.0) {
+                if (abs($sale->paid_amount) > 0.001) {
                     $this->reverseAccountPayments($sale);
                 }
 

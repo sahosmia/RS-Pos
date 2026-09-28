@@ -186,6 +186,27 @@ class Product extends Model implements HasMedia
     }
 
     /**
+     * Re-calculates and saves current_stock from all stock_movements for this product.
+     */
+    public function recalculateStock(): void
+    {
+        $movements = $this->stockMovements()->get();
+        $total = 0.0;
+
+        foreach ($movements as $movement) {
+            if ($movement->type->increasesStock()) {
+                $total += $movement->quantity;
+            } else {
+                $total -= $movement->quantity;
+            }
+        }
+
+        $this->forceFill([
+            'current_stock' => round($total, 2),
+        ])->save();
+    }
+
+    /**
      * A single product photo — no custom column, just the package's
      * polymorphic `media` table.
      */

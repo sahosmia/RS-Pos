@@ -18,7 +18,10 @@ class TrialBalanceController extends Controller
 {
     public function __invoke(): Response
     {
-        $accounts = ChartOfAccount::query()->active()->orderBy('code')->get();
+        $accounts = ChartOfAccount::query()
+            ->where(fn ($q) => $q->where('is_active', true)->orWhere('balance', '!=', 0))
+            ->orderBy('code')
+            ->get();
 
         $rows = $accounts->map(fn (ChartOfAccount $account) => [
             'id' => $account->id,

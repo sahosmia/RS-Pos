@@ -9,6 +9,7 @@ use App\Models\Product;
 use App\Services\StockService;
 use App\Support\ImportResult;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Maatwebsite\Excel\Concerns\ToCollection;
 use Maatwebsite\Excel\Concerns\WithCustomValueBinder;
@@ -70,11 +71,17 @@ class OpeningStockImport implements ToCollection, WithCustomValueBinder, WithHea
             $quantity = (float) $data['quantity'];
             $unitCost = (float) $data['unit_cost'];
 
-            $this->stock->increase($product, $quantity, StockMovementType::OpeningStock);
-            $product->forceFill(['avg_cost' => $unitCost])->save();
-            $this->postOpeningStockJournal->execute($product, $quantity, $unitCost);
+            try {
+                DB::transaction(function () use ($product, $quantity, $unitCost) {
+                    $this->stock->increase($product, $quantity, StockMovementType::OpeningStock);
+                    $product->forceFill(['avg_cost' => $unitCost])->save();
+                    $this->postOpeningStockJournal->execute($product, $quantity, $unitCost);
+                });
 
-            $this->result->addCreated();
+                $this->result->addCreated();
+            } catch (\Throwable $e) {
+                $this->result->addSkipped("Row {$rowNumber}: ".$e->getMessage());
+            }
         }
     }
 }

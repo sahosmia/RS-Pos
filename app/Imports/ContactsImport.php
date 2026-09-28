@@ -7,6 +7,7 @@ use App\Imports\Concerns\BindsCellsAsStrings;
 use App\Models\Contact;
 use App\Support\ImportResult;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Maatwebsite\Excel\Concerns\ToCollection;
 use Maatwebsite\Excel\Concerns\WithCustomValueBinder;
@@ -54,18 +55,24 @@ class ContactsImport implements ToCollection, WithCustomValueBinder, WithHeading
                 continue;
             }
 
-            $this->createContact->execute([
-                'name' => $data['name'],
-                'phone' => $data['phone'],
-                'email' => $data['email'] ?? null,
-                'address' => $data['address'] ?? null,
-                'type' => $data['type'],
-                'business_name' => $data['business_name'] ?? null,
-                'entity_type' => ! empty($data['business_name']) ? 'business' : 'individual',
-                'opening_balance' => $data['opening_balance'] ?? 0,
-            ]);
+            try {
+                DB::transaction(function () use ($data) {
+                    $this->createContact->execute([
+                        'name' => $data['name'],
+                        'phone' => $data['phone'],
+                        'email' => $data['email'] ?? null,
+                        'address' => $data['address'] ?? null,
+                        'type' => $data['type'],
+                        'business_name' => $data['business_name'] ?? null,
+                        'entity_type' => ! empty($data['business_name']) ? 'business' : 'individual',
+                        'opening_balance' => $data['opening_balance'] ?? 0,
+                    ]);
+                });
 
-            $this->result->addCreated();
+                $this->result->addCreated();
+            } catch (\Throwable $e) {
+                $this->result->addSkipped("Row {$rowNumber}: ".$e->getMessage());
+            }
         }
     }
 }

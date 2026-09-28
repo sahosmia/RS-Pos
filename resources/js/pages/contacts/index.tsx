@@ -7,7 +7,6 @@ import DataTablePagination from '@/components/data-table/data-table-pagination';
 import DataTableRowActions, { type RowAction } from '@/components/data-table/data-table-row-actions';
 import DataTableToolbar from '@/components/data-table/data-table-toolbar';
 import { type DataTableColumnOption } from '@/components/data-table/types';
-import HeadingSmall from '@/components/heading-small';
 import ConfirmDialog from '@/components/shared/confirm-dialog';
 import EmptyState from '@/components/shared/empty-state';
 import { Badge } from '@/components/ui/badge';
@@ -27,7 +26,21 @@ import { type BreadcrumbItem, type SharedData } from '@/types';
 import { type Account, type ContactListItem, type ContactType, type CustomerGroup, type Paginated } from '@/types/models';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import { type VisibilityState } from '@tanstack/react-table';
-import { BookOpen, Bell, Download, Pencil, Plus, Power, PowerOff, Receipt, ShoppingBag, Trash2, Wallet } from 'lucide-react';
+import {
+    Bell,
+    BookOpen,
+    Download,
+    Pencil,
+    Plus,
+    Power,
+    PowerOff,
+    Receipt,
+    ShoppingBag,
+    Trash2,
+    UsersRound,
+    Wallet,
+    X,
+} from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { activeColor, typeColor, useContactColumns, useContactTypeLabel } from './table/columns';
@@ -57,7 +70,6 @@ const getVisibilityColumns = (): DataTableColumnOption[] => [
     { id: 'status', label: 'Status' },
 ];
 
-/** Matches `ContactController::COLUMN_LABELS` on the backend. */
 const getExportColumns = (): DataTableColumnOption[] => [
     { id: 'name', label: 'Name' },
     { id: 'contact_code', label: 'Contact ID' },
@@ -78,8 +90,6 @@ export default function ContactsIndex({ contacts, stats, customerGroups, account
     const typeLabel = useContactTypeLabel();
     const money = useMoneyFormat();
 
-    // The page is shared by customers and suppliers (`?type=` filters the same list) — the
-    // heading should say which one you're actually looking at instead of a generic "Contacts".
     const pageTitle =
         filters.type === 'customer'
             ? t('contactsPage', 'title_customers')
@@ -97,7 +107,17 @@ export default function ContactsIndex({ contacts, stats, customerGroups, account
     const [viewMode, setViewMode] = useTableViewMode();
     const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
 
-    const { search, setSearch, isLoading, isSearching, applyFilters, submitSearchNow, activeFilterCount, canReset, resetFilters } = useTableFilters({
+    const {
+        search,
+        setSearch,
+        isLoading,
+        isSearching,
+        applyFilters,
+        submitSearchNow,
+        activeFilterCount,
+        canReset,
+        resetFilters,
+    } = useTableFilters({
         routeName: 'contacts.index',
         filters,
         emptyFilters: { type: null, customer_group_id: null },
@@ -115,7 +135,6 @@ export default function ContactsIndex({ contacts, stats, customerGroups, account
         selectedIds: selection.selectedIds,
     });
 
-    // Table-column visibility → which fine-grained export columns should start checked.
     const defaultExportColumns = useMemo(() => {
         const isVisible = (id: string) => columnVisibility[id] !== false;
         const ids: string[] = [];
@@ -141,9 +160,6 @@ export default function ContactsIndex({ contacts, stats, customerGroups, account
         setFormModalOpen(true);
     }, []);
 
-    // The header's global "Quick Create" menu can't reach into this page's local modal
-    // state, so it links here with `?quick_create=1` (plus `?type=` to preselect
-    // Customer/Supplier) and this opens the same Add Contact modal on arrival.
     useEffect(() => {
         const params = new URLSearchParams(window.location.search);
         if (params.get('quick_create') !== '1') return;
@@ -161,10 +177,7 @@ export default function ContactsIndex({ contacts, stats, customerGroups, account
     }, []);
 
     const confirmDelete = () => {
-        if (!deleting) {
-            return;
-        }
-
+        if (!deleting) return;
         router.delete(route('contacts.destroy', deleting.id), {
             preserveScroll: true,
             onSuccess: () => toast.success('Contact deleted.'),
@@ -263,8 +276,21 @@ export default function ContactsIndex({ contacts, stats, customerGroups, account
                 both: 'bg-teal-100 text-teal-700 dark:bg-teal-500/15 dark:text-teal-400',
             };
 
+            const balanceTone =
+                contact.balance > 0
+                    ? 'text-rose-600 dark:text-rose-400'
+                    : contact.balance < 0
+                      ? 'text-emerald-600 dark:text-emerald-400'
+                      : 'text-muted-foreground';
+
             return (
-                <div className={cn('rounded-xl border border-l-4 bg-card p-4 transition-shadow hover:shadow-md', accentBorder[contact.type])}>
+                <div
+                    className={cn(
+                        'group rounded-xl border border-l-4 bg-card p-4 transition-all hover:border-primary/30 hover:shadow-md',
+                        accentBorder[contact.type],
+                        selection.isSelected(contact.id) && 'border-primary/40 bg-primary/5 ring-1 ring-primary/20',
+                    )}
+                >
                     <div className="flex items-start justify-between gap-2">
                         <div className="flex min-w-0 items-start gap-3">
                             <Checkbox
@@ -274,18 +300,23 @@ export default function ContactsIndex({ contacts, stats, customerGroups, account
                             />
                             <div
                                 className={cn(
-                                    'flex size-9 shrink-0 items-center justify-center rounded-full text-sm font-semibold',
+                                    'flex size-10 shrink-0 items-center justify-center rounded-full text-sm font-semibold ring-2 ring-background',
                                     avatarTone[contact.type],
                                 )}
                             >
                                 {initials}
                             </div>
                             <div className="min-w-0">
-                                <Link href={route('contacts.show', contact.id)} className="truncate font-medium underline-offset-2 hover:underline">
+                                <Link
+                                    href={route('contacts.show', contact.id)}
+                                    className="block truncate font-medium underline-offset-2 hover:underline"
+                                >
                                     {contact.name}
                                 </Link>
-                                {contact.business_name && <div className="text-muted-foreground truncate text-xs">{contact.business_name}</div>}
-                                <div className="text-muted-foreground truncate text-xs">{contact.phone}</div>
+                                {contact.business_name && (
+                                    <div className="text-muted-foreground truncate text-xs">{contact.business_name}</div>
+                                )}
+                                <div className="text-muted-foreground truncate text-xs tabular-nums">{contact.phone}</div>
                             </div>
                         </div>
                         <DataTableRowActions actions={contactActions(contact)} />
@@ -300,7 +331,9 @@ export default function ContactsIndex({ contacts, stats, customerGroups, account
                                 {contact.is_active ? t('common', 'active') : t('common', 'inactive')}
                             </Badge>
                         </div>
-                        <span className="shrink-0 text-sm font-semibold tabular-nums">{money(contact.balance)}</span>
+                        <span className={cn('shrink-0 text-sm font-semibold tabular-nums', balanceTone)}>
+                            {money(contact.balance)}
+                        </span>
                     </div>
                 </div>
             );
@@ -313,10 +346,20 @@ export default function ContactsIndex({ contacts, stats, customerGroups, account
             <Head title={pageTitle} />
 
             <div className="space-y-6 px-4 py-6">
-                <div className="flex flex-wrap items-end justify-between gap-4">
-                    <HeadingSmall title={pageTitle} description={t('contactsPage', 'description')} />
-                    <Button onClick={openCreate}>
-                        <Plus /> {t('contactsPage', 'add_contact')}
+                {/* ───────────── Page header ───────────── */}
+                <div className="flex flex-wrap items-start justify-between gap-4">
+                    <div className="flex items-start gap-3">
+                        <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-sky-500/10 text-sky-600 ring-1 ring-sky-500/20 dark:text-sky-400">
+                            <UsersRound className="size-5" />
+                        </div>
+                        <div>
+                            <h1 className="text-xl font-semibold tracking-tight">{pageTitle}</h1>
+                            <p className="text-muted-foreground text-sm">{t('contactsPage', 'description')}</p>
+                        </div>
+                    </div>
+                    <Button onClick={openCreate} className="gap-1.5">
+                        <Plus className="size-4" />
+                        {t('contactsPage', 'add_contact')}
                     </Button>
                 </div>
 
@@ -341,7 +384,9 @@ export default function ContactsIndex({ contacts, stats, customerGroups, account
                     onViewModeChange={setViewMode}
                     visibilityColumns={getVisibilityColumns()}
                     columnVisibility={columnVisibility}
-                    onVisibilityChange={(id, visible) => setColumnVisibility((current) => ({ ...current, [id]: visible }))}
+                    onVisibilityChange={(id, visible) =>
+                        setColumnVisibility((current) => ({ ...current, [id]: visible }))
+                    }
                     exportColumns={getExportColumns()}
                     defaultExportColumns={defaultExportColumns}
                     totalCount={contacts.total}
@@ -351,7 +396,9 @@ export default function ContactsIndex({ contacts, stats, customerGroups, account
                         <div className="flex flex-wrap items-end gap-3">
                             <Select
                                 value={filters.type ?? 'all'}
-                                onValueChange={(value) => applyFilters({ type: value === 'all' ? null : (value as ContactType) })}
+                                onValueChange={(value) =>
+                                    applyFilters({ type: value === 'all' ? null : (value as ContactType) })
+                                }
                             >
                                 <SelectTrigger className="w-44">
                                     <SelectValue placeholder={t('contactsPage', 'type')} />
@@ -366,7 +413,9 @@ export default function ContactsIndex({ contacts, stats, customerGroups, account
 
                             <Select
                                 value={filters.customer_group_id ? String(filters.customer_group_id) : 'all'}
-                                onValueChange={(value) => applyFilters({ customer_group_id: value === 'all' ? null : Number(value) })}
+                                onValueChange={(value) =>
+                                    applyFilters({ customer_group_id: value === 'all' ? null : Number(value) })
+                                }
                             >
                                 <SelectTrigger className="w-48">
                                     <SelectValue placeholder={t('nav', 'customer_group')} />
@@ -384,19 +433,39 @@ export default function ContactsIndex({ contacts, stats, customerGroups, account
                     }
                 />
 
+                {/* ───────────── Desktop bulk action bar ───────────── */}
                 {selection.selectedIds.length > 0 && !isMobile && (
-                    <div className="bg-muted/50 flex items-center justify-between rounded-lg border p-3">
-                        <p className="text-sm">
-                            {selection.selectedIds.length} {t('contactsPage', 'selected')}
-                        </p>
+                    <div className="border-primary/30 bg-primary/5 flex items-center justify-between rounded-lg border p-3 shadow-xs">
+                        <div className="flex items-center gap-3">
+                            <Badge variant="secondary" className="tabular-nums">
+                                {selection.selectedIds.length} {t('contactsPage', 'selected')}
+                            </Badge>
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => selection.clear()}
+                                className="text-muted-foreground hover:text-foreground h-6 gap-1 px-2 text-xs"
+                            >
+                                <X className="size-3" />
+                                {t('common', 'clear')}
+                            </Button>
+                        </div>
                         <div className="flex gap-2">
-                            <Button variant="outline" size="sm" onClick={() => setSendNotificationOpen(true)}>
-                                <Bell /> {t('contactsPage', 'send_notification')}
+                            <Button variant="outline" size="sm" onClick={() => setSendNotificationOpen(true)} className="gap-1.5">
+                                <Bell className="size-4" />
+                                {t('contactsPage', 'send_notification')}
                             </Button>
-                            <Button variant="outline" size="sm" onClick={exportSelected}>
-                                <Download /> {t('common', 'export')}
+                            <Button variant="outline" size="sm" onClick={exportSelected} className="gap-1.5">
+                                <Download className="size-4" />
+                                {t('common', 'export')}
                             </Button>
-                            <Button variant="outline" size="sm" onClick={() => setBulkDeleteOpen(true)}>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setBulkDeleteOpen(true)}
+                                className="gap-1.5 text-destructive hover:text-destructive"
+                            >
+                                <Trash2 className="size-4" />
                                 {t('common', 'delete')}
                             </Button>
                         </div>
@@ -414,7 +483,8 @@ export default function ContactsIndex({ contacts, stats, customerGroups, account
                     canReset={canReset}
                     emptyState={
                         <EmptyState title={t('contactsPage', 'empty_title')} description={t('contactsPage', 'empty_description')}>
-                            <Button className="mt-2" onClick={openCreate}>
+                            <Button className="mt-2 gap-1.5" onClick={openCreate}>
+                                <Plus className="size-4" />
                                 {t('contactsPage', 'add_contact')}
                             </Button>
                         </EmptyState>
@@ -449,7 +519,12 @@ export default function ContactsIndex({ contacts, stats, customerGroups, account
             />
 
             {paying && (
-                <PayDueModal open={paying !== null} onOpenChange={(open) => !open && setPaying(null)} contact={paying} accounts={accounts} />
+                <PayDueModal
+                    open={paying !== null}
+                    onOpenChange={(open) => !open && setPaying(null)}
+                    contact={paying}
+                    accounts={accounts}
+                />
             )}
 
             <ConfirmDialog
@@ -470,21 +545,27 @@ export default function ContactsIndex({ contacts, stats, customerGroups, account
                 onConfirm={confirmBulkDelete}
             />
 
-            {/* Thumb-reachable on mobile — the same bulk bar sits inline above the table on desktop instead. */}
+            {/* ───────────── Mobile sticky bulk bar ───────────── */}
             {selection.selectedIds.length > 0 && isMobile && (
-                <div className="bg-background fixed inset-x-0 bottom-0 z-40 flex items-center justify-between border-t p-3 shadow-lg">
-                    <p className="text-sm">
+                <div className="bg-background/95 supports-[backdrop-filter]:bg-background/80 fixed inset-x-0 bottom-0 z-40 flex items-center justify-between gap-2 border-t p-3 shadow-lg backdrop-blur">
+                    <Badge variant="secondary" className="tabular-nums">
                         {selection.selectedIds.length} {t('contactsPage', 'selected')}
-                    </p>
-                    <div className="flex gap-2">
-                        <Button variant="outline" size="sm" onClick={() => setSendNotificationOpen(true)}>
-                            <Bell /> {t('contactsPage', 'send')}
+                    </Badge>
+                    <div className="flex gap-1.5">
+                        <Button variant="outline" size="sm" onClick={() => setSendNotificationOpen(true)} aria-label={t('contactsPage', 'send')}>
+                            <Bell className="size-4" />
                         </Button>
-                        <Button variant="outline" size="sm" onClick={exportSelected}>
-                            <Download /> {t('common', 'export')}
+                        <Button variant="outline" size="sm" onClick={exportSelected} aria-label={t('common', 'export')}>
+                            <Download className="size-4" />
                         </Button>
-                        <Button variant="outline" size="sm" onClick={() => setBulkDeleteOpen(true)}>
-                            {t('common', 'delete')}
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setBulkDeleteOpen(true)}
+                            aria-label={t('common', 'delete')}
+                            className="text-destructive hover:text-destructive"
+                        >
+                            <Trash2 className="size-4" />
                         </Button>
                     </div>
                 </div>

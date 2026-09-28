@@ -12,6 +12,7 @@ use App\Models\Sale;
 use App\Support\ImportResult;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Concerns\ToCollection;
 use Maatwebsite\Excel\Concerns\WithCustomValueBinder;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
@@ -51,7 +52,14 @@ class SalesImport implements ToCollection, WithCustomValueBinder, WithHeadingRow
         $groups = $rows->groupBy(fn (Collection $row) => trim((string) ($row['invoice_no'] ?? '')));
 
         foreach ($groups as $invoiceNo => $group) {
-            $this->importInvoice((string) $invoiceNo, $group);
+            $invoiceStr = (string) $invoiceNo;
+            try {
+                DB::transaction(function () use ($invoiceStr, $group) {
+                    $this->importInvoice($invoiceStr, $group);
+                });
+            } catch (\Throwable $e) {
+                $this->result->addSkipped("Invoice \"{$invoiceStr}\": ".$e->getMessage());
+            }
         }
     }
 

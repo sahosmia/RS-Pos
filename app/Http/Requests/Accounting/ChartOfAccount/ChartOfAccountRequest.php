@@ -36,4 +36,18 @@ class ChartOfAccountRequest extends FormRequest
             'is_active' => ['required', 'boolean'],
         ];
     }
+
+    public function withValidator($validator): void
+    {
+        $validator->after(function ($validator) {
+            /** @var ChartOfAccount|null $chartOfAccount */
+            $chartOfAccount = $this->route('chart_of_account');
+
+            if ($chartOfAccount && $this->has('is_active') && ! $this->boolean('is_active')) {
+                if (abs((float) $chartOfAccount->balance) > 0.001) {
+                    $validator->errors()->add('is_active', 'An account with a non-zero balance cannot be deactivated.');
+                }
+            }
+        });
+    }
 }

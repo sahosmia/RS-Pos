@@ -142,12 +142,16 @@ class ConfirmPurchaseAction
         /** @var Product $product */
         $product = $item->product;
 
+        $effectiveUnitPrice = $purchase->subtotal > 0
+            ? $item->unit_price * ($purchase->total_amount / $purchase->subtotal)
+            : $item->unit_price;
+
         $newAvgCost = $product->current_stock <= 0
-            ? $item->unit_price
-            : (($product->current_stock * $product->avg_cost) + ($item->quantity * $item->unit_price))
+            ? $effectiveUnitPrice
+            : (($product->current_stock * $product->avg_cost) + ($item->quantity * $effectiveUnitPrice))
                 / ($product->current_stock + $item->quantity);
 
-        $this->stock->increase($product, $item->quantity, StockMovementType::Purchase, 'purchase', $purchase->id, unitCost: $item->unit_price);
+        $this->stock->increase($product, $item->quantity, StockMovementType::Purchase, 'purchase', $purchase->id, unitCost: $effectiveUnitPrice);
 
         $product->forceFill(['avg_cost' => round($newAvgCost, 2)])->save();
 

@@ -19,7 +19,10 @@ use Tests\TestCase;
 
 pest()->extend(TestCase::class)
     ->use(RefreshDatabase::class)
-    ->beforeEach(fn () => $this->seed(ChartOfAccountSeeder::class))
+    ->beforeEach(function () {
+        $this->withoutVite();
+        $this->seed(ChartOfAccountSeeder::class);
+    })
     ->in('Feature');
 
 /*
