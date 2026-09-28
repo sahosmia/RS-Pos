@@ -35,6 +35,8 @@ class SaleController extends Controller
             'status' => ['nullable', 'in:draft,quotation,confirmed,cancelled'],
             'payment_status' => ['nullable', 'in:due,partial,paid'],
             'per_page' => ['nullable', 'string', 'max:10'],
+            'sort' => ['nullable', 'string', 'max:50'],
+            'direction' => ['nullable', 'in:asc,desc'],
         ]);
 
         $resolvedPerPage = Settings::resolveRequestedPerPage($validated['per_page'] ?? null);
@@ -80,6 +82,8 @@ class SaleController extends Controller
                 'customer_id' => $validated['customer_id'] ?? null,
                 'status' => $validated['status'] ?? null,
                 'payment_status' => $validated['payment_status'] ?? null,
+                'sort' => $validated['sort'] ?? 'sale_date',
+                'direction' => $validated['direction'] ?? 'desc',
                 'per_page' => $resolvedPerPage ?? 'all',
             ],
         ]);

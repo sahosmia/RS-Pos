@@ -1,6 +1,7 @@
 import { getJournalEntryActions } from '@/components/accounting/journal-entry-actions';
 import DataTable from '@/components/data-table/data-table';
 import DataTableCheckbox from '@/components/data-table/data-table-checkbox';
+import DataTableColumnHeader from '@/components/data-table/data-table-column-header';
 import DataTablePagination from '@/components/data-table/data-table-pagination';
 import DataTableRowActions from '@/components/data-table/data-table-row-actions';
 import DataTableToolbar from '@/components/data-table/data-table-toolbar';
@@ -26,7 +27,6 @@ import { useCallback, useMemo, useState } from 'react';
 
 const breadcrumbs: BreadcrumbItem[] = [{ title: 'Journal Entries', href: '/journal-entries' }];
 
-/** No `search`/`sort` here — the backend's `JournalEntryController::index()` doesn't accept either today. */
 interface JournalEntryFilters extends TableFilterBase {
     from: string | null;
     to: string | null;
@@ -68,7 +68,7 @@ export default function JournalEntriesIndex({ entries, accounts, filters }: Jour
     const [reason, setReason] = useState('');
     const [processing, setProcessing] = useState(false);
 
-    const { isLoading, applyFilters, activeFilterCount, canReset, resetFilters } = useTableFilters({
+    const { isLoading, applyFilters, handleSort, activeFilterCount, canReset, resetFilters } = useTableFilters({
         routeName: 'journal-entries.index',
         filters,
         emptyFilters: { from: null, to: null, chart_of_account_id: null },
@@ -150,7 +150,15 @@ export default function JournalEntriesIndex({ entries, accounts, filters }: Jour
             },
             {
                 id: 'date',
-                header: 'Date',
+                header: () => (
+                    <DataTableColumnHeader
+                        title="Date"
+                        sortKey="entry_date"
+                        currentSort={filters.sort ?? ''}
+                        currentDirection={filters.direction ?? 'desc'}
+                        onSort={handleSort}
+                    />
+                ),
                 meta: { cellClassName: 'whitespace-nowrap' },
                 cell: ({ row }) => row.original.entry_date,
             },
@@ -194,7 +202,7 @@ export default function JournalEntriesIndex({ entries, accounts, filters }: Jour
                 cell: ({ row }) => money(row.original.total_credit),
             },
         ],
-        [money, selection],
+        [money, selection, filters.sort, filters.direction, handleSort],
     );
 
     const renderGridCard = useCallback(

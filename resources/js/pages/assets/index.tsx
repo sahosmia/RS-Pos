@@ -9,6 +9,7 @@ import MoneyInput from '@/components/shared/money-input';
 import { Button } from '@/components/ui/button';
 import DataTable from '@/components/data-table/data-table';
 import DataTableCheckbox from '@/components/data-table/data-table-checkbox';
+import DataTableColumnHeader from '@/components/data-table/data-table-column-header';
 import DataTablePagination from '@/components/data-table/data-table-pagination';
 import DataTableRowActions from '@/components/data-table/data-table-row-actions';
 import DataTableToolbar from '@/components/data-table/data-table-toolbar';
@@ -31,7 +32,6 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const breadcrumbs: BreadcrumbItem[] = [{ title: 'Assets & Liabilities', href: '/assets' }, { title: 'Assets', href: '/assets' }];
 
-/** No `search`/`sort`/dropdown filters here — the backend's `AssetController::index()` doesn't accept any today. */
 interface AssetFilters extends TableFilterBase {
     per_page: number | 'all';
 }
@@ -73,7 +73,7 @@ export default function AssetsIndex({ assets, totalValue, filters }: AssetsIndex
         opening_value: 0,
     });
 
-    const { isLoading, applyFilters, activeFilterCount, canReset, resetFilters } = useTableFilters({
+    const { isLoading, applyFilters, handleSort, activeFilterCount, canReset, resetFilters } = useTableFilters({
         routeName: 'assets.index',
         filters,
     });
@@ -194,7 +194,15 @@ export default function AssetsIndex({ assets, totalValue, filters }: AssetsIndex
             },
             {
                 id: 'name',
-                header: 'Name',
+                header: () => (
+                    <DataTableColumnHeader
+                        title="Name"
+                        sortKey="name"
+                        currentSort={filters.sort ?? ''}
+                        currentDirection={filters.direction ?? 'asc'}
+                        onSort={handleSort}
+                    />
+                ),
                 cell: ({ row }) => (
                     <Link href={route('assets.show', row.original.id)} className="font-medium underline-offset-2 hover:underline">
                         {row.original.name}
@@ -204,13 +212,22 @@ export default function AssetsIndex({ assets, totalValue, filters }: AssetsIndex
             { id: 'category', header: 'Category', cell: ({ row }) => row.original.category ?? '—' },
             {
                 id: 'current_value',
-                header: 'Current Value',
+                header: () => (
+                    <DataTableColumnHeader
+                        title="Current Value"
+                        sortKey="current_value"
+                        currentSort={filters.sort ?? ''}
+                        currentDirection={filters.direction ?? 'asc'}
+                        onSort={handleSort}
+                        align="right"
+                    />
+                ),
                 meta: { headerClassName: 'text-right', cellClassName: 'text-right tabular-nums' },
                 cell: ({ row }) => money(row.original.current_value),
             },
         ],
         // eslint-disable-next-line react-hooks/exhaustive-deps
-        [money, selection],
+        [money, selection, filters.sort, filters.direction, handleSort],
     );
 
     const renderGridCard = useCallback(

@@ -9,6 +9,7 @@ import MoneyInput from '@/components/shared/money-input';
 import { Badge } from '@/components/ui/badge';
 import DataTable from '@/components/data-table/data-table';
 import DataTableCheckbox from '@/components/data-table/data-table-checkbox';
+import DataTableColumnHeader from '@/components/data-table/data-table-column-header';
 import DataTablePagination from '@/components/data-table/data-table-pagination';
 import DataTableRowActions from '@/components/data-table/data-table-row-actions';
 import DataTableToolbar from '@/components/data-table/data-table-toolbar';
@@ -31,7 +32,6 @@ import { FormEventHandler, useCallback, useMemo, useState } from 'react';
 
 const breadcrumbs: BreadcrumbItem[] = [{ title: 'EMI Installments', href: '/emi-installments' }];
 
-/** No `sort` here — `EmiInstallmentController::index()` doesn't accept it today. */
 interface EmiInstallmentFilters extends TableFilterBase {
     status: EmiInstallmentStatusValue | null;
     search: string | null;
@@ -81,7 +81,7 @@ export default function EmiInstallmentsIndex({ installments, accounts, filters }
     const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
     const [paying, setPaying] = useState<EmiInstallmentListItem | null>(null);
 
-    const { search, setSearch, isLoading, isSearching, applyFilters, submitSearchNow, activeFilterCount, canReset, resetFilters } = useTableFilters({
+    const { search, setSearch, isLoading, isSearching, applyFilters, submitSearchNow, handleSort, activeFilterCount, canReset, resetFilters } = useTableFilters({
         routeName: 'emi-installments.index',
         filters,
         emptyFilters: { status: null, search: null },
@@ -170,19 +170,45 @@ export default function EmiInstallmentsIndex({ installments, accounts, filters }
             },
             {
                 id: 'number',
-                header: '#',
+                header: () => (
+                    <DataTableColumnHeader
+                        title="#"
+                        sortKey="installment_number"
+                        currentSort={filters.sort ?? ''}
+                        currentDirection={filters.direction ?? 'asc'}
+                        onSort={handleSort}
+                        align="right"
+                    />
+                ),
                 meta: { headerClassName: 'text-right', cellClassName: 'text-right tabular-nums' },
                 cell: ({ row }) => row.original.installment_number,
             },
             {
                 id: 'due_date',
-                header: 'Due Date',
+                header: () => (
+                    <DataTableColumnHeader
+                        title="Due Date"
+                        sortKey="due_date"
+                        currentSort={filters.sort ?? ''}
+                        currentDirection={filters.direction ?? 'asc'}
+                        onSort={handleSort}
+                    />
+                ),
                 meta: { cellClassName: 'whitespace-nowrap' },
                 cell: ({ row }) => formatDate(row.original.due_date),
             },
             {
                 id: 'amount',
-                header: 'Amount',
+                header: () => (
+                    <DataTableColumnHeader
+                        title="Amount"
+                        sortKey="amount"
+                        currentSort={filters.sort ?? ''}
+                        currentDirection={filters.direction ?? 'asc'}
+                        onSort={handleSort}
+                        align="right"
+                    />
+                ),
                 meta: { headerClassName: 'text-right', cellClassName: 'text-right tabular-nums' },
                 cell: ({ row }) => money(row.original.amount),
             },
@@ -194,11 +220,19 @@ export default function EmiInstallmentsIndex({ installments, accounts, filters }
             },
             {
                 id: 'status',
-                header: 'Status',
+                header: () => (
+                    <DataTableColumnHeader
+                        title="Status"
+                        sortKey="status"
+                        currentSort={filters.sort ?? ''}
+                        currentDirection={filters.direction ?? 'asc'}
+                        onSort={handleSort}
+                    />
+                ),
                 cell: ({ row }) => <Badge variant={statusVariant[row.original.status]}>{humanize(row.original.status)}</Badge>,
             },
         ],
-        [money, selection, openPay],
+        [money, selection, openPay, filters.sort, filters.direction, handleSort],
     );
 
     const renderGridCard = useCallback(

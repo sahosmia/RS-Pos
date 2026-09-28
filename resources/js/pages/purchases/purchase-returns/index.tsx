@@ -2,6 +2,7 @@ import { getPurchaseReturnActions } from '@/components/purchases/purchase-return
 import EmptyState from '@/components/shared/empty-state';
 import DataTable from '@/components/data-table/data-table';
 import DataTableCheckbox from '@/components/data-table/data-table-checkbox';
+import DataTableColumnHeader from '@/components/data-table/data-table-column-header';
 import DataTablePagination from '@/components/data-table/data-table-pagination';
 import DataTableRowActions from '@/components/data-table/data-table-row-actions';
 import DataTableToolbar from '@/components/data-table/data-table-toolbar';
@@ -24,7 +25,6 @@ import { useCallback, useMemo, useState } from 'react';
 
 const breadcrumbs: BreadcrumbItem[] = [{ title: 'Purchase Returns', href: '/purchase-returns' }];
 
-/** No `search`/`sort` here — the backend's `PurchaseReturnController::index()` doesn't accept either today. */
 interface PurchaseReturnFilters extends TableFilterBase {
     from: string | null;
     to: string | null;
@@ -58,7 +58,7 @@ export default function PurchaseReturnsIndex({ returns, filters }: PurchaseRetur
     const [viewMode, setViewMode] = useTableViewMode();
     const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
 
-    const { isLoading, applyFilters, activeFilterCount, canReset, resetFilters } = useTableFilters({
+    const { isLoading, applyFilters, handleSort, activeFilterCount, canReset, resetFilters } = useTableFilters({
         routeName: 'purchase-returns.index',
         filters,
         emptyFilters: { from: null, to: null },
@@ -115,7 +115,20 @@ export default function PurchaseReturnsIndex({ returns, filters }: PurchaseRetur
                 meta: { headerClassName: 'w-10', cellClassName: 'w-10', printHidden: true },
                 cell: ({ row }) => <DataTableRowActions actions={getPurchaseReturnActions(row.original)} />,
             },
-            { id: 'date', header: 'Date', meta: { cellClassName: 'whitespace-nowrap' }, cell: ({ row }) => row.original.return_date },
+            {
+                id: 'date',
+                header: () => (
+                    <DataTableColumnHeader
+                        title="Date"
+                        sortKey="return_date"
+                        currentSort={filters.sort ?? ''}
+                        currentDirection={filters.direction ?? 'desc'}
+                        onSort={handleSort}
+                    />
+                ),
+                meta: { cellClassName: 'whitespace-nowrap' },
+                cell: ({ row }) => row.original.return_date,
+            },
             {
                 id: 'purchase',
                 header: 'Purchase',
@@ -132,12 +145,21 @@ export default function PurchaseReturnsIndex({ returns, filters }: PurchaseRetur
             },
             {
                 id: 'amount',
-                header: 'Amount',
+                header: () => (
+                    <DataTableColumnHeader
+                        title="Amount"
+                        sortKey="total_amount"
+                        currentSort={filters.sort ?? ''}
+                        currentDirection={filters.direction ?? 'desc'}
+                        onSort={handleSort}
+                        align="right"
+                    />
+                ),
                 meta: { headerClassName: 'text-right', cellClassName: 'text-right tabular-nums' },
                 cell: ({ row }) => money(row.original.total_amount),
             },
         ],
-        [money, selection],
+        [money, selection, filters.sort, filters.direction, handleSort],
     );
 
     const renderGridCard = useCallback(

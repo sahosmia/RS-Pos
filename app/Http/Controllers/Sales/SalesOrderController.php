@@ -25,6 +25,8 @@ class SalesOrderController extends Controller
             'customer_id' => ['nullable', 'integer', 'exists:contacts,id'],
             'status' => ['nullable', 'in:pending,partial,completed,cancelled'],
             'per_page' => ['nullable', 'string', 'max:10'],
+            'sort' => ['nullable', 'string', 'max:50'],
+            'direction' => ['nullable', 'in:asc,desc'],
         ]);
 
         $resolvedPerPage = Settings::resolveRequestedPerPage($validated['per_page'] ?? null);
@@ -58,6 +60,8 @@ class SalesOrderController extends Controller
                 'to' => $validated['to'] ?? null,
                 'customer_id' => $validated['customer_id'] ?? null,
                 'status' => $validated['status'] ?? null,
+                'sort' => $validated['sort'] ?? 'order_date',
+                'direction' => $validated['direction'] ?? 'desc',
                 'per_page' => $resolvedPerPage ?? 'all',
             ],
         ]);

@@ -39,6 +39,8 @@ class ContactController extends Controller
             'type' => ['nullable', 'in:customer,supplier,both'],
             'customer_group_id' => ['nullable', 'integer', 'exists:customer_groups,id'],
             'per_page' => ['nullable', 'string', 'max:10'],
+            'sort' => ['nullable', 'string', 'max:50'],
+            'direction' => ['nullable', 'in:asc,desc'],
         ]);
 
         $resolvedPerPage = Settings::resolveRequestedPerPage($validated['per_page'] ?? null);
@@ -94,6 +96,8 @@ class ContactController extends Controller
                 'search' => $validated['search'] ?? null,
                 'type' => $validated['type'] ?? null,
                 'customer_group_id' => $validated['customer_group_id'] ?? null,
+                'sort' => $validated['sort'] ?? 'name',
+                'direction' => $validated['direction'] ?? 'asc',
                 'per_page' => $resolvedPerPage ?? 'all',
             ],
         ]);

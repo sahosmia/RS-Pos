@@ -1,5 +1,6 @@
 import { getSaleActions } from '@/components/sales/sale-actions';
 import DataTableCheckbox from '@/components/data-table/data-table-checkbox';
+import DataTableColumnHeader from '@/components/data-table/data-table-column-header';
 import DataTableRowActions from '@/components/data-table/data-table-row-actions';
 import { type DataTableColumnOption } from '@/components/data-table/types';
 import ContactLink from '@/components/shared/contact-link';
@@ -49,6 +50,9 @@ export const getExportColumns = (): DataTableColumnOption[] => [
 ];
 
 interface UseSaleColumnsOptions {
+    sort?: string;
+    direction?: 'asc' | 'desc';
+    onSort?: (key: string) => void;
     money: (value: number) => string;
     selection: {
         isSelected: (id: number) => boolean;
@@ -63,7 +67,7 @@ interface UseSaleColumnsOptions {
 }
 
 /** Column definitions for the Sales table — kept next to the page, not inside the generic DataTable. */
-export function useSaleColumns({ money, selection, onDelete, onAddPayment, onViewPayments }: UseSaleColumnsOptions) {
+export function useSaleColumns({ sort, direction, onSort, money, selection, onDelete, onAddPayment, onViewPayments }: UseSaleColumnsOptions) {
     return useMemo<ColumnDef<SaleListItem>[]>(
         () => [
             {
@@ -90,7 +94,15 @@ export function useSaleColumns({ money, selection, onDelete, onAddPayment, onVie
             },
             {
                 id: 'invoice',
-                header: 'Invoice',
+                header: onSort ? () => (
+                    <DataTableColumnHeader
+                        title="Invoice"
+                        sortKey="invoice_no"
+                        currentSort={sort ?? ''}
+                        currentDirection={direction ?? 'desc'}
+                        onSort={onSort}
+                    />
+                ) : 'Invoice',
                 cell: ({ row }) => (
                     <>
                         <Link href={route('sales.show', row.original.id)} className="font-medium underline-offset-2 hover:underline">
@@ -109,22 +121,61 @@ export function useSaleColumns({ money, selection, onDelete, onAddPayment, onVie
                 header: 'Customer',
                 cell: ({ row }) => <ContactLink id={row.original.customer.id} name={row.original.customer.name} />,
             },
-            { id: 'date', header: 'Date', meta: { cellClassName: 'whitespace-nowrap' }, cell: ({ row }) => formatDate(row.original.sale_date) },
+            {
+                id: 'date',
+                header: onSort ? () => (
+                    <DataTableColumnHeader
+                        title="Date"
+                        sortKey="sale_date"
+                        currentSort={sort ?? ''}
+                        currentDirection={direction ?? 'desc'}
+                        onSort={onSort}
+                    />
+                ) : 'Date',
+                meta: { cellClassName: 'whitespace-nowrap' },
+                cell: ({ row }) => formatDate(row.original.sale_date),
+            },
             {
                 id: 'total',
-                header: 'Total',
+                header: onSort ? () => (
+                    <DataTableColumnHeader
+                        title="Total"
+                        sortKey="total_amount"
+                        currentSort={sort ?? ''}
+                        currentDirection={direction ?? 'desc'}
+                        onSort={onSort}
+                        align="right"
+                    />
+                ) : 'Total',
                 meta: { headerClassName: 'text-right', cellClassName: 'text-right tabular-nums' },
                 cell: ({ row }) => money(row.original.total_amount),
             },
             {
                 id: 'due',
-                header: 'Due',
+                header: onSort ? () => (
+                    <DataTableColumnHeader
+                        title="Due"
+                        sortKey="due_amount"
+                        currentSort={sort ?? ''}
+                        currentDirection={direction ?? 'desc'}
+                        onSort={onSort}
+                        align="right"
+                    />
+                ) : 'Due',
                 meta: { headerClassName: 'text-right', cellClassName: 'text-right tabular-nums' },
                 cell: ({ row }) => money(row.original.due_amount),
             },
             {
                 id: 'payment_status',
-                header: 'Payment',
+                header: onSort ? () => (
+                    <DataTableColumnHeader
+                        title="Payment"
+                        sortKey="payment_status"
+                        currentSort={sort ?? ''}
+                        currentDirection={direction ?? 'desc'}
+                        onSort={onSort}
+                    />
+                ) : 'Payment',
                 cell: ({ row }) => (
                     <Badge variant="outline" className={paymentStatusColor[row.original.payment_status]}>
                         {humanize(row.original.payment_status)}
@@ -133,7 +184,15 @@ export function useSaleColumns({ money, selection, onDelete, onAddPayment, onVie
             },
             {
                 id: 'status',
-                header: 'Status',
+                header: onSort ? () => (
+                    <DataTableColumnHeader
+                        title="Status"
+                        sortKey="status"
+                        currentSort={sort ?? ''}
+                        currentDirection={direction ?? 'desc'}
+                        onSort={onSort}
+                    />
+                ) : 'Status',
                 cell: ({ row }) => (
                     <Badge variant="outline" className={statusColor[row.original.status]}>
                         {humanize(row.original.status)}
@@ -141,6 +200,6 @@ export function useSaleColumns({ money, selection, onDelete, onAddPayment, onVie
                 ),
             },
         ],
-        [money, selection, onDelete, onAddPayment, onViewPayments],
+        [money, selection, onDelete, onAddPayment, onViewPayments, sort, direction, onSort],
     );
 }

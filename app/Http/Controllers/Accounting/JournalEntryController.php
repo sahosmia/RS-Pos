@@ -25,6 +25,8 @@ class JournalEntryController extends Controller
             'to' => ['nullable', 'date', 'after_or_equal:from'],
             'chart_of_account_id' => ['nullable', 'integer', 'exists:chart_of_accounts,id'],
             'per_page' => ['nullable', 'string', 'max:10'],
+            'sort' => ['nullable', 'string', 'max:50'],
+            'direction' => ['nullable', 'in:asc,desc'],
         ]);
 
         $resolvedPerPage = Settings::resolveRequestedPerPage($validated['per_page'] ?? null);
@@ -55,6 +57,8 @@ class JournalEntryController extends Controller
                 'from' => $validated['from'] ?? null,
                 'to' => $validated['to'] ?? null,
                 'chart_of_account_id' => $validated['chart_of_account_id'] ?? null,
+                'sort' => $validated['sort'] ?? 'entry_date',
+                'direction' => $validated['direction'] ?? 'desc',
                 'per_page' => $resolvedPerPage ?? 'all',
             ],
         ]);

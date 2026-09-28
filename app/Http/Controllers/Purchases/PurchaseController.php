@@ -33,6 +33,8 @@ class PurchaseController extends Controller
             'status' => ['nullable', 'in:draft,ordered,received,cancelled'],
             'payment_status' => ['nullable', 'in:due,partial,paid'],
             'per_page' => ['nullable', 'string', 'max:10'],
+            'sort' => ['nullable', 'string', 'max:50'],
+            'direction' => ['nullable', 'in:asc,desc'],
         ]);
 
         $resolvedPerPage = Settings::resolveRequestedPerPage($validated['per_page'] ?? null);
@@ -77,6 +79,8 @@ class PurchaseController extends Controller
                 'supplier_id' => $validated['supplier_id'] ?? null,
                 'status' => $validated['status'] ?? null,
                 'payment_status' => $validated['payment_status'] ?? null,
+                'sort' => $validated['sort'] ?? 'purchase_date',
+                'direction' => $validated['direction'] ?? 'desc',
                 'per_page' => $resolvedPerPage ?? 'all',
             ],
         ]);

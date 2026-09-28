@@ -28,6 +28,8 @@ class ExpenseController extends Controller
             'expense_category_id' => ['nullable', 'integer', 'exists:expense_categories,id'],
             'payment_status' => ['nullable', 'in:due,partial,paid'],
             'per_page' => ['nullable', 'string', 'max:10'],
+            'sort' => ['nullable', 'string', 'max:50'],
+            'direction' => ['nullable', 'in:asc,desc'],
         ]);
 
         $resolvedPerPage = Settings::resolveRequestedPerPage($validated['per_page'] ?? null);
@@ -69,6 +71,8 @@ class ExpenseController extends Controller
                 'to' => $validated['to'] ?? null,
                 'expense_category_id' => $validated['expense_category_id'] ?? null,
                 'payment_status' => $validated['payment_status'] ?? null,
+                'sort' => $validated['sort'] ?? 'expense_date',
+                'direction' => $validated['direction'] ?? 'desc',
                 'per_page' => $resolvedPerPage ?? 'all',
             ],
         ]);

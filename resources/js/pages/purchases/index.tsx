@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import DataTable from '@/components/data-table/data-table';
 import DataTableCheckbox from '@/components/data-table/data-table-checkbox';
+import DataTableColumnHeader from '@/components/data-table/data-table-column-header';
 import DataTablePagination from '@/components/data-table/data-table-pagination';
 import DataTableRowActions from '@/components/data-table/data-table-row-actions';
 import DataTableToolbar from '@/components/data-table/data-table-toolbar';
@@ -34,7 +35,6 @@ import { toast } from 'sonner';
 
 const breadcrumbs: BreadcrumbItem[] = [{ title: 'Purchases', href: '/purchases' }];
 
-/** No `sort` here — the backend's `PurchaseController::index()` doesn't accept it today. */
 interface PurchaseFilters extends TableFilterBase {
     from: string | null;
     to: string | null;
@@ -109,7 +109,7 @@ export default function PurchasesIndex({ purchases, stats, initialSupplier, filt
         setSupplier(initialSupplier);
     }, [initialSupplier]);
 
-    const { search, setSearch, isLoading, isSearching, submitSearchNow, applyFilters, activeFilterCount, canReset, resetFilters } = useTableFilters({
+    const { search, setSearch, isLoading, isSearching, submitSearchNow, applyFilters, handleSort, activeFilterCount, canReset, resetFilters } = useTableFilters({
         routeName: 'purchases.index',
         filters,
         emptyFilters: { from: null, to: null, supplier_id: null, status: null, payment_status: null },
@@ -184,7 +184,15 @@ export default function PurchasesIndex({ purchases, stats, initialSupplier, filt
             },
             {
                 id: 'invoice',
-                header: 'Invoice',
+                header: () => (
+                    <DataTableColumnHeader
+                        title="Invoice"
+                        sortKey="invoice_no"
+                        currentSort={filters.sort ?? ''}
+                        currentDirection={filters.direction ?? 'desc'}
+                        onSort={handleSort}
+                    />
+                ),
                 cell: ({ row }) => (
                     <Link href={route('purchases.show', row.original.id)} className="font-medium underline-offset-2 hover:underline">
                         {row.original.invoice_no}
@@ -198,36 +206,78 @@ export default function PurchasesIndex({ purchases, stats, initialSupplier, filt
             },
             {
                 id: 'date',
-                header: 'Date',
+                header: () => (
+                    <DataTableColumnHeader
+                        title="Date"
+                        sortKey="purchase_date"
+                        currentSort={filters.sort ?? ''}
+                        currentDirection={filters.direction ?? 'desc'}
+                        onSort={handleSort}
+                    />
+                ),
                 meta: { cellClassName: 'whitespace-nowrap' },
                 cell: ({ row }) => formatDate(row.original.purchase_date),
             },
             {
                 id: 'total',
-                header: 'Total',
+                header: () => (
+                    <DataTableColumnHeader
+                        title="Total"
+                        sortKey="total_amount"
+                        currentSort={filters.sort ?? ''}
+                        currentDirection={filters.direction ?? 'desc'}
+                        onSort={handleSort}
+                        align="right"
+                    />
+                ),
                 meta: { headerClassName: 'text-right', cellClassName: 'text-right tabular-nums' },
                 cell: ({ row }) => money(row.original.total_amount),
             },
             {
                 id: 'due',
-                header: 'Due',
+                header: () => (
+                    <DataTableColumnHeader
+                        title="Due"
+                        sortKey="due_amount"
+                        currentSort={filters.sort ?? ''}
+                        currentDirection={filters.direction ?? 'desc'}
+                        onSort={handleSort}
+                        align="right"
+                    />
+                ),
                 meta: { headerClassName: 'text-right', cellClassName: 'text-right tabular-nums' },
                 cell: ({ row }) => money(row.original.due_amount),
             },
             {
                 id: 'payment_status',
-                header: 'Payment',
+                header: () => (
+                    <DataTableColumnHeader
+                        title="Payment"
+                        sortKey="payment_status"
+                        currentSort={filters.sort ?? ''}
+                        currentDirection={filters.direction ?? 'desc'}
+                        onSort={handleSort}
+                    />
+                ),
                 cell: ({ row }) => (
                     <Badge variant={paymentStatusVariant[row.original.payment_status]}>{humanize(row.original.payment_status)}</Badge>
                 ),
             },
             {
                 id: 'status',
-                header: 'Status',
+                header: () => (
+                    <DataTableColumnHeader
+                        title="Status"
+                        sortKey="status"
+                        currentSort={filters.sort ?? ''}
+                        currentDirection={filters.direction ?? 'desc'}
+                        onSort={handleSort}
+                    />
+                ),
                 cell: ({ row }) => <Badge variant={statusVariant[row.original.status]}>{humanize(row.original.status)}</Badge>,
             },
         ],
-        [money, selection],
+        [money, selection, filters.sort, filters.direction, handleSort],
     );
 
     const renderGridCard = useCallback(

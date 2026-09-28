@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import DataTable from '@/components/data-table/data-table';
 import DataTableCheckbox from '@/components/data-table/data-table-checkbox';
+import DataTableColumnHeader from '@/components/data-table/data-table-column-header';
 import DataTablePagination from '@/components/data-table/data-table-pagination';
 import DataTableRowActions from '@/components/data-table/data-table-row-actions';
 import DataTableToolbar from '@/components/data-table/data-table-toolbar';
@@ -32,7 +33,6 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 
 const breadcrumbs: BreadcrumbItem[] = [{ title: 'Expenses', href: '/expenses' }];
 
-/** No `search`/`sort` here — the backend's `ExpenseController::index()` doesn't accept either today. */
 interface ExpenseFilters extends TableFilterBase {
     from: string | null;
     to: string | null;
@@ -94,7 +94,7 @@ export default function ExpensesIndex({ expenses, stats, categories, accounts, f
     const [editing, setEditing] = useState<ExpenseListItem | null>(null);
     const [paying, setPaying] = useState<ExpenseListItem | null>(null);
 
-    const { isLoading, applyFilters, activeFilterCount, canReset, resetFilters } = useTableFilters({
+    const { isLoading, applyFilters, handleSort, activeFilterCount, canReset, resetFilters } = useTableFilters({
         routeName: 'expenses.index',
         filters,
         emptyFilters: { from: null, to: null, expense_category_id: null, payment_status: null },
@@ -166,7 +166,20 @@ export default function ExpensesIndex({ expenses, stats, categories, accounts, f
                     <DataTableRowActions actions={getExpenseActions(row.original, { onEdit: setEditing, onPay: setPaying })} />
                 ),
             },
-            { id: 'date', header: 'Date', meta: { cellClassName: 'whitespace-nowrap' }, cell: ({ row }) => row.original.expense_date },
+            {
+                id: 'date',
+                header: () => (
+                    <DataTableColumnHeader
+                        title="Date"
+                        sortKey="expense_date"
+                        currentSort={filters.sort ?? ''}
+                        currentDirection={filters.direction ?? 'desc'}
+                        onSort={handleSort}
+                    />
+                ),
+                meta: { cellClassName: 'whitespace-nowrap' },
+                cell: ({ row }) => row.original.expense_date,
+            },
             { id: 'category', header: 'Category', cell: ({ row }) => row.original.category.name },
             {
                 id: 'vendor',
@@ -175,25 +188,51 @@ export default function ExpensesIndex({ expenses, stats, categories, accounts, f
             },
             {
                 id: 'total',
-                header: 'Total',
+                header: () => (
+                    <DataTableColumnHeader
+                        title="Total"
+                        sortKey="total_amount"
+                        currentSort={filters.sort ?? ''}
+                        currentDirection={filters.direction ?? 'desc'}
+                        onSort={handleSort}
+                        align="right"
+                    />
+                ),
                 meta: { headerClassName: 'text-right', cellClassName: 'text-right tabular-nums' },
                 cell: ({ row }) => money(row.original.total_amount),
             },
             {
                 id: 'due',
-                header: 'Due',
+                header: () => (
+                    <DataTableColumnHeader
+                        title="Due"
+                        sortKey="due_amount"
+                        currentSort={filters.sort ?? ''}
+                        currentDirection={filters.direction ?? 'desc'}
+                        onSort={handleSort}
+                        align="right"
+                    />
+                ),
                 meta: { headerClassName: 'text-right', cellClassName: 'text-right tabular-nums' },
                 cell: ({ row }) => money(row.original.due_amount),
             },
             {
                 id: 'status',
-                header: 'Status',
+                header: () => (
+                    <DataTableColumnHeader
+                        title="Status"
+                        sortKey="payment_status"
+                        currentSort={filters.sort ?? ''}
+                        currentDirection={filters.direction ?? 'desc'}
+                        onSort={handleSort}
+                    />
+                ),
                 cell: ({ row }) => (
                     <Badge variant={paymentStatusVariant[row.original.payment_status]}>{humanize(row.original.payment_status)}</Badge>
                 ),
             },
         ],
-        [money, selection],
+        [money, selection, filters.sort, filters.direction, handleSort],
     );
 
     const renderGridCard = useCallback(
