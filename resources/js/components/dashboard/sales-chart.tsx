@@ -113,18 +113,22 @@ export default function SalesChart({ title, data, seriesName = 'Total Sales' }: 
                 width: 3,
             },
             formatter: function () {
-                const point = this;
-                const valueFormatted = money(Number(point.y));
-                // On a categorized xAxis, `point.x` is the numeric index into `categories`,
-                // not the label. `point.key` is Highcharts' own category-aware label, so
+                // Destructuring (not a bare `const point = this`) sidesteps
+                // @typescript-eslint/no-this-alias while keeping the same
+                // readability — Highcharts only gives us `this` here, a plain
+                // formatter callback has no other way to reach it.
+                const { x, y, key, series } = this;
+                const valueFormatted = money(Number(y));
+                // On a categorized xAxis, `x` is the numeric index into `categories`,
+                // not the label. `key` is Highcharts' own category-aware label, so
                 // prefer it and only fall back to manual indexing if it's ever missing.
-                const label = point.key ?? categories[point.x as number] ?? point.x;
+                const label = key ?? categories[x as number] ?? x;
                 return `
                     <div style="padding: 4px 6px; font-size: 12px; line-height: 1.4;">
                         <div style="font-weight: 600; color: #1e293b; margin-bottom: 2px;">${label}</div>
                         <div style="display: flex; items-center; gap: 6px; color: #475569;">
                             <span style="color: #60a5fa; font-size: 14px;">●</span>
-                            <span>${point.series.name}: <b>${valueFormatted}</b></span>
+                            <span>${series.name}: <b>${valueFormatted}</b></span>
                         </div>
                     </div>
                 `;

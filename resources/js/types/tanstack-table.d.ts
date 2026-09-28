@@ -1,6 +1,10 @@
 import '@tanstack/react-table';
 
 declare module '@tanstack/react-table' {
+    // The library's own `ColumnMeta<TData, TValue>` signature dictates these two
+    // type params — declaration merging requires this augmentation to repeat them
+    // verbatim even though neither is referenced in the body below.
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     interface ColumnMeta<TData extends RowData, TValue> {
         headerClassName?: string;
         cellClassName?: string;

@@ -100,7 +100,7 @@ export default function FinancialPosition({ report: initialReport }: FinancialPo
 
                     <div className="space-y-2 rounded-lg border p-4">
                         <h3 className="font-medium">Assets / CR</h3>
-                        <FinancialPositionSectionRow label="Closing Stock" section={report.assets.closing_stock} />
+                        <FinancialPositionSectionRow label="Closing Stock" section={report.assets.closing_stock} showBreakdown={false} />
                         <FinancialPositionSectionRow label="Sundry Debtors" section={report.assets.sundry_debtors} />
                         <FinancialPositionSectionRow label="Company / Staff Advances" section={report.assets.staff_advances} />
                         <FinancialPositionSectionRow label="Cash at Bank" section={report.assets.cash_and_bank} />

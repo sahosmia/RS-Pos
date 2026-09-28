@@ -29,35 +29,6 @@ interface PurchaseFormProps {
     initialProducts: PurchaseProductOption[];
 }
 
-const emptyItem: PurchaseFormItem = {
-    product_id: 0,
-    quantity: 1,
-    original_price: 0,
-    unit_price: 0,
-    discount_type: null,
-    discount_value: 0,
-};
-
-/**
- * Re-keys a `{ index: T }` map after an item at `removedIndex` is spliced
- * out — every entry past it shifts down by one, matching the new `items` array.
- */
-function reindexAfterRemoval<T>(map: Record<number, T>, removedIndex: number): Record<number, T> {
-    const next: Record<number, T> = {};
-
-    for (const [key, entry] of Object.entries(map)) {
-        const index = Number(key);
-
-        if (index < removedIndex) {
-            next[index] = entry;
-        } else if (index > removedIndex) {
-            next[index - 1] = entry;
-        }
-    }
-
-    return next;
-}
-
 export default function PurchaseForm({ mode, purchase, initialSupplier, initialProducts }: PurchaseFormProps) {
     const money = useMoneyFormat();
 
