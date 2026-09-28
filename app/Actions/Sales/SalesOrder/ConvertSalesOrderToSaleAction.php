@@ -33,11 +33,17 @@ class ConvertSalesOrderToSaleAction
      */
     public function execute(SalesOrder $order, array $payments = [], array $serialNumbersByOrderItem = []): Sale
     {
-        if ($order->status === SalesOrderStatus::Completed) {
-            return $order->sale()->firstOrFail();
-        }
-
         return DB::transaction(function () use ($order, $payments, $serialNumbersByOrderItem) {
+            $order = SalesOrder::where('id', $order->id)->lockForUpdate()->firstOrFail();
+
+            if ($order->status === SalesOrderStatus::Completed) {
+                return $order->sale()->firstOrFail();
+            }
+
+            if (! $order->canConvert()) {
+                throw new \RuntimeException('Sales order cannot be converted.');
+            }
+
             $order->load('items.product', 'customer');
 
             $sale = $this->createSale->execute([

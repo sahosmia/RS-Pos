@@ -5,7 +5,7 @@ use App\Http\Controllers\OtherLiabilities\OtherLiabilityExportController;
 use App\Http\Controllers\OtherLiabilities\OtherLiabilityTransactionController;
 use Illuminate\Support\Facades\Route;
 
-Route::middleware(['auth', 'module:finance'])->group(function () {
+Route::middleware(['auth', 'module:asset'])->group(function () {
     // Registered before the resource route — `other-liabilities.show` (GET other-liabilities/{other_liability})
     // exists here, so `export` would otherwise route-model-bind as a `{other_liability}` id.
     Route::get('other-liabilities/export', OtherLiabilityExportController::class)->name('other-liabilities.export');

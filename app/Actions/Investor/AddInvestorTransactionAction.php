@@ -11,6 +11,7 @@ use App\Services\AccountService;
 use App\Services\ChartOfAccountResolver;
 use App\Services\JournalService;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class AddInvestorTransactionAction
 {
@@ -29,11 +30,15 @@ class AddInvestorTransactionAction
         $amount = round((float) $data['amount'], 2);
         $note = $data['note'] ?? null;
 
-        return DB::transaction(fn () => match ($type) {
-            InvestorTransactionType::Investment => $this->recordInvestment($investor, $amount, $data, $note),
-            InvestorTransactionType::ProfitShare => $this->recordProfitShare($investor, $amount, $data, $note),
-            InvestorTransactionType::Withdrawal => $this->recordWithdrawal($investor, $amount, $data, $note),
-            InvestorTransactionType::Adjustment => $this->recordAdjustment($investor, $amount, $note),
+        return DB::transaction(function () use ($investor, $type, $amount, $data, $note) {
+            $investor = Investor::where('id', $investor->id)->lockForUpdate()->firstOrFail();
+
+            return match ($type) {
+                InvestorTransactionType::Investment => $this->recordInvestment($investor, $amount, $data, $note),
+                InvestorTransactionType::ProfitShare => $this->recordProfitShare($investor, $amount, $data, $note),
+                InvestorTransactionType::Withdrawal => $this->recordWithdrawal($investor, $amount, $data, $note),
+                InvestorTransactionType::Adjustment => $this->recordAdjustment($investor, $amount, $note),
+            };
         });
     }
 
@@ -75,6 +80,12 @@ class AddInvestorTransactionAction
 
     private function recordWithdrawal(Investor $investor, float $amount, array $data, ?string $note): InvestorTransaction
     {
+        if ($amount > ($investor->total_invested + 0.0001)) {
+            throw ValidationException::withMessages([
+                'amount' => ['Cannot withdraw more than total invested balance (৳'.number_format($investor->total_invested, 2).').'],
+            ]);
+        }
+
         $account = Account::findOrFail($data['account_id']);
         $transaction = $investor->addLedgerTransaction(InvestorTransactionType::Withdrawal->value, -$amount, $account->id, $note);
 

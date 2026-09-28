@@ -307,10 +307,13 @@ export interface PurchaseListItem {
 
 /** Index signature needed so this array satisfies Inertia's FormDataConvertible constraint in useForm(). */
 export interface PurchaseFormItem {
-    [key: string]: number | undefined;
+    [key: string]: number | string | null | undefined;
     product_id: number;
     quantity: number;
+    original_price?: number;
     unit_price: number;
+    discount_type?: 'flat' | 'percentage' | null;
+    discount_value?: number;
 }
 
 export interface PurchaseFormDetail {
@@ -318,6 +321,8 @@ export interface PurchaseFormDetail {
     supplier_id: number;
     purchase_date: string;
     status: PurchaseStatusValue;
+    discount_type?: 'flat' | 'percentage' | null;
+    discount_value?: number;
     items: PurchaseFormItem[];
 }
 
@@ -348,7 +353,11 @@ export interface PurchaseItemDetail {
     id: number;
     product: { id: number; name: string; sku: string; track_serial_number: boolean };
     quantity: number;
+    original_price?: number;
     unit_price: number;
+    discount_type?: 'flat' | 'percentage' | null;
+    discount_value?: number;
+    discount_amount?: number;
     subtotal: number;
 }
 
@@ -358,6 +367,10 @@ export interface PurchaseDetail {
     supplier: { id: number; name: string; phone: string; balance: number };
     creator?: { id: number; name: string } | null;
     purchase_date: string;
+    subtotal?: number;
+    discount_type?: 'flat' | 'percentage' | null;
+    discount_value?: number;
+    discount_amount?: number;
     total_amount: number;
     paid_amount: number;
     due_amount: number;
@@ -769,7 +782,7 @@ export interface LedgerTransactionRow {
     balance: number;
 }
 
-export type AssetTransactionTypeValue = 'opening_asset' | 'purchase' | 'addition' | 'sold' | 'disposal';
+export type AssetTransactionTypeValue = 'opening_asset' | 'purchase' | 'addition' | 'sold' | 'disposal' | 'adjustment';
 
 export interface AssetListItem {
     id: number;

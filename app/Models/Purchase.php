@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\DiscountType;
 use App\Enums\PaymentStatus;
 use App\Enums\PurchaseStatus;
 use App\Models\Concerns\LogsActivityDefaults;
@@ -31,6 +32,8 @@ class Purchase extends Model
         'invoice_no',
         'purchase_date',
         'status',
+        'discount_type',
+        'discount_value',
         'created_by',
     ];
 
@@ -41,6 +44,10 @@ class Purchase extends Model
     {
         return [
             'purchase_date' => 'date',
+            'subtotal' => 'float',
+            'discount_type' => DiscountType::class,
+            'discount_value' => 'float',
+            'discount_amount' => 'float',
             'total_amount' => 'float',
             'paid_amount' => 'float',
             'due_amount' => 'float',

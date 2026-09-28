@@ -41,6 +41,7 @@ class AddAssetTransactionAction
             AssetTransactionType::Purchase, AssetTransactionType::Addition => $this->recordGrowth($asset, $type, $data),
             AssetTransactionType::Sold => $this->recordSold($asset, $data),
             AssetTransactionType::Disposal => $this->recordDisposal($asset, $data),
+            AssetTransactionType::Adjustment => $this->recordAdjustment($asset, $data),
             AssetTransactionType::OpeningAsset => throw new InvalidArgumentException('Opening value is set when the asset is created, not added later.'),
         });
     }
@@ -126,6 +127,31 @@ class AddAssetTransactionAction
             ['chart_of_account_id' => $this->chartOfAccounts->code('5950')->id, 'debit' => $bookValue, 'credit' => 0],
             ['chart_of_account_id' => $this->chartOfAccounts->code('1400')->id, 'debit' => 0, 'credit' => $bookValue],
         ], 'asset', $asset->id);
+
+        return $transaction;
+    }
+
+    /**
+     * A situational correction with no standard business meaning — posted
+     * against Opening Balance Equity, same as any other balance correction
+     * with no natural counterpart account.
+     */
+    private function recordAdjustment(Asset $asset, array $data): AssetTransaction
+    {
+        $amount = round((float) $data['amount'], 2);
+        $note = $data['note'] ?? null;
+
+        $transaction = $asset->addLedgerTransaction(AssetTransactionType::Adjustment->value, $amount, null, $note);
+
+        $this->journal->postOpeningBalance(
+            today(),
+            $this->chartOfAccounts->code('1400'),
+            $this->chartOfAccounts->code('3300'),
+            $amount,
+            'asset_adjustment',
+            $asset->id,
+            "Asset balance adjustment: {$asset->name}",
+        );
 
         return $transaction;
     }

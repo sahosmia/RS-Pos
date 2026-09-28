@@ -141,12 +141,36 @@ export default function PurchaseShow({ purchase, accounts }: PurchaseShowProps) 
                                         {item.product.name} <span className="text-muted-foreground">({item.product.sku})</span>
                                     </td>
                                     <td className="px-4 py-2 text-right tabular-nums">{item.quantity}</td>
-                                    <td className="px-4 py-2 text-right tabular-nums">{money(item.unit_price)}</td>
+                                    <td className="px-4 py-2 text-right tabular-nums">
+                                        <div>{money(item.unit_price)}</div>
+                                        {item.discount_amount !== undefined && item.discount_amount > 0 && (
+                                            <div className="text-emerald-600 text-xs dark:text-emerald-400">
+                                                Discount {item.discount_type === 'percentage' ? `(${item.discount_value}%)` : ''}: -
+                                                {money(item.discount_amount)}
+                                            </div>
+                                        )}
+                                    </td>
                                     <td className="px-4 py-2 text-right tabular-nums">{money(item.subtotal)}</td>
                                 </tr>
                             ))}
                         </tbody>
                         <tfoot>
+                            {purchase.discount_amount !== undefined && purchase.discount_amount > 0 && (
+                                <>
+                                    <tr className="border-t font-medium">
+                                        <td colSpan={3} className="px-4 py-2 text-right">
+                                            Subtotal
+                                        </td>
+                                        <td className="px-4 py-2 text-right tabular-nums">{money(purchase.subtotal ?? 0)}</td>
+                                    </tr>
+                                    <tr className="text-emerald-600 dark:text-emerald-400">
+                                        <td colSpan={3} className="px-4 py-1 text-right text-sm font-medium">
+                                            Discount {purchase.discount_type === 'percentage' ? `(${purchase.discount_value}%)` : ''}
+                                        </td>
+                                        <td className="px-4 py-1 text-right text-sm tabular-nums">-{money(purchase.discount_amount)}</td>
+                                    </tr>
+                                </>
+                            )}
                             <tr className="border-t font-medium">
                                 <td colSpan={3} className="px-4 py-2 text-right">
                                     Total

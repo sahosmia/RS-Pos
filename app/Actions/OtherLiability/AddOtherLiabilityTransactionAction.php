@@ -11,6 +11,7 @@ use App\Services\AccountService;
 use App\Services\ChartOfAccountResolver;
 use App\Services\JournalService;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use InvalidArgumentException;
 
 class AddOtherLiabilityTransactionAction
@@ -30,11 +31,15 @@ class AddOtherLiabilityTransactionAction
         $amount = round((float) $data['amount'], 2);
         $note = $data['note'] ?? null;
 
-        return DB::transaction(fn () => match ($type) {
-            OtherLiabilityTransactionType::Increase => $this->recordIncrease($liability, $amount, $data, $note),
-            OtherLiabilityTransactionType::Payment => $this->recordPayment($liability, $amount, $data, $note),
-            OtherLiabilityTransactionType::Adjustment => $this->recordAdjustment($liability, $amount, $note),
-            OtherLiabilityTransactionType::OpeningLiability => throw new InvalidArgumentException('Opening balance is set when the liability is created, not added later.'),
+        return DB::transaction(function () use ($liability, $type, $amount, $data, $note) {
+            $liability = OtherLiability::where('id', $liability->id)->lockForUpdate()->firstOrFail();
+
+            return match ($type) {
+                OtherLiabilityTransactionType::Increase => $this->recordIncrease($liability, $amount, $data, $note),
+                OtherLiabilityTransactionType::Payment => $this->recordPayment($liability, $amount, $data, $note),
+                OtherLiabilityTransactionType::Adjustment => $this->recordAdjustment($liability, $amount, $note),
+                OtherLiabilityTransactionType::OpeningLiability => throw new InvalidArgumentException('Opening balance is set when the liability is created, not added later.'),
+            };
         });
     }
 
@@ -56,6 +61,12 @@ class AddOtherLiabilityTransactionAction
 
     private function recordPayment(OtherLiability $liability, float $amount, array $data, ?string $note): OtherLiabilityTransaction
     {
+        if ($amount > ($liability->current_balance + 0.0001)) {
+            throw ValidationException::withMessages([
+                'amount' => ['Payment amount cannot exceed current liability balance (৳'.number_format($liability->current_balance, 2).').'],
+            ]);
+        }
+
         $account = Account::findOrFail($data['account_id']);
         $transaction = $liability->addLedgerTransaction(OtherLiabilityTransactionType::Payment->value, -$amount, $account->id, $note);
 

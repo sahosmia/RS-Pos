@@ -52,7 +52,6 @@ use Illuminate\Database\Seeder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Artisan;
 
-
 class DummyDataSeeder extends Seeder
 {
     public function run(): void

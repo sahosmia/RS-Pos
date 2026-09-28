@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\DB;
 class CreatePurchaseAction
 {
     /**
-     * @param  array{supplier_id: int, purchase_date: string, status: string, items: array<int, array{product_id: int, quantity: float|string, unit_price: float|string}>}  $data
+     * @param  array{supplier_id: int, purchase_date: string, status: string, discount_type?: string|null, discount_value?: float|string|null, items: array<int, array{product_id: int, quantity: float|string, original_price?: float|string|null, unit_price: float|string, discount_type?: string|null, discount_value?: float|string|null}>}  $data
      */
     public function execute(array $data): Purchase
     {
@@ -25,39 +25,14 @@ class CreatePurchaseAction
                 'invoice_no' => Settings::current()->generatePurchaseNumber(),
                 'purchase_date' => $data['purchase_date'],
                 'status' => $data['status'],
+                'discount_type' => $data['discount_type'] ?? null,
+                'discount_value' => $data['discount_value'] ?? 0,
                 'created_by' => Auth::id(),
             ]);
 
-            $totalAmount = $this->syncItems($purchase, $data['items']);
-
-            $purchase->forceFill(['total_amount' => $totalAmount, 'due_amount' => $totalAmount])->save();
+            PurchaseTotals::sync($purchase, $data['items'])->applyTo($purchase);
 
             return $purchase;
         });
-    }
-
-    /**
-     * @param  array<int, array{product_id: int, quantity: float|string, unit_price: float|string}>  $items
-     */
-    private function syncItems(Purchase $purchase, array $items): float
-    {
-        $total = 0.0;
-
-        foreach ($items as $item) {
-            $quantity = (float) $item['quantity'];
-            $unitPrice = (float) $item['unit_price'];
-            $subtotal = round($quantity * $unitPrice, 2);
-
-            $purchase->items()->create([
-                'product_id' => $item['product_id'],
-                'quantity' => $quantity,
-                'unit_price' => $unitPrice,
-                'subtotal' => $subtotal,
-            ]);
-
-            $total += $subtotal;
-        }
-
-        return round($total, 2);
     }
 }

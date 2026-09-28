@@ -244,3 +244,43 @@ test('the supplier field rejects a customer-only contact', function () {
         'items' => [['product_id' => $product->id, 'quantity' => 1, 'unit_price' => 10]],
     ])->assertSessionHasErrors('supplier_id');
 });
+
+test('creating a purchase with item-level and invoice-level discounts computes totals correctly', function () {
+    $this->actingAs(User::factory()->create());
+    $supplier = Contact::factory()->supplier()->create();
+    $product = Product::factory()->create(['current_stock' => 0, 'avg_cost' => 100]);
+
+    // Item: original_price 100, 10% discount -> unit_price 90. Quantity 10 -> subtotal 900.
+    // Invoice level: 100 flat discount -> total_amount 800.
+    $this->post('/purchases', [
+        'supplier_id' => $supplier->id,
+        'purchase_date' => '2026-03-01',
+        'status' => 'draft',
+        'discount_type' => 'flat',
+        'discount_value' => 100,
+        'items' => [
+            [
+                'product_id' => $product->id,
+                'quantity' => 10,
+                'original_price' => 100,
+                'unit_price' => 90,
+                'discount_type' => 'percentage',
+                'discount_value' => 10,
+            ],
+        ],
+    ])->assertRedirect();
+
+    $purchase = Purchase::query()->firstOrFail();
+
+    expect($purchase->status)->toBe(PurchaseStatus::Draft)
+        ->and($purchase->subtotal)->toBe(900.0)
+        ->and($purchase->discount_amount)->toBe(100.0)
+        ->and($purchase->total_amount)->toBe(800.0)
+        ->and($purchase->due_amount)->toBe(800.0);
+
+    $item = $purchase->items()->firstOrFail();
+    expect($item->original_price)->toBe(100.0)
+        ->and($item->unit_price)->toBe(90.0)
+        ->and($item->discount_amount)->toBe(10.0)
+        ->and($item->subtotal)->toBe(900.0);
+});

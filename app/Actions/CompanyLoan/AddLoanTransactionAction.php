@@ -11,6 +11,7 @@ use App\Services\AccountService;
 use App\Services\ChartOfAccountResolver;
 use App\Services\JournalService;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class AddLoanTransactionAction
 {
@@ -29,11 +30,15 @@ class AddLoanTransactionAction
         $amount = round((float) $data['amount'], 2);
         $note = $data['note'] ?? null;
 
-        return DB::transaction(fn () => match ($type) {
-            LoanTransactionType::Disbursement => $this->recordDisbursement($loan, $amount, $data, $note),
-            LoanTransactionType::Repayment => $this->recordRepayment($loan, $amount, $data, $note),
-            LoanTransactionType::InterestCharge => $this->recordInterest($loan, $amount, $note),
-            LoanTransactionType::Adjustment => $this->recordAdjustment($loan, $amount, $note),
+        return DB::transaction(function () use ($loan, $type, $amount, $data, $note) {
+            $loan = CompanyLoan::where('id', $loan->id)->lockForUpdate()->firstOrFail();
+
+            return match ($type) {
+                LoanTransactionType::Disbursement => $this->recordDisbursement($loan, $amount, $data, $note),
+                LoanTransactionType::Repayment => $this->recordRepayment($loan, $amount, $data, $note),
+                LoanTransactionType::InterestCharge => $this->recordInterest($loan, $amount, $note),
+                LoanTransactionType::Adjustment => $this->recordAdjustment($loan, $amount, $note),
+            };
         });
     }
 
@@ -55,6 +60,12 @@ class AddLoanTransactionAction
 
     private function recordRepayment(CompanyLoan $loan, float $amount, array $data, ?string $note): LoanTransaction
     {
+        if ($amount > ($loan->outstanding_balance + 0.0001)) {
+            throw ValidationException::withMessages([
+                'amount' => ['Repayment amount cannot exceed outstanding loan balance (৳'.number_format($loan->outstanding_balance, 2).').'],
+            ]);
+        }
+
         $account = Account::findOrFail($data['account_id']);
         $transaction = $loan->addLedgerTransaction(LoanTransactionType::Repayment->value, -$amount, $account->id, $note);
 
