@@ -3,7 +3,8 @@ import { type DataTableColumnOption } from '@/components/data-table/types';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { cn } from '@/lib/utils';
+import { FileSpreadsheet, FileText, FileType2, type LucideIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 export type DataTableExportFormat = 'csv' | 'xlsx' | 'pdf';
@@ -19,25 +20,18 @@ interface DataTableExportDialogProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     columns: DataTableColumnOption[];
-    /** Column ids currently visible in the table — the checklist starts pre-checked to match. */
     defaultVisibleColumns: string[];
     totalCount: number;
     selectedCount: number;
     onExport: (params: DataTableExportParams) => void;
 }
 
-/**
- * Format × column picker shared by every list page's export button — the row
- * scope isn't a choice the user makes (doc/corrections2.md #7): checking any
- * rows exports just those, and with nothing checked it exports everything
- * matching the current filters. The page itself turns `onExport`'s params
- * into the actual download URL — this dialog only collects the choice.
- * Nothing here is trusted server-side: the backend must re-validate
- * `format`/`scope`, whitelist `columns` against its own known set, and
- * re-scope `selected` ids through the same filtered query rather than
- * trusting the id list as-is (see `ProductExportController` for the pattern
- * this follows).
- */
+const FORMATS: { value: DataTableExportFormat; label: string; description: string; icon: LucideIcon }[] = [
+    { value: 'csv', label: 'CSV', description: 'Plain text, universal', icon: FileText },
+    { value: 'xlsx', label: 'Excel', description: 'Best for analysis', icon: FileSpreadsheet },
+    { value: 'pdf', label: 'PDF', description: 'Print-ready', icon: FileType2 },
+];
+
 export default function DataTableExportDialog({
     open,
     onOpenChange,
@@ -50,16 +44,22 @@ export default function DataTableExportDialog({
     const [format, setFormat] = useState<DataTableExportFormat>('xlsx');
     const [checkedColumns, setCheckedColumns] = useState<Record<string, boolean>>({});
 
-    // Re-seed the column checklist from the table's current visibility each time
-    // the dialog opens (or if that visibility changes while it's still open).
     useEffect(() => {
         if (open) {
-            setCheckedColumns(Object.fromEntries(columns.map((column) => [column.id, defaultVisibleColumns.includes(column.id)])));
+            setCheckedColumns(
+                Object.fromEntries(columns.map((column) => [column.id, defaultVisibleColumns.includes(column.id)])),
+            );
         }
     }, [open, columns, defaultVisibleColumns]);
 
     const selectedColumnIds = columns.filter((column) => checkedColumns[column.id]).map((column) => column.id);
     const scope: DataTableExportScope = selectedCount > 0 ? 'selected' : 'all';
+
+    const allChecked = selectedColumnIds.length === columns.length;
+    const toggleAll = () => {
+        const next = !allChecked;
+        setCheckedColumns(Object.fromEntries(columns.map((column) => [column.id, next])));
+    };
 
     const submit = () => {
         onExport({ format, scope, columns: selectedColumnIds });
@@ -68,40 +68,79 @@ export default function DataTableExportDialog({
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent>
+            <DialogContent className="sm:max-w-md">
                 <DialogHeader>
-                    <DialogTitle>Export</DialogTitle>
+                    <DialogTitle>Export data</DialogTitle>
                     <DialogDescription>Choose a format and which columns to include.</DialogDescription>
                 </DialogHeader>
 
-                <div className="space-y-4">
+                <div className="space-y-5">
+                    {/* Format picker — card tiles instead of tabs */}
                     <div className="grid gap-2">
-                        <Label>Format</Label>
-                        <Tabs value={format} onValueChange={(value) => setFormat(value as DataTableExportFormat)}>
-                            <TabsList>
-                                <TabsTrigger value="csv">CSV</TabsTrigger>
-                                <TabsTrigger value="xlsx">Excel</TabsTrigger>
-                                <TabsTrigger value="pdf">PDF</TabsTrigger>
-                            </TabsList>
-                        </Tabs>
+                        <Label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Format</Label>
+                        <div className="grid grid-cols-3 gap-2">
+                            {FORMATS.map(({ value, label, description, icon: Icon }) => {
+                                const active = format === value;
+                                return (
+                                    <button
+                                        key={value}
+                                        type="button"
+                                        onClick={() => setFormat(value)}
+                                        className={cn(
+                                            'flex flex-col items-center gap-1.5 rounded-lg border p-3 text-center transition-all',
+                                            active
+                                                ? 'border-primary/50 bg-primary/5 ring-1 ring-primary/20'
+                                                : 'hover:border-primary/30 hover:bg-muted/40',
+                                        )}
+                                    >
+                                        <div
+                                            className={cn(
+                                                'flex size-8 items-center justify-center rounded-md transition-colors',
+                                                active ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground',
+                                            )}
+                                        >
+                                            <Icon className="size-4" />
+                                        </div>
+                                        <div className="text-sm font-medium">{label}</div>
+                                        <div className="text-[10px] leading-tight text-muted-foreground">{description}</div>
+                                    </button>
+                                );
+                            })}
+                        </div>
                     </div>
 
-                    <p className="bg-muted/40 text-muted-foreground rounded-md border p-3 text-sm">
+                    {/* Scope hint */}
+                    <div className="bg-muted/40 text-muted-foreground rounded-lg border p-3 text-xs">
                         {scope === 'selected'
                             ? `${selectedCount} selected row${selectedCount === 1 ? '' : 's'} will be exported.`
                             : `Nothing is selected — all ${totalCount} row${totalCount === 1 ? '' : 's'} matching the current filters will be exported.`}
-                    </p>
+                    </div>
 
+                    {/* Columns */}
                     <div className="grid gap-2">
-                        <Label>Columns</Label>
-                        <div className="grid grid-cols-2 gap-x-4 gap-y-2 rounded-md border p-3">
+                        <div className="flex items-center justify-between">
+                            <Label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Columns</Label>
+                            <button
+                                type="button"
+                                onClick={toggleAll}
+                                className="text-primary text-xs font-medium hover:underline"
+                            >
+                                {allChecked ? 'Deselect all' : 'Select all'}
+                            </button>
+                        </div>
+                        <div className="grid max-h-56 grid-cols-2 gap-x-4 gap-y-2 overflow-y-auto rounded-lg border p-3">
                             {columns.map((column) => (
-                                <label key={column.id} className="flex cursor-pointer items-center gap-2 text-sm">
+                                <label
+                                    key={column.id}
+                                    className="flex cursor-pointer items-center gap-2 text-sm hover:text-foreground"
+                                >
                                     <DataTableCheckbox
                                         checked={checkedColumns[column.id] ?? false}
-                                        onCheckedChange={(checked) => setCheckedColumns((current) => ({ ...current, [column.id]: checked }))}
+                                        onCheckedChange={(checked) =>
+                                            setCheckedColumns((current) => ({ ...current, [column.id]: checked }))
+                                        }
                                     />
-                                    {column.label}
+                                    <span className="truncate">{column.label}</span>
                                 </label>
                             ))}
                         </div>
@@ -113,7 +152,7 @@ export default function DataTableExportDialog({
                         Cancel
                     </Button>
                     <Button type="button" onClick={submit} disabled={selectedColumnIds.length === 0}>
-                        Export
+                        Export {selectedColumnIds.length > 0 && `(${selectedColumnIds.length})`}
                     </Button>
                 </DialogFooter>
             </DialogContent>

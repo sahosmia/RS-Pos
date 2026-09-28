@@ -8,11 +8,10 @@ import { Input } from '@/components/ui/input';
 import ViewModeToggle from '@/components/ui/view-mode-toggle';
 import { type TableViewMode } from '@/hooks/use-table-view-mode';
 import { cn } from '@/lib/utils';
-import { Download, Loader2, RotateCcw } from 'lucide-react';
+import { Download, Loader2, RotateCcw, Search } from 'lucide-react';
 import { type ReactNode, useState } from 'react';
 
 interface DataTableToolbarProps {
-    /** Omit entirely for a list with no free-text search (e.g. a pure date/status filter page). */
     search?: string;
     onSearchChange?: (value: string) => void;
     onSearchSubmit?: () => void;
@@ -23,16 +22,10 @@ interface DataTableToolbarProps {
     canReset: boolean;
     onReset: () => void;
 
-    /** Omit entirely for a list with no per-column Table-view visibility toggle. */
     visibilityColumns?: DataTableColumnOption[];
     columnVisibility?: Record<string, boolean>;
     onVisibilityChange?: (id: string, visible: boolean) => void;
 
-    /**
-     * Omit entirely for a list without the format/scope/columns export dialog
-     * (e.g. one with its own simpler "export selected" action) — provide all
-     * five together, or none.
-     */
     exportColumns?: DataTableColumnOption[];
     defaultExportColumns?: string[];
     totalCount?: number;
@@ -42,23 +35,9 @@ interface DataTableToolbarProps {
     viewMode: TableViewMode;
     onViewModeChange: (mode: TableViewMode) => void;
 
-    /**
-     * Domain-specific filter controls (Category/Brand selects, date ranges, ...),
-     * rendered inside the collapsible panel. This component never looks at what's
-     * inside — omit it entirely for a page with no filters beyond search.
-     */
     filterSlot?: ReactNode;
 }
 
-/**
- * The search/filter/export/view-mode row every list page renders above its
- * table. Fully generic — domain filters live in `filterSlot`, this only owns
- * the shell (search debounce/cancel-on-submit wiring is the caller's, via
- * `useTableFilters` — this component only forwards keystrokes/Enter). Search,
- * column-visibility, and export are each independently optional: not every
- * list has a search box, a toggleable Table view, or the generic export
- * dialog (some have their own simpler export instead).
- */
 export default function DataTableToolbar({
     search,
     onSearchChange,
@@ -84,60 +63,87 @@ export default function DataTableToolbar({
     const [exportDialogOpen, setExportDialogOpen] = useState(false);
 
     const hasSearch = onSearchChange !== undefined;
-    const hasViewOptions = visibilityColumns !== undefined && columnVisibility !== undefined && onVisibilityChange !== undefined;
+    const hasViewOptions =
+        visibilityColumns !== undefined && columnVisibility !== undefined && onVisibilityChange !== undefined;
     const hasExport = onExport !== undefined && exportColumns !== undefined && defaultExportColumns !== undefined;
 
     return (
-        <Collapsible open={filtersOpen} onOpenChange={setFiltersOpen} className="bg-muted/30 rounded-lg border p-3 print:hidden">
-            <div className="flex flex-wrap items-end gap-3">
+        <Collapsible
+            open={filtersOpen}
+            onOpenChange={setFiltersOpen}
+            className="bg-card rounded-xl border p-3 shadow-xs print:hidden"
+        >
+            <div className="flex flex-wrap items-center gap-2">
+                {/* ── Search ── */}
                 {hasSearch && (
-                    <div className="relative grid w-full gap-2 sm:w-auto">
+                    <div className="relative w-full sm:w-72">
+                        <Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2" />
                         <Input
                             placeholder={searchPlaceholder}
                             value={search}
                             onChange={(e) => onSearchChange(e.target.value)}
                             onKeyDown={(e) => e.key === 'Enter' && onSearchSubmit?.()}
-                            className="w-full pr-8 sm:w-56"
+                            className="w-full pl-9 pr-8"
                         />
                         <Loader2
                             className={cn(
-                                'text-muted-foreground pointer-events-none absolute top-1/2 right-2 size-4 -translate-y-1/2 animate-spin transition-opacity duration-200',
+                                'text-muted-foreground pointer-events-none absolute top-1/2 right-2.5 size-4 -translate-y-1/2 animate-spin transition-opacity duration-200',
                                 isSearching ? 'opacity-100' : 'opacity-0',
                             )}
                         />
                     </div>
                 )}
 
+                {/* ── Filter toggle ── */}
                 {filterSlot && (
                     <CollapsibleTrigger asChild>
                         <FilterToggleButton open={filtersOpen} activeCount={activeFilterCount} />
                     </CollapsibleTrigger>
                 )}
 
+                {/* ── Reset ── */}
                 {canReset && (
-                    <Button type="button" variant="ghost" className="gap-2" onClick={onReset}>
-                        <RotateCcw className="size-4" />
+                    <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="text-muted-foreground hover:text-foreground gap-1.5"
+                        onClick={onReset}
+                    >
+                        <RotateCcw className="size-3.5" />
                         <span className="hidden sm:inline">Reset</span>
                     </Button>
                 )}
 
-                <div className="ml-auto flex flex-wrap items-center gap-2">
+                {/* ── Right-aligned actions ── */}
+                <div className="ml-auto flex flex-wrap items-center gap-1.5">
                     {hasViewOptions && (
-                        <DataTableViewOptions columns={visibilityColumns} visibility={columnVisibility} onVisibilityChange={onVisibilityChange} />
+                        <DataTableViewOptions
+                            columns={visibilityColumns}
+                            visibility={columnVisibility}
+                            onVisibilityChange={onVisibilityChange}
+                        />
                     )}
                     {hasExport && (
-                        <Button type="button" variant="outline" className="gap-2" onClick={() => setExportDialogOpen(true)}>
-                            <Download className="size-4" />
+                        <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="gap-1.5"
+                            onClick={() => setExportDialogOpen(true)}
+                        >
+                            <Download className="size-3.5" />
                             <span className="hidden sm:inline">Export</span>
                         </Button>
                     )}
+                    <div className="bg-border mx-1 hidden h-6 w-px sm:block" aria-hidden="true" />
                     <ViewModeToggle value={viewMode} onChange={onViewModeChange} />
                 </div>
             </div>
 
             {filterSlot && (
                 <CollapsibleContent className="-m-1 mt-2 overflow-hidden p-1 pt-2 data-[state=closed]:animate-[collapsible-up_200ms_ease-out] data-[state=open]:animate-[collapsible-down_200ms_ease-out]">
-                    {filterSlot}
+                    <div className="rounded-lg border bg-muted/20 p-3">{filterSlot}</div>
                 </CollapsibleContent>
             )}
 

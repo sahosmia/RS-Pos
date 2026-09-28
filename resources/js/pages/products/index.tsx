@@ -1,4 +1,6 @@
-import HeadingSmall from '@/components/heading-small';
+import DataTable from '@/components/data-table/data-table';
+import DataTablePagination from '@/components/data-table/data-table-pagination';
+import DataTableToolbar from '@/components/data-table/data-table-toolbar';
 import { getProductActions } from '@/components/products/product-actions';
 import ProductFilters from '@/components/products/product-filters';
 import ProductGridCard from '@/components/products/product-grid-card';
@@ -6,9 +8,6 @@ import ProductStatCards from '@/components/products/product-stat-cards';
 import StockAdjustmentModal from '@/components/products/stock-adjustment-modal';
 import ConfirmDialog from '@/components/shared/confirm-dialog';
 import EmptyState from '@/components/shared/empty-state';
-import DataTable from '@/components/data-table/data-table';
-import DataTablePagination from '@/components/data-table/data-table-pagination';
-import DataTableToolbar from '@/components/data-table/data-table-toolbar';
 import { Button } from '@/components/ui/button';
 import { useTableExport } from '@/hooks/table/use-table-export';
 import { useTableFilters } from '@/hooks/table/use-table-filters';
@@ -20,6 +19,7 @@ import { type BreadcrumbItem, type SharedData } from '@/types';
 import { type ProductListItem } from '@/types/models';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import { type VisibilityState } from '@tanstack/react-table';
+import { Package, Plus } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { getExportColumns, getVisibilityColumns, useProductColumns } from './table/columns';
@@ -35,12 +35,22 @@ export default function ProductsIndex({ products, stats, categories, brands, fil
     const [viewMode, setViewMode] = useTableViewMode();
     const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
 
-    const { search, setSearch, isLoading, isSearching, applyFilters, submitSearchNow, handleSort, activeFilterCount, canReset, resetFilters } =
-        useTableFilters({
-            routeName: 'products.index',
-            filters,
-            emptyFilters: { category_id: null, brand_id: null, stock_status: null, preset: null, from: null, to: null },
-        });
+    const {
+        search,
+        setSearch,
+        isLoading,
+        isSearching,
+        applyFilters,
+        submitSearchNow,
+        handleSort,
+        activeFilterCount,
+        canReset,
+        resetFilters,
+    } = useTableFilters({
+        routeName: 'products.index',
+        filters,
+        emptyFilters: { category_id: null, brand_id: null, stock_status: null, preset: null, from: null, to: null },
+    });
 
     const selection = useTableSelection({
         rows: products.data,
@@ -54,33 +64,21 @@ export default function ProductsIndex({ products, stats, categories, brands, fil
         selectedIds: selection.selectedIds,
     });
 
-    // Table-column visibility (Product/Category/Stock/...) → which fine-grained export
-    // columns should start checked, so "Export" defaults to what's actually on screen.
     const defaultExportColumns = useMemo(() => {
         const isVisible = (id: string) => columnVisibility[id] !== false;
         const ids: string[] = [];
-
-        if (isVisible('product')) {
-            ids.push('name', 'sku');
-        }
-        if (isVisible('category')) {
-            ids.push('category', 'brand');
-        }
+        if (isVisible('product')) ids.push('name', 'sku');
+        if (isVisible('category')) ids.push('category', 'brand');
         if (isVisible('stock')) ids.push('stock');
         if (isVisible('price')) ids.push('price');
         if (isVisible('margin')) ids.push('margin');
         if (isVisible('status')) ids.push('status');
-
         return ids;
     }, [columnVisibility]);
 
     const confirmDelete = () => {
-        if (!deleting) {
-            return;
-        }
-
+        if (!deleting) return;
         const name = deleting.name;
-
         router.delete(route('products.destroy', deleting.id), {
             preserveScroll: true,
             onSuccess: () => toast.success(`"${name}" ${t('productsPage', 'deleted_toast')}`),
@@ -103,12 +101,24 @@ export default function ProductsIndex({ products, stats, categories, brands, fil
             <Head title={t('productsPage', 'title')} />
 
             <div className="space-y-6 px-4 py-6">
-                <div className="flex flex-wrap items-end justify-between gap-4">
-                    <HeadingSmall title={t('productsPage', 'title')} description={t('productsPage', 'description')} />
+                {/* ───────────── Page header ───────────── */}
+                <div className="flex flex-wrap items-start justify-between gap-4">
+                    <div className="flex items-start gap-3">
+                        <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-violet-500/10 text-violet-600 ring-1 ring-violet-500/20 dark:text-violet-400">
+                            <Package className="size-5" />
+                        </div>
+                        <div>
+                            <h1 className="text-xl font-semibold tracking-tight">{t('productsPage', 'title')}</h1>
+                            <p className="text-muted-foreground text-sm">{t('productsPage', 'description')}</p>
+                        </div>
+                    </div>
 
                     <div className="flex flex-wrap items-center gap-2 print:hidden">
-                        <Button asChild>
-                            <Link href={route('products.create')}>{t('productsPage', 'add_product')}</Link>
+                        <Button asChild className="gap-1.5">
+                            <Link href={route('products.create')}>
+                                <Plus className="size-4" />
+                                {t('productsPage', 'add_product')}
+                            </Link>
                         </Button>
                     </div>
                 </div>
@@ -126,7 +136,9 @@ export default function ProductsIndex({ products, stats, categories, brands, fil
                     onReset={resetFilters}
                     visibilityColumns={getVisibilityColumns(t)}
                     columnVisibility={columnVisibility}
-                    onVisibilityChange={(id, visible) => setColumnVisibility((current) => ({ ...current, [id]: visible }))}
+                    onVisibilityChange={(id, visible) =>
+                        setColumnVisibility((current) => ({ ...current, [id]: visible }))
+                    }
                     exportColumns={getExportColumns(t)}
                     defaultExportColumns={defaultExportColumns}
                     totalCount={products.total}
@@ -166,14 +178,23 @@ export default function ProductsIndex({ products, stats, categories, brands, fil
                     loading={isLoading}
                     canReset={canReset}
                     emptyState={
-                        <EmptyState title={t('productsPage', 'empty_title')} description={t('productsPage', 'empty_description')}>
-                            <Button className="mt-2" asChild>
-                                <Link href={route('products.create')}>{t('productsPage', 'add_product')}</Link>
+                        <EmptyState
+                            title={t('productsPage', 'empty_title')}
+                            description={t('productsPage', 'empty_description')}
+                        >
+                            <Button className="mt-2 gap-1.5" asChild>
+                                <Link href={route('products.create')}>
+                                    <Plus className="size-4" />
+                                    {t('productsPage', 'add_product')}
+                                </Link>
                             </Button>
                         </EmptyState>
                     }
                     filteredEmptyState={
-                        <EmptyState title={t('common', 'no_results_title')} description={t('common', 'no_results_description')}>
+                        <EmptyState
+                            title={t('common', 'no_results_title')}
+                            description={t('common', 'no_results_description')}
+                        >
                             <Button className="mt-2" variant="outline" onClick={resetFilters}>
                                 {t('common', 'clear_filters')}
                             </Button>

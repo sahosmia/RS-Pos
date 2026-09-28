@@ -16,17 +16,33 @@ interface DataTableViewOptionsProps {
     onVisibilityChange: (id: string, visible: boolean) => void;
 }
 
-/** Which columns the Table view shows — the export dialog defaults its column checklist to this same state. */
 export default function DataTableViewOptions({ columns, visibility, onVisibilityChange }: DataTableViewOptionsProps) {
+    const visibleCount = columns.filter((column) => visibility[column.id] !== false).length;
+
     return (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
-                <Button type="button" variant="outline" size="icon" aria-label="Toggle columns">
-                    <Columns3 className="size-4" />
+                <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="gap-1.5"
+                    aria-label="Toggle columns"
+                >
+                    <Columns3 className="size-3.5" />
+                    <span className="hidden sm:inline">Columns</span>
+                    <span className="text-muted-foreground tabular-nums text-xs">
+                        {visibleCount}/{columns.length}
+                    </span>
                 </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48">
-                <DropdownMenuLabel>Toggle columns</DropdownMenuLabel>
+            <DropdownMenuContent align="end" className="w-52">
+                <DropdownMenuLabel className="flex items-center justify-between">
+                    <span>Toggle columns</span>
+                    <span className="text-muted-foreground text-xs tabular-nums">
+                        {visibleCount}/{columns.length}
+                    </span>
+                </DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 {columns.map((column) => (
                     <DropdownMenuCheckboxItem
