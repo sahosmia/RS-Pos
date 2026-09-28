@@ -1,10 +1,10 @@
 import { FormInput } from '@/components/form/form-input';
 import { FormSelect } from '@/components/form/form-select';
-import HeadingSmall from '@/components/heading-small';
 import InputError from '@/components/input-error';
 import MoneyInput from '@/components/shared/money-input';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useMoneyFormat } from '@/hooks/use-money-format';
@@ -13,7 +13,8 @@ import AppLayout from '@/layouts/app-layout';
 import { today } from '@/lib/format-date';
 import { type BreadcrumbItem } from '@/types';
 import { type Account, type ServiceableSaleItem } from '@/types/models';
-import { Head, router, useForm } from '@inertiajs/react';
+import { Head, Link, router, useForm } from '@inertiajs/react';
+import { Calendar, ChevronLeft, Wrench, Search, Save, X } from 'lucide-react';
 import { FormEventHandler, useState } from 'react';
 
 interface ServiceRequestsCreateProps {
@@ -73,7 +74,25 @@ export default function ServiceRequestsCreate({ query, items, staff, accounts }:
             <Head title={t('serviceRequests', 'add')} />
 
             <div className="space-y-6 px-4 py-6">
-                <HeadingSmall title={t('serviceRequests', 'add')} description={t('serviceRequests', 'add_description')} />
+                {/* ───────────── Page header ───────────── */}
+                <div className="flex flex-wrap items-start justify-between gap-4">
+                    <div className="flex items-start gap-3">
+                        <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-orange-500/10 text-orange-600 ring-1 ring-orange-500/20 dark:text-orange-400">
+                            <Wrench className="size-5" />
+                        </div>
+                        <div>
+                            <h1 className="text-xl font-semibold tracking-tight">{t('serviceRequests', 'add')}</h1>
+                            <p className="text-muted-foreground text-sm">{t('serviceRequests', 'add_description')}</p>
+                        </div>
+                    </div>
+
+                    <Button variant="outline" asChild className="gap-1.5">
+                        <Link href={route('service-requests.index')}>
+                            <ChevronLeft className="size-4" />
+                            Back to service requests
+                        </Link>
+                    </Button>
+                </div>
 
                 <form onSubmit={runSearch} className="flex max-w-md gap-2">
                     <FormInput
@@ -82,8 +101,10 @@ export default function ServiceRequestsCreate({ query, items, staff, accounts }:
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                         className="flex-1"
+                        icon={Search}
                     />
-                    <Button type="submit" variant="outline">
+                    <Button type="submit" variant="outline" className="gap-1.5">
+                        <Search className="size-4" />
                         {t('serviceRequests', 'search')}
                     </Button>
                 </form>
@@ -110,7 +131,7 @@ export default function ServiceRequestsCreate({ query, items, staff, accounts }:
                                 )}
                                 {items.map((item) => (
                                     <tr key={item.id} className="border-t">
-                                        <td className="px-4 py-2">{item.invoice_no}</td>
+                                        <td className="px-4 py-2 font-medium">{item.invoice_no}</td>
                                         <td className="px-4 py-2">{item.customer.name}</td>
                                         <td className="px-4 py-2">
                                             {item.product.name} <span className="text-muted-foreground">({item.product.sku})</span>
@@ -133,90 +154,104 @@ export default function ServiceRequestsCreate({ query, items, staff, accounts }:
                 )}
 
                 {selected && (
-                    <form onSubmit={submit} className="max-w-lg space-y-4 rounded-lg border p-4">
-                        <div className="flex items-center justify-between">
+                    <Card className="max-w-xl overflow-hidden shadow-xs">
+                        <CardHeader className="flex flex-row items-center justify-between border-b bg-muted/30 px-4 py-3">
                             <div>
-                                <p className="font-medium">
-                                    {selected.product.name} <span className="text-muted-foreground">({selected.product.sku})</span>
-                                </p>
-                                <p className="text-muted-foreground text-sm">
-                                    {selected.invoice_no} — {selected.customer.name}
+                                <CardTitle className="text-base font-semibold">{selected.product.name}</CardTitle>
+                                <p className="text-muted-foreground text-xs">
+                                    {selected.product.sku} · {selected.invoice_no} — {selected.customer.name}
                                 </p>
                             </div>
-                            <Badge variant={selected.is_next_free ? 'secondary' : 'outline'}>
-                                {selected.is_next_free ? t('serviceRequests', 'free') : t('serviceRequests', 'paid')}
-                            </Badge>
-                        </div>
-                        <Button type="button" variant="ghost" size="sm" onClick={() => setSelected(null)}>
-                            {t('serviceRequests', 'choose_different_item')}
-                        </Button>
-
-                        <FormInput
-                            id="request_date"
-                            label={t('serviceRequests', 'request_date')}
-                            type="date"
-                            value={form.data.request_date}
-                            onChange={(e) => form.setData('request_date', e.target.value)}
-                            error={form.errors.request_date}
-                            required
-                        />
-
-                        <FormInput
-                            id="service_date"
-                            label={t('serviceRequests', 'service_date')}
-                            type="date"
-                            value={form.data.service_date}
-                            onChange={(e) => form.setData('service_date', e.target.value)}
-                            error={form.errors.service_date}
-                        />
-
-                        <FormSelect
-                            id="staff_id"
-                            label={t('serviceRequests', 'technician')}
-                            value={form.data.staff_id}
-                            onChange={(val) => form.setData('staff_id', val ? Number(val) : null)}
-                            options={staffOptions}
-                            placeholder={t('serviceRequests', 'none')}
-                            allowNone
-                            noneLabel={t('serviceRequests', 'none')}
-                            error={form.errors.staff_id}
-                        />
-
-                        {!selected.is_next_free && (
-                            <>
-                                <div className="grid gap-2">
-                                    <Label htmlFor="charge_amount">{t('serviceRequests', 'charge_amount')}</Label>
-                                    <MoneyInput
-                                        id="charge_amount"
-                                        value={form.data.charge_amount}
-                                        onChange={(e) => form.setData('charge_amount', Number(e.target.value))}
+                            <div className="flex items-center gap-2">
+                                <Badge variant={selected.is_next_free ? 'secondary' : 'outline'}>
+                                    {selected.is_next_free ? t('serviceRequests', 'free') : t('serviceRequests', 'paid')}
+                                </Badge>
+                                <Button type="button" variant="ghost" size="sm" onClick={() => setSelected(null)}>
+                                    {t('serviceRequests', 'choose_different_item')}
+                                </Button>
+                            </div>
+                        </CardHeader>
+                        <CardContent className="p-4">
+                            <form onSubmit={submit} className="space-y-4">
+                                <div className="grid gap-4 sm:grid-cols-2">
+                                    <FormInput
+                                        id="request_date"
+                                        label={t('serviceRequests', 'request_date')}
+                                        type="date"
+                                        value={form.data.request_date}
+                                        onChange={(e) => form.setData('request_date', e.target.value)}
+                                        error={form.errors.request_date}
+                                        icon={Calendar}
                                         required
                                     />
-                                    <InputError message={form.errors.charge_amount} />
+
+                                    <FormInput
+                                        id="service_date"
+                                        label={t('serviceRequests', 'service_date')}
+                                        type="date"
+                                        value={form.data.service_date}
+                                        onChange={(e) => form.setData('service_date', e.target.value)}
+                                        error={form.errors.service_date}
+                                        icon={Calendar}
+                                    />
                                 </div>
 
                                 <FormSelect
-                                    id="account_id"
-                                    label={t('serviceRequests', 'account')}
-                                    value={form.data.account_id}
-                                    onChange={(val) => val && form.setData('account_id', Number(val))}
-                                    options={accountOptions}
-                                    placeholder={t('serviceRequests', 'select_account')}
-                                    error={form.errors.account_id}
+                                    id="staff_id"
+                                    label={t('serviceRequests', 'technician')}
+                                    value={form.data.staff_id}
+                                    onChange={(val) => form.setData('staff_id', val ? Number(val) : null)}
+                                    options={staffOptions}
+                                    placeholder={t('serviceRequests', 'none')}
+                                    allowNone
+                                    noneLabel={t('serviceRequests', 'none')}
+                                    error={form.errors.staff_id}
                                 />
-                            </>
-                        )}
 
-                        <div className="grid gap-2">
-                            <Label htmlFor="note">{t('serviceRequests', 'note')}</Label>
-                            <Textarea id="note" value={form.data.note} onChange={(e) => form.setData('note', e.target.value)} rows={2} />
-                            <InputError message={form.errors.note} />
-                        </div>
+                                {!selected.is_next_free && (
+                                    <div className="grid gap-4 sm:grid-cols-2">
+                                        <div className="grid gap-2">
+                                            <Label htmlFor="charge_amount">{t('serviceRequests', 'charge_amount')}</Label>
+                                            <MoneyInput
+                                                id="charge_amount"
+                                                value={form.data.charge_amount}
+                                                onChange={(e) => form.setData('charge_amount', Number(e.target.value))}
+                                                required
+                                            />
+                                            <InputError message={form.errors.charge_amount} />
+                                        </div>
 
-                        <Button type="submit" disabled={form.processing}>
-                            {form.processing ? t('common', 'saving') : t('serviceRequests', 'add_button')}
-                        </Button>
-                    </form>
+                                        <FormSelect
+                                            id="account_id"
+                                            label={t('serviceRequests', 'account')}
+                                            value={form.data.account_id}
+                                            onChange={(val) => val && form.setData('account_id', Number(val))}
+                                            options={accountOptions}
+                                            placeholder={t('serviceRequests', 'select_account')}
+                                            error={form.errors.account_id}
+                                        />
+                                    </div>
+                                )}
+
+                                <div className="grid gap-2">
+                                    <Label htmlFor="note">{t('serviceRequests', 'note')}</Label>
+                                    <Textarea id="note" value={form.data.note} onChange={(e) => form.setData('note', e.target.value)} rows={2} />
+                                    <InputError message={form.errors.note} />
+                                </div>
+
+                                <div className="flex items-center justify-end gap-2 border-t pt-3">
+                                    <Button type="button" variant="ghost" onClick={() => setSelected(null)} className="gap-1.5">
+                                        <X className="size-4" />
+                                        {t('common', 'cancel')}
+                                    </Button>
+                                    <Button type="submit" disabled={form.processing} className="gap-1.5">
+                                        <Save className="size-4" />
+                                        {form.processing ? t('common', 'saving') : t('serviceRequests', 'add_button')}
+                                    </Button>
+                                </div>
+                            </form>
+                        </CardContent>
+                    </Card>
                 )}
             </div>
         </AppLayout>

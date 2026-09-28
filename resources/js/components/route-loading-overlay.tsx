@@ -16,39 +16,49 @@ export default function RouteLoadingOverlay() {
     const [isLoading, setIsLoading] = useState(false);
 
     useEffect(() => {
-        let timeout: ReturnType<typeof setTimeout> | undefined;
+        // Keyed by the visit object itself (Inertia reuses the *same* object
+        // reference between a request's 'start' and its 'finish') rather than
+        // a single shared timeout var, and rather than trusting `finish`'s own
+        // `visit.prefetch` flag — Inertia's internal request handling mutates
+        // `prefetch` back to `false` on that same object right before firing
+        // 'finish' for a prefetch response, so checking it there is unreliable
+        // (a hovered sidebar link's background prefetch would misreport as a
+        // real navigation finishing, clearing or clobbering an unrelated
+        // in-flight real navigation's own pending timeout — the sidebar's
+        // `prefetch` links are exactly what made this visible). Tracking by
+        // object identity, decided only once at 'start' (reliable there),
+        // sidesteps the mutation entirely and also correctly handles more
+        // than one real navigation overlapping.
+        const pending = new Map<Visit, ReturnType<typeof setTimeout>>();
 
         const removeStartListener = router.on('start', (event) => {
-            // Sidebar/nav links use `prefetch` (Inertia's hover-prefetch) —
-            // that fires this same 'start' event on mere hover, with no
-            // visible navigation happening, so showing the overlay for it
-            // reads as the page randomly re-rendering. Real navigations
-            // (including the follow-up visit that *uses* a prefetched
-            // response) are unaffected — `prefetch` is only true on the
-            // background warm-up request itself.
             const visit = event.detail.visit as Visit;
             if (visit.prefetch) {
                 return;
             }
 
-            timeout = setTimeout(() => setIsLoading(true), 150);
+            pending.set(
+                visit,
+                setTimeout(() => setIsLoading(true), 150),
+            );
         });
 
         const removeFinishListener = router.on('finish', (event) => {
-            // A prefetch finishing shouldn't clear a *real*, still-in-flight
-            // navigation's pending timeout/overlay — only the matching kind
-            // of visit that actually started it should be able to stop it.
             const visit = event.detail.visit as Visit;
-            if (visit.prefetch) {
+            const timeout = pending.get(visit);
+            if (timeout === undefined) {
                 return;
             }
 
             clearTimeout(timeout);
-            setIsLoading(false);
+            pending.delete(visit);
+            if (pending.size === 0) {
+                setIsLoading(false);
+            }
         });
 
         return () => {
-            clearTimeout(timeout);
+            pending.forEach(clearTimeout);
             removeStartListener();
             removeFinishListener();
         };

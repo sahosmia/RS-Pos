@@ -14,16 +14,21 @@ import { type SharedData } from '@/types';
 import { type Brand, type Category, type ProductDetail, type ServicePlanPeriod, type Unit } from '@/types/models';
 import { router, useForm, usePage } from '@inertiajs/react';
 import {
+    Barcode,
+    Calendar,
     CircleDollarSign,
     Eye,
+    Hash,
     ImagePlus,
     Info,
+    Layers,
     Package,
     Plus,
     Save,
     Settings2,
     ShieldCheck,
     Sparkles,
+    Tag,
     Trash2,
     X,
     type LucideIcon,
@@ -236,6 +241,7 @@ export default function ProductForm({ mode, product, categories, brands, units }
                                 onChange={(e) => form.setData('name', e.target.value)}
                                 error={form.errors.name}
                                 placeholder="e.g. Wireless Mouse, Samsung S23"
+                                icon={Tag}
                                 required
                             />
                         </div>
@@ -248,6 +254,7 @@ export default function ProductForm({ mode, product, categories, brands, units }
                             onChange={(e) => form.setData('sku', e.target.value)}
                             error={form.errors.sku}
                             placeholder="e.g. SKU-10001"
+                            icon={Hash}
                         />
 
                         <FormInput
@@ -257,6 +264,7 @@ export default function ProductForm({ mode, product, categories, brands, units }
                             onChange={(e) => form.setData('barcode', e.target.value)}
                             error={form.errors.barcode}
                             placeholder="Scan or type barcode"
+                            icon={Barcode}
                         />
 
                         {/* Category */}
@@ -361,6 +369,7 @@ export default function ProductForm({ mode, product, categories, brands, units }
                             onChange={(e) => form.setData('minimum_stock_level', Number(e.target.value))}
                             error={form.errors.minimum_stock_level}
                             placeholder="0"
+                            icon={Layers}
                         />
 
                         {mode === 'edit' && product && (
@@ -400,6 +409,7 @@ export default function ProductForm({ mode, product, categories, brands, units }
                                         onChange={(e) => form.setData('opening_stock', Number(e.target.value))}
                                         error={form.errors.opening_stock}
                                         placeholder="0"
+                                        icon={Package}
                                     />
 
                                     <div className="grid gap-2">
@@ -439,6 +449,7 @@ export default function ProductForm({ mode, product, categories, brands, units }
                             onChange={(e) => form.setData('warranty_period_months', e.target.value ? Number(e.target.value) : null)}
                             error={form.errors.warranty_period_months}
                             placeholder="e.g. 12"
+                            icon={Calendar}
                         />
                     </div>
 
