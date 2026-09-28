@@ -21,6 +21,7 @@ const typeOptions: { value: AssetTransactionTypeValue; label: string }[] = [
     { value: 'addition', label: 'Addition/Upgrade' },
     { value: 'sold', label: 'Sold' },
     { value: 'disposal', label: 'Disposal (write-off)' },
+    { value: 'adjustment', label: 'Adjustment (correction)' },
 ];
 
 export default function AddAssetTransactionModal({ open, onOpenChange, assetId, accounts }: AddAssetTransactionModalProps) {
@@ -42,6 +43,7 @@ export default function AddAssetTransactionModal({ open, onOpenChange, assetId, 
 
     const isDisposal = form.data.type === 'disposal';
     const isSold = form.data.type === 'sold';
+    const isAdjustment = form.data.type === 'adjustment';
 
     const accountOptions = accounts.map((account) => ({ value: String(account.id), label: account.name }));
 
@@ -52,7 +54,7 @@ export default function AddAssetTransactionModal({ open, onOpenChange, assetId, 
             type: data.type,
             amount: isSold || isDisposal ? undefined : data.amount,
             sale_price: isSold ? data.sale_price : undefined,
-            account_id: isDisposal ? null : data.account_id,
+            account_id: isDisposal || isAdjustment ? null : data.account_id,
             note: data.note || null,
         }));
 
@@ -107,7 +109,7 @@ export default function AddAssetTransactionModal({ open, onOpenChange, assetId, 
 
             {isDisposal && <p className="text-muted-foreground text-xs">পুরো বইমূল্যটাই loss হিসেবে বাদ যাবে — কোনো টাকা ফেরত আসছে না।</p>}
 
-            {!isDisposal && (
+            {!isDisposal && !isAdjustment && (
                 <FormSelect
                     id="account_id"
                     label="Account"

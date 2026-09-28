@@ -118,9 +118,9 @@ class InitialDataSeeder extends Seeder
     }
 
     /**
-     * @param array<string, Category> $categories
-     * @param array<string, Unit> $units
-     * @param array<string, Brand> $brands
+     * @param  array<string, Category>  $categories
+     * @param  array<string, Unit>  $units
+     * @param  array<string, Brand>  $brands
      */
     private function seedProducts(array $categories, array $units, array $brands): void
     {
@@ -255,7 +255,7 @@ class InitialDataSeeder extends Seeder
     }
 
     /**
-     * @param array<string, Investor> $investors
+     * @param  array<string, Investor>  $investors
      */
     private function seedStaff(array $investors): void
     {

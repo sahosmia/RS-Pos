@@ -1,5 +1,6 @@
 import { FormInput } from '@/components/form/form-input';
 import InputError from '@/components/input-error';
+import DiscountModal, { discountAmountFor, type DiscountTypeValue } from '@/components/sales/discount-modal';
 import MoneyInput from '@/components/shared/money-input';
 import SearchableSelect from '@/components/shared/searchable-select';
 import { Button } from '@/components/ui/button';
@@ -15,7 +16,7 @@ import {
     type SupplierOption,
 } from '@/types/models';
 import { router, useForm } from '@inertiajs/react';
-import { Trash2 } from 'lucide-react';
+import { Pencil, Trash2 } from 'lucide-react';
 import { FormEventHandler, useState } from 'react';
 import { toast } from 'sonner';
 
@@ -28,7 +29,14 @@ interface PurchaseFormProps {
     initialProducts: PurchaseProductOption[];
 }
 
-const emptyItem: PurchaseFormItem = { product_id: 0, quantity: 1, unit_price: 0 };
+const emptyItem: PurchaseFormItem = {
+    product_id: 0,
+    quantity: 1,
+    original_price: 0,
+    unit_price: 0,
+    discount_type: null,
+    discount_value: 0,
+};
 
 /**
  * Re-keys a `{ index: T }` map after an item at `removedIndex` is spliced
@@ -57,10 +65,14 @@ export default function PurchaseForm({ mode, purchase, initialSupplier, initialP
         supplier_id: purchase?.supplier_id ?? 0,
         purchase_date: purchase?.purchase_date ?? today(),
         status: (purchase?.status ?? 'draft') as PurchaseStatusValue,
+        discount_type: (purchase?.discount_type ?? null) as DiscountTypeValue,
+        discount_value: purchase?.discount_value ?? 0,
         items: purchase?.items ?? [{ ...emptyItem }],
     });
 
     const [supplier, setSupplier] = useState<SupplierOption | null>(initialSupplier);
+    const [itemDiscountIndex, setItemDiscountIndex] = useState<number | null>(null);
+    const [invoiceDiscountOpen, setInvoiceDiscountOpen] = useState(false);
 
     // Selected product per item row, keyed by row index — the form's own `items` only carries
     // `product_id` for submission, this is purely so each row's picker can show a label (doc/corrections2.md #8:
@@ -98,7 +110,13 @@ export default function PurchaseForm({ mode, purchase, initialSupplier, initialP
 
             return next;
         });
-        updateItem(index, { product_id: product?.id ?? 0, unit_price: product?.avg_cost ?? 0 });
+        updateItem(index, {
+            product_id: product?.id ?? 0,
+            original_price: product?.avg_cost ?? 0,
+            unit_price: product?.avg_cost ?? 0,
+            discount_type: null,
+            discount_value: 0,
+        });
     };
 
     const addItem = () => form.setData('items', [...form.data.items, { ...emptyItem }]);
@@ -115,7 +133,14 @@ export default function PurchaseForm({ mode, purchase, initialSupplier, initialP
         setSelectedProducts((current) => reindexAfterRemoval(current, index));
     };
 
-    const total = form.data.items.reduce((sum, item) => sum + item.quantity * item.unit_price, 0);
+    const subtotal = form.data.items.reduce((sum, item) => sum + item.quantity * item.unit_price, 0);
+    const invoiceDiscountAmount = discountAmountFor(subtotal, form.data.discount_type, form.data.discount_value);
+    const grandTotal = subtotal - invoiceDiscountAmount;
+
+    const editingItem = itemDiscountIndex !== null ? form.data.items[itemDiscountIndex] : null;
+    const editingItemOriginalPrice = editingItem
+        ? (editingItem.original_price ?? editingItem.unit_price ?? 0)
+        : 0;
 
     const submit: FormEventHandler = (e) => {
         e.preventDefault();
@@ -222,11 +247,39 @@ export default function PurchaseForm({ mode, purchase, initialSupplier, initialP
                                         />
                                     </td>
                                     <td className="py-2 pr-2">
-                                        <MoneyInput
-                                            value={item.unit_price}
-                                            onChange={(e) => updateItem(index, { unit_price: Number(e.target.value) })}
-                                            className="text-right"
-                                        />
+                                        <div className="space-y-1">
+                                            <MoneyInput
+                                                value={item.original_price ?? item.unit_price}
+                                                onChange={(e) => {
+                                                    const orig = Number(e.target.value);
+                                                    const disc = discountAmountFor(orig, item.discount_type as DiscountTypeValue, item.discount_value ?? 0);
+                                                    updateItem(index, {
+                                                        original_price: orig,
+                                                        unit_price: orig - disc,
+                                                    });
+                                                }}
+                                                className="text-right"
+                                            />
+                                            <div className="flex items-center justify-end gap-1 text-xs">
+                                                {item.discount_type ? (
+                                                    <span className="text-emerald-600 font-medium dark:text-emerald-400">
+                                                        {item.discount_type === 'percentage' ? `${item.discount_value}%` : `-${money(item.discount_value ?? 0)}`}
+                                                    </span>
+                                                ) : (
+                                                    <span className="text-muted-foreground">Discount</span>
+                                                )}
+                                                <Button
+                                                    type="button"
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="size-5"
+                                                    onClick={() => setItemDiscountIndex(index)}
+                                                    aria-label="Edit discount"
+                                                >
+                                                    <Pencil className="size-3" />
+                                                </Button>
+                                            </div>
+                                        </div>
                                     </td>
                                     <td className="py-2 pr-2 text-right tabular-nums">{money(item.quantity * item.unit_price)}</td>
                                     <td className="py-2 text-right">
@@ -246,9 +299,37 @@ export default function PurchaseForm({ mode, purchase, initialSupplier, initialP
                         <tfoot>
                             <tr className="border-t font-medium">
                                 <td colSpan={3} className="py-2 text-right">
+                                    Subtotal
+                                </td>
+                                <td className="py-2 text-right tabular-nums">{money(subtotal)}</td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td colSpan={3} className="py-1 text-right text-sm">
+                                    <div className="flex items-center justify-end gap-1">
+                                        <span>Discount</span>
+                                        <Button
+                                            type="button"
+                                            variant="ghost"
+                                            size="icon"
+                                            className="size-5"
+                                            onClick={() => setInvoiceDiscountOpen(true)}
+                                            aria-label="Edit discount"
+                                        >
+                                            <Pencil className="size-3" />
+                                        </Button>
+                                    </div>
+                                </td>
+                                <td className="py-1 text-right text-sm tabular-nums text-emerald-600 dark:text-emerald-400">
+                                    -{money(invoiceDiscountAmount)}
+                                </td>
+                                <td></td>
+                            </tr>
+                            <tr className="border-t font-medium text-base">
+                                <td colSpan={3} className="py-2 text-right">
                                     Total
                                 </td>
-                                <td className="py-2 text-right tabular-nums">{money(total)}</td>
+                                <td className="py-2 text-right tabular-nums">{money(grandTotal)}</td>
                                 <td></td>
                             </tr>
                         </tfoot>
@@ -265,6 +346,41 @@ export default function PurchaseForm({ mode, purchase, initialSupplier, initialP
                     {form.processing ? 'Saving...' : mode === 'create' ? 'Create Purchase' : 'Save Changes'}
                 </Button>
             </div>
+
+            {/* Per-item discount modal */}
+            <DiscountModal
+                open={itemDiscountIndex !== null}
+                onOpenChange={(open) => !open && setItemDiscountIndex(null)}
+                title="Item Discount"
+                baseAmount={editingItemOriginalPrice}
+                initialType={(editingItem?.discount_type as DiscountTypeValue) ?? null}
+                initialValue={editingItem?.discount_value ?? 0}
+                onApply={(type, value) => {
+                    if (itemDiscountIndex === null) return;
+                    const orig = editingItemOriginalPrice;
+                    const disc = discountAmountFor(orig, type, value);
+                    updateItem(itemDiscountIndex, {
+                        discount_type: type,
+                        discount_value: value,
+                        original_price: orig,
+                        unit_price: orig - disc,
+                    });
+                }}
+            />
+
+            {/* Invoice-level discount modal */}
+            <DiscountModal
+                open={invoiceDiscountOpen}
+                onOpenChange={setInvoiceDiscountOpen}
+                title="Purchase Discount"
+                baseAmount={subtotal}
+                initialType={form.data.discount_type}
+                initialValue={form.data.discount_value}
+                onApply={(type, value) => {
+                    form.setData('discount_type', type);
+                    form.setData('discount_value', value);
+                }}
+            />
         </form>
     );
 }

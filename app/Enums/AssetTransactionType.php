@@ -15,4 +15,5 @@ enum AssetTransactionType: string
     case Addition = 'addition';
     case Sold = 'sold';
     case Disposal = 'disposal';
+    case Adjustment = 'adjustment';
 }

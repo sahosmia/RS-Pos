@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\DB;
 class UpdatePurchaseAction
 {
     /**
-     * @param  array{supplier_id: int, purchase_date: string, status: string, items: array<int, array{product_id: int, quantity: float|string, unit_price: float|string}>}  $data
+     * @param  array{supplier_id: int, purchase_date: string, status: string, discount_type?: string|null, discount_value?: float|string|null, items: array<int, array{product_id: int, quantity: float|string, original_price?: float|string|null, unit_price: float|string, discount_type?: string|null, discount_value?: float|string|null}>}  $data
      */
     public function execute(Purchase $purchase, array $data): Purchase
     {
@@ -22,28 +22,11 @@ class UpdatePurchaseAction
                 'supplier_id' => $data['supplier_id'],
                 'purchase_date' => $data['purchase_date'],
                 'status' => $data['status'],
+                'discount_type' => $data['discount_type'] ?? null,
+                'discount_value' => $data['discount_value'] ?? 0,
             ]);
 
-            $purchase->items()->delete();
-
-            $total = 0.0;
-
-            foreach ($data['items'] as $item) {
-                $quantity = (float) $item['quantity'];
-                $unitPrice = (float) $item['unit_price'];
-                $subtotal = round($quantity * $unitPrice, 2);
-
-                $purchase->items()->create([
-                    'product_id' => $item['product_id'],
-                    'quantity' => $quantity,
-                    'unit_price' => $unitPrice,
-                    'subtotal' => $subtotal,
-                ]);
-
-                $total += $subtotal;
-            }
-
-            $purchase->forceFill(['total_amount' => round($total, 2), 'due_amount' => round($total, 2)])->save();
+            PurchaseTotals::sync($purchase, $data['items'])->applyTo($purchase);
 
             return $purchase;
         });

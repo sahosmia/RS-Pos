@@ -14,6 +14,7 @@ use App\Services\ChartOfAccountResolver;
 use App\Services\JournalService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 /**
  * Every staff_transaction_types row (default or admin-added) declares a
@@ -40,8 +41,17 @@ class AddStaffTransactionAction
         $note = $data['note'] ?? null;
 
         return DB::transaction(function () use ($staff, $type, $amount, $data, $note) {
+            $staff = Staff::where('id', $staff->id)->lockForUpdate()->firstOrFail();
             $delta = $type->effect_on_balance === BalanceEffect::Increase ? $amount : -$amount;
             $balanceBefore = (float) $staff->balance;
+
+            match ($type->nature) {
+                StaffTransactionNature::Expense => $this->postExpense($staff, $amount),
+                StaffTransactionNature::Settlement => $this->postSettlement($staff, $amount, $data),
+                StaffTransactionNature::Advance => $this->postAdvance($staff, $amount, $data, $type),
+                StaffTransactionNature::AdvanceReturn => $this->postAdvanceReturn($staff, $amount, $data),
+                StaffTransactionNature::Adjustment => $this->postAdjustment($staff, $delta, $balanceBefore),
+            };
 
             $ledgerEntry = $staff->ledgerEntries()->create([
                 'staff_transaction_type_id' => $type->id,
@@ -52,14 +62,6 @@ class AddStaffTransactionAction
             ]);
 
             $staff->increment('balance', $delta);
-
-            match ($type->nature) {
-                StaffTransactionNature::Expense => $this->postExpense($staff, $amount),
-                StaffTransactionNature::Settlement => $this->postSettlement($staff, $amount, $data),
-                StaffTransactionNature::Advance => $this->postAdvance($staff, $amount, $data, $type),
-                StaffTransactionNature::AdvanceReturn => $this->postAdvanceReturn($staff, $amount, $data),
-                StaffTransactionNature::Adjustment => $this->postAdjustment($staff, $delta, $balanceBefore),
-            };
 
             return $ledgerEntry;
         });
@@ -86,6 +88,13 @@ class AddStaffTransactionAction
      */
     private function postSettlement(Staff $staff, float $amount, array $data): void
     {
+        $payableAmount = $staff->balance < 0 ? abs($staff->balance) : 0.0;
+        if ($staff->balance >= 0 || $amount > ($payableAmount + 0.0001)) {
+            throw ValidationException::withMessages([
+                'amount' => ['Payment amount cannot exceed payable salary balance (৳'.number_format($payableAmount, 2).').'],
+            ]);
+        }
+
         $account = Account::findOrFail($data['account_id']);
         $this->accounts->record($account, AccountTransactionType::StaffSalaryPayment, -$amount, today(), 'staff', $staff->id);
 
@@ -127,6 +136,13 @@ class AddStaffTransactionAction
      */
     private function postAdvanceReturn(Staff $staff, float $amount, array $data): void
     {
+        $advanceBalance = $staff->balance > 0 ? $staff->balance : 0.0;
+        if ($staff->balance <= 0 || $amount > ($advanceBalance + 0.0001)) {
+            throw ValidationException::withMessages([
+                'amount' => ['Return amount cannot exceed outstanding advance balance (৳'.number_format($advanceBalance, 2).').'],
+            ]);
+        }
+
         $account = Account::findOrFail($data['account_id']);
         $this->accounts->record($account, AccountTransactionType::StaffAdvanceReturn, $amount, today(), 'staff', $staff->id);
 
