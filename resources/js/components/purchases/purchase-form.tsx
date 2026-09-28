@@ -67,30 +67,44 @@ export default function PurchaseForm({ mode, purchase, initialSupplier, initialP
         status: (purchase?.status ?? 'draft') as PurchaseStatusValue,
         discount_type: (purchase?.discount_type ?? null) as DiscountTypeValue,
         discount_value: purchase?.discount_value ?? 0,
-        items: purchase?.items ?? [{ ...emptyItem }],
+        items: purchase?.items ?? ([] as PurchaseFormItem[]),
     });
 
     const [supplier, setSupplier] = useState<SupplierOption | null>(initialSupplier);
     const [itemDiscountIndex, setItemDiscountIndex] = useState<number | null>(null);
     const [invoiceDiscountOpen, setInvoiceDiscountOpen] = useState(false);
 
-    // Selected product per item row, keyed by row index — the form's own `items` only carries
-    // `product_id` for submission, this is purely so each row's picker can show a label (doc/corrections2.md #8:
-    // the full product catalog is no longer preloaded, so a row can't just look its id up in a big local array).
     const [selectedProducts, setSelectedProducts] = useState<Record<number, PurchaseProductOption>>(() => {
-        const byId = new Map(initialProducts.map((product) => [product.id, product]));
         const seeded: Record<number, PurchaseProductOption> = {};
-
-        (purchase?.items ?? []).forEach((item, index) => {
-            const product = byId.get(item.product_id);
-
-            if (product) {
-                seeded[index] = product;
-            }
+        initialProducts.forEach((product) => {
+            seeded[product.id] = product;
         });
-
         return seeded;
     });
+
+    const addProduct = (product: PurchaseProductOption) => {
+        setSelectedProducts((current) => ({ ...current, [product.id]: product }));
+
+        const existingIndex = form.data.items.findIndex((i) => i.product_id === product.id);
+
+        if (existingIndex >= 0) {
+            const items = [...form.data.items];
+            items[existingIndex] = { ...items[existingIndex], quantity: items[existingIndex].quantity + 1 };
+            form.setData('items', items);
+        } else {
+            form.setData('items', [
+                ...form.data.items,
+                {
+                    product_id: product.id,
+                    quantity: 1,
+                    original_price: product.avg_cost,
+                    unit_price: product.avg_cost,
+                    discount_type: null,
+                    discount_value: 0,
+                },
+            ]);
+        }
+    };
 
     const updateItem = (index: number, changes: Partial<PurchaseFormItem>) => {
         const items = [...form.data.items];
@@ -98,39 +112,11 @@ export default function PurchaseForm({ mode, purchase, initialSupplier, initialP
         form.setData('items', items);
     };
 
-    const onProductChange = (index: number, product: PurchaseProductOption | null) => {
-        setSelectedProducts((current) => {
-            const next = { ...current };
-
-            if (product) {
-                next[index] = product;
-            } else {
-                delete next[index];
-            }
-
-            return next;
-        });
-        updateItem(index, {
-            product_id: product?.id ?? 0,
-            original_price: product?.avg_cost ?? 0,
-            unit_price: product?.avg_cost ?? 0,
-            discount_type: null,
-            discount_value: 0,
-        });
-    };
-
-    const addItem = () => form.setData('items', [...form.data.items, { ...emptyItem }]);
-
     const removeItem = (index: number) => {
-        if (form.data.items.length <= 1) {
-            return;
-        }
-
         form.setData(
             'items',
             form.data.items.filter((_, i) => i !== index),
         );
-        setSelectedProducts((current) => reindexAfterRemoval(current, index));
     };
 
     const subtotal = form.data.items.reduce((sum, item) => sum + item.quantity * item.unit_price, 0);
@@ -201,140 +187,151 @@ export default function PurchaseForm({ mode, purchase, initialSupplier, initialP
                 </div>
             </div>
 
-            <div className="space-y-3 rounded-lg border p-4">
-                <div className="flex items-center justify-between">
-                    <h3 className="font-medium">Items</h3>
-                    <Button type="button" variant="outline" size="sm" onClick={addItem}>
-                        Add Item
-                    </Button>
+            <div className="space-y-4 rounded-lg border p-4">
+                <div className="space-y-1">
+                    <Label>Search Product</Label>
+                    <SearchableSelect<PurchaseProductOption>
+                        value={null}
+                        onChange={(product) => product && addProduct(product)}
+                        getLabel={(option) => option.name}
+                        getSublabel={(option) => `${option.sku} · Cost: ${money(option.avg_cost)}`}
+                        searchUrl={route('products.search')}
+                        placeholder="পণ্য সিলেক্ট করুন (নাম, SKU বা বারকোড দিয়ে সার্চ করুন)"
+                    />
                 </div>
 
-                <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                        <thead className="text-muted-foreground">
-                            <tr>
-                                <th className="py-2 text-left font-medium">Product</th>
-                                <th className="w-28 py-2 text-right font-medium">Quantity</th>
-                                <th className="w-36 py-2 text-right font-medium">Unit Cost</th>
-                                <th className="w-32 py-2 text-right font-medium">Subtotal</th>
-                                <th className="w-10 py-2"></th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {form.data.items.map((item, index) => (
-                                <tr key={index} className="border-t">
-                                    <td className="py-2 pr-2">
-                                        <SearchableSelect
-                                            value={selectedProducts[index] ?? null}
-                                            onChange={(product) => onProductChange(index, product)}
-                                            getLabel={(option) => option.name}
-                                            getSublabel={(option) => option.sku}
-                                            searchUrl={route('products.search')}
-                                            placeholder="Search a product by name, SKU or barcode"
-                                        />
-                                        <InputError message={(form.errors as Record<string, string>)[`items.${index}.product_id`]} />
-                                    </td>
-                                    <td className="py-2 pr-2">
-                                        <FormInput
-                                            id={`purchase-item-${index}-quantity`}
-                                            type="number"
-                                            step="1"
-                                            min={0}
-                                            value={item.quantity}
-                                            onChange={(e) => updateItem(index, { quantity: Number(e.target.value) })}
-                                            placeholder="1"
-                                            className="text-right"
-                                        />
-                                    </td>
-                                    <td className="py-2 pr-2">
-                                        <div className="space-y-1">
-                                            <MoneyInput
-                                                value={item.original_price ?? item.unit_price}
-                                                onChange={(e) => {
-                                                    const orig = Number(e.target.value);
-                                                    const disc = discountAmountFor(orig, item.discount_type as DiscountTypeValue, item.discount_value ?? 0);
-                                                    updateItem(index, {
-                                                        original_price: orig,
-                                                        unit_price: orig - disc,
-                                                    });
-                                                }}
-                                                className="text-right"
-                                            />
-                                            <div className="flex items-center justify-end gap-1 text-xs">
-                                                {item.discount_type ? (
-                                                    <span className="text-emerald-600 font-medium dark:text-emerald-400">
-                                                        {item.discount_type === 'percentage' ? `${item.discount_value}%` : `-${money(item.discount_value ?? 0)}`}
-                                                    </span>
-                                                ) : (
-                                                    <span className="text-muted-foreground">Discount</span>
-                                                )}
-                                                <Button
-                                                    type="button"
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    className="size-5"
-                                                    onClick={() => setItemDiscountIndex(index)}
-                                                    aria-label="Edit discount"
-                                                >
-                                                    <Pencil className="size-3" />
+                {form.data.items.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed py-8 text-center">
+                        <p className="text-sm font-medium">No items added yet</p>
+                        <p className="text-muted-foreground text-xs">উপরের সার্চবক্সে প্রোডাক্ট সিলেক্ট করলে এখানে নতুন row যোগ হবে</p>
+                    </div>
+                ) : (
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-sm">
+                            <thead className="text-muted-foreground">
+                                <tr>
+                                    <th className="py-2 text-left font-medium">Product</th>
+                                    <th className="w-28 py-2 text-right font-medium">Quantity</th>
+                                    <th className="w-36 py-2 text-right font-medium">Unit Cost</th>
+                                    <th className="w-32 py-2 text-right font-medium">Subtotal</th>
+                                    <th className="w-10 py-2"></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {form.data.items.map((item, index) => {
+                                    const product = selectedProducts[item.product_id];
+                                    return (
+                                        <tr key={index} className="border-t">
+                                            <td className="py-2 pr-2">
+                                                <div className="font-medium">{product?.name ?? `Product #${item.product_id}`}</div>
+                                                {product?.sku && <div className="text-muted-foreground text-xs font-mono">{product.sku}</div>}
+                                                <InputError message={(form.errors as Record<string, string>)[`items.${index}.product_id`]} />
+                                            </td>
+                                            <td className="py-2 pr-2">
+                                                <FormInput
+                                                    id={`purchase-item-${index}-quantity`}
+                                                    type="number"
+                                                    step="1"
+                                                    min={1}
+                                                    value={item.quantity}
+                                                    onChange={(e) => updateItem(index, { quantity: Math.max(1, Number(e.target.value)) })}
+                                                    placeholder="1"
+                                                    className="text-right"
+                                                />
+                                            </td>
+                                            <td className="py-2 pr-2">
+                                                <div className="space-y-1">
+                                                    <MoneyInput
+                                                        value={item.original_price ?? item.unit_price}
+                                                        onChange={(e) => {
+                                                            const orig = Number(e.target.value);
+                                                            const disc = discountAmountFor(
+                                                                orig,
+                                                                item.discount_type as DiscountTypeValue,
+                                                                item.discount_value ?? 0,
+                                                            );
+                                                            updateItem(index, {
+                                                                original_price: orig,
+                                                                unit_price: orig - disc,
+                                                            });
+                                                        }}
+                                                        className="text-right"
+                                                    />
+                                                    <div className="flex items-center justify-end gap-1 text-xs">
+                                                        {item.discount_type ? (
+                                                            <span className="text-emerald-600 font-medium dark:text-emerald-400">
+                                                                {item.discount_type === 'percentage'
+                                                                    ? `${item.discount_value}%`
+                                                                    : `-${money(item.discount_value ?? 0)}`}
+                                                            </span>
+                                                        ) : (
+                                                            <span className="text-muted-foreground">Discount</span>
+                                                        )}
+                                                        <Button
+                                                            type="button"
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="size-5"
+                                                            onClick={() => setItemDiscountIndex(index)}
+                                                            aria-label="Edit discount"
+                                                        >
+                                                            <Pencil className="size-3" />
+                                                        </Button>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td className="py-2 pr-2 text-right tabular-nums font-semibold">
+                                                {money(item.quantity * item.unit_price)}
+                                            </td>
+                                            <td className="py-2 text-right">
+                                                <Button type="button" variant="ghost" size="icon" onClick={() => removeItem(index)}>
+                                                    <Trash2 className="size-4" />
                                                 </Button>
-                                            </div>
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                            <tfoot>
+                                <tr className="border-t font-medium">
+                                    <td colSpan={3} className="py-2 text-right">
+                                        Subtotal
+                                    </td>
+                                    <td className="py-2 text-right tabular-nums">{money(subtotal)}</td>
+                                    <td></td>
+                                </tr>
+                                <tr>
+                                    <td colSpan={3} className="py-1 text-right text-sm">
+                                        <div className="flex items-center justify-end gap-1">
+                                            <span>Discount</span>
+                                            <Button
+                                                type="button"
+                                                variant="ghost"
+                                                size="icon"
+                                                className="size-5"
+                                                onClick={() => setInvoiceDiscountOpen(true)}
+                                                aria-label="Edit discount"
+                                            >
+                                                <Pencil className="size-3" />
+                                            </Button>
                                         </div>
                                     </td>
-                                    <td className="py-2 pr-2 text-right tabular-nums">{money(item.quantity * item.unit_price)}</td>
-                                    <td className="py-2 text-right">
-                                        <Button
-                                            type="button"
-                                            variant="ghost"
-                                            size="icon"
-                                            onClick={() => removeItem(index)}
-                                            disabled={form.data.items.length <= 1}
-                                        >
-                                            <Trash2 className="size-4" />
-                                        </Button>
+                                    <td className="py-1 text-right text-sm tabular-nums text-emerald-600 dark:text-emerald-400">
+                                        -{money(invoiceDiscountAmount)}
                                     </td>
+                                    <td></td>
                                 </tr>
-                            ))}
-                        </tbody>
-                        <tfoot>
-                            <tr className="border-t font-medium">
-                                <td colSpan={3} className="py-2 text-right">
-                                    Subtotal
-                                </td>
-                                <td className="py-2 text-right tabular-nums">{money(subtotal)}</td>
-                                <td></td>
-                            </tr>
-                            <tr>
-                                <td colSpan={3} className="py-1 text-right text-sm">
-                                    <div className="flex items-center justify-end gap-1">
-                                        <span>Discount</span>
-                                        <Button
-                                            type="button"
-                                            variant="ghost"
-                                            size="icon"
-                                            className="size-5"
-                                            onClick={() => setInvoiceDiscountOpen(true)}
-                                            aria-label="Edit discount"
-                                        >
-                                            <Pencil className="size-3" />
-                                        </Button>
-                                    </div>
-                                </td>
-                                <td className="py-1 text-right text-sm tabular-nums text-emerald-600 dark:text-emerald-400">
-                                    -{money(invoiceDiscountAmount)}
-                                </td>
-                                <td></td>
-                            </tr>
-                            <tr className="border-t font-medium text-base">
-                                <td colSpan={3} className="py-2 text-right">
-                                    Total
-                                </td>
-                                <td className="py-2 text-right tabular-nums">{money(grandTotal)}</td>
-                                <td></td>
-                            </tr>
-                        </tfoot>
-                    </table>
-                </div>
+                                <tr className="border-t font-semibold text-base">
+                                    <td colSpan={3} className="py-2 text-right">
+                                        Total
+                                    </td>
+                                    <td className="py-2 text-right tabular-nums">{money(grandTotal)}</td>
+                                    <td></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                )}
                 <InputError message={form.errors.items} />
             </div>
 
