@@ -122,6 +122,7 @@ export interface Dictionary {
         total_payable: string;
         cash_and_bank: string;
         low_stock_products: string;
+        closing_stock_value: string;
     };
     language: {
         label: string;
@@ -565,6 +566,7 @@ const en: Dictionary = {
         total_payable: 'Total Payable',
         cash_and_bank: 'Cash + Bank',
         low_stock_products: 'Low Stock Products',
+        closing_stock_value: 'Closing Stock Value',
     },
     language: {
         label: 'Language',

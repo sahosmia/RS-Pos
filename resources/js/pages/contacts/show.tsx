@@ -164,7 +164,13 @@ export default function ContactShow({ contact, ledger, ledgerFilters, payments, 
                                     label="From"
                                     type="date"
                                     value={ledgerFrom}
-                                    onChange={(e) => setLedgerFrom(e.target.value)}
+                                    onChange={(e) => {
+                                        const val = e.target.value;
+                                        setLedgerFrom(val);
+                                        if (val && ledgerTo) {
+                                            applyLedgerFilter(val, ledgerTo);
+                                        }
+                                    }}
                                     className="h-9 w-40"
                                 />
                                 <FormInput
@@ -172,12 +178,15 @@ export default function ContactShow({ contact, ledger, ledgerFilters, payments, 
                                     label="To"
                                     type="date"
                                     value={ledgerTo}
-                                    onChange={(e) => setLedgerTo(e.target.value)}
+                                    onChange={(e) => {
+                                        const val = e.target.value;
+                                        setLedgerTo(val);
+                                        if (ledgerFrom && val) {
+                                            applyLedgerFilter(ledgerFrom, val);
+                                        }
+                                    }}
                                     className="h-9 w-40"
                                 />
-                                <Button variant="outline" size="sm" onClick={() => applyLedgerFilter(ledgerFrom, ledgerTo)}>
-                                    Apply
-                                </Button>
                             </div>
 
                             {ledger.length > 0 && (

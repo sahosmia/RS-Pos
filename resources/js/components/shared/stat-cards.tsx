@@ -20,7 +20,7 @@ export default function StatCards({ cards, className }: StatCardsProps) {
             {cards.map((card) => (
                 <div
                     key={card.label}
-                    className="group relative overflow-hidden rounded-xl border bg-card p-4 transition-shadow hover:shadow-md"
+                    className="group relative overflow-hidden rounded-xl border/40 bg-card/80 p-4 transition-all hover:shadow-2xs"
                 >
                     <div className="flex items-center gap-3">
                         <div

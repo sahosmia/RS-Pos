@@ -988,6 +988,15 @@ export interface DashboardBalances {
     totalPayable: number;
     cashAndBank: number;
     lowStockCount: number;
+    closingStockValue: number;
+}
+
+export interface DashboardLowStockProduct {
+    id: number;
+    name: string;
+    sku: string;
+    current_stock: number;
+    minimum_stock_level: number;
 }
 
 export interface DashboardDailySalesPoint {

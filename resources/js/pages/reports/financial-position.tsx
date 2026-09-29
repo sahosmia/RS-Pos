@@ -26,11 +26,16 @@ export default function FinancialPosition({ report: initialReport }: FinancialPo
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    const applyEndDate = () => {
+    const handleEndDateChange = (newDate: string) => {
+        setEndDate(newDate);
+        if (!newDate) {
+            return;
+        }
+
         setLoading(true);
         setError(null);
 
-        fetch(`${route('reports.financial-position')}?end_date=${endDate}`, { headers: { Accept: 'application/json' } })
+        fetch(`${route('reports.financial-position')}?end_date=${newDate}`, { headers: { Accept: 'application/json' } })
             .then(async (response) => {
                 if (!response.ok) {
                     const body = await response.json().catch(() => null);
@@ -59,15 +64,11 @@ export default function FinancialPosition({ report: initialReport }: FinancialPo
                     <div className="flex items-end gap-2">
                         <FormInput
                             id="end_date"
-                            label="As of"
                             type="date"
                             value={endDate}
-                            onChange={(e) => setEndDate(e.target.value)}
+                            onChange={(e) => handleEndDateChange(e.target.value)}
                             className="h-9 w-40"
                         />
-                        <Button size="sm" onClick={applyEndDate} disabled={loading}>
-                            {loading ? 'Loading...' : 'Apply'}
-                        </Button>
                     </div>
                 </div>
 

@@ -25,9 +25,20 @@ export default function CashFlow({ from, to, byType, moneyIn, moneyOut, net }: C
     const money = useMoneyFormat();
     const [range, setRange] = useState({ from, to });
 
-    const submit: FormEventHandler = (e) => {
-        e.preventDefault();
-        router.get(route('reports.cash-flow'), range, { preserveState: true });
+    const handleFromChange = (fromVal: string) => {
+        const next = { ...range, from: fromVal };
+        setRange(next);
+        if (fromVal && next.to) {
+            router.get(route('reports.cash-flow'), next, { preserveState: true });
+        }
+    };
+
+    const handleToChange = (toVal: string) => {
+        const next = { ...range, to: toVal };
+        setRange(next);
+        if (next.from && toVal) {
+            router.get(route('reports.cash-flow'), next, { preserveState: true });
+        }
     };
 
     return (
@@ -37,13 +48,10 @@ export default function CashFlow({ from, to, byType, moneyIn, moneyOut, net }: C
             <div className="space-y-6 px-4 py-6">
                 <HeadingSmall title="Cash Flow" description="টাইপ অনুযায়ী টাকার আসা-যাওয়া" />
 
-                <form onSubmit={submit} className="flex flex-wrap items-end gap-2">
-                    <FormInput id="from" label="From" type="date" value={range.from} onChange={(e) => setRange({ ...range, from: e.target.value })} />
-                    <FormInput id="to" label="To" type="date" value={range.to} onChange={(e) => setRange({ ...range, to: e.target.value })} />
-                    <Button type="submit" variant="outline">
-                        Apply
-                    </Button>
-                </form>
+                <div className="flex flex-wrap items-end gap-2">
+                    <FormInput id="from" label="From" type="date" value={range.from} onChange={(e) => handleFromChange(e.target.value)} />
+                    <FormInput id="to" label="To" type="date" value={range.to} onChange={(e) => handleToChange(e.target.value)} />
+                </div>
 
                 <div className="grid gap-4 sm:grid-cols-3">
                     <div className="rounded-lg border p-4">

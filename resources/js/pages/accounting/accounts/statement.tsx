@@ -29,10 +29,20 @@ export default function AccountStatement({ account, transactions, broughtForward
         { title: account.name, href: `/accounts/${account.id}/statement` },
     ];
 
-    const applyRange: FormEventHandler = (e) => {
-        e.preventDefault();
+    const handleFromChange = (fromVal: string) => {
+        const next = { ...range, from: fromVal };
+        setRange(next);
+        if (fromVal && next.to) {
+            router.get(route('accounts.statement', account.id), next, { preserveState: true, preserveScroll: true });
+        }
+    };
 
-        router.get(route('accounts.statement', account.id), range, { preserveState: true, preserveScroll: true });
+    const handleToChange = (toVal: string) => {
+        const next = { ...range, to: toVal };
+        setRange(next);
+        if (next.from && toVal) {
+            router.get(route('accounts.statement', account.id), next, { preserveState: true, preserveScroll: true });
+        }
     };
 
     const rows: LedgerRow[] = transactions.map((transaction) => ({
@@ -65,13 +75,10 @@ export default function AccountStatement({ account, transactions, broughtForward
                     </div>
                 </div>
 
-                <form onSubmit={applyRange} className="flex flex-wrap items-end gap-3">
-                    <FormInput id="from" label="From" type="date" value={range.from} onChange={(e) => setRange({ ...range, from: e.target.value })} />
-                    <FormInput id="to" label="To" type="date" value={range.to} onChange={(e) => setRange({ ...range, to: e.target.value })} />
-                    <Button type="submit" variant="outline">
-                        Apply
-                    </Button>
-                </form>
+                <div className="flex flex-wrap items-end gap-3">
+                    <FormInput id="from" label="From" type="date" value={range.from} onChange={(e) => handleFromChange(e.target.value)} />
+                    <FormInput id="to" label="To" type="date" value={range.to} onChange={(e) => handleToChange(e.target.value)} />
+                </div>
 
                 {rows.length === 0 ? (
                     <EmptyState title="No transactions in this range" description="তারিখের সীমা বদলে দেখুন" />

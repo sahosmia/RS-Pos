@@ -82,9 +82,17 @@ export default function DateRangeFilter({ range, onChange, allowClear = false }:
         onChange({ preset: value as DateRangePresetValue });
     };
 
-    const applyCustomRange = () => {
-        if (customFrom && customTo) {
-            onChange({ preset: 'custom', from: customFrom, to: customTo });
+    const handleFromChange = (val: string) => {
+        setCustomFrom(val);
+        if (val && customTo) {
+            onChange({ preset: 'custom', from: val, to: customTo });
+        }
+    };
+
+    const handleToChange = (val: string) => {
+        setCustomTo(val);
+        if (customFrom && val) {
+            onChange({ preset: 'custom', from: customFrom, to: val });
         }
     };
 
@@ -112,7 +120,7 @@ export default function DateRangeFilter({ range, onChange, allowClear = false }:
                         id="date-range-from"
                         type="date"
                         value={customFrom}
-                        onChange={(e) => setCustomFrom(e.target.value)}
+                        onChange={(e) => handleFromChange(e.target.value)}
                         className="w-full sm:w-auto"
                     />
                     <FormInput
@@ -120,18 +128,9 @@ export default function DateRangeFilter({ range, onChange, allowClear = false }:
                         type="date"
                         value={customTo}
                         min={customFrom}
-                        onChange={(e) => setCustomTo(e.target.value)}
+                        onChange={(e) => handleToChange(e.target.value)}
                         className="w-full sm:w-auto"
                     />
-                    <Button
-                        type="button"
-                        variant="outline"
-                        onClick={applyCustomRange}
-                        disabled={!customFrom || !customTo}
-                        className="w-full sm:w-auto"
-                    >
-                        Apply
-                    </Button>
                 </div>
             )}
         </div>
