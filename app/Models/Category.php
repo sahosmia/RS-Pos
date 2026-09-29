@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\LogsActivityDefaults;
+use App\Queries\Product\ProductFormOptions;
 use Database\Factories\CategoryFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -15,6 +16,12 @@ class Category extends Model
     use HasFactory;
 
     use LogsActivityDefaults;
+
+    protected static function booted(): void
+    {
+        static::saved(fn () => ProductFormOptions::clearCache());
+        static::deleted(fn () => ProductFormOptions::clearCache());
+    }
 
     /**
      * @var list<string>

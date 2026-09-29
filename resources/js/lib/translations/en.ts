@@ -54,6 +54,7 @@ export interface Dictionary {
         products: string;
         add_product: string;
         low_stock: string;
+        out_of_stock: string;
         category: string;
         unit: string;
         brand: string;
@@ -499,6 +500,7 @@ const en: Dictionary = {
         products: 'Products',
         add_product: 'Add Product',
         low_stock: 'Low Stock',
+        out_of_stock: 'Out of Stock',
         category: 'Category',
         unit: 'Unit',
         brand: 'Brand',

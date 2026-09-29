@@ -20,6 +20,7 @@ class Purchase extends Model
 
     /** @use HasFactory<PurchaseFactory> */
     use HasFactory;
+
     use LogsActivityDefaults;
 
     /**

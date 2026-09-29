@@ -18,6 +18,7 @@ class Expense extends Model implements HasMedia
 
     /** @use HasFactory<ExpenseFactory> */
     use HasFactory;
+
     use InteractsWithMedia;
     use LogsActivityDefaults;
 

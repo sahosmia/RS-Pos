@@ -55,6 +55,7 @@ const bn: Dictionary = {
         products: 'পণ্যসমূহ',
         add_product: 'পণ্য যোগ করুন',
         low_stock: 'কম স্টক',
+        out_of_stock: 'স্টক শেষ',
         category: 'ক্যাটাগরি',
         unit: 'একক',
         brand: 'ব্র্যান্ড',
