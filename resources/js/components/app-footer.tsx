@@ -1,6 +1,6 @@
 export function AppFooter() {
     return (
-        <footer className="text-muted-foreground border-sidebar-border/70 shrink-0 border-t px-4 py-3 text-center text-xs md:px-6">
+        <footer className="text-muted-foreground border-sidebar-border/70 shrink-0 border-t px-4 py-3 text-center text-xs md:px-6 print:hidden">
             RS POS — Developed by{' '}
             <a
                 href="https://www.rsitsoft.com"

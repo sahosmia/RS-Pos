@@ -15,7 +15,7 @@ export function AppSidebar() {
     const mainNavItems = applyMenuOrder(permittedNavItems, shop.menu_order);
 
     return (
-        <Sidebar collapsible="icon" variant="inset">
+        <Sidebar collapsible="icon" variant="inset" className="print:hidden">
             <SidebarHeader>
                 <SidebarMenu>
                     <SidebarMenuItem>

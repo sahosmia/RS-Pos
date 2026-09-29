@@ -331,7 +331,10 @@ export default function SaleForm({ mode, sale, initialCustomer, products, accoun
         }));
         const options = {
             preserveScroll: true,
-            ...(onSuccess ? { onSuccess } : {}),
+            onSuccess: (page: Page) => {
+                toast.success(mode === 'edit' ? 'Sale invoice updated.' : 'Sale invoice saved.');
+                onSuccess?.(page);
+            },
             onError: (errors: Record<string, string>) =>
                 toast.error(paymentRowsError(errors) ?? 'Could not save the sale — check the form for errors.'),
         };

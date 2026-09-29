@@ -20,7 +20,11 @@ export function getSaleActions(sale: SaleListItem, { onDelete, onAddPayment, onV
     return [
         { label: 'View', icon: Eye, href: route('sales.show', sale.id) },
         { label: 'Edit', icon: Pencil, href: route('sales.edit', sale.id), hidden: !sale.can_edit },
-        { label: 'Print Invoice', icon: Printer, href: route('sales.show', { sale: sale.id, print: 1 }) },
+        {
+            label: 'Print Invoice',
+            icon: Printer,
+            onClick: () => window.open(route('sales.show', { sale: sale.id, print: 1 }), '_blank', 'noopener,noreferrer'),
+        },
         {
             label: 'Add Payment',
             icon: Wallet,

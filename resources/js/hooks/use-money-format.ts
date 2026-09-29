@@ -13,6 +13,7 @@ import { useCallback } from 'react';
  */
 export function useMoneyFormat() {
     const { shop } = usePage<SharedData>().props;
+    const currencySymbol = shop?.currency_symbol ?? '৳';
 
     return useCallback(
         (amount: number): string => {
@@ -21,8 +22,8 @@ export function useMoneyFormat() {
                 maximumFractionDigits: 2,
             }).format(Math.abs(amount));
 
-            return `${amount < 0 ? '-' : ''}${shop.currency_symbol}${formatted}`;
+            return `${amount < 0 ? '-' : ''}${currencySymbol}${formatted}`;
         },
-        [shop.currency_symbol],
+        [currencySymbol],
     );
 }

@@ -277,3 +277,20 @@
         height: 0;
     }
 }
+
+/*
+  Zero the page margin so Chrome/Firefox have no reserved margin box to draw
+  their default print header/footer (page title, URL, date, page number)
+  into — this is what actually suppresses that browser chrome, not just
+  `print:hidden` on app elements. The invoice/page content gets its own
+  padding here instead, so it doesn't print edge-to-edge.
+*/
+@media print {
+    @page {
+        margin: 0;
+    }
+
+    body {
+        padding: 12mm;
+    }
+}
