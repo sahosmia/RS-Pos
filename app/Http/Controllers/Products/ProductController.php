@@ -33,18 +33,25 @@ class ProductController extends Controller
 
         $products = $products->through(fn (Product $product) => ProductListResource::make($product)->resolve());
 
-        $statsQuery = ProductQuery::filtered($filters);
+        // `select()` (not `selectRaw()`, which only appends) so this replaces the
+        // `has_stock_movements` exists-select ProductQuery::filtered() adds for the list
+        // view — otherwise it lingers alongside these aggregates with no GROUP BY (MySQL 1140).
+        $rawStats = ProductQuery::filtered($filters)
+            ->reorder()
+            ->toBase()
+            ->select(DB::raw('
+                COUNT(*) as total_products,
+                COALESCE(SUM(CASE WHEN manage_stock = 1 THEN current_stock ELSE 0 END), 0) as total_stock,
+                COALESCE(SUM(CASE WHEN manage_stock = 1 THEN current_stock * avg_cost ELSE 0 END), 0) as total_stock_value,
+                COUNT(CASE WHEN manage_stock = 1 AND current_stock <= minimum_stock_level THEN 1 END) as low_stock_count
+            '))
+            ->first();
+
         $stats = [
-            'total_products' => (clone $statsQuery)->count(),
-            'total_stock' => (float) (clone $statsQuery)->where('manage_stock', true)->sum('current_stock'),
-            // `->selectRaw(...)->value(...)` doesn't go through Eloquent's aggregate()
-            // machinery, so it can't reset the base query's `withExists` select or
-            // `orderBy` — mixing that leftover non-aggregated select with a raw SUM
-            // and no GROUP BY is what MySQL error 1140 was coming from. `->sum()`
-            // (like `total_stock` above) goes through the real aggregate path, which
-            // clears both automatically, and already coalesces a null sum to 0.
-            'total_stock_value' => (float) (clone $statsQuery)->where('manage_stock', true)->sum(DB::raw('current_stock * avg_cost')),
-            'low_stock_count' => (clone $statsQuery)->where('manage_stock', true)->whereColumn('current_stock', '<=', 'minimum_stock_level')->count(),
+            'total_products' => (int) ($rawStats->total_products ?? 0),
+            'total_stock' => (float) ($rawStats->total_stock ?? 0),
+            'total_stock_value' => (float) ($rawStats->total_stock_value ?? 0),
+            'low_stock_count' => (int) ($rawStats->low_stock_count ?? 0),
         ];
 
         return Inertia::render('products/index', [

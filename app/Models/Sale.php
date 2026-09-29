@@ -22,6 +22,7 @@ class Sale extends Model
 
     /** @use HasFactory<SaleFactory> */
     use HasFactory;
+
     use LogsActivityDefaults;
 
     /**

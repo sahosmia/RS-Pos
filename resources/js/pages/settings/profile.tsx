@@ -22,6 +22,7 @@ export default function Profile({ mustVerifyEmail, status }: { mustVerifyEmail: 
 
     const { data, setData, patch, errors, processing, recentlySuccessful } = useForm({
         name: auth.user.name,
+        username: auth.user.username ?? '',
         email: auth.user.email,
     });
 
@@ -37,7 +38,7 @@ export default function Profile({ mustVerifyEmail, status }: { mustVerifyEmail: 
 
             <SettingsLayout>
                 <div className="space-y-6">
-                    <HeadingSmall title="Profile information" description="Update your name and email address" />
+                    <HeadingSmall title="Profile information" description="Update your name, username, and email address" />
 
                     <form onSubmit={submit} className="space-y-6">
                         <FormInput
@@ -50,6 +51,18 @@ export default function Profile({ mustVerifyEmail, status }: { mustVerifyEmail: 
                             autoComplete="name"
                             placeholder="Full name"
                             error={errors.name}
+                        />
+
+                        <FormInput
+                            id="username"
+                            label="Username"
+                            className="mt-1 block w-full"
+                            value={data.username}
+                            onChange={(e) => setData('username', e.target.value)}
+                            required
+                            autoComplete="username"
+                            placeholder="Username"
+                            error={errors.username}
                         />
 
                         <FormInput

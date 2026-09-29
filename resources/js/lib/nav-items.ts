@@ -61,6 +61,7 @@ export function buildMainNavItems(emiModuleEnabled: boolean, t: ReturnType<typeo
                 { key: 'products', title: t('nav', 'products'), url: '/products' },
                 { key: 'add_product', title: t('nav', 'add_product'), url: '/products/create', permission: 'product.create' },
                 { key: 'low_stock', title: t('nav', 'low_stock'), url: '/products?stock_status=low_stock' },
+                { key: 'out_of_stock', title: t('nav', 'out_of_stock'), url: '/products?stock_status=out_of_stock' },
                 { key: 'category', title: t('nav', 'category'), url: '/categories' },
                 { key: 'unit', title: t('nav', 'unit'), url: '/units' },
                 { key: 'brand', title: t('nav', 'brand'), url: '/brands' },
