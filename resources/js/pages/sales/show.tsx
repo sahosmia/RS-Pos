@@ -118,17 +118,19 @@ export default function SaleShow({ sale, accounts, justConfirmed, invoiceSetting
                         <div className="space-y-1">
                             {invoiceSettings.general.title && <h2 className="text-2xl font-bold tracking-tight">{invoiceSettings.general.title}</h2>}
                             {invoiceSettings.general.subtitle && <p className="text-muted-foreground text-sm">{invoiceSettings.general.subtitle}</p>}
+                        </div>
+                        <div className="flex flex-col items-end text-right">
+                            {invoiceSettings.branding.show_logo && invoiceLogoUrl && (
+                                <img src={invoiceLogoUrl} alt={shop.name} className="mb-1 h-14 w-auto shrink-0 object-contain" />
+                            )}
                             {(invoiceSettings.business.show_name || invoiceSettings.business.show_address || invoiceSettings.business.show_phone) && (
-                                <div className="pt-1 text-sm">
+                                <div className="text-sm">
                                     {invoiceSettings.business.show_name && shop.name && <p className="font-semibold">{shop.name}</p>}
                                     {invoiceSettings.business.show_address && shop.address && <p className="text-muted-foreground">{shop.address}</p>}
                                     {invoiceSettings.business.show_phone && shop.phone && <p className="text-muted-foreground">{shop.phone}</p>}
                                 </div>
                             )}
                         </div>
-                        {invoiceSettings.branding.show_logo && invoiceLogoUrl && (
-                            <img src={invoiceLogoUrl} alt={shop.name} className="h-14 w-auto shrink-0 object-contain" />
-                        )}
                     </div>
                 )}
 

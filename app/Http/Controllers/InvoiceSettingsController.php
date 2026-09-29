@@ -21,6 +21,7 @@ class InvoiceSettingsController extends Controller
                 'name' => $settings->shop_name,
                 'address' => $settings->shop_address,
                 'phone' => $settings->shop_phone,
+                'currency_symbol' => $settings->currency_symbol,
             ],
         ]);
     }
