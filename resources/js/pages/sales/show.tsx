@@ -109,63 +109,63 @@ export default function SaleShow({ sale, accounts, justConfirmed, invoiceSetting
             <Head title={sale.invoice_no} />
 
             <div className="space-y-6 px-4 py-6">
-                {(invoiceSettings.general.title || (invoiceSettings.branding.show_logo && invoiceLogoUrl)) && (
+                {(invoiceSettings.general.title ||
+                    (invoiceSettings.branding.show_logo && invoiceLogoUrl) ||
+                    invoiceSettings.business.show_name ||
+                    invoiceSettings.business.show_address ||
+                    invoiceSettings.business.show_phone) && (
                     <div className="flex items-start justify-between gap-4 border-b pb-4">
-                        <div>
+                        <div className="space-y-1">
                             {invoiceSettings.general.title && <h2 className="text-2xl font-bold tracking-tight">{invoiceSettings.general.title}</h2>}
                             {invoiceSettings.general.subtitle && <p className="text-muted-foreground text-sm">{invoiceSettings.general.subtitle}</p>}
+                            {(invoiceSettings.business.show_name || invoiceSettings.business.show_address || invoiceSettings.business.show_phone) && (
+                                <div className="pt-1 text-sm">
+                                    {invoiceSettings.business.show_name && shop.name && <p className="font-semibold">{shop.name}</p>}
+                                    {invoiceSettings.business.show_address && shop.address && <p className="text-muted-foreground">{shop.address}</p>}
+                                    {invoiceSettings.business.show_phone && shop.phone && <p className="text-muted-foreground">{shop.phone}</p>}
+                                </div>
+                            )}
                         </div>
                         {invoiceSettings.branding.show_logo && invoiceLogoUrl && (
-                            <img src={invoiceLogoUrl} alt={shop.name} className="h-14 w-auto object-contain" />
+                            <img src={invoiceLogoUrl} alt={shop.name} className="h-14 w-auto shrink-0 object-contain" />
                         )}
                     </div>
                 )}
 
-                {(invoiceSettings.business.show_name || invoiceSettings.business.show_address || invoiceSettings.business.show_phone) && (
-                    <div className="text-sm">
-                        {invoiceSettings.business.show_name && shop.name && <p className="font-medium">{shop.name}</p>}
-                        {invoiceSettings.business.show_address && shop.address && <p className="text-muted-foreground">{shop.address}</p>}
-                        {invoiceSettings.business.show_phone && shop.phone && <p className="text-muted-foreground">{shop.phone}</p>}
+                <div className="grid grid-cols-2 gap-4 border-b pb-4 text-sm">
+                    <div>
+                        {(invoiceSettings.customer.show_name ||
+                            (invoiceSettings.customer.show_phone && sale.customer.phone) ||
+                            (invoiceSettings.customer.show_email && sale.customer.email) ||
+                            (invoiceSettings.customer.show_address && sale.customer.address)) && (
+                            <div className="space-y-0.5">
+                                <p className="mb-1 text-xs font-semibold tracking-wider text-muted-foreground uppercase">Customer Details</p>
+                                {invoiceSettings.customer.show_name && <p className="font-medium">{sale.customer.name}</p>}
+                                {invoiceSettings.customer.show_phone && sale.customer.phone && <p className="text-muted-foreground">{sale.customer.phone}</p>}
+                                {invoiceSettings.customer.show_email && sale.customer.email && <p className="text-muted-foreground">{sale.customer.email}</p>}
+                                {invoiceSettings.customer.show_address && sale.customer.address && <p className="text-muted-foreground">{sale.customer.address}</p>}
+                            </div>
+                        )}
                     </div>
-                )}
-
-                <div className="space-y-1 text-sm">
-                    {invoiceSettings.general.show_number && (
-                        <p>
-                            <span className="text-muted-foreground">Invoice No: </span>
-                            {sale.invoice_no}
-                        </p>
-                    )}
-                    {invoiceSettings.general.show_date && (
-                        <p>
-                            <span className="text-muted-foreground">Date: </span>
-                            {sale.sale_date}
-                        </p>
-                    )}
-                    {invoiceSettings.customer.show_name && (
-                        <p>
-                            <span className="text-muted-foreground">Customer: </span>
-                            {sale.customer.name}
-                        </p>
-                    )}
-                    {invoiceSettings.customer.show_phone && sale.customer.phone && (
-                        <p>
-                            <span className="text-muted-foreground">Phone: </span>
-                            {sale.customer.phone}
-                        </p>
-                    )}
-                    {invoiceSettings.customer.show_email && sale.customer.email && (
-                        <p>
-                            <span className="text-muted-foreground">Email: </span>
-                            {sale.customer.email}
-                        </p>
-                    )}
-                    {invoiceSettings.customer.show_address && sale.customer.address && (
-                        <p>
-                            <span className="text-muted-foreground">Address: </span>
-                            {sale.customer.address}
-                        </p>
-                    )}
+                    <div>
+                        {(invoiceSettings.general.show_number || invoiceSettings.general.show_date) && (
+                            <div className="space-y-0.5 sm:text-right">
+                                <p className="mb-1 text-xs font-semibold tracking-wider text-muted-foreground uppercase">Order Details</p>
+                                {invoiceSettings.general.show_number && (
+                                    <p>
+                                        <span className="text-muted-foreground">Invoice No: </span>
+                                        <span className="font-medium">{sale.invoice_no}</span>
+                                    </p>
+                                )}
+                                {invoiceSettings.general.show_date && (
+                                    <p>
+                                        <span className="text-muted-foreground">Date: </span>
+                                        <span>{sale.sale_date}</span>
+                                    </p>
+                                )}
+                            </div>
+                        )}
+                    </div>
                 </div>
 
                 <div className="flex flex-wrap items-start justify-between gap-4 print:hidden">

@@ -96,6 +96,17 @@ class ExpenseController extends Controller
         return back();
     }
 
+    public function destroy(Expense $expense): RedirectResponse
+    {
+        if (! $expense->canEdit()) {
+            return back()->withErrors(['expense' => 'This expense already has a payment and cannot be deleted directly.']);
+        }
+
+        $expense->delete();
+
+        return back();
+    }
+
     public function update(UpdateExpenseRequest $request, Expense $expense, UpdateExpenseAction $updateExpense): RedirectResponse
     {
         if (! $expense->canEdit()) {

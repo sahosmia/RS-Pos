@@ -3,6 +3,7 @@ import { getExpenseActions } from '@/components/expenses/expense-actions';
 import ExpenseModal from '@/components/expenses/expense-modal';
 import HeadingSmall from '@/components/heading-small';
 import LookupManagerModal from '@/components/products/lookup-manager-modal';
+import ConfirmDialog from '@/components/shared/confirm-dialog';
 import StatCards from '@/components/shared/stat-cards';
 import ContactLink from '@/components/shared/contact-link';
 import EmptyState from '@/components/shared/empty-state';
@@ -26,10 +27,11 @@ import { useTableViewMode } from '@/hooks/use-table-view-mode';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem, type SharedData } from '@/types';
 import { type Account, type ExpenseCategoryOption, type ExpenseListItem, type Paginated, type PaymentStatusValue } from '@/types/models';
-import { Head, usePage } from '@inertiajs/react';
+import { Head, router, usePage } from '@inertiajs/react';
 import { ArrowDownCircle, ArrowUpCircle, DollarSign, Receipt } from 'lucide-react';
 import { type ColumnDef, type VisibilityState } from '@tanstack/react-table';
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { toast } from 'sonner';
 
 const breadcrumbs: BreadcrumbItem[] = [{ title: 'Expenses', href: '/expenses' }];
 
@@ -93,6 +95,16 @@ export default function ExpensesIndex({ expenses, stats, categories, accounts, f
     const [categoriesOpen, setCategoriesOpen] = useState(false);
     const [editing, setEditing] = useState<ExpenseListItem | null>(null);
     const [paying, setPaying] = useState<ExpenseListItem | null>(null);
+    const [deleting, setDeleting] = useState<ExpenseListItem | null>(null);
+
+    const confirmDelete = () => {
+        if (!deleting) return;
+        router.delete(route('expenses.destroy', deleting.id), {
+            onSuccess: () => toast.success('Expense deleted.'),
+            onError: (errors) => toast.error(errors.expense ?? 'Could not delete expense.'),
+            onFinish: () => setDeleting(null),
+        });
+    };
 
     const { isLoading, applyFilters, handleSort, activeFilterCount, canReset, resetFilters } = useTableFilters({
         routeName: 'expenses.index',
@@ -163,7 +175,9 @@ export default function ExpensesIndex({ expenses, stats, categories, accounts, f
                 header: '',
                 meta: { headerClassName: 'w-10', cellClassName: 'w-10', printHidden: true },
                 cell: ({ row }) => (
-                    <DataTableRowActions actions={getExpenseActions(row.original, { onEdit: setEditing, onPay: setPaying })} />
+                    <DataTableRowActions
+                        actions={getExpenseActions(row.original, { onEdit: setEditing, onPay: setPaying, onDelete: setDeleting })}
+                    />
                 ),
             },
             {
@@ -253,7 +267,9 @@ export default function ExpensesIndex({ expenses, stats, categories, accounts, f
                     </div>
                     <div className="flex shrink-0 items-center gap-1">
                         <span className="font-medium tabular-nums">{money(expense.total_amount)}</span>
-                        <DataTableRowActions actions={getExpenseActions(expense, { onEdit: setEditing, onPay: setPaying })} />
+                        <DataTableRowActions
+                            actions={getExpenseActions(expense, { onEdit: setEditing, onPay: setPaying, onDelete: setDeleting })}
+                        />
                     </div>
                 </div>
 
@@ -445,6 +461,15 @@ export default function ExpensesIndex({ expenses, stats, categories, accounts, f
                 updateRouteName="expense-categories.update"
                 destroyRouteName="expense-categories.destroy"
                 parentOptions={categories}
+            />
+
+            <ConfirmDialog
+                open={deleting !== null}
+                onOpenChange={(open) => !open && setDeleting(null)}
+                title="Delete Expense?"
+                description={`Category "${deleting?.category.name}" and amount ${money(deleting?.total_amount ?? 0)} analysis entry will be permanently deleted.`}
+                confirmLabel="Delete"
+                onConfirm={confirmDelete}
             />
         </AppLayout>
     );

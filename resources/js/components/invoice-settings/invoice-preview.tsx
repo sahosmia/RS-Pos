@@ -26,64 +26,85 @@ const SAMPLE = {
 export default function InvoicePreview({ settings, logoPreview, shop }: InvoicePreviewProps) {
     const money = useMoneyFormat();
 
+    const hasHeader =
+        settings.general.title ||
+        (settings.branding.show_logo && logoPreview) ||
+        settings.business.show_name ||
+        settings.business.show_address ||
+        settings.business.show_phone;
+
+    const hasCustomerDetails =
+        settings.customer.show_name ||
+        settings.customer.show_phone ||
+        settings.customer.show_email ||
+        settings.customer.show_address;
+
+    const hasOrderDetails =
+        settings.general.show_number ||
+        settings.general.show_date ||
+        settings.general.show_due_date;
+
     return (
         <div className="space-y-4 rounded-lg border bg-card p-6 text-sm shadow-2xs">
-            {(settings.general.title || (settings.branding.show_logo && logoPreview)) && (
+            {hasHeader && (
                 <div className="flex items-start justify-between gap-4 border-b pb-4">
-                    <div>
+                    <div className="space-y-1">
                         {settings.general.title && <h2 className="text-xl font-bold tracking-tight">{settings.general.title}</h2>}
                         {settings.general.subtitle && <p className="text-muted-foreground text-xs">{settings.general.subtitle}</p>}
+                        {(settings.business.show_name || settings.business.show_address || settings.business.show_phone) && (
+                            <div className="pt-1 text-xs">
+                                {settings.business.show_name && <p className="font-semibold">{shop.name || 'Your Shop Name'}</p>}
+                                {settings.business.show_address && <p className="text-muted-foreground">{shop.address || 'Shop address'}</p>}
+                                {settings.business.show_phone && <p className="text-muted-foreground">{shop.phone || '01xxxxxxxxx'}</p>}
+                            </div>
+                        )}
                     </div>
-                    {settings.branding.show_logo && logoPreview && <img src={logoPreview} alt="Logo" className="h-10 w-auto object-contain" />}
+                    {settings.branding.show_logo && logoPreview && (
+                        <img src={logoPreview} alt="Logo" className="h-12 w-auto shrink-0 object-contain" />
+                    )}
                 </div>
             )}
 
-            {(settings.business.show_name || settings.business.show_address || settings.business.show_phone) && (
-                <div>
-                    {settings.business.show_name && <p className="font-medium">{shop.name || 'Your Shop Name'}</p>}
-                    {settings.business.show_address && <p className="text-muted-foreground text-xs">{shop.address || 'Shop address'}</p>}
-                    {settings.business.show_phone && <p className="text-muted-foreground text-xs">{shop.phone || '01xxxxxxxxx'}</p>}
+            {(hasCustomerDetails || hasOrderDetails) && (
+                <div className="grid grid-cols-2 gap-4 border-b pb-4 text-xs">
+                    <div>
+                        {hasCustomerDetails && (
+                            <div className="space-y-0.5">
+                                <p className="mb-1 text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">Customer Details</p>
+                                {settings.customer.show_name && <p className="font-medium">{SAMPLE.customer.name}</p>}
+                                {settings.customer.show_phone && <p className="text-muted-foreground">{SAMPLE.customer.phone}</p>}
+                                {settings.customer.show_email && <p className="text-muted-foreground">{SAMPLE.customer.email}</p>}
+                                {settings.customer.show_address && <p className="text-muted-foreground">{SAMPLE.customer.address}</p>}
+                            </div>
+                        )}
+                    </div>
+                    <div>
+                        {hasOrderDetails && (
+                            <div className="space-y-0.5 sm:text-right">
+                                <p className="mb-1 text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">Order Details</p>
+                                {settings.general.show_number && (
+                                    <p>
+                                        <span className="text-muted-foreground">Invoice No: </span>
+                                        <span className="font-medium">{SAMPLE.invoiceNo}</span>
+                                    </p>
+                                )}
+                                {settings.general.show_date && (
+                                    <p>
+                                        <span className="text-muted-foreground">Date: </span>
+                                        <span>{SAMPLE.date}</span>
+                                    </p>
+                                )}
+                                {settings.general.show_due_date && (
+                                    <p>
+                                        <span className="text-muted-foreground">Due Date: </span>
+                                        <span>2026-10-15</span>
+                                    </p>
+                                )}
+                            </div>
+                        )}
+                    </div>
                 </div>
             )}
-
-            <div className="space-y-0.5 text-xs">
-                {settings.general.show_number && (
-                    <p>
-                        <span className="text-muted-foreground">Invoice No: </span>
-                        {SAMPLE.invoiceNo}
-                    </p>
-                )}
-                {settings.general.show_date && (
-                    <p>
-                        <span className="text-muted-foreground">Date: </span>
-                        {SAMPLE.date}
-                    </p>
-                )}
-                {settings.customer.show_name && (
-                    <p>
-                        <span className="text-muted-foreground">Customer: </span>
-                        {SAMPLE.customer.name}
-                    </p>
-                )}
-                {settings.customer.show_phone && (
-                    <p>
-                        <span className="text-muted-foreground">Phone: </span>
-                        {SAMPLE.customer.phone}
-                    </p>
-                )}
-                {settings.customer.show_email && (
-                    <p>
-                        <span className="text-muted-foreground">Email: </span>
-                        {SAMPLE.customer.email}
-                    </p>
-                )}
-                {settings.customer.show_address && (
-                    <p>
-                        <span className="text-muted-foreground">Address: </span>
-                        {SAMPLE.customer.address}
-                    </p>
-                )}
-            </div>
 
             <div className="overflow-x-auto rounded-md border">
                 <table className="w-full text-xs">
