@@ -25,6 +25,7 @@ import { useTableSelection } from '@/hooks/table/use-table-selection';
 import { useMoneyFormat } from '@/hooks/use-money-format';
 import { useTableViewMode } from '@/hooks/use-table-view-mode';
 import AppLayout from '@/layouts/app-layout';
+import { formatDateTime } from '@/lib/format-date';
 import { type BreadcrumbItem, type SharedData } from '@/types';
 import { type Account, type ExpenseCategoryOption, type ExpenseListItem, type Paginated, type PaymentStatusValue } from '@/types/models';
 import { Head, router, usePage } from '@inertiajs/react';
@@ -191,8 +192,8 @@ export default function ExpensesIndex({ expenses, stats, categories, accounts, f
                         onSort={handleSort}
                     />
                 ),
-                meta: { cellClassName: 'whitespace-nowrap' },
-                cell: ({ row }) => row.original.expense_date,
+                meta: { cellClassName: 'whitespace-nowrap', label: 'Date & Time' },
+                cell: ({ row }) => formatDateTime(row.original.created_at ?? row.original.expense_date),
             },
             { id: 'category', header: 'Category', cell: ({ row }) => row.original.category.name },
             {
@@ -275,7 +276,7 @@ export default function ExpensesIndex({ expenses, stats, categories, accounts, f
 
                 <div className="mt-2 flex items-center justify-between gap-2">
                     <span className="text-muted-foreground text-xs whitespace-nowrap">
-                        {expense.expense_date}
+                        {formatDateTime(expense.created_at ?? expense.expense_date)}
                         {expense.due_amount > 0 && ` · Due ${money(expense.due_amount)}`}
                     </span>
                     <Badge variant={paymentStatusVariant[expense.payment_status]}>{humanize(expense.payment_status)}</Badge>
