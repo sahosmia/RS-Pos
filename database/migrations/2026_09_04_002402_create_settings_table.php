@@ -40,6 +40,9 @@ return new class extends Migration
             // Null = no custom order yet, sidebar uses its built-in order.
             // Shape: {"top": ["dashboard","sales",...], "sub": {"sales": ["sales","add_sale",...]}}
             $table->json('menu_order')->nullable();
+            // Null = defaults (everything shown). Shape: {general:{...}, branding:{...},
+            // business:{...}, customer:{...}, items:{...}, totals:{...}, terms:{...}, footer:{...}}
+            $table->json('invoice_settings')->nullable();
 
             $table->text('license_key')->nullable();
             $table->string('license_status')->nullable();

@@ -104,6 +104,7 @@ const bn: Dictionary = {
         roles: 'রোলস',
         roles_permissions: 'রোল ও পারমিশন',
         business_settings: 'ব্যবসায়িক সেটিংস',
+        invoice_settings: 'ইনভয়েস সেটিংস',
     },
     dashboard: {
         title: 'ড্যাশবোর্ড',
@@ -123,6 +124,7 @@ const bn: Dictionary = {
         total_payable: 'মোট দেনা',
         cash_and_bank: 'ক্যাশ + ব্যাংক',
         low_stock_products: 'কম স্টকের পণ্য',
+        closing_stock_value: 'ক্লোজিং স্টক ভ্যালু',
     },
     language: {
         label: 'ভাষা',

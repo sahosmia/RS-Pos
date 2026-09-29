@@ -103,6 +103,7 @@ export interface Dictionary {
         roles: string;
         roles_permissions: string;
         business_settings: string;
+        invoice_settings: string;
     };
     dashboard: {
         title: string;
@@ -122,6 +123,7 @@ export interface Dictionary {
         total_payable: string;
         cash_and_bank: string;
         low_stock_products: string;
+        closing_stock_value: string;
     };
     language: {
         label: string;
@@ -546,6 +548,7 @@ const en: Dictionary = {
         roles: 'Roles',
         roles_permissions: 'Roles & Permissions',
         business_settings: 'Business Settings',
+        invoice_settings: 'Invoice Settings',
     },
     dashboard: {
         title: 'Dashboard',
@@ -565,6 +568,7 @@ const en: Dictionary = {
         total_payable: 'Total Payable',
         cash_and_bank: 'Cash + Bank',
         low_stock_products: 'Low Stock Products',
+        closing_stock_value: 'Closing Stock Value',
     },
     language: {
         label: 'Language',

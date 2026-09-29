@@ -69,10 +69,29 @@ class DashboardController extends Controller
             ->filter(fn (ChartOfAccount $a) => in_array($a->code, ['1010', '1020'], true) || in_array($a->parent_id, $cashParentIds, true))
             ->sum('balance');
 
+        $lowStockProducts = Product::query()
+            ->where('manage_stock', true)
+            ->whereColumn('current_stock', '<=', 'minimum_stock_level')
+            ->orderBy('current_stock', 'asc')
+            ->take(5)
+            ->get(['id', 'name', 'sku', 'current_stock', 'minimum_stock_level'])
+            ->map(fn (Product $p) => [
+                'id' => $p->id,
+                'name' => $p->name,
+                'sku' => $p->sku,
+                'current_stock' => (float) $p->current_stock,
+                'minimum_stock_level' => (float) $p->minimum_stock_level,
+            ]);
+
         $lowStockCount = Product::query()
             ->where('manage_stock', true)
             ->whereColumn('current_stock', '<=', 'minimum_stock_level')
             ->count();
+
+        $closingStockValue = (float) Product::query()
+            ->where('manage_stock', true)
+            ->selectRaw('SUM(current_stock * avg_cost) as total_value')
+            ->value('total_value') ?? 0.0;
 
         $totalCustomers = Contact::query()->whereIn('type', [ContactType::Customer, ContactType::Both])->count();
         $totalSuppliers = Contact::query()->whereIn('type', [ContactType::Supplier, ContactType::Both])->count();
@@ -187,9 +206,11 @@ class DashboardController extends Controller
                 'totalPayable' => round($byCode('2100'), 2),
                 'cashAndBank' => round($cashAndBank, 2),
                 'lowStockCount' => $lowStockCount,
+                'closingStockValue' => round($closingStockValue, 2),
                 'totalCustomers' => $totalCustomers,
                 'totalSuppliers' => $totalSuppliers,
             ],
+            'lowStockProducts' => $lowStockProducts,
             'recentTransactions' => [
                 'sales' => $recentSales,
                 'purchases' => $recentPurchases,

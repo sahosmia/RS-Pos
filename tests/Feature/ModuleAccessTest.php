@@ -14,7 +14,7 @@ test('a user without the module permission gets 403 on its pages', function (str
         ->assertForbidden();
 })->with([
     '/expenses', '/accounts', '/assets', '/staff', '/contacts', '/reports/profit-loss',
-    '/imports', '/business-settings', '/service-requests', '/journal-entries',
+    '/imports', '/business-settings', '/invoice-settings', '/service-requests', '/journal-entries',
     '/bills/receive', '/bills/pay', '/bills/discount',
 ]);
 

@@ -2,6 +2,7 @@ import { FormInput } from '@/components/form/form-input';
 import InputError from '@/components/input-error';
 import AccountPaymentRows, { paymentRowsError, type PaymentRow } from '@/components/shared/account-payment-rows';
 import MoneyInput from '@/components/shared/money-input';
+import PageHeader from '@/components/shared/page-header';
 import ProductSearchInput, { type ProductOption } from '@/components/shared/product-search-input';
 import SearchableSelect from '@/components/shared/searchable-select';
 import { Button } from '@/components/ui/button';
@@ -95,27 +96,20 @@ export default function SalesOrdersCreate({ initialCustomer, products, accounts 
             <Head title="Add Sales Order" />
 
             <div className="space-y-6 px-4 py-6">
-                {/* ───────────── Page header ───────────── */}
-                <div className="flex flex-wrap items-start justify-between gap-4">
-                    <div className="flex items-start gap-3">
-                        <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-teal-500/10 text-teal-600 ring-1 ring-teal-500/20 dark:text-teal-400">
-                            <ClipboardList className="size-5" />
-                        </div>
-                        <div>
-                            <h1 className="text-xl font-semibold tracking-tight">Add Sales Order</h1>
-                            <p className="text-muted-foreground text-sm">
-                                অগ্রিম বুকিং — এখনো stock কমবে না
-                            </p>
-                        </div>
-                    </div>
-
-                    <Button variant="outline" asChild className="gap-1.5">
-                        <Link href={route('sales-orders.index')}>
-                            <ChevronLeft className="size-4" />
-                            Back to sales orders
-                        </Link>
-                    </Button>
-                </div>
+                <PageHeader
+                    icon={ClipboardList}
+                    iconClassName="bg-teal-500/10 text-teal-600 ring-1 ring-teal-500/20 dark:text-teal-400"
+                    title="Add Sales Order"
+                    description="অগ্রিম বুকিং — এখনো stock কমবে না"
+                    actions={
+                        <Button variant="outline" asChild className="gap-1.5">
+                            <Link href={route('sales-orders.index')}>
+                                <ChevronLeft className="size-4" />
+                                Back to sales orders
+                            </Link>
+                        </Button>
+                    }
+                />
 
                 <form onSubmit={submit} className="space-y-5">
                     {/* Order Details */}

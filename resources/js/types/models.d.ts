@@ -21,6 +21,23 @@ export interface Settings {
     menu_order: { top: string[]; sub: Record<string, string[]> } | null;
 }
 
+export interface InvoiceSettingsConfig {
+    general: { title: string; subtitle: string; show_number: boolean; show_date: boolean; show_due_date: boolean };
+    branding: { show_logo: boolean };
+    business: { show_name: boolean; show_address: boolean; show_phone: boolean };
+    customer: { show_name: boolean; show_phone: boolean; show_email: boolean; show_address: boolean };
+    items: { show_sku: boolean; show_unit: boolean; show_discount: boolean };
+    totals: { show_discount: boolean; show_paid: boolean; show_due: boolean };
+    terms: { enabled: boolean; items: string[] };
+    footer: { enabled: boolean; text: string };
+}
+
+export interface InvoiceShopInfo {
+    name: string;
+    address: string | null;
+    phone: string | null;
+}
+
 export interface AccountType {
     id: number;
     name: string;
@@ -441,7 +458,7 @@ export interface EmiInstallmentListItem {
 
 export interface SaleItemDetail {
     id: number;
-    product: { id: number; name: string; sku: string };
+    product: { id: number; name: string; sku: string; unit: { id: number; name: string } | null };
     quantity: number;
     original_price: number;
     unit_price: number;
@@ -458,7 +475,7 @@ export interface SaleItemDetail {
 export interface SaleDetail {
     id: number;
     invoice_no: string;
-    customer: { id: number; name: string; phone: string; balance: number };
+    customer: { id: number; name: string; phone: string; email: string | null; address: string | null; balance: number };
     creator?: { id: number; name: string } | null;
     sale_date: string;
     subtotal: number;
@@ -988,6 +1005,15 @@ export interface DashboardBalances {
     totalPayable: number;
     cashAndBank: number;
     lowStockCount: number;
+    closingStockValue: number;
+}
+
+export interface DashboardLowStockProduct {
+    id: number;
+    name: string;
+    sku: string;
+    current_stock: number;
+    minimum_stock_level: number;
 }
 
 export interface DashboardDailySalesPoint {

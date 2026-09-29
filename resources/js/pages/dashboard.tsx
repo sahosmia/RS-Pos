@@ -1,4 +1,5 @@
 import BestSellersPurchasesWidget from '@/components/dashboard/best-sellers-purchases-widget';
+import { LowStockWidget } from '@/components/dashboard/low-stock-widget';
 import RevenueExpenseChart from '@/components/dashboard/revenue-expense-chart';
 import SalesChart from '@/components/dashboard/sales-chart';
 import HeadingSmall from '@/components/heading-small';
@@ -13,6 +14,7 @@ import {
     type DashboardBestSellerItem,
     type DashboardDailySalesPoint,
     type DashboardMetrics,
+    type DashboardLowStockProduct,
     type DashboardMonthlySalesPoint,
     type DashboardRange,
     type DashboardRecentTransactions,
@@ -39,6 +41,7 @@ interface DashboardProps {
     range: DashboardRange;
     metrics: DashboardMetrics;
     balances: DashboardBalances;
+    lowStockProducts: DashboardLowStockProduct[];
     salesLast30Days: DashboardDailySalesPoint[];
     salesCurrentFiscalYear: DashboardMonthlySalesPoint[];
     monthlyRevenueVsExpense: DashboardRevenueExpensePoint[];
@@ -57,7 +60,7 @@ function shortDayLabel(isoDate: string): string {
 
 function ColorfulMetricCard({ label, value, colorClass, icon: Icon }: { label: string; value: string; colorClass: string; icon: LucideIcon }) {
     return (
-        <div className={`flex items-center justify-between gap-3 rounded-xl border p-4 shadow-xs transition-all hover:shadow-md ${colorClass}`}>
+        <div className={`flex items-center justify-between gap-3 rounded-xl p-4 shadow-2xs transition-all hover:shadow-xs ${colorClass}`}>
             <div className="min-w-0">
                 <p className="text-xs font-semibold tracking-wider uppercase opacity-80">{label}</p>
                 <p className="mt-1 text-xl font-extrabold tabular-nums sm:text-2xl">{value}</p>
@@ -73,6 +76,7 @@ export default function Dashboard({
     range,
     metrics,
     balances,
+    lowStockProducts,
     salesLast30Days,
     salesCurrentFiscalYear,
     monthlyRevenueVsExpense,
@@ -115,25 +119,25 @@ export default function Dashboard({
                             label={t('dashboard', 'total_sales')}
                             value={money(metrics.totalSales)}
                             icon={Receipt}
-                            colorClass="bg-emerald-50/60 border-emerald-200 text-emerald-950 dark:bg-emerald-950/20 dark:border-emerald-800 dark:text-emerald-100"
+                            colorClass="bg-emerald-50/80 text-emerald-950 dark:bg-emerald-950/20 dark:text-emerald-100"
                         />
                         <ColorfulMetricCard
                             label={t('dashboard', 'net_sales')}
                             value={money(metrics.netSales)}
                             icon={TrendingUp}
-                            colorClass="bg-teal-50/60 border-teal-200 text-teal-950 dark:bg-teal-950/20 dark:border-teal-800 dark:text-teal-100"
+                            colorClass="bg-teal-50/80 text-teal-950 dark:bg-teal-950/20 dark:text-teal-100"
                         />
                         <ColorfulMetricCard
                             label={t('dashboard', 'invoice_due')}
                             value={money(metrics.invoiceDue)}
                             icon={AlertCircle}
-                            colorClass="bg-amber-50/60 border-amber-200 text-amber-950 dark:bg-amber-950/20 dark:border-amber-800 dark:text-amber-100"
+                            colorClass="bg-amber-50/80 text-amber-950 dark:bg-amber-950/20 dark:text-amber-100"
                         />
                         <ColorfulMetricCard
                             label={t('dashboard', 'total_sell_return')}
                             value={money(metrics.totalSellReturn)}
                             icon={RotateCcw}
-                            colorClass="bg-rose-50/60 border-rose-200 text-rose-950 dark:bg-rose-950/20 dark:border-rose-800 dark:text-rose-100"
+                            colorClass="bg-rose-50/80 text-rose-950 dark:bg-rose-950/20 dark:text-rose-100"
                         />
                     </div>
                 </div>
@@ -145,25 +149,25 @@ export default function Dashboard({
                             label={t('dashboard', 'total_purchase')}
                             value={money(metrics.totalPurchase)}
                             icon={ShoppingBag}
-                            colorClass="bg-blue-50/60 border-blue-200 text-blue-950 dark:bg-blue-950/20 dark:border-blue-800 dark:text-blue-100"
+                            colorClass="bg-blue-50/80 text-blue-950 dark:bg-blue-950/20 dark:text-blue-100"
                         />
                         <ColorfulMetricCard
                             label={t('dashboard', 'purchase_due')}
                             value={money(metrics.purchaseDue)}
                             icon={CreditCard}
-                            colorClass="bg-orange-50/60 border-orange-200 text-orange-950 dark:bg-orange-950/20 dark:border-orange-800 dark:text-orange-100"
+                            colorClass="bg-orange-50/80 text-orange-950 dark:bg-orange-950/20 dark:text-orange-100"
                         />
                         <ColorfulMetricCard
                             label={t('dashboard', 'total_purchase_return')}
                             value={money(metrics.totalPurchaseReturn)}
                             icon={RotateCcw}
-                            colorClass="bg-pink-50/60 border-pink-200 text-pink-950 dark:bg-pink-950/20 dark:border-pink-800 dark:text-pink-100"
+                            colorClass="bg-pink-50/80 text-pink-950 dark:bg-pink-950/20 dark:text-pink-100"
                         />
                         <ColorfulMetricCard
                             label={t('dashboard', 'expense')}
                             value={money(metrics.totalExpense)}
                             icon={HandCoins}
-                            colorClass="bg-purple-50/60 border-purple-200 text-purple-950 dark:bg-purple-950/20 dark:border-purple-800 dark:text-purple-100"
+                            colorClass="bg-purple-50/80 text-purple-950 dark:bg-purple-950/20 dark:text-purple-100"
                         />
                     </div>
                 </div>
@@ -175,25 +179,25 @@ export default function Dashboard({
                             label={t('dashboard', 'total_receivable')}
                             value={money(balances.totalReceivable)}
                             icon={ArrowDownLeft}
-                            colorClass="bg-cyan-50/60 border-cyan-200 text-cyan-950 dark:bg-cyan-950/20 dark:border-cyan-800 dark:text-cyan-100"
+                            colorClass="bg-cyan-50/80 text-cyan-950 dark:bg-cyan-950/20 dark:text-cyan-100"
                         />
                         <ColorfulMetricCard
                             label={t('dashboard', 'total_payable')}
                             value={money(balances.totalPayable)}
                             icon={ArrowUpRight}
-                            colorClass="bg-red-50/60 border-red-200 text-red-950 dark:bg-red-950/20 dark:border-red-800 dark:text-red-100"
+                            colorClass="bg-red-50/80 text-red-950 dark:bg-red-950/20 dark:text-red-100"
                         />
                         <ColorfulMetricCard
                             label={t('dashboard', 'cash_and_bank')}
                             value={money(balances.cashAndBank)}
                             icon={Wallet}
-                            colorClass="bg-indigo-50/60 border-indigo-200 text-indigo-950 dark:bg-indigo-950/20 dark:border-indigo-800 dark:text-indigo-100"
+                            colorClass="bg-indigo-50/80 text-indigo-950 dark:bg-indigo-950/20 dark:text-indigo-100"
                         />
                         <ColorfulMetricCard
-                            label={t('dashboard', 'low_stock_products')}
-                            value={String(balances.lowStockCount)}
+                            label={t('dashboard', 'closing_stock_value')}
+                            value={money(balances.closingStockValue)}
                             icon={Package}
-                            colorClass="bg-violet-50/60 border-violet-200 text-violet-950 dark:bg-violet-950/20 dark:border-violet-800 dark:text-violet-100"
+                            colorClass="bg-violet-50/80 text-violet-950 dark:bg-violet-950/20 dark:text-violet-100"
                         />
                     </div>
                 </div>
@@ -208,7 +212,14 @@ export default function Dashboard({
                         data={salesCurrentFiscalYear.map((point) => ({ key: point.month, label: point.label, total: point.total }))}
                     />
 
-                    <RevenueExpenseChart title="Revenue vs Expense — Monthly" data={monthlyRevenueVsExpense} />
+                    <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-stretch">
+                        <div className="lg:col-span-3">
+                            <RevenueExpenseChart title="Revenue vs Expense — Monthly" data={monthlyRevenueVsExpense} />
+                        </div>
+                        <div className="lg:col-span-1">
+                            <LowStockWidget products={lowStockProducts} />
+                        </div>
+                    </div>
 
                     <BestSellersPurchasesWidget bestSellers={bestSellers} purchases={recentTransactions.purchases} period={bestSellersPeriod} />
                 </div>

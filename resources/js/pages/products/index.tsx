@@ -8,6 +8,7 @@ import ProductStatCards from '@/components/products/product-stat-cards';
 import StockAdjustmentModal from '@/components/products/stock-adjustment-modal';
 import ConfirmDialog from '@/components/shared/confirm-dialog';
 import EmptyState from '@/components/shared/empty-state';
+import PageHeader from '@/components/shared/page-header';
 import { Button } from '@/components/ui/button';
 import { useTableExport } from '@/hooks/table/use-table-export';
 import { useTableFilters } from '@/hooks/table/use-table-filters';
@@ -101,27 +102,20 @@ export default function ProductsIndex({ products, stats, categories, brands, fil
             <Head title={t('productsPage', 'title')} />
 
             <div className="space-y-6 px-4 py-6">
-                {/* ───────────── Page header ───────────── */}
-                <div className="flex flex-wrap items-start justify-between gap-4">
-                    <div className="flex items-start gap-3">
-                        <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-violet-500/10 text-violet-600 ring-1 ring-violet-500/20 dark:text-violet-400">
-                            <Package className="size-5" />
-                        </div>
-                        <div>
-                            <h1 className="text-xl font-semibold tracking-tight">{t('productsPage', 'title')}</h1>
-                            <p className="text-muted-foreground text-sm">{t('productsPage', 'description')}</p>
-                        </div>
-                    </div>
-
-                    <div className="flex flex-wrap items-center gap-2 print:hidden">
+                <PageHeader
+                    icon={Package}
+                    iconClassName="bg-violet-500/10 text-violet-600 ring-1 ring-violet-500/20 dark:text-violet-400"
+                    title={t('productsPage', 'title')}
+                    description={t('productsPage', 'description')}
+                    actions={
                         <Button asChild className="gap-1.5">
                             <Link href={route('products.create')}>
                                 <Plus className="size-4" />
                                 {t('productsPage', 'add_product')}
                             </Link>
                         </Button>
-                    </div>
-                </div>
+                    }
+                />
 
                 {stats && <ProductStatCards stats={stats} />}
 

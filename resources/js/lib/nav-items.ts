@@ -229,6 +229,10 @@ export function buildMainNavItems(emiModuleEnabled: boolean, t: ReturnType<typeo
             url: '/business-settings',
             icon: Settings,
             permission: 'settings.manage',
+            items: [
+                { key: 'business_settings', title: t('nav', 'business_settings'), url: '/business-settings' },
+                { key: 'invoice_settings', title: t('nav', 'invoice_settings'), url: '/invoice-settings' },
+            ],
         },
     ];
 }

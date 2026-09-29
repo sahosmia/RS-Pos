@@ -123,12 +123,28 @@ class SaleController extends Controller
 
     public function show(Sale $sale): Response
     {
-        $sale->load(['customer:id,name,phone,balance', 'creator:id,name', 'items.product:id,name,sku', 'items.serialNumbers', 'items' => fn ($query) => $query->orderBy('id')]);
+        $sale->load([
+            'customer:id,name,phone,email,address,balance',
+            'creator:id,name',
+            'items.product:id,name,sku,unit_id',
+            'items.product.unit:id,name',
+            'items.serialNumbers',
+            'items' => fn ($query) => $query->orderBy('id'),
+        ]);
+
+        $settings = Settings::current();
 
         return Inertia::render('sales/show', [
             'sale' => $this->present($sale),
             'accounts' => SalesFormOptions::activeAccounts(),
             'justConfirmed' => (bool) session('justConfirmed'),
+            'invoiceSettings' => $settings->invoiceSettingsOrDefault(),
+            'invoiceLogoUrl' => $settings->getFirstMediaUrl('invoice_logo') ?: null,
+            'shop' => [
+                'name' => $settings->shop_name,
+                'address' => $settings->shop_address,
+                'phone' => $settings->shop_phone,
+            ],
         ]);
     }
 
@@ -212,7 +228,7 @@ class SaleController extends Controller
         return [
             'id' => $sale->id,
             'invoice_no' => $sale->invoice_no,
-            'customer' => $sale->customer->only(['id', 'name', 'phone', 'balance']),
+            'customer' => $sale->customer->only(['id', 'name', 'phone', 'email', 'address', 'balance']),
             'creator' => $sale->creator?->only(['id', 'name']),
             'sale_date' => $sale->sale_date->toDateString(),
             'subtotal' => $sale->subtotal,
@@ -229,7 +245,10 @@ class SaleController extends Controller
             'payment_history' => SalePaymentHistory::forSale($sale),
             'items' => $sale->items->map(fn ($item) => [
                 'id' => $item->id,
-                'product' => $item->product->only(['id', 'name', 'sku']),
+                'product' => [
+                    ...$item->product->only(['id', 'name', 'sku']),
+                    'unit' => $item->product->unit?->only(['id', 'name']),
+                ],
                 'quantity' => $item->quantity,
                 'original_price' => $item->original_price,
                 'unit_price' => $item->unit_price,

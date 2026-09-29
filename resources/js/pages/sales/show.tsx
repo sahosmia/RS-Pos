@@ -10,7 +10,7 @@ import { useMoneyFormat } from '@/hooks/use-money-format';
 import AppLayout from '@/layouts/app-layout';
 import { buildSaleWhatsappMessage, openWhatsapp } from '@/lib/sale-whatsapp-message';
 import { type BreadcrumbItem } from '@/types';
-import { type Account, type SaleDetail } from '@/types/models';
+import { type Account, type InvoiceSettingsConfig, type InvoiceShopInfo, type SaleDetail } from '@/types/models';
 import { Head, Link, router } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
@@ -19,11 +19,14 @@ interface SaleShowProps {
     sale: SaleDetail;
     accounts: Account[];
     justConfirmed: boolean;
+    invoiceSettings: InvoiceSettingsConfig;
+    invoiceLogoUrl: string | null;
+    shop: InvoiceShopInfo;
 }
 
 const humanize = (value: string) => value.replaceAll('_', ' ').replace(/\b\w/g, (character) => character.toUpperCase());
 
-export default function SaleShow({ sale, accounts, justConfirmed }: SaleShowProps) {
+export default function SaleShow({ sale, accounts, justConfirmed, invoiceSettings, invoiceLogoUrl, shop }: SaleShowProps) {
     const money = useMoneyFormat();
     const [paymentOpen, setPaymentOpen] = useState(false);
     const [deleting, setDeleting] = useState(false);
@@ -106,6 +109,65 @@ export default function SaleShow({ sale, accounts, justConfirmed }: SaleShowProp
             <Head title={sale.invoice_no} />
 
             <div className="space-y-6 px-4 py-6">
+                {(invoiceSettings.general.title || (invoiceSettings.branding.show_logo && invoiceLogoUrl)) && (
+                    <div className="flex items-start justify-between gap-4 border-b pb-4">
+                        <div>
+                            {invoiceSettings.general.title && <h2 className="text-2xl font-bold tracking-tight">{invoiceSettings.general.title}</h2>}
+                            {invoiceSettings.general.subtitle && <p className="text-muted-foreground text-sm">{invoiceSettings.general.subtitle}</p>}
+                        </div>
+                        {invoiceSettings.branding.show_logo && invoiceLogoUrl && (
+                            <img src={invoiceLogoUrl} alt={shop.name} className="h-14 w-auto object-contain" />
+                        )}
+                    </div>
+                )}
+
+                {(invoiceSettings.business.show_name || invoiceSettings.business.show_address || invoiceSettings.business.show_phone) && (
+                    <div className="text-sm">
+                        {invoiceSettings.business.show_name && shop.name && <p className="font-medium">{shop.name}</p>}
+                        {invoiceSettings.business.show_address && shop.address && <p className="text-muted-foreground">{shop.address}</p>}
+                        {invoiceSettings.business.show_phone && shop.phone && <p className="text-muted-foreground">{shop.phone}</p>}
+                    </div>
+                )}
+
+                <div className="space-y-1 text-sm">
+                    {invoiceSettings.general.show_number && (
+                        <p>
+                            <span className="text-muted-foreground">Invoice No: </span>
+                            {sale.invoice_no}
+                        </p>
+                    )}
+                    {invoiceSettings.general.show_date && (
+                        <p>
+                            <span className="text-muted-foreground">Date: </span>
+                            {sale.sale_date}
+                        </p>
+                    )}
+                    {invoiceSettings.customer.show_name && (
+                        <p>
+                            <span className="text-muted-foreground">Customer: </span>
+                            {sale.customer.name}
+                        </p>
+                    )}
+                    {invoiceSettings.customer.show_phone && sale.customer.phone && (
+                        <p>
+                            <span className="text-muted-foreground">Phone: </span>
+                            {sale.customer.phone}
+                        </p>
+                    )}
+                    {invoiceSettings.customer.show_email && sale.customer.email && (
+                        <p>
+                            <span className="text-muted-foreground">Email: </span>
+                            {sale.customer.email}
+                        </p>
+                    )}
+                    {invoiceSettings.customer.show_address && sale.customer.address && (
+                        <p>
+                            <span className="text-muted-foreground">Address: </span>
+                            {sale.customer.address}
+                        </p>
+                    )}
+                </div>
+
                 <div className="flex flex-wrap items-start justify-between gap-4 print:hidden">
                     <HeadingSmall
                         title={sale.invoice_no}
@@ -152,14 +214,18 @@ export default function SaleShow({ sale, accounts, justConfirmed }: SaleShowProp
                         <p className="text-muted-foreground text-sm">Total</p>
                         <p className="text-xl font-semibold tabular-nums">{money(sale.total_amount)}</p>
                     </div>
-                    <div className="rounded-lg border p-4">
-                        <p className="text-muted-foreground text-sm">Paid</p>
-                        <p className="text-xl font-semibold tabular-nums">{money(sale.paid_amount)}</p>
-                    </div>
-                    <div className="rounded-lg border p-4">
-                        <p className="text-muted-foreground text-sm">Due</p>
-                        <p className="text-xl font-semibold tabular-nums">{money(sale.due_amount)}</p>
-                    </div>
+                    {invoiceSettings.totals.show_paid && (
+                        <div className="rounded-lg border p-4">
+                            <p className="text-muted-foreground text-sm">Paid</p>
+                            <p className="text-xl font-semibold tabular-nums">{money(sale.paid_amount)}</p>
+                        </div>
+                    )}
+                    {invoiceSettings.totals.show_due && (
+                        <div className="rounded-lg border p-4">
+                            <p className="text-muted-foreground text-sm">Due</p>
+                            <p className="text-xl font-semibold tabular-nums">{money(sale.due_amount)}</p>
+                        </div>
+                    )}
                     <div className="rounded-lg border p-4">
                         <p className="text-muted-foreground text-sm">Customer Balance</p>
                         <p className="text-xl font-semibold tabular-nums">{money(sale.customer.balance)}</p>
@@ -181,8 +247,12 @@ export default function SaleShow({ sale, accounts, justConfirmed }: SaleShowProp
                                 <tr key={item.id} className="border-t align-top">
                                     <td className="px-4 py-2">
                                         <div>
-                                            {item.product.name} <span className="text-muted-foreground">({item.product.sku})</span>
+                                            {item.product.name}
+                                            {invoiceSettings.items.show_sku && <span className="text-muted-foreground"> ({item.product.sku})</span>}
                                         </div>
+                                        {invoiceSettings.items.show_unit && item.product.unit && (
+                                            <div className="text-muted-foreground text-xs">Unit: {item.product.unit.name}</div>
+                                        )}
                                         {item.installation_required && (
                                             <div className="text-muted-foreground text-xs">Installation: {money(item.installation_charge ?? 0)}</div>
                                         )}
@@ -196,7 +266,7 @@ export default function SaleShow({ sale, accounts, justConfirmed }: SaleShowProp
                                     <td className="px-4 py-2 text-right tabular-nums">{item.quantity}</td>
                                     <td className="px-4 py-2 text-right tabular-nums">
                                         {money(item.unit_price)}
-                                        {item.discount_amount > 0 && (
+                                        {invoiceSettings.items.show_discount && item.discount_amount > 0 && (
                                             <div className="text-muted-foreground text-xs">
                                                 Discount {item.discount_type === 'percentage' ? `(${item.discount_value}%)` : ''}: -
                                                 {money(item.discount_amount)}
@@ -214,7 +284,7 @@ export default function SaleShow({ sale, accounts, justConfirmed }: SaleShowProp
                                 </td>
                                 <td className="px-4 py-2 text-right tabular-nums">{money(sale.subtotal)}</td>
                             </tr>
-                            {sale.discount_amount > 0 && (
+                            {invoiceSettings.totals.show_discount && sale.discount_amount > 0 && (
                                 <tr>
                                     <td colSpan={3} className="text-muted-foreground px-4 py-2 text-right">
                                         Discount {sale.discount_type === 'percentage' ? `(${sale.discount_value}%)` : ''}
@@ -237,6 +307,21 @@ export default function SaleShow({ sale, accounts, justConfirmed }: SaleShowProp
                         <h3 className="font-medium">Payment History</h3>
                         <SalePaymentHistoryTable rows={sale.payment_history} />
                     </div>
+                )}
+
+                {invoiceSettings.terms.enabled && invoiceSettings.terms.items.length > 0 && (
+                    <div className="space-y-1 border-t pt-4 text-sm">
+                        <h3 className="font-medium">Terms &amp; Conditions</h3>
+                        <ol className="text-muted-foreground list-inside list-decimal space-y-0.5">
+                            {invoiceSettings.terms.items.map((term, index) => (
+                                <li key={index}>{term}</li>
+                            ))}
+                        </ol>
+                    </div>
+                )}
+
+                {invoiceSettings.footer.enabled && invoiceSettings.footer.text && (
+                    <div className="text-muted-foreground border-t pt-4 text-center text-sm">{invoiceSettings.footer.text}</div>
                 )}
             </div>
 

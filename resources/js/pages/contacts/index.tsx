@@ -9,6 +9,7 @@ import DataTableToolbar from '@/components/data-table/data-table-toolbar';
 import { type DataTableColumnOption } from '@/components/data-table/types';
 import ConfirmDialog from '@/components/shared/confirm-dialog';
 import EmptyState from '@/components/shared/empty-state';
+import PageHeader from '@/components/shared/page-header';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -353,22 +354,18 @@ export default function ContactsIndex({ contacts, stats, customerGroups, account
             <Head title={pageTitle} />
 
             <div className="space-y-6 px-4 py-6">
-                {/* ───────────── Page header ───────────── */}
-                <div className="flex flex-wrap items-start justify-between gap-4">
-                    <div className="flex items-start gap-3">
-                        <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-sky-500/10 text-sky-600 ring-1 ring-sky-500/20 dark:text-sky-400">
-                            <UsersRound className="size-5" />
-                        </div>
-                        <div>
-                            <h1 className="text-xl font-semibold tracking-tight">{pageTitle}</h1>
-                            <p className="text-muted-foreground text-sm">{t('contactsPage', 'description')}</p>
-                        </div>
-                    </div>
-                    <Button onClick={openCreate} className="gap-1.5">
-                        <Plus className="size-4" />
-                        {t('contactsPage', 'add_contact')}
-                    </Button>
-                </div>
+                <PageHeader
+                    icon={UsersRound}
+                    iconClassName="bg-sky-500/10 text-sky-600 ring-1 ring-sky-500/20 dark:text-sky-400"
+                    title={pageTitle}
+                    description={t('contactsPage', 'description')}
+                    actions={
+                        <Button onClick={openCreate} className="gap-1.5">
+                            <Plus className="size-4" />
+                            {t('contactsPage', 'add_contact')}
+                        </Button>
+                    }
+                />
 
                 <ContactStatCards
                     stats={stats}

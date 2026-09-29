@@ -2,6 +2,7 @@ import { FormInput } from '@/components/form/form-input';
 import { FormSelect } from '@/components/form/form-select';
 import InputError from '@/components/input-error';
 import MoneyInput from '@/components/shared/money-input';
+import PageHeader from '@/components/shared/page-header';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -74,25 +75,20 @@ export default function ServiceRequestsCreate({ query, items, staff, accounts }:
             <Head title={t('serviceRequests', 'add')} />
 
             <div className="space-y-6 px-4 py-6">
-                {/* ───────────── Page header ───────────── */}
-                <div className="flex flex-wrap items-start justify-between gap-4">
-                    <div className="flex items-start gap-3">
-                        <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-orange-500/10 text-orange-600 ring-1 ring-orange-500/20 dark:text-orange-400">
-                            <Wrench className="size-5" />
-                        </div>
-                        <div>
-                            <h1 className="text-xl font-semibold tracking-tight">{t('serviceRequests', 'add')}</h1>
-                            <p className="text-muted-foreground text-sm">{t('serviceRequests', 'add_description')}</p>
-                        </div>
-                    </div>
-
-                    <Button variant="outline" asChild className="gap-1.5">
-                        <Link href={route('service-requests.index')}>
-                            <ChevronLeft className="size-4" />
-                            Back to service requests
-                        </Link>
-                    </Button>
-                </div>
+                <PageHeader
+                    icon={Wrench}
+                    iconClassName="bg-orange-500/10 text-orange-600 ring-1 ring-orange-500/20 dark:text-orange-400"
+                    title={t('serviceRequests', 'add')}
+                    description={t('serviceRequests', 'add_description')}
+                    actions={
+                        <Button variant="outline" asChild className="gap-1.5">
+                            <Link href={route('service-requests.index')}>
+                                <ChevronLeft className="size-4" />
+                                Back to service requests
+                            </Link>
+                        </Button>
+                    }
+                />
 
                 <form onSubmit={runSearch} className="flex max-w-md gap-2">
                     <FormInput

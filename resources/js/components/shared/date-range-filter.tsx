@@ -1,5 +1,4 @@
 import { FormInput } from '@/components/form/form-input';
-import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { type DateRangePresetValue } from '@/types/models';
 import { useEffect, useState } from 'react';
@@ -47,11 +46,12 @@ interface DateRangeFilterProps {
  * Preset dropdown + custom-range date inputs (doc/corrections2.md #4).
  * Picking "Custom Range" only switches the dropdown into custom-editing
  * mode locally — it does NOT navigate yet, since there's no `from`/`to` to
- * send until the user actually picks both dates. Only "Apply" fires
- * `onChange`. `isCustom` (not `range.preset`) drives which UI shows, so the
- * date pickers appear immediately on selecting "Custom Range" instead of
- * only after a round-trip; it re-syncs from the server's `range` whenever
- * that changes from elsewhere (e.g. browser back/forward).
+ * send until the user actually picks both dates. `onChange` fires
+ * automatically as soon as both dates are set (no separate Apply step).
+ * `isCustom` (not `range.preset`) drives which UI shows, so the date
+ * pickers appear immediately on selecting "Custom Range" instead of only
+ * after a round-trip; it re-syncs from the server's `range` whenever that
+ * changes from elsewhere (e.g. browser back/forward).
  */
 export default function DateRangeFilter({ range, onChange, allowClear = false }: DateRangeFilterProps) {
     const [isCustom, setIsCustom] = useState(range.preset === 'custom');
@@ -82,9 +82,17 @@ export default function DateRangeFilter({ range, onChange, allowClear = false }:
         onChange({ preset: value as DateRangePresetValue });
     };
 
-    const applyCustomRange = () => {
-        if (customFrom && customTo) {
-            onChange({ preset: 'custom', from: customFrom, to: customTo });
+    const handleFromChange = (val: string) => {
+        setCustomFrom(val);
+        if (val && customTo) {
+            onChange({ preset: 'custom', from: val, to: customTo });
+        }
+    };
+
+    const handleToChange = (val: string) => {
+        setCustomTo(val);
+        if (customFrom && val) {
+            onChange({ preset: 'custom', from: customFrom, to: val });
         }
     };
 
@@ -112,7 +120,7 @@ export default function DateRangeFilter({ range, onChange, allowClear = false }:
                         id="date-range-from"
                         type="date"
                         value={customFrom}
-                        onChange={(e) => setCustomFrom(e.target.value)}
+                        onChange={(e) => handleFromChange(e.target.value)}
                         className="w-full sm:w-auto"
                     />
                     <FormInput
@@ -120,18 +128,9 @@ export default function DateRangeFilter({ range, onChange, allowClear = false }:
                         type="date"
                         value={customTo}
                         min={customFrom}
-                        onChange={(e) => setCustomTo(e.target.value)}
+                        onChange={(e) => handleToChange(e.target.value)}
                         className="w-full sm:w-auto"
                     />
-                    <Button
-                        type="button"
-                        variant="outline"
-                        onClick={applyCustomRange}
-                        disabled={!customFrom || !customTo}
-                        className="w-full sm:w-auto"
-                    >
-                        Apply
-                    </Button>
                 </div>
             )}
         </div>

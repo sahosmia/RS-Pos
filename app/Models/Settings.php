@@ -12,11 +12,15 @@ use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\InteractsWithMedia;
 
-class Settings extends Model
+class Settings extends Model implements HasMedia
 {
     /** @use HasFactory<SettingsFactory> */
     use HasFactory;
+
+    use InteractsWithMedia;
 
     /**
      * Fallback list of page-size choices for the "Rows per page" dropdown
@@ -58,6 +62,7 @@ class Settings extends Model
         'activity_log_retention_months',
         'theme_color',
         'menu_order',
+        'invoice_settings',
         'license_key',
         'license_status',
         'license_last_verified_at',
@@ -83,6 +88,7 @@ class Settings extends Model
             'activity_log_retention_months' => 'integer',
             'theme_color' => ThemeColor::class,
             'menu_order' => 'array',
+            'invoice_settings' => 'array',
             'license_key' => 'encrypted',
             'license_last_verified_at' => 'datetime',
         ];
@@ -248,5 +254,84 @@ class Settings extends Model
 
             return $number;
         });
+    }
+
+    /**
+     * Default invoice template config — everything shown, matching what a
+     * printed invoice does today with zero configuration. A fresh install or
+     * one that hasn't visited Invoice Settings yet always gets this.
+     *
+     * @return array<string, mixed>
+     */
+    public static function defaultInvoiceSettings(): array
+    {
+        return [
+            'general' => [
+                'title' => 'INVOICE',
+                'subtitle' => '',
+                'show_number' => true,
+                'show_date' => true,
+                'show_due_date' => true,
+            ],
+            'branding' => [
+                'show_logo' => true,
+            ],
+            'business' => [
+                'show_name' => true,
+                'show_address' => true,
+                'show_phone' => true,
+            ],
+            'customer' => [
+                'show_name' => true,
+                'show_phone' => true,
+                'show_email' => true,
+                'show_address' => true,
+            ],
+            'items' => [
+                'show_sku' => true,
+                'show_unit' => true,
+                'show_discount' => true,
+            ],
+            'totals' => [
+                'show_discount' => true,
+                'show_paid' => true,
+                'show_due' => true,
+            ],
+            'terms' => [
+                'enabled' => false,
+                'items' => [],
+            ],
+            'footer' => [
+                'enabled' => true,
+                'text' => 'Thank you for your business!',
+            ],
+        ];
+    }
+
+    /**
+     * The shop's saved invoice template config, deep-merged over the
+     * defaults so an admin who has only ever touched one section still gets
+     * sane values everywhere else (and new sections added later don't need
+     * a data migration for existing rows).
+     *
+     * @return array<string, mixed>
+     */
+    public function invoiceSettingsOrDefault(): array
+    {
+        $defaults = self::defaultInvoiceSettings();
+        $saved = $this->invoice_settings ?? [];
+
+        foreach ($defaults as $section => $fields) {
+            $defaults[$section] = array_merge($fields, $saved[$section] ?? []);
+        }
+
+        return $defaults;
+    }
+
+    public function registerMediaCollections(): void
+    {
+        $this->addMediaCollection('invoice_logo')
+            ->singleFile()
+            ->acceptsMimeTypes(['image/jpeg', 'image/png', 'image/webp']);
     }
 }

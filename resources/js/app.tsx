@@ -1,6 +1,5 @@
 import '../css/app.css';
 
-import RouteLoadingOverlay from '@/components/route-loading-overlay';
 import Toaster from '@/components/ui/sonner';
 import { type SharedData } from '@/types';
 import { createInertiaApp } from '@inertiajs/react';
@@ -35,7 +34,6 @@ createInertiaApp({
             <>
                 <App {...props} />
                 <Toaster />
-                <RouteLoadingOverlay />
             </>,
         );
     },
