@@ -1,18 +1,21 @@
-import { FormInput } from '@/components/form/form-input';
 import HeadingSmall from '@/components/heading-small';
-import { Button } from '@/components/ui/button';
+import DateRangeFilter from '@/components/shared/date-range-filter';
 import { useMoneyFormat } from '@/hooks/use-money-format';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
-import { type CashFlowTypeRow } from '@/types/models';
+import { type CashFlowTypeRow, type DateRangePresetValue } from '@/types/models';
 import { Head, router } from '@inertiajs/react';
-import { FormEventHandler, useState } from 'react';
 
 const breadcrumbs: BreadcrumbItem[] = [{ title: 'Cash Flow', href: '/reports/cash-flow' }];
 
 interface CashFlowProps {
     from: string;
     to: string;
+    range?: {
+        preset: DateRangePresetValue | null;
+        from: string | null;
+        to: string | null;
+    };
     byType: CashFlowTypeRow[];
     moneyIn: number;
     moneyOut: number;
@@ -21,24 +24,21 @@ interface CashFlowProps {
 
 const humanize = (value: string) => value.replaceAll('_', ' ').replace(/\b\w/g, (character) => character.toUpperCase());
 
-export default function CashFlow({ from, to, byType, moneyIn, moneyOut, net }: CashFlowProps) {
+export default function CashFlow({ from, to, range, byType, moneyIn, moneyOut, net }: CashFlowProps) {
     const money = useMoneyFormat();
-    const [range, setRange] = useState({ from, to });
 
-    const handleFromChange = (fromVal: string) => {
-        const next = { ...range, from: fromVal };
-        setRange(next);
-        if (fromVal && next.to) {
-            router.get(route('reports.cash-flow'), next, { preserveState: true });
-        }
-    };
+    const activeRange = range ?? { preset: 'custom' as const, from, to };
 
-    const handleToChange = (toVal: string) => {
-        const next = { ...range, to: toVal };
-        setRange(next);
-        if (next.from && toVal) {
-            router.get(route('reports.cash-flow'), next, { preserveState: true });
-        }
+    const changeRange = (next: { preset?: DateRangePresetValue | null; from?: string | null; to?: string | null }) => {
+        router.get(
+            route('reports.cash-flow'),
+            {
+                preset: next.preset ?? undefined,
+                from: next.from ?? undefined,
+                to: next.to ?? undefined,
+            },
+            { preserveState: true, preserveScroll: true }
+        );
     };
 
     return (
@@ -49,8 +49,7 @@ export default function CashFlow({ from, to, byType, moneyIn, moneyOut, net }: C
                 <HeadingSmall title="Cash Flow" description="টাইপ অনুযায়ী টাকার আসা-যাওয়া" />
 
                 <div className="flex flex-wrap items-end gap-2">
-                    <FormInput id="from" label="From" type="date" value={range.from} onChange={(e) => handleFromChange(e.target.value)} />
-                    <FormInput id="to" label="To" type="date" value={range.to} onChange={(e) => handleToChange(e.target.value)} />
+                    <DateRangeFilter range={activeRange} onChange={changeRange} />
                 </div>
 
                 <div className="grid gap-4 sm:grid-cols-3">

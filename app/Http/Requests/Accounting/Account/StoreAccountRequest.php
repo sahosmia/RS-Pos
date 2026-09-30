@@ -19,10 +19,10 @@ class StoreAccountRequest extends FormRequest
     {
         return [
             'name' => ['required', 'string', 'max:255'],
-            'account_type_id' => ['required', 'integer', 'exists:account_types,id'],
+            'account_type_id' => ['nullable', 'integer', 'exists:account_types,id'],
             'account_sub_type' => ['nullable', 'string', 'max:255'],
             'account_number' => ['nullable', 'string', 'max:255'],
-            'opening_balance' => ['required', 'numeric'],
+            'opening_balance' => ['nullable', 'numeric', 'min:0'],
             'is_default' => ['sometimes', 'boolean'],
         ];
     }

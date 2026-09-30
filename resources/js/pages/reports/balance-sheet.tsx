@@ -26,7 +26,7 @@ export default function BalanceSheet({ quick, full }: BalanceSheetProps) {
                 <Tabs defaultValue="quick" className="w-full">
                     <TabsList>
                         <TabsTrigger value="quick">Quick</TabsTrigger>
-                        <TabsTrigger value="full">Financial Position (Full)</TabsTrigger>
+                        <TabsTrigger value="full">Full Balance Sheet</TabsTrigger>
                     </TabsList>
 
                     <TabsContent value="quick" className="space-y-4">

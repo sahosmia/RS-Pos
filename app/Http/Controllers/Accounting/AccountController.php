@@ -36,7 +36,7 @@ class AccountController extends Controller
                 'id' => $account->id,
                 'name' => $account->name,
                 'account_type_id' => $account->account_type_id,
-                'account_type' => $account->accountType->only(['id', 'name']),
+                'account_type' => $account->accountType ? $account->accountType->only(['id', 'name']) : null,
                 'account_sub_type' => $account->account_sub_type,
                 'account_number' => $account->account_number,
                 'opening_balance' => $account->opening_balance,

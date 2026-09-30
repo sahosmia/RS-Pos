@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Reports;
 
+use App\Enums\DateRangePreset;
 use App\Http\Controllers\Controller;
 use App\Models\AccountTransaction;
 use App\Models\Settings;
@@ -9,6 +10,7 @@ use App\Support\FiscalYear;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -25,12 +27,21 @@ class CashFlowController extends Controller
         $default = FiscalYear::current(Settings::current()->fiscal_year_start_month);
 
         $validated = $request->validate([
-            'from' => ['nullable', 'date'],
-            'to' => ['nullable', 'date', 'after_or_equal:from'],
+            'preset' => ['nullable', Rule::enum(DateRangePreset::class)],
+            'from' => ['nullable', 'date', 'required_if:preset,custom'],
+            'to' => ['nullable', 'date', 'after_or_equal:from', 'required_if:preset,custom'],
         ]);
 
-        $from = Carbon::parse($validated['from'] ?? $default['start']);
-        $to = Carbon::parse($validated['to'] ?? $default['end']);
+        $preset = isset($validated['preset']) ? DateRangePreset::tryFrom($validated['preset']) : null;
+
+        if ($preset && $preset !== DateRangePreset::Custom) {
+            $range = $preset->resolve();
+            $from = $range['start']->copy()->startOfDay();
+            $to = $range['end']->copy()->endOfDay();
+        } else {
+            $from = isset($validated['from']) ? Carbon::parse($validated['from'])->startOfDay() : Carbon::parse($default['start'])->startOfDay();
+            $to = isset($validated['to']) ? Carbon::parse($validated['to'])->endOfDay() : Carbon::parse($default['end'])->endOfDay();
+        }
 
         $byType = AccountTransaction::query()
             ->whereBetween('operation_date', [$from, $to])
@@ -49,6 +60,11 @@ class CashFlowController extends Controller
         return Inertia::render('reports/cash-flow', [
             'from' => $from->toDateString(),
             'to' => $to->toDateString(),
+            'range' => [
+                'preset' => $preset?->value ?? ($request->has('from') || $request->has('to') ? 'custom' : null),
+                'from' => $from->toDateString(),
+                'to' => $to->toDateString(),
+            ],
             'byType' => $byType,
             'moneyIn' => $moneyIn,
             'moneyOut' => $moneyOut,

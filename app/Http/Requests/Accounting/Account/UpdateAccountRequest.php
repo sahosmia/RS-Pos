@@ -24,10 +24,10 @@ class UpdateAccountRequest extends FormRequest
 
         return [
             'name' => ['required', 'string', 'max:255'],
-            'account_type_id' => ['required', 'integer', 'exists:account_types,id'],
+            'account_type_id' => ['nullable', 'integer', 'exists:account_types,id'],
             'account_sub_type' => ['nullable', 'string', 'max:255'],
             'account_number' => ['nullable', 'string', 'max:255'],
-            'opening_balance' => ['required', 'numeric', new OpeningBalanceEditable($account)],
+            'opening_balance' => ['nullable', 'numeric', 'min:0', new OpeningBalanceEditable($account)],
             'is_active' => ['required', 'boolean'],
             'is_default' => ['sometimes', 'boolean'],
         ];

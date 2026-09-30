@@ -52,7 +52,7 @@ export interface AccountTypeListItem extends AccountType {
 export interface Account {
     id: number;
     name: string;
-    account_type: AccountType;
+    account_type: AccountType | null;
     account_sub_type: string | null;
     current_balance: number;
     is_active: boolean;
@@ -62,8 +62,8 @@ export interface Account {
 export interface AccountListItem {
     id: number;
     name: string;
-    account_type_id: number;
-    account_type: AccountType;
+    account_type_id: number | null;
+    account_type: AccountType | null;
     account_sub_type: string | null;
     account_number: string | null;
     opening_balance: number;
