@@ -294,6 +294,7 @@ export interface Dictionary {
     contactShow: {
         pay_due: string;
         add_discount: string;
+        refund: string;
         balance: string;
         ledger: string;
         purchases: string;
@@ -340,6 +341,15 @@ export interface Dictionary {
         submit: string;
         reason: string;
         reason_placeholder: string;
+    };
+    refundModal: {
+        title: string;
+        current_credit: string;
+        hint: string;
+        submit: string;
+        note_placeholder: string;
+        toast: string;
+        error: string;
     };
     customerGroups: {
         title: string;
@@ -744,6 +754,7 @@ const en: Dictionary = {
     contactShow: {
         pay_due: 'Pay Due Amount',
         add_discount: 'Add Discount',
+        refund: 'Refund',
         balance: 'Balance',
         ledger: 'Ledger',
         purchases: 'Purchases',
@@ -790,6 +801,15 @@ const en: Dictionary = {
         submit: 'Waive',
         reason: 'Reason',
         reason_placeholder: 'loyalty, goodwill...',
+    },
+    refundModal: {
+        title: 'Refund Customer',
+        current_credit: 'Customer credit:',
+        hint: 'The money goes back out of the account you choose.',
+        submit: 'Refund',
+        note_placeholder: 'reason for the refund (optional)',
+        toast: 'Refund recorded.',
+        error: 'Could not record the refund — check the form for errors.',
     },
     customerGroups: {
         title: 'Customer Groups',

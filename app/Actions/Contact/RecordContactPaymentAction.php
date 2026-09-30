@@ -2,10 +2,14 @@
 
 namespace App\Actions\Contact;
 
+use App\Actions\Purchases\Purchase\AddPurchasePaymentAction;
+use App\Actions\Sales\Sale\AddSalePaymentAction;
 use App\Enums\AccountTransactionType;
 use App\Enums\ContactLedgerType;
 use App\Models\Account;
 use App\Models\Contact;
+use App\Models\Purchase;
+use App\Models\Sale;
 use App\Services\AccountService;
 use App\Services\ChartOfAccountResolver;
 use App\Services\JournalService;
@@ -13,12 +17,15 @@ use App\Services\LedgerService;
 use Illuminate\Support\Facades\DB;
 
 /**
- * "Pay Due Amount" — a standalone ledger-only settlement, separate from any
- * sale/purchase confirm, used only for a genuine general-balance settlement
- * (not tied to a specific sale/purchase — those go through
- * AddSalePaymentAction/AddPurchasePaymentAction instead so their due amounts
- * stay correct). Touches Accounts (real cash movement), the Contact ledger,
- * and the General Ledger together, in one transaction.
+ * "Pay Due Amount" — a settlement against a contact's balance that isn't aimed
+ * at one specific sale/purchase (those go through
+ * AddSalePaymentAction/AddPurchasePaymentAction directly). The money is first
+ * applied to the contact's oldest unpaid invoices through those same actions,
+ * so every invoice's paid/due/status stays in step with the ledger; only what
+ * is left after every invoice is settled is recorded as a general balance
+ * movement (an advance/credit, or the contact's opening balance). Touches
+ * Accounts (real cash movement), the Contact ledger, and the General Ledger
+ * together, in one transaction.
  */
 class RecordContactPaymentAction
 {
@@ -27,6 +34,8 @@ class RecordContactPaymentAction
         private AccountService $accounts,
         private JournalService $journal,
         private ChartOfAccountResolver $chartOfAccounts,
+        private AddSalePaymentAction $addSalePayment,
+        private AddPurchasePaymentAction $addPurchasePayment,
     ) {}
 
     /**
@@ -41,16 +50,64 @@ class RecordContactPaymentAction
         ?string $note = null,
     ): void {
         DB::transaction(function () use ($contact, $account, $amount, $direction, $note) {
-            if ($direction === 'received') {
-                $this->accounts->record($account, AccountTransactionType::SalePayment, $amount, today(), 'contact', $contact->id, $note);
-                $this->ledger->recordContact($contact, ContactLedgerType::PaymentReceived, -$amount, 'account', $account->id, $note);
-            } else {
-                $this->accounts->record($account, AccountTransactionType::PurchasePayment, -$amount, today(), 'contact', $contact->id, $note);
-                $this->ledger->recordContact($contact, ContactLedgerType::PaymentMade, $amount, 'account', $account->id, $note);
+            $remaining = $direction === 'received'
+                ? $this->applyToSales($contact, $account, round($amount, 2))
+                : $this->applyToPurchases($contact, $account, round($amount, 2));
+
+            if ($remaining <= 0.0) {
+                return;
             }
 
-            $this->postJournal($contact, $account, $amount, $direction);
+            if ($direction === 'received') {
+                $this->accounts->record($account, AccountTransactionType::SalePayment, $remaining, today(), 'contact', $contact->id, $note);
+                $this->ledger->recordContact($contact, ContactLedgerType::PaymentReceived, -$remaining, 'account', $account->id, $note);
+            } else {
+                $this->accounts->record($account, AccountTransactionType::PurchasePayment, -$remaining, today(), 'contact', $contact->id, $note);
+                $this->ledger->recordContact($contact, ContactLedgerType::PaymentMade, $remaining, 'account', $account->id, $note);
+            }
+
+            $this->postJournal($contact, $account, $remaining, $direction);
         });
+    }
+
+    /**
+     * @return float What is left after the customer's oldest due invoices are settled.
+     */
+    private function applyToSales(Contact $contact, Account $account, float $remaining): float
+    {
+        $sales = Sale::query()->where('customer_id', $contact->id)->allocatableDue()->lockForUpdate()->get();
+
+        foreach ($sales as $sale) {
+            if ($remaining <= 0.0) {
+                break;
+            }
+
+            $portion = min($remaining, round((float) $sale->due_amount, 2));
+            $this->addSalePayment->execute($sale, [['account_id' => $account->id, 'amount' => $portion]]);
+            $remaining = round($remaining - $portion, 2);
+        }
+
+        return $remaining;
+    }
+
+    /**
+     * @return float What is left after the supplier's oldest due purchases are settled.
+     */
+    private function applyToPurchases(Contact $contact, Account $account, float $remaining): float
+    {
+        $purchases = Purchase::query()->where('supplier_id', $contact->id)->allocatableDue()->lockForUpdate()->get();
+
+        foreach ($purchases as $purchase) {
+            if ($remaining <= 0.0) {
+                break;
+            }
+
+            $portion = min($remaining, round((float) $purchase->due_amount, 2));
+            $this->addPurchasePayment->execute($purchase, [['account_id' => $account->id, 'amount' => $portion]]);
+            $remaining = round($remaining - $portion, 2);
+        }
+
+        return $remaining;
     }
 
     /**
@@ -58,7 +115,7 @@ class RecordContactPaymentAction
      * Receivable (received) / Accounts Payable (made) — same shape as
      * AddSalePaymentAction/AddPurchasePaymentAction's private postJournal(),
      * just against the contact's running balance instead of one sale/
-     * purchase, since this settlement isn't tied to either.
+     * purchase, since this part of the settlement isn't tied to either.
      */
     private function postJournal(Contact $contact, Account $account, float $amount, string $direction): void
     {

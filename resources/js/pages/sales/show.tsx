@@ -310,6 +310,14 @@ export default function SaleShow({ sale, accounts, justConfirmed, invoiceSetting
                                     <td className="px-4 py-2 text-right tabular-nums">{money(sale.paid_amount)}</td>
                                 </tr>
                             )}
+                            {invoiceSettings.totals.show_paid && sale.waived_amount > 0 && (
+                                <tr>
+                                    <td colSpan={3} className="text-muted-foreground px-4 py-2 text-right">
+                                        Discount waived
+                                    </td>
+                                    <td className="px-4 py-2 text-right tabular-nums">{money(sale.waived_amount)}</td>
+                                </tr>
+                            )}
                             {invoiceSettings.totals.show_due && (
                                 <tr>
                                     <td colSpan={3} className="text-muted-foreground px-4 py-2 text-right">

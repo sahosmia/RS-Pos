@@ -242,6 +242,7 @@ class SaleController extends Controller
             'discount_amount' => $sale->discount_amount,
             'total_amount' => $sale->total_amount,
             'paid_amount' => $sale->paid_amount,
+            'waived_amount' => $sale->waivedAmount(),
             'due_amount' => $sale->due_amount,
             'payment_status' => $sale->payment_status,
             'status' => $sale->status,

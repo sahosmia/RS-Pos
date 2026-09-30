@@ -14,7 +14,7 @@ export default function BillDiscount() {
             <div className="space-y-6 px-4 py-6">
                 <HeadingSmall
                     title="Add Discount"
-                    description="কোনো নির্দিষ্ট সেল/পারচেজ ছাড়াই কন্টাক্টের বকেয়া থেকে ছাড় দিন — কোনো ক্যাশ মুভমেন্ট হবে না"
+                    description="কোনো নির্দিষ্ট সেল ছাড়াই কন্টাক্টের বকেয়া থেকে ছাড় দিন — সবচেয়ে পুরনো due invoice থেকে স্বয়ংক্রিয়ভাবে কাটা হবে, কোনো ক্যাশ মুভমেন্ট হবে না"
                 />
 
                 <BillDiscountForm />

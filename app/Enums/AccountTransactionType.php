@@ -14,6 +14,7 @@ enum AccountTransactionType: string
     case SalePayment = 'sale_payment';
     case PurchasePayment = 'purchase_payment';
     case SaleReturnRefund = 'sale_return_refund';
+    case CustomerRefund = 'customer_refund';
     case PurchaseReturnRefund = 'purchase_return_refund';
     case Expense = 'expense';
     case Adjustment = 'adjustment';

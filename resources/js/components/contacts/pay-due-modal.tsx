@@ -83,7 +83,7 @@ export default function PayDueModal({ open, onOpenChange, contact, accounts, sal
             : (openPurchases.find((purchase) => purchase.id === form.data.purchase_id)?.due_amount ?? null);
 
     const invoiceOptions = [
-        { value: GENERAL_BALANCE, label: 'General balance (not tied to an invoice)' },
+        { value: GENERAL_BALANCE, label: 'Oldest due first (auto-applied to invoices)' },
         ...(form.data.direction === 'received'
             ? openSales.map((sale) => ({ value: String(sale.id), label: `${sale.invoice_no} — due ${money(sale.due_amount)}` }))
             : openPurchases.map((purchase) => ({ value: String(purchase.id), label: `${purchase.invoice_no} — due ${money(purchase.due_amount)}` }))),

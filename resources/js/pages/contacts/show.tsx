@@ -1,6 +1,7 @@
 import ContactFormModal from '@/components/contacts/contact-form-modal';
 import ContactLedgerTable from '@/components/contacts/contact-ledger-table';
 import PayDueModal from '@/components/contacts/pay-due-modal';
+import RefundCreditModal from '@/components/contacts/refund-credit-modal';
 import WaiveDueModal from '@/components/contacts/waive-due-modal';
 import { FormInput } from '@/components/form/form-input';
 import HeadingSmall from '@/components/heading-small';
@@ -52,6 +53,9 @@ export default function ContactShow({ contact, ledger, ledgerFilters, payments, 
     const [editModalOpen, setEditModalOpen] = useState(false);
     const [payModalOpen, setPayModalOpen] = useState(false);
     const [waiveModalOpen, setWaiveModalOpen] = useState(false);
+    const [refundModalOpen, setRefundModalOpen] = useState(false);
+    // A pure customer with a negative balance holds credit (advance / overpayment) we can hand back.
+    const canRefund = contact.type === 'customer' && contact.balance < 0;
     const [ledgerFrom, setLedgerFrom] = useState(ledgerFilters.from);
     const [ledgerTo, setLedgerTo] = useState(ledgerFilters.to);
 
@@ -136,6 +140,11 @@ export default function ContactShow({ contact, ledger, ledgerFilters, payments, 
                         <Button variant="outline" onClick={() => setWaiveModalOpen(true)}>
                             {t('contactShow', 'add_discount')}
                         </Button>
+                        {canRefund && (
+                            <Button variant="outline" onClick={() => setRefundModalOpen(true)} disabled={accounts.length === 0}>
+                                {t('contactShow', 'refund')}
+                            </Button>
+                        )}
                         <Button variant="outline" onClick={() => setEditModalOpen(true)}>
                             {t('common', 'edit')}
                         </Button>
@@ -377,6 +386,8 @@ export default function ContactShow({ contact, ledger, ledgerFilters, payments, 
             />
 
             <WaiveDueModal open={waiveModalOpen} onOpenChange={setWaiveModalOpen} contact={contact} />
+
+            <RefundCreditModal open={refundModalOpen} onOpenChange={setRefundModalOpen} contact={contact} accounts={accounts} />
         </AppLayout>
     );
 }

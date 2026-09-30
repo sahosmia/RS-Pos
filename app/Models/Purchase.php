@@ -8,6 +8,7 @@ use App\Enums\PurchaseStatus;
 use App\Models\Concerns\LogsActivityDefaults;
 use App\Traits\HasAccountTransactions;
 use Database\Factories\PurchaseFactory;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -124,5 +125,21 @@ class Purchase extends Model
             'due_amount' => $dueAmount,
             'payment_status' => PaymentStatus::fromAmounts($paidAmount, $this->total_amount),
         ])->save();
+    }
+
+    /**
+     * Received purchases still owing money, oldest first — where a payment
+     * that isn't aimed at one purchase lands.
+     *
+     * @param  Builder<Purchase>  $query
+     * @return Builder<Purchase>
+     */
+    public function scopeAllocatableDue(Builder $query): Builder
+    {
+        return $query
+            ->where('status', PurchaseStatus::Received)
+            ->where('due_amount', '>', 0)
+            ->orderBy('purchase_date')
+            ->orderBy('id');
     }
 }

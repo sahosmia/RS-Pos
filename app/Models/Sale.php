@@ -11,10 +11,12 @@ use App\Enums\SaleStatus;
 use App\Models\Concerns\LogsActivityDefaults;
 use App\Traits\HasAccountTransactions;
 use Database\Factories\SaleFactory;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\DB;
 
 class Sale extends Model
 {
@@ -165,13 +167,47 @@ class Sale extends Model
             ? $this->sumAccountTransactions('sales_order', $this->sales_order_id)
             : 0.0;
 
+        $waived = $this->waivedAmount();
+
         $paidAmount = round($paidViaAccounts + $advanceCarried, 2);
-        $dueAmount = round($this->total_amount - $paidAmount, 2);
+        $dueAmount = round($this->total_amount - $paidAmount - $waived, 2);
 
         $this->forceFill([
             'paid_amount' => $paidAmount,
             'due_amount' => $dueAmount,
-            'payment_status' => PaymentStatus::fromAmounts($paidAmount, $this->total_amount),
+            'payment_status' => PaymentStatus::fromAmounts(round($paidAmount + $waived, 2), $this->total_amount),
         ])->save();
+    }
+
+    /**
+     * Discount waived against this invoice from the customer's ledger. It
+     * settles part of the due without any cash, so it is not "paid" — but the
+     * invoice counts as settled to that extent.
+     */
+    public function waivedAmount(): float
+    {
+        return round(abs((float) DB::table('contact_ledger')
+            ->where('reference_type', 'sale')
+            ->where('reference_id', $this->id)
+            ->where('type', 'discount_waived')
+            ->sum('amount')), 2);
+    }
+
+    /**
+     * Confirmed invoices still owing money, oldest first — where a payment or
+     * discount that isn't aimed at one invoice lands. EMI sales are left out:
+     * their due is settled installment by installment.
+     *
+     * @param  Builder<Sale>  $query
+     * @return Builder<Sale>
+     */
+    public function scopeAllocatableDue(Builder $query): Builder
+    {
+        return $query
+            ->where('status', SaleStatus::Confirmed)
+            ->where('due_amount', '>', 0)
+            ->where(fn (Builder $q) => $q->whereNull('financing_type')->orWhere('financing_type', '!=', SalePaymentType::Emi))
+            ->orderBy('sale_date')
+            ->orderBy('id');
     }
 }

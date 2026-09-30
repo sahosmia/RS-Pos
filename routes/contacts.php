@@ -10,6 +10,7 @@ use App\Http\Controllers\Contacts\ContactLedgerExportController;
 use App\Http\Controllers\Contacts\ContactNotificationController;
 use App\Http\Controllers\Contacts\ContactPaymentController;
 use App\Http\Controllers\Contacts\ContactRecentSalesController;
+use App\Http\Controllers\Contacts\ContactRefundController;
 use App\Http\Controllers\Contacts\ContactSearchController;
 use App\Http\Controllers\Contacts\ContactToggleActiveController;
 use App\Http\Controllers\Contacts\CustomerGroupController;
@@ -48,6 +49,7 @@ Route::middleware(['auth', 'module:contact,payment'])
     ->group(function () {
         Route::post('payments', [ContactPaymentController::class, 'store'])->name('payments.store');
         Route::post('due-waivers', [ContactDueWaiverController::class, 'store'])->name('due-waivers.store');
+        Route::post('refunds', [ContactRefundController::class, 'store'])->name('refunds.store');
     });
 
 // Sidebar "Bills" menu — the same one-off actions above, just contact-first

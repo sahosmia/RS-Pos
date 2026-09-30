@@ -295,6 +295,7 @@ const bn: Dictionary = {
     contactShow: {
         pay_due: 'বকেয়া পরিশোধ',
         add_discount: 'ডিসকাউন্ট যোগ করুন',
+        refund: 'রিফান্ড',
         balance: 'ব্যালেন্স',
         ledger: 'লেজার',
         purchases: 'ক্রয়',
@@ -341,6 +342,15 @@ const bn: Dictionary = {
         submit: 'মাফ করুন',
         reason: 'কারণ',
         reason_placeholder: 'loyalty, goodwill...',
+    },
+    refundModal: {
+        title: 'গ্রাহককে রিফান্ড',
+        current_credit: 'গ্রাহকের জমা (credit):',
+        hint: 'আপনার বাছা account থেকে টাকা ফেরত যাবে।',
+        submit: 'রিফান্ড করুন',
+        note_placeholder: 'রিফান্ডের কারণ (ঐচ্ছিক)',
+        toast: 'রিফান্ড রেকর্ড হয়েছে।',
+        error: 'রিফান্ড রেকর্ড করা যায়নি — ফর্মের ভুলগুলো দেখুন।',
     },
     customerGroups: {
         title: 'কাস্টমার গ্রুপ',

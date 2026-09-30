@@ -494,6 +494,7 @@ export interface SaleDetail {
     discount_amount: number;
     total_amount: number;
     paid_amount: number;
+    waived_amount: number;
     due_amount: number;
     payment_status: PaymentStatusValue;
     status: SaleStatusValue;
