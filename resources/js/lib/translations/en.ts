@@ -46,6 +46,7 @@ export interface Dictionary {
     nav: {
         dashboard: string;
         sales: string;
+        draft_sales: string;
         sale_returns: string;
         sales_order: string;
         add_sale: string;
@@ -496,6 +497,7 @@ const en: Dictionary = {
     nav: {
         dashboard: 'Dashboard',
         sales: 'Sales',
+        draft_sales: 'Draft Sales',
         sale_returns: 'Sale Returns',
         sales_order: 'Sales Order',
         add_sale: 'Add Sale',

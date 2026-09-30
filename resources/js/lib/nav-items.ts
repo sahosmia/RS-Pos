@@ -45,6 +45,7 @@ export function buildMainNavItems(emiModuleEnabled: boolean, t: ReturnType<typeo
             permission: 'sale.view_own',
             items: [
                 { key: 'sales', title: t('nav', 'sales'), url: '/sales' },
+                { key: 'draft_sales', title: t('nav', 'draft_sales'), url: '/sales?status=draft' },
                 { key: 'add_sale', title: t('nav', 'add_sale'), url: '/sales/create', permission: 'sale.create' },
                 { key: 'sale_returns', title: t('nav', 'sale_returns'), url: '/sale-returns' },
                 { key: 'sales_order', title: t('nav', 'sales_order'), url: '/sales-orders' },

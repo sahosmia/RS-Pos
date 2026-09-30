@@ -124,7 +124,12 @@ class ContactController extends Controller
             ]);
         }
 
-        return to_route('contacts.index', ['type' => $contact->type->value === 'both' ? null : $contact->type->value]);
+        $targetType = match ($contact->type->value) {
+            'supplier' => 'supplier',
+            default => 'customer',
+        };
+
+        return to_route('contacts.index', ['type' => $targetType]);
     }
 
     /**

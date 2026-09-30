@@ -59,6 +59,12 @@ export default function SaleShow({ sale, accounts, justConfirmed, invoiceSetting
         );
     };
 
+    useEffect(() => {
+        if (justConfirmed) {
+            toast.success('Sale invoice saved successfully.');
+        }
+    }, [justConfirmed]);
+
     // The list page lacks the invoice/customer data needed to print or WhatsApp, so it
     // links here with `?print=1`/`?whatsapp=1` and this fires the action once on arrival.
     useEffect(() => {

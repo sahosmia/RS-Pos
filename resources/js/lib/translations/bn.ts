@@ -47,6 +47,7 @@ const bn: Dictionary = {
     nav: {
         dashboard: 'ড্যাশবোর্ড',
         sales: 'বিক্রি',
+        draft_sales: 'ড্রাফট সেলস',
         sale_returns: 'বিক্রি ফেরত',
         sales_order: 'সেলস অর্ডার',
         add_sale: 'বিক্রি যোগ করুন',
