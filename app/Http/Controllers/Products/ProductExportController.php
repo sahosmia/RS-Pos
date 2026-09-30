@@ -27,7 +27,7 @@ class ProductExportController extends Controller
         'stock' => 'Stock',
         'pap' => 'Purchase Average Price (P.A.P)',
         'tpp' => 'Total Purchase Price (T.P.P)',
-        'price' => 'Price',
+        'price' => 'Selling Price',
         'margin' => 'Margin %',
         'status' => 'Status',
     ];

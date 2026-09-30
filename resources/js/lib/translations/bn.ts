@@ -210,7 +210,7 @@ const bn: Dictionary = {
         stock: 'স্টক',
         pap: 'ক্রয় গড় মূল্য (P.A.P)',
         tpp: 'মোট ক্রয় মূল্য (T.P.P)',
-        price: 'দাম',
+        price: 'বিক্রয় মূল্য',
         margin: 'মার্জিন',
         status: 'স্ট্যাটাস',
         sku: 'SKU',
