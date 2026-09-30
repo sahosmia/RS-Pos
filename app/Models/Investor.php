@@ -28,6 +28,8 @@ class Investor extends Model
      */
     protected $fillable = [
         'name',
+        'phone',
+        'note',
         'opening_amount',
         'created_by',
     ];

@@ -89,11 +89,12 @@ export default function LedgerTransactionModal({
             />
 
             <div className="grid gap-2">
-                <Label htmlFor="amount">Amount</Label>
+                <Label htmlFor="amount" required>Amount</Label>
                 <MoneyInput
                     id="amount"
                     value={form.data.amount}
                     onChange={(e) => form.setData('amount', Number(e.target.value))}
+                    placeholder="0.00"
                     min={selected?.allowNegative ? undefined : 0}
                     required
                 />
@@ -110,12 +111,19 @@ export default function LedgerTransactionModal({
                     options={accountOptions}
                     placeholder="Select an account"
                     error={form.errors.account_id}
+                    required
                 />
             )}
 
             <div className="grid gap-2">
                 <Label htmlFor="note">Note</Label>
-                <Textarea id="note" value={form.data.note} onChange={(e) => form.setData('note', e.target.value)} rows={2} />
+                <Textarea
+                    id="note"
+                    value={form.data.note}
+                    onChange={(e) => form.setData('note', e.target.value)}
+                    placeholder="e.g. Transaction note or reference details"
+                    rows={2}
+                />
                 <InputError message={form.errors.note} />
             </div>
         </FormModal>

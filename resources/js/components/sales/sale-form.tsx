@@ -539,7 +539,7 @@ export default function SaleForm({ mode, sale, initialCustomer, products, accoun
                                     <div className="min-w-0 flex-1">
                                         <div className="truncate text-sm font-medium">{product?.name}</div>
                                         <div className="text-muted-foreground text-xs tabular-nums">
-                                            {item.quantity} × {money(item.unit_price)} = {money(item.quantity * item.unit_price)}
+                                            {item.quantity} {product?.unit?.short_name || product?.unit?.name || 'pcs'} × {money(item.unit_price)} = {money(item.quantity * item.unit_price)}
                                         </div>
                                         {item.installation_required && (
                                             <div className="text-muted-foreground text-xs">+ Installation {money(item.installation_charge ?? 0)}</div>
@@ -612,16 +612,21 @@ export default function SaleForm({ mode, sale, initialCustomer, products, accoun
                                                 )}
                                             </td>
                                             <td className="py-2.5 pr-2">
-                                                <FormInput
-                                                    id={`sale-item-${index}-quantity`}
-                                                    type="number"
-                                                    step="1"
-                                                    min={0}
-                                                    value={item.quantity}
-                                                    onChange={(e) => updateItem(index, { quantity: Number(e.target.value) })}
-                                                    placeholder="1"
-                                                    className="text-right"
-                                                />
+                                <div className="flex items-center gap-1.5 justify-end">
+                                    <FormInput
+                                        id={`sale-item-${index}-quantity`}
+                                        type="number"
+                                        step="1"
+                                        min={0}
+                                        value={item.quantity}
+                                        onChange={(e) => updateItem(index, { quantity: Number(e.target.value) })}
+                                        placeholder="1"
+                                        className="text-right w-20"
+                                    />
+                                    <span className="text-muted-foreground text-xs font-medium shrink-0">
+                                        {product?.unit?.short_name || product?.unit?.name || 'pcs'}
+                                    </span>
+                                </div>
                                             </td>
                                             <td className="py-2.5 pr-2">
                                                 <MoneyInput
@@ -874,16 +879,20 @@ export default function SaleForm({ mode, sale, initialCustomer, products, accoun
                     {cartSheet && (
                         <div className="space-y-4">
                             <div className="grid grid-cols-2 gap-3">
-                                <FormInput
-                                    id="cart-quantity"
-                                    label="Quantity"
-                                    type="number"
-                                    step="1"
-                                    min={0}
-                                    value={cartSheet.quantity}
-                                    onChange={(e) => setCartSheet({ ...cartSheet, quantity: Number(e.target.value) })}
-                                    placeholder="1"
-                                />
+                                <div className="space-y-2">
+                                    <Label htmlFor="cart-quantity">
+                                        Quantity ({cartSheet.product.unit?.short_name || cartSheet.product.unit?.name || 'pcs'})
+                                    </Label>
+                                    <FormInput
+                                        id="cart-quantity"
+                                        type="number"
+                                        step="1"
+                                        min={0}
+                                        value={cartSheet.quantity}
+                                        onChange={(e) => setCartSheet({ ...cartSheet, quantity: Number(e.target.value) })}
+                                        placeholder="1"
+                                    />
+                                </div>
                                 <div className="grid gap-2">
                                     <Label htmlFor="cart-price">Price</Label>
                                     <MoneyInput

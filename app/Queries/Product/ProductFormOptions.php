@@ -20,7 +20,7 @@ class ProductFormOptions
         return Cache::remember(self::CACHE_KEY, now()->addHours(24), fn () => [
             'categories' => Category::query()->orderBy('name')->get(['id', 'name', 'parent_id']),
             'brands' => Brand::query()->orderBy('name')->get(['id', 'name']),
-            'units' => Unit::query()->orderBy('name')->get(['id', 'name']),
+            'units' => Unit::query()->orderBy('name')->get(['id', 'name', 'short_name']),
         ]);
     }
 

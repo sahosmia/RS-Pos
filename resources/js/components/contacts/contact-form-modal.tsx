@@ -5,6 +5,8 @@ import FormModal from '@/components/shared/form-modal';
 import MoneyInput from '@/components/shared/money-input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -18,7 +20,7 @@ import {
     type CustomerGroup,
 } from '@/types/models';
 import { useForm } from '@inertiajs/react';
-import { Building2, ChevronDown, Hash, Mail, MapPin, MessageSquareQuote, Phone, Smartphone, User, Users } from 'lucide-react';
+import { AlertTriangle, Building2, ChevronDown, Hash, Mail, MapPin, MessageSquareQuote, Phone, Smartphone, User, Users } from 'lucide-react';
 import { FormEventHandler, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
@@ -76,6 +78,27 @@ export default function ContactFormModal({ open, onOpenChange, editing, customer
 
     const [shipSameAsAddress, setShipSameAsAddress] = useState(true);
     const [additionalOpen, setAdditionalOpen] = useState(false);
+    const [duplicateContact, setDuplicateContact] = useState<{ id: number; name: string; phone: string; type: string } | null>(null);
+
+    const checkPhoneDuplicate = (phone: string) => {
+        const trimmed = phone.trim();
+        if (!trimmed || trimmed.length < 5) return;
+        fetch(route('contacts.search') + `?q=${encodeURIComponent(trimmed)}`, {
+            headers: { Accept: 'application/json' },
+        })
+            .then((res) => (res.ok ? res.json() : { data: [] }))
+            .then((data) => {
+                const matches = data.data ?? [];
+                const matched = matches.find(
+                    (c: { id: number; phone: string; name: string }) =>
+                        c.phone === trimmed && c.id !== editing?.id,
+                );
+                if (matched) {
+                    setDuplicateContact(matched);
+                }
+            })
+            .catch(() => {});
+    };
 
     useEffect(() => {
         if (!open) return;
@@ -165,6 +188,7 @@ export default function ContactFormModal({ open, onOpenChange, editing, customer
     }));
 
     return (
+        <>
         <FormModal
             open={open}
             onOpenChange={onOpenChange}
@@ -195,7 +219,6 @@ export default function ContactFormModal({ open, onOpenChange, editing, customer
                         onChange={(e) => form.setData('business_name', e.target.value)}
                         error={form.errors.business_name}
                         placeholder="e.g. City Traders Ltd"
-                        required
                     />
                 )}
 
@@ -272,6 +295,7 @@ export default function ContactFormModal({ open, onOpenChange, editing, customer
                         icon={Phone}
                         value={form.data.phone}
                         onChange={(e) => form.setData('phone', e.target.value)}
+                        onBlur={(e) => checkPhoneDuplicate(e.target.value)}
                         error={form.errors.phone}
                         placeholder="e.g. 01712345678"
                         required
@@ -392,5 +416,26 @@ export default function ContactFormModal({ open, onOpenChange, editing, customer
                 </Collapsible>
             </div>
         </FormModal>
+
+        <Dialog open={duplicateContact !== null} onOpenChange={(open) => !open && setDuplicateContact(null)}>
+            <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2 text-amber-600 dark:text-amber-400">
+                        <AlertTriangle className="size-5 shrink-0" />
+                        এই ফোন নাম্বারটি ইতোমধ্যেই ব্যবহৃত!
+                    </DialogTitle>
+                    <DialogDescription className="pt-2 text-sm">
+                        এই ফোন নাম্বার (<strong>{duplicateContact?.phone}</strong>) দিয়ে ইতোমধ্যেই{' '}
+                        <strong className="text-foreground">{duplicateContact?.name}</strong> নামের একজন ব্যক্তির তথ্য সিস্টেমে সংরক্ষিত আছে।
+                    </DialogDescription>
+                </DialogHeader>
+                <DialogFooter className="mt-4">
+                    <Button type="button" onClick={() => setDuplicateContact(null)}>
+                        ঠিক আছে, বুঝেছি
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    </>
     );
 }

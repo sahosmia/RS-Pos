@@ -71,6 +71,9 @@ class HomeApplianceProductSeeder extends Seeder
 
     public function run(): void
     {
+        // Opening stock posts a journal entry, so the ledger accounts must exist.
+        $this->call(ChartOfAccountSeeder::class);
+
         $createProduct = app(CreateProductAction::class);
         $piece = Unit::query()->firstOrCreate(['name' => 'Piece'])->id;
         $brands = collect(self::BRANDS)->mapWithKeys(fn (string $name) => [$name => Brand::query()->firstOrCreate(['name' => $name])->id]);

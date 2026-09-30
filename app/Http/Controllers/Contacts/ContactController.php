@@ -124,7 +124,7 @@ class ContactController extends Controller
             ]);
         }
 
-        return to_route('contacts.index');
+        return to_route('contacts.index', ['type' => $contact->type->value === 'both' ? null : $contact->type->value]);
     }
 
     /**

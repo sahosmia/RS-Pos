@@ -13,8 +13,8 @@ class SalesFormOptions
      */
     public static function productsForSale(): Collection
     {
-        return Product::query()->where('is_for_sale', true)->orderBy('name')
-            ->get(['id', 'name', 'sku', 'barcode', 'selling_price', 'current_stock', 'track_serial_number', 'has_installation_service']);
+        return Product::query()->where('is_for_sale', true)->with('unit:id,name,short_name')->orderBy('name')
+            ->get(['id', 'unit_id', 'name', 'sku', 'barcode', 'selling_price', 'current_stock', 'track_serial_number', 'has_installation_service']);
     }
 
     /**

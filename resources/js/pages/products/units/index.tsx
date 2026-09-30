@@ -27,18 +27,26 @@ export default function UnitsIndex({ units }: UnitsIndexProps) {
     const [editing, setEditing] = useState<UnitListItem | null>(null);
     const [deleting, setDeleting] = useState<UnitListItem | null>(null);
 
-    const form = useForm({ name: '' });
+    const form = useForm({
+        name: '',
+        short_name: '',
+        description: '',
+    });
 
     const openCreate = () => {
         form.clearErrors();
-        form.setData('name', '');
+        form.setData({ name: '', short_name: '', description: '' });
         setEditing(null);
         setModalOpen(true);
     };
 
     const openEdit = (unit: UnitListItem) => {
         form.clearErrors();
-        form.setData('name', unit.name);
+        form.setData({
+            name: unit.name,
+            short_name: unit.short_name || '',
+            description: unit.description || '',
+        });
         setEditing(unit);
         setModalOpen(true);
     };
@@ -88,7 +96,8 @@ export default function UnitsIndex({ units }: UnitsIndexProps) {
                             <thead className="bg-muted/50 text-muted-foreground">
                                 <tr>
                                     <th className="px-4 py-2 text-left font-medium">{t('common', 'name')}</th>
-                                    <th className="px-4 py-2 text-right font-medium">{t('lookup', 'products_count')}</th>
+                                    <th className="px-4 py-2 text-left font-medium">Short Unit</th>
+                                    <th className="px-4 py-2 text-left font-medium">Description</th>
                                     <th className="px-4 py-2 text-right font-medium">{t('common', 'actions')}</th>
                                 </tr>
                             </thead>
@@ -96,7 +105,8 @@ export default function UnitsIndex({ units }: UnitsIndexProps) {
                                 {units.map((unit) => (
                                     <tr key={unit.id} className="border-t">
                                         <td className="px-4 py-2 font-medium">{unit.name}</td>
-                                        <td className="px-4 py-2 text-right tabular-nums">{unit.products_count}</td>
+                                        <td className="px-4 py-2 font-medium text-muted-foreground">{unit.short_name || '—'}</td>
+                                        <td className="px-4 py-2 text-muted-foreground max-w-xs truncate">{unit.description || '—'}</td>
                                         <td className="px-4 py-2">
                                             <div className="flex justify-end">
                                                 <DataTableRowActions
@@ -124,9 +134,28 @@ export default function UnitsIndex({ units }: UnitsIndexProps) {
                     label={t('common', 'name')}
                     value={form.data.name}
                     onChange={(e) => form.setData('name', e.target.value)}
+                    placeholder="e.g. Piece, Kilogram, Box"
                     error={form.errors.name}
                     required
                 />
+                <FormInput
+                    id="short_name"
+                    label="Short Name / Unit Symbol"
+                    value={form.data.short_name}
+                    onChange={(e) => form.setData('short_name', e.target.value)}
+                    placeholder="e.g. pcs, kg, box"
+                    error={form.errors.short_name}
+                />
+                <div className="grid gap-2">
+                    <label htmlFor="description" className="text-sm font-medium leading-none">Description</label>
+                    <textarea
+                        id="description"
+                        className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                        value={form.data.description}
+                        onChange={(e) => form.setData('description', e.target.value)}
+                        placeholder="Optional description"
+                    />
+                </div>
             </FormModal>
 
             <ConfirmDialog

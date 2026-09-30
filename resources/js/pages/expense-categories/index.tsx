@@ -130,6 +130,7 @@ export default function ExpenseCategoriesIndex({ categories, allCategories }: Ex
                     label="Name"
                     value={form.data.name}
                     onChange={(e) => form.setData('name', e.target.value)}
+                    placeholder="e.g. Office Rent, Utilities, Refreshment"
                     error={form.errors.name}
                     required
                 />

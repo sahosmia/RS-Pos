@@ -127,32 +127,36 @@ export interface CategoryListItem {
     id: number;
     name: string;
     parent_id: number | null;
+    description: string | null;
     parent: { id: number; name: string } | null;
-    products_count: number;
     can_delete: boolean;
 }
 
 export interface Unit {
     id: number;
     name: string;
+    short_name?: string | null;
+    description?: string | null;
 }
 
 export interface UnitListItem {
     id: number;
     name: string;
-    products_count: number;
+    short_name: string | null;
+    description: string | null;
     can_delete: boolean;
 }
 
 export interface Brand {
     id: number;
     name: string;
+    description?: string | null;
 }
 
 export interface BrandListItem {
     id: number;
     name: string;
-    products_count: number;
+    description: string | null;
     can_delete: boolean;
 }
 

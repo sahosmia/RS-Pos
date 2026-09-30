@@ -134,6 +134,7 @@ export default function CustomerGroupsIndex({ customerGroups }: CustomerGroupsIn
                     label={t('common', 'name')}
                     value={form.data.name}
                     onChange={(e) => form.setData('name', e.target.value)}
+                    placeholder="e.g. VIP, Retail, Wholesale"
                     error={form.errors.name}
                     required
                 />
