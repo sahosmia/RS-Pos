@@ -18,13 +18,9 @@ Route::middleware(['auth', 'module:account'])->group(function () {
     Route::resource('account-types', AccountTypeController::class)
         ->only(['store', 'update', 'destroy']);
 
-    // No `cash-book/{cash_book}` route exists (resource is index/store only),
-    // so ordering doesn't matter here today — registered before the resource
-    // anyway to match the convention every other export route follows.
+    Route::get('cash-book', [CashBookController::class, 'index'])->name('cash-book.index');
+    Route::post('cash-book', [CashBookController::class, 'store'])->name('cash-book.store');
     Route::get('cash-book/export', CashBookExportController::class)->name('cash-book.export');
-
-    Route::resource('cash-book', CashBookController::class)
-        ->only(['index', 'store']);
 });
 
 Route::middleware(['auth', 'module:account,transfer'])

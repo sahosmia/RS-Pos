@@ -106,10 +106,10 @@ export default function AccountsIndex({ accounts, accountTypes, totalBalance }: 
 
     const accountForm = useForm({
         name: '',
-        account_type_id: accountTypes[0]?.id ?? 0,
+        account_type_id: '' as string | number,
         account_sub_type: '',
         account_number: '',
-        opening_balance: 0,
+        opening_balance: 0 as number | string,
         is_active: true as boolean,
         is_default: false as boolean,
     });
@@ -126,7 +126,7 @@ export default function AccountsIndex({ accounts, accountTypes, totalBalance }: 
         accountForm.clearErrors();
         accountForm.setData({
             name: '',
-            account_type_id: accountTypes[0]?.id ?? 0,
+            account_type_id: '',
             account_sub_type: '',
             account_number: '',
             opening_balance: 0,
@@ -141,7 +141,7 @@ export default function AccountsIndex({ accounts, accountTypes, totalBalance }: 
         accountForm.clearErrors();
         accountForm.setData({
             name: account.name,
-            account_type_id: account.account_type_id,
+            account_type_id: account.account_type_id ?? '',
             account_sub_type: account.account_sub_type ?? '',
             account_number: account.account_number ?? '',
             opening_balance: account.opening_balance,
@@ -243,7 +243,7 @@ export default function AccountsIndex({ accounts, accountTypes, totalBalance }: 
                                                         <div className="text-muted-foreground text-xs">{account.account_sub_type}</div>
                                                     )}
                                                 </td>
-                                                <td className="px-4 py-2">{account.account_type.name}</td>
+                                                <td className="px-4 py-2">{account.account_type?.name ?? '—'}</td>
                                                 <td className="px-4 py-2 text-right tabular-nums">{money(account.current_balance)}</td>
                                                 <td className="px-4 py-2">
                                                     <Badge variant={account.is_active ? 'secondary' : 'outline'}>
@@ -361,6 +361,7 @@ export default function AccountsIndex({ accounts, accountTypes, totalBalance }: 
                 <FormInput
                     id="name"
                     label="Account Name"
+                    placeholder="e.g. Main Cash, City Bank..."
                     value={accountForm.data.name}
                     onChange={(e) => accountForm.setData('name', e.target.value)}
                     error={accountForm.errors.name}
@@ -371,9 +372,11 @@ export default function AccountsIndex({ accounts, accountTypes, totalBalance }: 
                     id="account_type_id"
                     label="Account Type"
                     value={accountForm.data.account_type_id}
-                    onChange={(val) => val && accountForm.setData('account_type_id', Number(val))}
+                    onChange={(val) => accountForm.setData('account_type_id', val ? Number(val) : '')}
                     options={accountTypes.map((type) => ({ value: String(type.id), label: type.name }))}
-                    placeholder="Select a type"
+                    placeholder="Select account type"
+                    allowNone
+                    noneLabel="Select account type"
                     error={accountForm.errors.account_type_id}
                 />
 
@@ -389,6 +392,7 @@ export default function AccountsIndex({ accounts, accountTypes, totalBalance }: 
                 <FormInput
                     id="account_number"
                     label="Account Number"
+                    placeholder="e.g. 1234567890"
                     value={accountForm.data.account_number}
                     onChange={(e) => accountForm.setData('account_number', e.target.value)}
                     error={accountForm.errors.account_number}
@@ -398,10 +402,10 @@ export default function AccountsIndex({ accounts, accountTypes, totalBalance }: 
                     <Label htmlFor="opening_balance">Opening Balance</Label>
                     <MoneyInput
                         id="opening_balance"
+                        placeholder="0.00"
                         value={accountForm.data.opening_balance}
                         disabled={editing !== null && !editing.can_edit_opening_balance}
-                        onChange={(e) => accountForm.setData('opening_balance', Number(e.target.value))}
-                        required
+                        onChange={(e) => accountForm.setData('opening_balance', e.target.value === '' ? '' : Number(e.target.value))}
                     />
                     {editing !== null && !editing.can_edit_opening_balance && (
                         <p className="text-muted-foreground text-xs">
@@ -450,6 +454,7 @@ export default function AccountsIndex({ accounts, accountTypes, totalBalance }: 
                 <FormSelect
                     id="from_account_id"
                     label="From"
+                    required
                     value={transferForm.data.from_account_id}
                     onChange={(val) => val && transferForm.setData('from_account_id', Number(val))}
                     options={accounts.map((account) => ({ value: String(account.id), label: `${account.name} — ${money(account.current_balance)}` }))}
@@ -460,6 +465,7 @@ export default function AccountsIndex({ accounts, accountTypes, totalBalance }: 
                 <FormSelect
                     id="to_account_id"
                     label="To"
+                    required
                     value={transferForm.data.to_account_id}
                     onChange={(val) => val && transferForm.setData('to_account_id', Number(val))}
                     options={accounts.map((account) => ({ value: String(account.id), label: `${account.name} — ${money(account.current_balance)}` }))}
@@ -468,7 +474,9 @@ export default function AccountsIndex({ accounts, accountTypes, totalBalance }: 
                 />
 
                 <div className="grid gap-2">
-                    <Label htmlFor="amount">Amount</Label>
+                    <Label htmlFor="amount" required>
+                        Amount
+                    </Label>
                     <MoneyInput
                         id="amount"
                         value={transferForm.data.amount}

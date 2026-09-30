@@ -123,6 +123,15 @@ export function buildMainNavItems(emiModuleEnabled: boolean, t: ReturnType<typeo
             items: [
                 { key: 'accounts', title: t('nav', 'accounts'), url: '/accounts' },
                 { key: 'petty_cash', title: t('nav', 'petty_cash'), url: '/cash-book' },
+                {
+                    key: 'financial_position',
+                    title: t('nav', 'financial_position'),
+                    url: '/reports/financial-position',
+                    permission: 'financial_position.view',
+                },
+                { key: 'balance_sheet', title: t('nav', 'balance_sheet'), url: '/reports/balance-sheet' },
+                { key: 'cash_flow', title: t('nav', 'cash_flow'), url: '/reports/cash-flow' },
+                { key: 'trial_balance', title: t('nav', 'trial_balance'), url: '/reports/trial-balance' },
             ],
         },
         {

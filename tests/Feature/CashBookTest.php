@@ -4,11 +4,10 @@ use App\Models\AccountTransaction;
 use App\Models\CashBook;
 use App\Models\CashBookEntry;
 use App\Models\MiscTransactionCategory;
-use App\Models\User;
 
 beforeEach(function () {
     CashBook::query()->create([]);
-    $this->actingAs(User::factory()->create());
+    $this->actingAs(userWithPermissions(['account.view', 'account.create']));
 });
 
 test('an expense lowers the cash book balance without touching any account', function () {

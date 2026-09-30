@@ -23,14 +23,15 @@ class CreateAccountAction
     ) {}
 
     /**
-     * @param  array{name: string, account_type_id: int, account_sub_type?: string|null, account_number?: string|null, opening_balance?: float|string|null, is_default?: bool}  $data
+     * @param  array{name: string, account_type_id?: int|string|null, account_sub_type?: string|null, account_number?: string|null, opening_balance?: float|string|null, is_default?: bool}  $data
      */
     public function execute(array $data): Account
     {
         return DB::transaction(function () use ($data) {
             $openingBalance = (float) ($data['opening_balance'] ?? 0);
             $isDefault = (bool) ($data['is_default'] ?? false);
-            $accountType = AccountType::findOrFail($data['account_type_id']);
+            $accountTypeId = ! empty($data['account_type_id']) ? (int) $data['account_type_id'] : null;
+            $accountType = $accountTypeId ? AccountType::find($accountTypeId) : null;
             $chartOfAccount = $this->createSubAccount($accountType, $data['name']);
 
             // Only one account can be the default — unset it everywhere else
@@ -41,7 +42,7 @@ class CreateAccountAction
 
             $account = Account::create([
                 'name' => $data['name'],
-                'account_type_id' => $accountType->id,
+                'account_type_id' => $accountType?->id,
                 'account_sub_type' => $data['account_sub_type'] ?? null,
                 'account_number' => $data['account_number'] ?? null,
                 'opening_balance' => $openingBalance,
@@ -79,10 +80,11 @@ class CreateAccountAction
      * accounts under 1010, everything else under 1020 — never manually
      * picked by whoever creates the account.
      */
-    private function createSubAccount(AccountType $accountType, string $name): ChartOfAccount
+    private function createSubAccount(?AccountType $accountType, string $name): ChartOfAccount
     {
+        $parentCode = ($accountType && $accountType->isProtected()) ? '1010' : '1020';
         $parent = ChartOfAccount::query()
-            ->where('code', $accountType->isProtected() ? '1010' : '1020')
+            ->where('code', $parentCode)
             ->firstOrFail();
 
         return ChartOfAccount::create([

@@ -19,7 +19,7 @@ class UpdateAccountAction
     ) {}
 
     /**
-     * @param  array{name: string, account_type_id: int, account_sub_type?: string|null, account_number?: string|null, opening_balance?: float|string|null, is_active?: bool, is_default?: bool}  $data
+     * @param  array{name: string, account_type_id?: int|string|null, account_sub_type?: string|null, account_number?: string|null, opening_balance?: float|string|null, is_active?: bool, is_default?: bool}  $data
      */
     public function execute(Account $account, array $data): Account
     {
@@ -27,6 +27,7 @@ class UpdateAccountAction
             $canEditOpeningBalance = $account->canEditOpeningBalance();
             $openingBalance = (float) ($data['opening_balance'] ?? $account->opening_balance);
             $isDefault = (bool) ($data['is_default'] ?? $account->is_default);
+            $accountTypeId = ! empty($data['account_type_id']) ? (int) $data['account_type_id'] : null;
 
             // Only one account can be the default — unset it everywhere else
             // before this one claims it.
@@ -36,7 +37,7 @@ class UpdateAccountAction
 
             $account->update([
                 'name' => $data['name'],
-                'account_type_id' => $data['account_type_id'],
+                'account_type_id' => $accountTypeId,
                 'account_sub_type' => $data['account_sub_type'] ?? null,
                 'account_number' => $data['account_number'] ?? null,
                 'is_active' => $data['is_active'] ?? $account->is_active,
