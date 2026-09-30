@@ -92,7 +92,7 @@ class ProductQuery
             'preset' => ['nullable', Rule::enum(DateRangePreset::class)],
             'from' => ['nullable', 'date', 'required_if:preset,custom'],
             'to' => ['nullable', 'date', 'after_or_equal:from', 'required_if:preset,custom'],
-            'sort' => ['nullable', 'in:name,selling_price,current_stock'],
+            'sort' => ['nullable', 'in:name,selling_price,current_stock,avg_cost'],
             'direction' => ['nullable', 'in:asc,desc'],
         ];
     }

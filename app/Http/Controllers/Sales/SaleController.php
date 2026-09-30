@@ -89,10 +89,15 @@ class SaleController extends Controller
         ]);
     }
 
-    public function create(): Response
+    public function create(Request $request): Response
     {
+        $customerId = $request->query('customer_id') ?? $request->query('contact_id');
+        $initialCustomer = $customerId
+            ? Contact::query()->whereIn('type', ['customer', 'both'])->find($customerId)?->only(['id', 'name', 'display_name', 'phone', 'business_name', 'balance'])
+            : null;
+
         return Inertia::render('sales/create', [
-            'initialCustomer' => null,
+            'initialCustomer' => $initialCustomer,
             'products' => SalesFormOptions::productsForSale(),
             'accounts' => SalesFormOptions::activeAccounts(),
         ]);

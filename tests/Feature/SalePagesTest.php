@@ -53,6 +53,18 @@ test('the add sale page renders', function () {
         ->assertInertia(fn ($page) => $page->component('sales/create'));
 });
 
+test('the add sale page auto-selects customer when customer_id query parameter is present', function () {
+    $this->actingAs(User::factory()->create());
+    $customer = Contact::factory()->create(['name' => 'Specific Customer', 'type' => 'customer']);
+
+    $this->get("/sales/create?customer_id={$customer->id}")
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('sales/create')
+            ->where('initialCustomer.id', $customer->id)
+            ->where('initialCustomer.name', 'Specific Customer'));
+});
+
 test('the sale detail page renders and flags a fresh confirm for the undo toast', function () {
     $this->actingAs(User::factory()->create());
     $customer = Contact::factory()->create();

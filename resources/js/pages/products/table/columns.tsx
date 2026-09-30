@@ -32,6 +32,8 @@ export const getVisibilityColumns = (t: <S extends keyof Dictionary>(section: S,
     { id: 'product', label: t('productColumns', 'product') },
     { id: 'category', label: t('productColumns', 'category_brand') },
     { id: 'stock', label: t('productColumns', 'stock') },
+    { id: 'pap', label: t('productColumns', 'pap') },
+    { id: 'tpp', label: t('productColumns', 'tpp') },
     { id: 'price', label: t('productColumns', 'price') },
     { id: 'margin', label: t('productColumns', 'margin') },
     { id: 'status', label: t('productColumns', 'status') },
@@ -45,6 +47,8 @@ export const getExportColumns = (t: <S extends keyof Dictionary>(section: S, key
     { id: 'category', label: t('nav', 'category') },
     { id: 'brand', label: t('nav', 'brand') },
     { id: 'stock', label: t('productColumns', 'stock') },
+    { id: 'pap', label: t('productColumns', 'pap') },
+    { id: 'tpp', label: t('productColumns', 'tpp') },
     { id: 'price', label: t('productColumns', 'price') },
     { id: 'margin', label: t('productColumns', 'margin_percent') },
     { id: 'status', label: t('productColumns', 'status') },
@@ -133,6 +137,27 @@ export function useProductColumns({ sort, direction, onSort, selection, onAdjust
                 ),
                 meta: { headerClassName: 'text-right', cellClassName: 'text-right tabular-nums', label: t('productColumns', 'stock') },
                 cell: ({ row }) => (row.original.manage_stock ? `${row.original.current_stock} ${row.original.unit.name}` : '—'),
+            },
+            {
+                id: 'pap',
+                header: () => (
+                    <DataTableColumnHeader
+                        title={t('productColumns', 'pap')}
+                        sortKey="avg_cost"
+                        currentSort={sort}
+                        currentDirection={direction}
+                        onSort={onSort}
+                        align="right"
+                    />
+                ),
+                meta: { headerClassName: 'text-right', cellClassName: 'text-right tabular-nums', label: t('productColumns', 'pap') },
+                cell: ({ row }) => money(row.original.avg_cost),
+            },
+            {
+                id: 'tpp',
+                header: t('productColumns', 'tpp'),
+                meta: { headerClassName: 'text-right', cellClassName: 'text-right tabular-nums', label: t('productColumns', 'tpp') },
+                cell: ({ row }) => (row.original.manage_stock ? money(row.original.avg_cost * row.original.current_stock) : '—'),
             },
             {
                 id: 'price',

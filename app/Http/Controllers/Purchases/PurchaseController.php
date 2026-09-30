@@ -92,10 +92,15 @@ class PurchaseController extends Controller
      * (doc/corrections2.md #8, see `ProductSearchController`/
      * `ContactSearchController`), so create needs no initial selection at all.
      */
-    public function create(): Response
+    public function create(Request $request): Response
     {
+        $supplierId = $request->query('supplier_id') ?? $request->query('contact_id');
+        $initialSupplier = $supplierId
+            ? Contact::query()->whereIn('type', ['supplier', 'both'])->find($supplierId)?->only(['id', 'name', 'display_name', 'phone', 'business_name', 'balance'])
+            : null;
+
         return Inertia::render('purchases/create', [
-            'initialSupplier' => null,
+            'initialSupplier' => $initialSupplier,
             'initialProducts' => [],
         ]);
     }

@@ -17,7 +17,7 @@ class AdjustStockAction
 {
     public function __construct(private StockService $stock) {}
 
-    public function execute(Product $product, float $countedQuantity, ?string $reason = null): ?StockMovement
+    public function execute(Product $product, float $countedQuantity, ?string $reason = null, ?float $unitCost = null): ?StockMovement
     {
         $difference = round($countedQuantity - $product->current_stock, 2);
 
@@ -25,8 +25,14 @@ class AdjustStockAction
             return null;
         }
 
+        $costToUse = $product->avg_cost > 0 ? $product->avg_cost : $unitCost;
+
+        if ($product->avg_cost <= 0 && $costToUse !== null && $costToUse > 0) {
+            $product->forceFill(['avg_cost' => round($costToUse, 2)])->save();
+        }
+
         return $difference > 0
-            ? $this->stock->increase($product, $difference, StockMovementType::AdjustmentIncrease, note: $reason, unitCost: $product->avg_cost)
-            : $this->stock->decrease($product, abs($difference), StockMovementType::AdjustmentDecrease, note: $reason, unitCost: $product->avg_cost);
+            ? $this->stock->increase($product, $difference, StockMovementType::AdjustmentIncrease, note: $reason, unitCost: $costToUse)
+            : $this->stock->decrease($product, abs($difference), StockMovementType::AdjustmentDecrease, note: $reason, unitCost: $costToUse);
     }
 }

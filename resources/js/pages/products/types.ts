@@ -2,7 +2,7 @@ import { type ProductStats } from '@/components/products/product-stat-cards';
 import { type Brand, type Category, type DateRangePresetValue, type Paginated, type ProductListItem, type StockStatus, type Unit } from '@/types/models';
 
 /** Matches `ProductQuery::filterRules()`'s `sort` whitelist exactly — the backend rejects anything else. */
-export type ProductSortField = 'name' | 'selling_price' | 'current_stock';
+export type ProductSortField = 'name' | 'selling_price' | 'current_stock' | 'avg_cost';
 
 export interface ProductFilters {
     search: string | null;
