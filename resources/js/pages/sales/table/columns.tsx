@@ -5,7 +5,7 @@ import DataTableRowActions from '@/components/data-table/data-table-row-actions'
 import { type DataTableColumnOption } from '@/components/data-table/types';
 import ContactLink from '@/components/shared/contact-link';
 import { Badge } from '@/components/ui/badge';
-import { formatDate } from '@/lib/format-date';
+import { formatDateTime } from '@/lib/format-date';
 import { statusTone } from '@/lib/status-tones';
 import { type PaymentStatusValue, type SaleListItem, type SaleStatusValue } from '@/types/models';
 import { Link } from '@inertiajs/react';
@@ -133,7 +133,7 @@ export function useSaleColumns({ sort, direction, onSort, money, selection, onDe
                     />
                 ) : 'Date',
                 meta: { cellClassName: 'whitespace-nowrap' },
-                cell: ({ row }) => formatDate(row.original.sale_date),
+                cell: ({ row }) => formatDateTime(row.original.created_at ?? row.original.sale_date),
             },
             {
                 id: 'total',

@@ -50,6 +50,7 @@ class SaleController extends Controller
             'invoice_no' => $sale->invoice_no,
             'customer' => $sale->customer->only(['id', 'name']),
             'sale_date' => $sale->sale_date->toDateString(),
+            'created_at' => $sale->created_at->format('Y-m-d\TH:i:s'),
             'total_amount' => $sale->total_amount,
             'due_amount' => $sale->due_amount,
             'payment_status' => $sale->payment_status,
