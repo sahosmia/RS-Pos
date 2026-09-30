@@ -47,6 +47,7 @@ class ExpenseController extends Controller
             'due_amount' => $expense->due_amount,
             'payment_status' => $expense->payment_status,
             'expense_date' => $expense->expense_date->toDateString(),
+            'created_at' => $expense->created_at?->toIso8601String(),
             'due_date' => $expense->due_date?->toDateString(),
             'note' => $expense->note,
             'can_edit' => $expense->canEdit(),

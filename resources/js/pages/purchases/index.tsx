@@ -23,7 +23,7 @@ import { useTableSelection } from '@/hooks/table/use-table-selection';
 import { useMoneyFormat } from '@/hooks/use-money-format';
 import { useTableViewMode } from '@/hooks/use-table-view-mode';
 import AppLayout from '@/layouts/app-layout';
-import { formatDate } from '@/lib/format-date';
+import { formatDateTime } from '@/lib/format-date';
 import { cn } from '@/lib/utils';
 import { type BreadcrumbItem, type SharedData } from '@/types';
 import { type Paginated, type PaymentStatusValue, type PurchaseListItem, type PurchaseStatusValue, type SupplierOption } from '@/types/models';
@@ -216,7 +216,7 @@ export default function PurchasesIndex({ purchases, stats, initialSupplier, filt
                     />
                 ),
                 meta: { cellClassName: 'whitespace-nowrap' },
-                cell: ({ row }) => formatDate(row.original.purchase_date),
+                cell: ({ row }) => formatDateTime(row.original.created_at ?? row.original.purchase_date),
             },
             {
                 id: 'total',
@@ -319,7 +319,7 @@ export default function PurchasesIndex({ purchases, stats, initialSupplier, filt
                                 <div className="text-muted-foreground truncate text-xs">
                                     <ContactLink id={purchase.supplier.id} name={purchase.supplier.name} />
                                 </div>
-                                <div className="text-muted-foreground truncate text-xs">{formatDate(purchase.purchase_date)}</div>
+                                <div className="text-muted-foreground truncate text-xs">{formatDateTime(purchase.created_at ?? purchase.purchase_date)}</div>
                             </div>
                         </div>
                         <DataTableRowActions actions={getPurchaseActions(purchase, { onDelete: setDeleting })} />

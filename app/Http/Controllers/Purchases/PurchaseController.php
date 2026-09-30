@@ -48,6 +48,7 @@ class PurchaseController extends Controller
             'invoice_no' => $purchase->invoice_no,
             'supplier' => $purchase->supplier->only(['id', 'name']),
             'purchase_date' => $purchase->purchase_date->toDateString(),
+            'created_at' => $purchase->created_at?->toIso8601String(),
             'total_amount' => $purchase->total_amount,
             'paid_amount' => $purchase->paid_amount,
             'due_amount' => $purchase->due_amount,

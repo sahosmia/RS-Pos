@@ -325,6 +325,7 @@ export interface PurchaseListItem {
     invoice_no: string;
     supplier: { id: number; name: string };
     purchase_date: string;
+    created_at?: string;
     total_amount: number;
     paid_amount: number;
     due_amount: number;
@@ -416,6 +417,7 @@ export interface SaleListItem {
     invoice_no: string;
     customer: { id: number; name: string };
     sale_date: string;
+    created_at?: string;
     total_amount: number;
     due_amount: number;
     payment_status: PaymentStatusValue;
@@ -724,6 +726,7 @@ export interface ExpenseListItem {
     due_amount: number;
     payment_status: PaymentStatusValue;
     expense_date: string;
+    created_at?: string;
     due_date: string | null;
     note: string | null;
     can_edit: boolean;

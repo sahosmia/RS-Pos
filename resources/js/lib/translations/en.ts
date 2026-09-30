@@ -48,6 +48,7 @@ export interface Dictionary {
         sales: string;
         sale_returns: string;
         sales_order: string;
+        draft_sales: string;
         add_sale: string;
         emi_installments: string;
         product: string;
@@ -508,6 +509,7 @@ const en: Dictionary = {
         sales: 'Sales',
         sale_returns: 'Sale Returns',
         sales_order: 'Sales Order',
+        draft_sales: 'Draft Sales List',
         add_sale: 'Add Sale',
         emi_installments: 'EMI Installments',
         product: 'Product',
