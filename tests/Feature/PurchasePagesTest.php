@@ -56,6 +56,18 @@ test('the add purchase page renders with no initial supplier/product selection',
             ->where('initialProducts', []));
 });
 
+test('the add purchase page auto-selects supplier when supplier_id query parameter is present', function () {
+    $this->actingAs(User::factory()->create());
+    $supplier = Contact::factory()->supplier()->create(['name' => 'Specific Supplier']);
+
+    $this->get("/purchases/create?supplier_id={$supplier->id}")
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('purchases/create')
+            ->where('initialSupplier.id', $supplier->id)
+            ->where('initialSupplier.name', 'Specific Supplier'));
+});
+
 test('the purchase detail page renders', function () {
     $this->actingAs(User::factory()->create());
     $supplier = Contact::factory()->supplier()->create();

@@ -17,9 +17,13 @@ class StoreStockAdjustmentRequest extends FormRequest
      */
     public function rules(): array
     {
+        $product = $this->route('product');
+        $needsCost = $product && $product->avg_cost <= 0;
+
         return [
             'quantity' => ['required', 'numeric', 'min:0'],
             'reason' => ['required', 'string', 'max:255'],
+            'unit_cost' => [$needsCost ? 'required' : 'nullable', 'numeric', 'gt:0'],
         ];
     }
 }

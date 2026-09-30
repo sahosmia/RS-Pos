@@ -353,7 +353,7 @@ export default function PurchasesIndex({ purchases, stats, initialSupplier, filt
                 <div className="flex flex-wrap items-end justify-between gap-4">
                     <HeadingSmall title="Purchases" description="Supplier থেকে কেনা পণ্যের তালিকা" />
                     <Button asChild>
-                        <Link href={route('purchases.create')}>Add Purchase</Link>
+                        <Link href={filters.supplier_id ? route('purchases.create', { supplier_id: filters.supplier_id }) : route('purchases.create')}>Add Purchase</Link>
                     </Button>
                 </div>
 
@@ -487,7 +487,7 @@ export default function PurchasesIndex({ purchases, stats, initialSupplier, filt
                     emptyState={
                         <EmptyState title="No purchases yet" description="প্রথম purchase যোগ করুন">
                             <Button className="mt-2" asChild>
-                                <Link href={route('purchases.create')}>Add Purchase</Link>
+                                <Link href={filters.supplier_id ? route('purchases.create', { supplier_id: filters.supplier_id }) : route('purchases.create')}>Add Purchase</Link>
                             </Button>
                         </EmptyState>
                     }

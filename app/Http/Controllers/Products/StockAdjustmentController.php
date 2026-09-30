@@ -18,7 +18,12 @@ class StockAdjustmentController extends Controller
     {
         $data = $request->validated();
 
-        $adjustStock->execute($product, (float) $data['quantity'], $data['reason'] ?? null);
+        $adjustStock->execute(
+            $product,
+            (float) $data['quantity'],
+            $data['reason'] ?? null,
+            isset($data['unit_cost']) ? (float) $data['unit_cost'] : null,
+        );
 
         return back();
     }

@@ -1,6 +1,7 @@
 import { FormInput } from '@/components/form/form-input';
 import InputError from '@/components/input-error';
 import FormModal from '@/components/shared/form-modal';
+import MoneyInput from '@/components/shared/money-input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useTranslation } from '@/hooks/use-translation';
@@ -20,15 +21,22 @@ interface StockAdjustmentModalProps {
  */
 export default function StockAdjustmentModal({ product, onOpenChange }: StockAdjustmentModalProps) {
     const { t } = useTranslation();
+    const needsCost = product ? product.avg_cost <= 0 : false;
+
     const form = useForm({
         quantity: 0,
+        unit_cost: 0,
         reason: '',
     });
 
     useEffect(() => {
         if (product) {
             form.clearErrors();
-            form.setData({ quantity: product.current_stock, reason: '' });
+            form.setData({
+                quantity: product.current_stock,
+                unit_cost: product.avg_cost > 0 ? product.avg_cost : 0,
+                reason: '',
+            });
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [product?.id]);
@@ -82,6 +90,21 @@ export default function StockAdjustmentModal({ product, onOpenChange }: StockAdj
                     </p>
                 )}
             </div>
+
+            {needsCost && (
+                <div className="grid gap-2">
+                    <Label htmlFor="unit_cost" required>
+                        {t('stockAdjustment', 'unit_cost')}
+                    </Label>
+                    <MoneyInput
+                        id="unit_cost"
+                        value={form.data.unit_cost}
+                        onChange={(e) => form.setData('unit_cost', Number(e.target.value))}
+                    />
+                    <p className="text-muted-foreground text-xs">{t('stockAdjustment', 'unit_cost_hint')}</p>
+                    <InputError message={form.errors.unit_cost} />
+                </div>
+            )}
 
             <div className="grid gap-2">
                 <Label htmlFor="reason">{t('stockAdjustment', 'reason')}</Label>
