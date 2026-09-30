@@ -11,6 +11,11 @@ export interface ProductOption {
     current_stock: number;
     track_serial_number: boolean;
     has_installation_service: boolean;
+    unit?: {
+        id: number;
+        name: string;
+        short_name?: string | null;
+    } | null;
 }
 
 interface ProductSearchInputProps {

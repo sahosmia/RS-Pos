@@ -24,6 +24,8 @@ class UpdateInvestorRequest extends FormRequest
 
         return [
             'name' => ['required', 'string', 'max:255'],
+            'phone' => ['nullable', 'string', 'max:30'],
+            'note' => ['nullable', 'string', 'max:1000'],
             'opening_amount' => ['required', 'numeric', 'min:0', new InvestorOpeningAmountEditable($investor)],
         ];
     }

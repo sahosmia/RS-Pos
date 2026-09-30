@@ -36,6 +36,8 @@ class InvestorController extends Controller
         $investors->getCollection()->transform(fn (Investor $investor) => [
             'id' => $investor->id,
             'name' => $investor->name,
+            'phone' => $investor->phone,
+            'note' => $investor->note,
             'opening_amount' => $investor->opening_amount,
             'total_invested' => $investor->total_invested,
             'can_delete' => $investor->transactions_count === 0,

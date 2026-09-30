@@ -29,18 +29,26 @@ export default function CategoriesIndex({ categories, allCategories }: Categorie
     const [editing, setEditing] = useState<CategoryListItem | null>(null);
     const [deleting, setDeleting] = useState<CategoryListItem | null>(null);
 
-    const form = useForm({ name: '', parent_id: null as number | null });
+    const form = useForm({
+        name: '',
+        parent_id: null as number | null,
+        description: '',
+    });
 
     const openCreate = () => {
         form.clearErrors();
-        form.setData({ name: '', parent_id: null });
+        form.setData({ name: '', parent_id: null, description: '' });
         setEditing(null);
         setModalOpen(true);
     };
 
     const openEdit = (category: CategoryListItem) => {
         form.clearErrors();
-        form.setData({ name: category.name, parent_id: category.parent_id });
+        form.setData({
+            name: category.name,
+            parent_id: category.parent_id,
+            description: category.description || '',
+        });
         setEditing(category);
         setModalOpen(true);
     };
@@ -93,7 +101,7 @@ export default function CategoriesIndex({ categories, allCategories }: Categorie
                                 <tr>
                                     <th className="px-4 py-2 text-left font-medium">{t('common', 'name')}</th>
                                     <th className="px-4 py-2 text-left font-medium">{t('lookup', 'categories_parent')}</th>
-                                    <th className="px-4 py-2 text-right font-medium">{t('lookup', 'products_count')}</th>
+                                    <th className="px-4 py-2 text-left font-medium">Description</th>
                                     <th className="px-4 py-2 text-right font-medium">{t('common', 'actions')}</th>
                                 </tr>
                             </thead>
@@ -102,7 +110,7 @@ export default function CategoriesIndex({ categories, allCategories }: Categorie
                                     <tr key={category.id} className="border-t">
                                         <td className="px-4 py-2 font-medium">{category.name}</td>
                                         <td className="text-muted-foreground px-4 py-2">{category.parent?.name ?? '—'}</td>
-                                        <td className="px-4 py-2 text-right tabular-nums">{category.products_count}</td>
+                                        <td className="px-4 py-2 text-muted-foreground max-w-xs truncate">{category.description || '—'}</td>
                                         <td className="px-4 py-2">
                                             <div className="flex justify-end">
                                                 <DataTableRowActions

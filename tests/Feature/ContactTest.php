@@ -38,6 +38,8 @@ test('creating a contact with an opening balance records the opening ledger entr
 
     $this->post('/contacts', [
         'name' => 'City Traders',
+        'first_name' => 'City',
+        'last_name' => 'Traders',
         'phone' => '+8801712345678',
         'type' => 'customer',
         'entity_type' => 'business',
@@ -45,7 +47,7 @@ test('creating a contact with an opening balance records the opening ledger entr
         'customer_group_id' => $group->id,
         'is_active' => true,
         'opening_balance' => 5000,
-    ])->assertRedirect('/contacts');
+    ])->assertRedirect('/contacts?type=customer');
 
     $contact = Contact::query()->firstOrFail();
 
@@ -53,16 +55,16 @@ test('creating a contact with an opening balance records the opening ledger entr
         ->and($contact->ledgerEntries()->where('type', ContactLedgerType::OpeningBalance)->count())->toBe(1);
 });
 
-test('business_name is required when entity_type is business', function () {
+test('first_name and last_name are required when creating a contact', function () {
     $this->actingAs(User::factory()->create());
 
     $this->post('/contacts', [
-        'name' => 'No Business Name',
+        'name' => 'No First Last',
         'phone' => '+8801712345678',
         'type' => 'customer',
-        'entity_type' => 'business',
+        'entity_type' => 'individual',
         'is_active' => true,
-    ])->assertSessionHasErrors('business_name');
+    ])->assertSessionHasErrors(['first_name', 'last_name']);
 });
 
 test('a contact created without a contact id gets one auto-generated from its own id', function () {
@@ -70,11 +72,13 @@ test('a contact created without a contact id gets one auto-generated from its ow
 
     $this->post('/contacts', [
         'name' => 'Auto Coded',
+        'first_name' => 'Auto',
+        'last_name' => 'Coded',
         'phone' => '+8801712345678',
         'type' => 'supplier',
         'entity_type' => 'individual',
         'is_active' => true,
-    ])->assertRedirect('/contacts');
+    ])->assertRedirect('/contacts?type=supplier');
 
     $contact = Contact::query()->where('name', 'Auto Coded')->firstOrFail();
 
@@ -86,12 +90,14 @@ test('a contact created with an explicit contact id keeps it instead of auto-gen
 
     $this->post('/contacts', [
         'name' => 'Manually Coded',
+        'first_name' => 'Manually',
+        'last_name' => 'Coded',
         'contact_code' => 'CUS-CUSTOM-1',
         'phone' => '+8801712345678',
         'type' => 'customer',
         'entity_type' => 'individual',
         'is_active' => true,
-    ])->assertRedirect('/contacts');
+    ])->assertRedirect('/contacts?type=customer');
 
     expect(Contact::query()->where('name', 'Manually Coded')->value('contact_code'))->toBe('CUS-CUSTOM-1');
 });
@@ -125,7 +131,7 @@ test('the new profile fields round-trip through create and the show page', funct
         'type' => 'customer',
         'entity_type' => 'individual',
         'is_active' => true,
-    ])->assertRedirect('/contacts');
+    ])->assertRedirect('/contacts?type=customer');
 
     $contact = Contact::query()->where('first_name', 'John')->firstOrFail();
 

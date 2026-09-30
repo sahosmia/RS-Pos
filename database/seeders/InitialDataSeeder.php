@@ -23,22 +23,22 @@ class InitialDataSeeder extends Seeder
 {
     public function run(): void
     {
-        $categories = $this->seedCategories();
-        $units = $this->seedUnits();
-        $brands = $this->seedBrands();
-        $this->seedCustomerGroups();
-        $this->seedExpenseCategories();
+        $this->call([
+            CategorySeeder::class,
+            UnitSeeder::class,
+            BrandSeeder::class,
+            CustomerGroupSeeder::class,
+            ExpenseCategorySeeder::class,
+            ProductSeeder::class,
+            ContactSeeder::class,
+            AssetSeeder::class,
+            CompanyLoanSeeder::class,
+            InvestorSeeder::class,
+            OtherLiabilitySeeder::class,
+            StaffSeeder::class,
+        ]);
 
-        $accounts = $this->seedAccounts();
-        $this->seedProducts($categories, $units, $brands);
-        $this->seedContacts();
-
-        // Updated modules with ZERO balances/transactions
-        $this->seedAssets();
-        $this->seedCompanyLoan();
-        $investors = $this->seedInvestors();
-        $this->seedOtherLiability();
-        $this->seedStaff($investors);
+        $this->seedAccounts();
     }
 
     /**
