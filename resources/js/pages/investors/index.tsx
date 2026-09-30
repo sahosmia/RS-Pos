@@ -61,7 +61,12 @@ export default function InvestorsIndex({ investors, totalInvested, filters }: In
     const [editing, setEditing] = useState<InvestorListItem | null>(null);
     const [deleting, setDeleting] = useState<InvestorListItem | null>(null);
 
-    const form = useForm({ name: '', opening_amount: 0 });
+    const form = useForm({
+        name: '',
+        phone: '',
+        note: '',
+        opening_amount: 0,
+    });
 
     const { isLoading, applyFilters, handleSort, activeFilterCount, canReset, resetFilters } = useTableFilters({
         routeName: 'investors.index',
@@ -83,7 +88,7 @@ export default function InvestorsIndex({ investors, totalInvested, filters }: In
 
     const openCreate = () => {
         form.clearErrors();
-        form.setData({ name: '', opening_amount: 0 });
+        form.setData({ name: '', phone: '', note: '', opening_amount: 0 });
         setEditing(null);
         setModalOpen(true);
     };
@@ -91,7 +96,12 @@ export default function InvestorsIndex({ investors, totalInvested, filters }: In
     const openEdit = useCallback(
         (investor: InvestorListItem) => {
             form.clearErrors();
-            form.setData({ name: investor.name, opening_amount: investor.opening_amount });
+            form.setData({
+                name: investor.name,
+                phone: investor.phone || '',
+                note: investor.note || '',
+                opening_amount: investor.opening_amount,
+            });
             setEditing(investor);
             setModalOpen(true);
         },
@@ -299,12 +309,22 @@ export default function InvestorsIndex({ investors, totalInvested, filters }: In
                     label="Name"
                     value={form.data.name}
                     onChange={(e) => form.setData('name', e.target.value)}
+                    placeholder="e.g. Rafiqul Islam"
                     error={form.errors.name}
                     required
                 />
 
+                <FormInput
+                    id="phone"
+                    label="Phone Number"
+                    value={form.data.phone}
+                    onChange={(e) => form.setData('phone', e.target.value)}
+                    placeholder="e.g. 01712345678"
+                    error={form.errors.phone}
+                />
+
                 <div className="grid gap-2">
-                    <Label htmlFor="opening_amount">Opening Balance</Label>
+                    <Label htmlFor="opening_amount" required>Opening Balance</Label>
                     <MoneyInput
                         id="opening_amount"
                         value={form.data.opening_amount}
@@ -317,6 +337,18 @@ export default function InvestorsIndex({ investors, totalInvested, filters }: In
                         <p className="text-muted-foreground text-xs">এই investor-এর লেনদেন হয়ে গেছে — opening balance আর বদলানো যাবে না।</p>
                     )}
                     <InputError message={form.errors.opening_amount} />
+                </div>
+
+                <div className="grid gap-2">
+                    <Label htmlFor="note">Note</Label>
+                    <textarea
+                        id="note"
+                        className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                        value={form.data.note}
+                        onChange={(e) => form.setData('note', e.target.value)}
+                        placeholder="e.g. Initial investor agreement details"
+                    />
+                    <InputError message={form.errors.note} />
                 </div>
             </FormModal>
 

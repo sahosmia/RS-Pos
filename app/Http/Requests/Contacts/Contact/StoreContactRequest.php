@@ -24,9 +24,9 @@ class StoreContactRequest extends FormRequest
             // it from prefix/first/middle/last before submitting, so this contract never changed.
             'name' => ['required', 'string', 'max:255'],
             'prefix' => ['nullable', Rule::enum(ContactPrefix::class)],
-            'first_name' => ['nullable', 'string', 'max:255'],
+            'first_name' => ['required', 'string', 'max:255'],
             'middle_name' => ['nullable', 'string', 'max:255'],
-            'last_name' => ['nullable', 'string', 'max:255'],
+            'last_name' => ['required', 'string', 'max:255'],
             // Left blank, `CreateContactAction` auto-generates one from the new row's id.
             'contact_code' => ['nullable', 'string', 'max:50', 'unique:contacts,contact_code'],
             'phone' => ['required', 'string', 'max:30'],
@@ -37,7 +37,7 @@ class StoreContactRequest extends FormRequest
             'reference' => ['nullable', 'string', 'max:255'],
             'type' => ['required', 'in:customer,supplier,both'],
             'entity_type' => ['required', 'in:individual,business'],
-            'business_name' => ['required_if:entity_type,business', 'nullable', 'string', 'max:255'],
+            'business_name' => ['nullable', 'string', 'max:255'],
             'customer_group_id' => ['nullable', 'integer', 'exists:customer_groups,id'],
             'is_active' => ['required', 'boolean'],
             'opening_balance' => ['nullable', 'numeric'],

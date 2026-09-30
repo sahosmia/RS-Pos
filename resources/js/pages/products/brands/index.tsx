@@ -27,18 +27,24 @@ export default function BrandsIndex({ brands }: BrandsIndexProps) {
     const [editing, setEditing] = useState<BrandListItem | null>(null);
     const [deleting, setDeleting] = useState<BrandListItem | null>(null);
 
-    const form = useForm({ name: '' });
+    const form = useForm({
+        name: '',
+        description: '',
+    });
 
     const openCreate = () => {
         form.clearErrors();
-        form.setData('name', '');
+        form.setData({ name: '', description: '' });
         setEditing(null);
         setModalOpen(true);
     };
 
     const openEdit = (brand: BrandListItem) => {
         form.clearErrors();
-        form.setData('name', brand.name);
+        form.setData({
+            name: brand.name,
+            description: brand.description || '',
+        });
         setEditing(brand);
         setModalOpen(true);
     };
@@ -88,7 +94,7 @@ export default function BrandsIndex({ brands }: BrandsIndexProps) {
                             <thead className="bg-muted/50 text-muted-foreground">
                                 <tr>
                                     <th className="px-4 py-2 text-left font-medium">{t('common', 'name')}</th>
-                                    <th className="px-4 py-2 text-right font-medium">{t('lookup', 'products_count')}</th>
+                                    <th className="px-4 py-2 text-left font-medium">Description</th>
                                     <th className="px-4 py-2 text-right font-medium">{t('common', 'actions')}</th>
                                 </tr>
                             </thead>
@@ -96,7 +102,7 @@ export default function BrandsIndex({ brands }: BrandsIndexProps) {
                                 {brands.map((brand) => (
                                     <tr key={brand.id} className="border-t">
                                         <td className="px-4 py-2 font-medium">{brand.name}</td>
-                                        <td className="px-4 py-2 text-right tabular-nums">{brand.products_count}</td>
+                                        <td className="px-4 py-2 text-muted-foreground max-w-xs truncate">{brand.description || '—'}</td>
                                         <td className="px-4 py-2">
                                             <div className="flex justify-end">
                                                 <DataTableRowActions
@@ -124,9 +130,20 @@ export default function BrandsIndex({ brands }: BrandsIndexProps) {
                     label={t('common', 'name')}
                     value={form.data.name}
                     onChange={(e) => form.setData('name', e.target.value)}
+                    placeholder="e.g. Samsung, Apple, Walton"
                     error={form.errors.name}
                     required
                 />
+                <div className="grid gap-2">
+                    <label htmlFor="description" className="text-sm font-medium leading-none">Description</label>
+                    <textarea
+                        id="description"
+                        className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                        value={form.data.description}
+                        onChange={(e) => form.setData('description', e.target.value)}
+                        placeholder="Optional brand description"
+                    />
+                </div>
             </FormModal>
 
             <ConfirmDialog

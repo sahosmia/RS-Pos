@@ -19,7 +19,7 @@ class BrandController extends Controller
             'brands' => $brands->map(fn (Brand $brand) => [
                 'id' => $brand->id,
                 'name' => $brand->name,
-                'products_count' => $brand->products_count,
+                'description' => $brand->description,
                 'can_delete' => $brand->products_count === 0,
             ]),
         ]);

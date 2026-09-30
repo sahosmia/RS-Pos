@@ -19,7 +19,8 @@ class UnitController extends Controller
             'units' => $units->map(fn (Unit $unit) => [
                 'id' => $unit->id,
                 'name' => $unit->name,
-                'products_count' => $unit->products_count,
+                'short_name' => $unit->short_name,
+                'description' => $unit->description,
                 'can_delete' => $unit->products_count === 0,
             ]),
         ]);

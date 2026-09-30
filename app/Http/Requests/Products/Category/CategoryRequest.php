@@ -38,6 +38,7 @@ class CategoryRequest extends FormRequest
                 'exists:categories,id',
                 $category ? Rule::notIn([$category->id]) : 'nullable',
             ],
+            'description' => ['nullable', 'string', 'max:1000'],
         ];
     }
 }

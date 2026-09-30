@@ -24,6 +24,8 @@ class UnitRequest extends FormRequest
 
         return [
             'name' => ['required', 'string', 'max:255', Rule::unique('units', 'name')->ignore($unit?->id)],
+            'short_name' => ['nullable', 'string', 'max:50'],
+            'description' => ['nullable', 'string', 'max:1000'],
         ];
     }
 }
