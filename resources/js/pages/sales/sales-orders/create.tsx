@@ -87,6 +87,7 @@ export default function SalesOrdersCreate({ initialCustomer, products, accounts 
         }));
 
         form.post(route('sales-orders.store'), {
+            onSuccess: () => toast.success('Sales order created.'),
             onError: (errors) => toast.error(paymentRowsError(errors) ?? 'Could not save the sales order — check the form for errors.'),
         });
     };

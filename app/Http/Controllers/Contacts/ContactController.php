@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Contacts;
 
 use App\Actions\Contact\CreateContactAction;
+use App\Enums\ContactType;
 use App\Actions\Contact\DeleteContactAction;
 use App\Actions\Contact\UpdateContactAction;
 use App\Http\Controllers\Controller;
@@ -124,7 +125,12 @@ class ContactController extends Controller
             ]);
         }
 
-        return to_route('contacts.index', ['type' => $contact->type->value === 'both' ? null : $contact->type->value]);
+        $targetType = match ($contact->type) {
+            ContactType::Supplier => 'supplier',
+            ContactType::Customer, ContactType::Both => 'customer',
+        };
+
+        return to_route('contacts.index', ['type' => $targetType]);
     }
 
     /**
