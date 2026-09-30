@@ -194,15 +194,6 @@ export function buildMainNavItems(emiModuleEnabled: boolean, t: ReturnType<typeo
             permission: 'report.view',
             items: [
                 { key: 'profit_loss', title: t('nav', 'profit_loss'), url: '/reports/profit-loss' },
-                { key: 'balance_sheet', title: t('nav', 'balance_sheet'), url: '/reports/balance-sheet' },
-                {
-                    key: 'financial_position',
-                    title: t('nav', 'financial_position'),
-                    url: '/reports/financial-position',
-                    permission: 'financial_position.view',
-                },
-                { key: 'trial_balance', title: t('nav', 'trial_balance'), url: '/reports/trial-balance' },
-                { key: 'cash_flow', title: t('nav', 'cash_flow'), url: '/reports/cash-flow' },
                 { key: 'stock_report', title: t('nav', 'stock_report'), url: '/reports/stock' },
                 { key: 'due_report', title: t('nav', 'due_report'), url: '/reports/due' },
                 { key: 'trending_products', title: t('nav', 'trending_products'), url: '/reports/trending-products' },
