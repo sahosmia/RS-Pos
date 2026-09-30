@@ -240,6 +240,8 @@ const bn: Dictionary = {
         adjust: 'অ্যাডজাস্ট',
         actual_quantity: 'প্রকৃত পরিমাণ',
         current_stock: 'বর্তমান স্টক',
+        unit_cost: 'একক ক্রয়মূল্য (Unit Cost)',
+        unit_cost_hint: 'এই প্রোডাক্টের আগের কোনো ক্রয়মূল্য নেই, তাই কস্ট প্রাইস দেওয়া বাধ্যতামূলক।',
         reason: 'কারণ',
         reason_placeholder: 'damaged, count mismatch...',
         toast: 'স্টক অ্যাডজাস্ট হয়েছে।',

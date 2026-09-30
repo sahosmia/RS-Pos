@@ -246,6 +246,41 @@ test('stock adjustment requires a reason', function () {
     ])->assertSessionHasErrors('reason');
 });
 
+test('stock adjustment requires unit_cost when product avg_cost is 0', function () {
+    $this->actingAs(User::factory()->create());
+    $product = Product::factory()->create(['category_id' => Category::factory(), 'unit_id' => Unit::factory(), 'current_stock' => 0, 'avg_cost' => 0]);
+
+    $this->post("/products/{$product->id}/stock-adjustments", [
+        'quantity' => 5,
+        'reason' => 'Initial stock count',
+    ])->assertSessionHasErrors('unit_cost');
+
+    $this->post("/products/{$product->id}/stock-adjustments", [
+        'quantity' => 5,
+        'reason' => 'Initial stock count',
+        'unit_cost' => 250,
+    ])->assertRedirect();
+
+    expect($product->fresh()->avg_cost)->toBe(250.0)
+        ->and($product->fresh()->current_stock)->toBe(5.0);
+});
+
+test('stock adjustment automatically uses existing avg_cost when avg_cost is greater than 0', function () {
+    $this->actingAs(User::factory()->create());
+    $product = Product::factory()->create(['category_id' => Category::factory(), 'unit_id' => Unit::factory(), 'current_stock' => 5, 'avg_cost' => 120]);
+
+    $this->post("/products/{$product->id}/stock-adjustments", [
+        'quantity' => 10,
+        'reason' => 'Stock count adjustment',
+    ])->assertRedirect();
+
+    $movement = StockMovement::query()->where('product_id', $product->id)->firstOrFail();
+
+    expect($product->fresh()->avg_cost)->toBe(120.0)
+        ->and($movement->unit_cost)->toBe(120.0)
+        ->and($movement->total_cost)->toBe(600.0);
+});
+
 test('a product with stock movements cannot be deleted', function () {
     $this->actingAs(User::factory()->create());
     $product = Product::factory()->create(['category_id' => Category::factory(), 'unit_id' => Unit::factory()]);

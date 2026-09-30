@@ -239,6 +239,8 @@ export interface Dictionary {
         adjust: string;
         actual_quantity: string;
         current_stock: string;
+        unit_cost: string;
+        unit_cost_hint: string;
         reason: string;
         reason_placeholder: string;
         toast: string;
@@ -687,6 +689,8 @@ const en: Dictionary = {
         adjust: 'Adjust',
         actual_quantity: 'Actual Quantity',
         current_stock: 'Current stock',
+        unit_cost: 'Unit Cost / Purchase Price',
+        unit_cost_hint: 'Since this product has no previous purchase price, please enter unit cost.',
         reason: 'Reason',
         reason_placeholder: 'damaged, count mismatch...',
         toast: 'Stock adjusted.',
