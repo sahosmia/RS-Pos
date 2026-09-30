@@ -1,6 +1,8 @@
 <?php
 
 use App\Actions\Investor\AddInvestorTransactionAction;
+use App\Actions\Investor\CreateInvestorAction;
+use App\Actions\Investor\UpdateInvestorAction;
 use App\Models\Account;
 use App\Models\AccountType;
 use App\Models\ChartOfAccount;
@@ -75,4 +77,60 @@ test('recalculateLedgerBalance re-derives total_invested from the transaction lo
     $investor->recalculateLedgerBalance();
 
     expect($investor->fresh()->total_invested)->toBe(400000.0);
+});
+
+test('creating an investor with an opening balance sets total_invested and posts a balanced journal entry to Capital', function () {
+    $this->actingAs(User::factory()->create());
+
+    $investor = app(CreateInvestorAction::class)->execute(['name' => 'Karim Uddin', 'opening_amount' => 200000]);
+
+    $capital = ChartOfAccount::where('code', '3100')->firstOrFail();
+    $entry = JournalEntry::where('reference_type', 'investor_opening_amount')->where('reference_id', $investor->id)->firstOrFail();
+
+    expect($investor->total_invested)->toBe(200000.0)
+        ->and($investor->opening_amount)->toBe(200000.0)
+        ->and($capital->fresh()->balance)->toBe(200000.0)
+        ->and($entry->lines->sum('debit'))->toBe($entry->lines->sum('credit'));
+});
+
+test('an investor without an opening balance posts nothing', function () {
+    $this->actingAs(User::factory()->create());
+
+    $investor = app(CreateInvestorAction::class)->execute(['name' => 'Karim Uddin']);
+
+    expect($investor->total_invested)->toBe(0.0)
+        ->and(JournalEntry::where('reference_type', 'investor_opening_amount')->count())->toBe(0);
+});
+
+test('the opening balance can be corrected before any other transaction, and is locked afterward', function () {
+    $this->actingAs(User::factory()->create());
+    $investor = app(CreateInvestorAction::class)->execute(['name' => 'Karim Uddin', 'opening_amount' => 200000]);
+
+    expect($investor->canEditOpeningAmount())->toBeTrue();
+
+    app(UpdateInvestorAction::class)->execute($investor, ['name' => 'Karim Uddin', 'opening_amount' => 150000]);
+    $capital = ChartOfAccount::where('code', '3100')->firstOrFail();
+
+    expect($investor->fresh()->total_invested)->toBe(150000.0)
+        ->and($capital->fresh()->balance)->toBe(150000.0);
+
+    $accountType = AccountType::factory()->create();
+    $account = Account::factory()->create(['account_type_id' => $accountType->id, 'current_balance' => 0]);
+    app(AddInvestorTransactionAction::class)->execute($investor->fresh(), ['type' => 'investment', 'amount' => 1000, 'account_id' => $account->id]);
+
+    expect($investor->fresh()->canEditOpeningAmount())->toBeFalse();
+
+    $this->patch("/investors/{$investor->id}", ['name' => 'Karim Uddin', 'opening_amount' => 1])
+        ->assertSessionHasErrors('opening_amount');
+});
+
+test('the investors page and store route carry the opening balance', function () {
+    $this->actingAs(User::factory()->create());
+
+    $this->post('/investors', ['name' => 'Rahim', 'opening_amount' => 50000])->assertRedirect('/investors');
+
+    $this->get('/investors')->assertInertia(fn ($page) => $page
+        ->where('investors.data.0.opening_amount', 50000)
+        ->where('investors.data.0.can_edit_opening_amount', true)
+        ->where('investors.data.0.total_invested', 50000));
 });

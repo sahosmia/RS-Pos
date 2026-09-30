@@ -12,7 +12,7 @@ export function LowStockWidget({ products }: LowStockWidgetProps) {
     const { t } = useTranslation();
 
     return (
-        <Card className="flex h-full flex-col shadow-none border-border/40">
+        <Card className="flex h-full flex-col">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
                 <CardTitle className="flex items-center gap-2 text-base font-medium">
                     <AlertTriangle className="h-4 w-4 text-amber-500" />

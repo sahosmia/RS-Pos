@@ -43,6 +43,12 @@ export interface AccountType {
     name: string;
 }
 
+export interface AccountTypeListItem extends AccountType {
+    accounts_count: number;
+    is_protected: boolean;
+    can_delete: boolean;
+}
+
 export interface Account {
     id: number;
     name: string;
@@ -842,13 +848,15 @@ export interface CompanyLoanDetail {
     start_date: string;
 }
 
-export type InvestorTransactionTypeValue = 'investment' | 'profit_share' | 'withdrawal' | 'adjustment';
+export type InvestorTransactionTypeValue = 'opening_balance' | 'investment' | 'profit_share' | 'withdrawal' | 'adjustment';
 
 export interface InvestorListItem {
     id: number;
     name: string;
+    opening_amount: number;
     total_invested: number;
     can_delete: boolean;
+    can_edit_opening_amount: boolean;
 }
 
 export interface InvestorDetail {

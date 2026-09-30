@@ -6,6 +6,7 @@ import ContactLink from '@/components/shared/contact-link';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useMoneyFormat } from '@/hooks/use-money-format';
+import { formatDateTime } from '@/lib/format-date';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { type Account, type PurchaseDetail } from '@/types/models';
@@ -62,7 +63,7 @@ export default function PurchaseShow({ purchase, accounts }: PurchaseShowProps) 
                         title={purchase.invoice_no}
                         description={
                             <>
-                                <ContactLink id={purchase.supplier.id} name={purchase.supplier.name} /> • {purchase.purchase_date}
+                                <ContactLink id={purchase.supplier.id} name={purchase.supplier.name} /> • {formatDateTime(purchase.created_at ?? purchase.purchase_date)}
                                 {purchase.creator && ` • Added by: ${purchase.creator.name}`}
                             </>
                         }

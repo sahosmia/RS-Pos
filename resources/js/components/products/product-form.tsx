@@ -101,7 +101,7 @@ function ToggleRow({
         <label
             htmlFor={id}
             className={cn(
-                'flex cursor-pointer items-center justify-between gap-4 rounded-lg border bg-background p-3 transition-colors',
+                'flex cursor-pointer items-center justify-between gap-4 rounded-lg border bg-card p-3 transition-colors',
                 checked ? 'border-primary/30 bg-primary/5' : 'hover:bg-muted/40',
             )}
         >
@@ -509,7 +509,7 @@ export default function ProductForm({ mode, product, categories, brands, units }
                                         {form.data.service_plan.map((period, index) => (
                                             <div
                                                 key={index}
-                                                className="grid grid-cols-1 gap-2 rounded-md border bg-background p-2.5 sm:grid-cols-[1fr_1fr_auto] sm:items-center sm:gap-3 sm:border-0 sm:bg-transparent sm:p-1"
+                                                className="grid grid-cols-1 gap-2 rounded-md border bg-card p-2.5 sm:grid-cols-[1fr_1fr_auto] sm:items-center sm:gap-3 sm:border-0 sm:bg-transparent sm:p-1"
                                             >
                                                 <FormInput
                                                     id={`service-period-months-${index}`}
@@ -587,7 +587,7 @@ export default function ProductForm({ mode, product, categories, brands, units }
                         />
 
                         {imagePreview ? (
-                            <div className="flex items-start gap-4 rounded-lg border bg-background p-3">
+                            <div className="flex items-start gap-4 rounded-lg border bg-card p-3">
                                 <img
                                     src={imagePreview}
                                     alt="Preview"
@@ -628,7 +628,7 @@ export default function ProductForm({ mode, product, categories, brands, units }
                                 onClick={() => fileInputRef.current?.click()}
                                 className="flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed bg-muted/20 py-8 transition-colors hover:border-primary/40 hover:bg-primary/5"
                             >
-                                <div className="flex size-11 items-center justify-center rounded-full bg-background ring-1 ring-border">
+                                <div className="flex size-11 items-center justify-center rounded-full bg-card ring-1 ring-border">
                                     <ImagePlus className="size-5 text-muted-foreground" />
                                 </div>
                                 <div className="text-center">

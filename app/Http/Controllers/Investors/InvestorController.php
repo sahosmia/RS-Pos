@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Investors;
 
+use App\Actions\Investor\CreateInvestorAction;
+use App\Actions\Investor\UpdateInvestorAction;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Investor\StoreInvestorRequest;
 use App\Http\Requests\Investor\UpdateInvestorRequest;
@@ -12,7 +14,6 @@ use App\Models\Settings;
 use App\Queries\Investor\InvestorQuery;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -35,8 +36,10 @@ class InvestorController extends Controller
         $investors->getCollection()->transform(fn (Investor $investor) => [
             'id' => $investor->id,
             'name' => $investor->name,
+            'opening_amount' => $investor->opening_amount,
             'total_invested' => $investor->total_invested,
             'can_delete' => $investor->transactions_count === 0,
+            'can_edit_opening_amount' => $investor->movements_count === 0,
         ]);
 
         return Inertia::render('investors/index', [
@@ -51,19 +54,20 @@ class InvestorController extends Controller
     }
 
     /**
-     * No journal/ledger effect here — an Investor starts at 0, capital only
-     * ever moves in afterward via AddInvestorTransactionAction.
+     * An Investor starts at 0 unless an opening capital is given (posted as
+     * Dr Opening Balance Equity / Cr Capital, no account movement) — every
+     * later change goes through AddInvestorTransactionAction.
      */
-    public function store(StoreInvestorRequest $request): RedirectResponse
+    public function store(StoreInvestorRequest $request, CreateInvestorAction $createInvestor): RedirectResponse
     {
-        Investor::create([...$request->validated(), 'created_by' => Auth::id()]);
+        $createInvestor->execute($request->validated());
 
         return to_route('investors.index');
     }
 
-    public function update(UpdateInvestorRequest $request, Investor $investor): RedirectResponse
+    public function update(UpdateInvestorRequest $request, Investor $investor, UpdateInvestorAction $updateInvestor): RedirectResponse
     {
-        $investor->update($request->validated());
+        $updateInvestor->execute($investor, $request->validated());
 
         return to_route('investors.index');
     }

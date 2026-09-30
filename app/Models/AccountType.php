@@ -16,11 +16,23 @@ class AccountType extends Model
     use LogsActivityDefaults;
 
     /**
+     * Cash-type accounts get their General Ledger sub-account under a different
+     * parent (1010) than every other type (1020) — see CreateAccountAction — so
+     * this type is matched by name and must never be renamed or deleted.
+     */
+    public const CASH = 'Cash';
+
+    /**
      * @var list<string>
      */
     protected $fillable = [
         'name',
     ];
+
+    public function isProtected(): bool
+    {
+        return $this->name === self::CASH;
+    }
 
     /**
      * @return HasMany<Account, $this>

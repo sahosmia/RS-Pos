@@ -2,6 +2,7 @@
 
 namespace App\Queries\Investor;
 
+use App\Enums\InvestorTransactionType;
 use App\Models\Investor;
 use Illuminate\Database\Eloquent\Builder;
 
@@ -27,7 +28,10 @@ class InvestorQuery
         }
 
         return Investor::query()
-            ->withCount('transactions')
+            ->withCount([
+                'transactions',
+                'transactions as movements_count' => fn (Builder $query) => $query->where('type', '!=', InvestorTransactionType::OpeningBalance),
+            ])
             ->orderBy($sort, $direction);
     }
 }

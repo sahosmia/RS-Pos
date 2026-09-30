@@ -801,13 +801,14 @@ Conceptually resembles Company Loan (cached balance + transaction log) but seman
 investors
 - id
 - name
+- opening_amount          -- capital invested before go-live (Dr 3300 Opening Balance Equity / Cr 3100 Capital, no account movement); editable until the first other transaction, same rule as other_liabilities.opening_amount
 - total_invested          -- cached, current capital still in the business
 - created_by
 
 investor_transactions
 - id
 - investor_id
-- type               enum('investment', 'profit_share', 'withdrawal', 'adjustment')
+- type               enum('opening_balance', 'investment', 'profit_share', 'withdrawal', 'adjustment')
 - amount              (+ or −)
 - account_id           (which account money moved to/from)
 - note
@@ -1412,7 +1413,7 @@ asset_transactions.type       opening_asset, purchase, addition, sold, disposal
 
 loan_transactions.type        disbursement, repayment, interest_charge, adjustment
 
-investor_transactions.type    investment, profit_share, withdrawal, adjustment
+investor_transactions.type    opening_balance, investment, profit_share, withdrawal, adjustment
 
 other_liability_transactions.type   opening_liability, increase, payment, adjustment
 

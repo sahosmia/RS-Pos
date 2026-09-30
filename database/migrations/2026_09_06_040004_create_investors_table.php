@@ -14,6 +14,7 @@ return new class extends Migration
         Schema::create('investors', function (Blueprint $table) {
             $table->id();
             $table->string('name');
+            $table->decimal('opening_amount', 19, 4)->default(0);
             $table->decimal('total_invested', 19, 4)->default(0);
             $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();

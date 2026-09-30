@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\InvestorTransactionType;
 use App\Models\Concerns\LogsActivityDefaults;
 use App\Traits\HasLedger;
 use Database\Factories\InvestorFactory;
@@ -27,6 +28,7 @@ class Investor extends Model
      */
     protected $fillable = [
         'name',
+        'opening_amount',
         'created_by',
     ];
 
@@ -36,8 +38,27 @@ class Investor extends Model
     protected function casts(): array
     {
         return [
+            'opening_amount' => 'float',
             'total_invested' => 'float',
         ];
+    }
+
+    /**
+     * The opening entry stays correctable only while nothing else has
+     * happened to this investor — same rule as OtherLiability's opening amount.
+     */
+    public function canEditOpeningAmount(): bool
+    {
+        return ! $this->transactions()
+            ->where('type', '!=', InvestorTransactionType::OpeningBalance)
+            ->exists();
+    }
+
+    public function openingTransaction(): ?InvestorTransaction
+    {
+        return $this->transactions()
+            ->where('type', InvestorTransactionType::OpeningBalance)
+            ->first();
     }
 
     /**

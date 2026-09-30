@@ -414,13 +414,14 @@ loan_transactions
 investors
 - id
 - name
+- opening_amount          (capital already invested before go-live; correctable until the first other movement)
 - total_invested          (cached)
 - created_by
 
 investor_transactions
 - id
 - investor_id
-- type                 enum('investment','profit_share','withdrawal','adjustment')
+- type                 enum('opening_balance','investment','profit_share','withdrawal','adjustment')
 - amount
 - account_id
 - note

@@ -19,6 +19,7 @@ class StoreInvestorRequest extends FormRequest
     {
         return [
             'name' => ['required', 'string', 'max:255'],
+            'opening_amount' => ['nullable', 'numeric', 'min:0'],
         ];
     }
 }

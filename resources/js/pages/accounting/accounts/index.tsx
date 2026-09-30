@@ -1,3 +1,5 @@
+import { getAccountActions } from '@/components/accounting/account-actions';
+import DataTableRowActions from '@/components/data-table/data-table-row-actions';
 import { FormInput } from '@/components/form/form-input';
 import { FormSelect } from '@/components/form/form-select';
 import HeadingSmall from '@/components/heading-small';
@@ -6,20 +8,20 @@ import ConfirmDialog from '@/components/shared/confirm-dialog';
 import EmptyState from '@/components/shared/empty-state';
 import FormModal from '@/components/shared/form-modal';
 import MoneyInput from '@/components/shared/money-input';
-import DataTableRowActions from '@/components/data-table/data-table-row-actions';
-import { getAccountActions } from '@/components/accounting/account-actions';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { useMoneyFormat } from '@/hooks/use-money-format';
 import AppLayout from '@/layouts/app-layout';
 import { today } from '@/lib/format-date';
 import { type BreadcrumbItem } from '@/types';
-import { type AccountListItem, type AccountType } from '@/types/models';
-import { Head, Link, router, useForm } from '@inertiajs/react';
-import { FormEventHandler, useState } from 'react';
+import { type AccountListItem, type AccountTypeListItem } from '@/types/models';
+import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
+import { Pencil, Trash2 } from 'lucide-react';
+import { FormEventHandler, useEffect, useState } from 'react';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -30,7 +32,7 @@ const breadcrumbs: BreadcrumbItem[] = [
 
 interface AccountsIndexProps {
     accounts: AccountListItem[];
-    accountTypes: AccountType[];
+    accountTypes: AccountTypeListItem[];
     totalBalance: number;
 }
 
@@ -41,6 +43,66 @@ export default function AccountsIndex({ accounts, accountTypes, totalBalance }: 
     const [editing, setEditing] = useState<AccountListItem | null>(null);
     const [transferModalOpen, setTransferModalOpen] = useState(false);
     const [deleting, setDeleting] = useState<AccountListItem | null>(null);
+
+    const [typeModalOpen, setTypeModalOpen] = useState(false);
+    const [editingType, setEditingType] = useState<AccountTypeListItem | null>(null);
+    const [deletingType, setDeletingType] = useState<AccountTypeListItem | null>(null);
+    const [activeTab, setActiveTab] = useState('accounts');
+
+    const { url } = usePage();
+
+    // Same `?tab=` sync as the Roles page: a redirect back with `?tab=types` reuses this page
+    // instance instead of remounting it, so the tab must resync on every navigation.
+    useEffect(() => {
+        const tab = new URLSearchParams(window.location.search).get('tab');
+        setActiveTab(tab === 'types' ? 'types' : 'accounts');
+    }, [url]);
+
+    const handleTabChange = (value: string) => {
+        setActiveTab(value);
+        const next = new URL(window.location.href);
+        next.searchParams.set('tab', value);
+        window.history.replaceState({}, '', next.toString());
+    };
+
+    const typeForm = useForm({ name: '' });
+
+    const openCreateType = () => {
+        typeForm.clearErrors();
+        typeForm.setData('name', '');
+        setEditingType(null);
+        setTypeModalOpen(true);
+    };
+
+    const openEditType = (type: AccountTypeListItem) => {
+        typeForm.clearErrors();
+        typeForm.setData('name', type.name);
+        setEditingType(type);
+        setTypeModalOpen(true);
+    };
+
+    const submitType: FormEventHandler = (e) => {
+        e.preventDefault();
+
+        const options = { preserveScroll: true, onSuccess: () => setTypeModalOpen(false) };
+
+        if (editingType) {
+            typeForm.patch(route('account-types.update', editingType.id), options);
+        } else {
+            typeForm.post(route('account-types.store'), options);
+        }
+    };
+
+    const confirmDeleteType = () => {
+        if (!deletingType) {
+            return;
+        }
+
+        router.delete(route('account-types.destroy', deletingType.id), {
+            preserveScroll: true,
+            onFinish: () => setDeletingType(null),
+        });
+    };
 
     const accountForm = useForm({
         name: '',
@@ -130,73 +192,164 @@ export default function AccountsIndex({ accounts, accountTypes, totalBalance }: 
             <Head title="Accounts" />
 
             <div className="space-y-6 px-4 py-6">
-                <div className="flex flex-wrap items-end justify-between gap-4">
-                    <HeadingSmall title="Payment Accounts" description="Cash, bank, mobile banking ও cheque — প্রতিটার নিজস্ব ব্যালেন্স" />
+                <HeadingSmall title="Payment Accounts" description="Cash, bank, mobile banking ও cheque — প্রতিটার নিজস্ব ব্যালেন্স" />
 
-                    <div className="flex flex-wrap items-center gap-2">
-                        <Button variant="outline" asChild>
-                            <Link href={route('cash-book.index')}>Petty Cash</Link>
-                        </Button>
-                        <Button variant="outline" onClick={() => setTransferModalOpen(true)} disabled={accounts.length < 2}>
-                            Fund Transfer
-                        </Button>
-                        <Button onClick={openCreate}>Add Account</Button>
-                    </div>
-                </div>
+                <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
+                    <TabsList>
+                        <TabsTrigger value="accounts">Accounts</TabsTrigger>
+                        <TabsTrigger value="types">Account Types</TabsTrigger>
+                    </TabsList>
 
-                <div className="rounded-lg border p-4">
-                    <p className="text-muted-foreground text-sm">Total balance (active accounts)</p>
-                    <p className="text-2xl font-semibold tabular-nums">{money(totalBalance)}</p>
-                </div>
+                    <TabsContent value="accounts" className="space-y-6">
+                        <div className="flex flex-wrap items-center justify-end gap-2">
+                            <Button variant="outline" asChild>
+                                <Link href={route('cash-book.index')}>Petty Cash</Link>
+                            </Button>
+                            <Button variant="outline" onClick={() => setTransferModalOpen(true)} disabled={accounts.length < 2}>
+                                Fund Transfer
+                            </Button>
+                            <Button onClick={openCreate}>Add Account</Button>
+                        </div>
 
-                {accounts.length === 0 ? (
-                    <EmptyState title="No accounts yet" description="প্রথমে একটা Cash বা Bank account যোগ করুন">
-                        <Button className="mt-2" onClick={openCreate}>
-                            Add Account
-                        </Button>
-                    </EmptyState>
-                ) : (
-                    <div className="overflow-x-auto rounded-lg border">
-                        <table className="w-full text-sm">
-                            <thead className="bg-muted/50 text-muted-foreground">
-                                <tr>
-                                    <th className="px-4 py-2 text-left font-medium">Name</th>
-                                    <th className="px-4 py-2 text-left font-medium">Type</th>
-                                    <th className="px-4 py-2 text-right font-medium">Balance</th>
-                                    <th className="px-4 py-2 text-left font-medium">Status</th>
-                                    <th className="px-4 py-2 text-right font-medium">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {accounts.map((account) => (
-                                    <tr key={account.id} className="border-t">
-                                        <td className="px-4 py-2">
-                                            <div className="font-medium">{account.name}</div>
-                                            {account.account_sub_type && (
-                                                <div className="text-muted-foreground text-xs">{account.account_sub_type}</div>
-                                            )}
-                                        </td>
-                                        <td className="px-4 py-2">{account.account_type.name}</td>
-                                        <td className="px-4 py-2 text-right tabular-nums">{money(account.current_balance)}</td>
-                                        <td className="px-4 py-2">
-                                            <Badge variant={account.is_active ? 'secondary' : 'outline'}>
-                                                {account.is_active ? 'Active' : 'Closed'}
-                                            </Badge>
-                                        </td>
-                                        <td className="px-4 py-2">
-                                            <div className="flex justify-end">
-                                                <DataTableRowActions
-                                                    actions={getAccountActions(account, { onEdit: openEdit, onDelete: setDeleting })}
-                                                />
-                                            </div>
-                                        </td>
+                        <div className="rounded-lg border p-4">
+                            <p className="text-muted-foreground text-sm">Total balance (active accounts)</p>
+                            <p className="text-2xl font-semibold tabular-nums">{money(totalBalance)}</p>
+                        </div>
+
+                        {accounts.length === 0 ? (
+                            <EmptyState title="No accounts yet" description="প্রথমে একটা Cash বা Bank account যোগ করুন">
+                                <Button className="mt-2" onClick={openCreate}>
+                                    Add Account
+                                </Button>
+                            </EmptyState>
+                        ) : (
+                            <div className="overflow-x-auto rounded-lg border">
+                                <table className="w-full text-sm">
+                                    <thead className="bg-muted/50 text-muted-foreground">
+                                        <tr>
+                                            <th className="px-4 py-2 text-left font-medium">Name</th>
+                                            <th className="px-4 py-2 text-left font-medium">Type</th>
+                                            <th className="px-4 py-2 text-right font-medium">Balance</th>
+                                            <th className="px-4 py-2 text-left font-medium">Status</th>
+                                            <th className="px-4 py-2 text-right font-medium">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {accounts.map((account) => (
+                                            <tr key={account.id} className="border-t">
+                                                <td className="px-4 py-2">
+                                                    <div className="font-medium">{account.name}</div>
+                                                    {account.account_sub_type && (
+                                                        <div className="text-muted-foreground text-xs">{account.account_sub_type}</div>
+                                                    )}
+                                                </td>
+                                                <td className="px-4 py-2">{account.account_type.name}</td>
+                                                <td className="px-4 py-2 text-right tabular-nums">{money(account.current_balance)}</td>
+                                                <td className="px-4 py-2">
+                                                    <Badge variant={account.is_active ? 'secondary' : 'outline'}>
+                                                        {account.is_active ? 'Active' : 'Closed'}
+                                                    </Badge>
+                                                </td>
+                                                <td className="px-4 py-2">
+                                                    <div className="flex justify-end">
+                                                        <DataTableRowActions
+                                                            actions={getAccountActions(account, { onEdit: openEdit, onDelete: setDeleting })}
+                                                        />
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        )}
+                    </TabsContent>
+
+                    <TabsContent value="types" className="space-y-4">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                            <p className="text-muted-foreground text-sm">Account form-এর "Account Type" dropdown-এ এই তালিকাটা দেখাবে</p>
+                            <Button onClick={openCreateType}>Add Type</Button>
+                        </div>
+
+                        <div className="overflow-x-auto rounded-lg border">
+                            <table className="w-full text-sm">
+                                <thead className="bg-muted/50 text-muted-foreground">
+                                    <tr>
+                                        <th className="px-4 py-2 text-left font-medium">Name</th>
+                                        <th className="px-4 py-2 text-right font-medium">Accounts</th>
+                                        <th className="px-4 py-2 text-right font-medium">Actions</th>
                                     </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                )}
+                                </thead>
+                                <tbody>
+                                    {accountTypes.map((type) => (
+                                        <tr key={type.id} className="border-t">
+                                            <td className="px-4 py-2 font-medium">
+                                                {type.name}
+                                                {type.is_protected && (
+                                                    <Badge variant="outline" className="ml-2">
+                                                        Built-in
+                                                    </Badge>
+                                                )}
+                                            </td>
+                                            <td className="px-4 py-2 text-right tabular-nums">{type.accounts_count}</td>
+                                            <td className="px-4 py-2">
+                                                <div className="flex justify-end gap-1">
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        onClick={() => openEditType(type)}
+                                                        disabled={type.is_protected}
+                                                    >
+                                                        <Pencil className="size-4" />
+                                                        <span className="sr-only">Edit {type.name}</span>
+                                                    </Button>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        onClick={() => setDeletingType(type)}
+                                                        disabled={!type.can_delete}
+                                                        className="text-destructive hover:text-destructive"
+                                                    >
+                                                        <Trash2 className="size-4" />
+                                                        <span className="sr-only">Delete {type.name}</span>
+                                                    </Button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </TabsContent>
+                </Tabs>
             </div>
+
+            <FormModal
+                open={typeModalOpen}
+                onOpenChange={setTypeModalOpen}
+                title={editingType ? 'Edit Account Type' : 'Add Account Type'}
+                processing={typeForm.processing}
+                onSubmit={submitType}
+            >
+                <FormInput
+                    id="type_name"
+                    label="Type Name"
+                    placeholder="Bkash, Nagad, Card..."
+                    value={typeForm.data.name}
+                    onChange={(e) => typeForm.setData('name', e.target.value)}
+                    error={typeForm.errors.name}
+                    required
+                />
+            </FormModal>
+
+            <ConfirmDialog
+                open={deletingType !== null}
+                onOpenChange={(open) => !open && setDeletingType(null)}
+                title="Delete account type?"
+                description={`"${deletingType?.name}" মুছে ফেলা হবে। কোনো account এই type ব্যবহার করলে এটা করা যাবে না।`}
+                confirmLabel="Delete"
+                onConfirm={confirmDeleteType}
+            />
 
             <FormModal
                 open={accountModalOpen}

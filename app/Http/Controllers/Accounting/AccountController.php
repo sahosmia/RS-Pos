@@ -46,7 +46,14 @@ class AccountController extends Controller
                 'can_delete' => $account->transactions_count === 0,
                 'can_edit_opening_balance' => $account->movements_count === 0,
             ]),
-            'accountTypes' => AccountType::query()->orderBy('name')->get(['id', 'name']),
+            'accountTypes' => AccountType::query()->withCount('accounts')->orderBy('name')->get()
+                ->map(fn (AccountType $type) => [
+                    'id' => $type->id,
+                    'name' => $type->name,
+                    'accounts_count' => $type->accounts_count,
+                    'is_protected' => $type->isProtected(),
+                    'can_delete' => $type->accounts_count === 0 && ! $type->isProtected(),
+                ]),
             'totalBalance' => (float) Account::query()->active()->sum('current_balance'),
         ]);
     }

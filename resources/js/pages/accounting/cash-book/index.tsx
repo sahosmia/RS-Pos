@@ -21,7 +21,7 @@ import { useTableSelection } from '@/hooks/table/use-table-selection';
 import { useMoneyFormat } from '@/hooks/use-money-format';
 import { useTableViewMode } from '@/hooks/use-table-view-mode';
 import AppLayout from '@/layouts/app-layout';
-import { formatDate, today } from '@/lib/format-date';
+import { formatDateTime, today } from '@/lib/format-date';
 import { type BreadcrumbItem, type SharedData } from '@/types';
 import { type CashBookEntry, type CashBookEntryType, type MiscTransactionCategory, type Paginated } from '@/types/models';
 import { Head, useForm, usePage } from '@inertiajs/react';
@@ -159,8 +159,8 @@ export default function CashBookIndex({ cashBook, entries, categories, filters, 
                         onSort={handleSort}
                     />
                 ),
-                meta: { cellClassName: 'whitespace-nowrap' },
-                cell: ({ row }) => formatDate(row.original.entry_date),
+                meta: { cellClassName: 'whitespace-nowrap', label: 'Date & Time' },
+                cell: ({ row }) => formatDateTime(row.original.entry_date),
             },
             { id: 'category', header: 'Category', cell: ({ row }) => row.original.category?.name ?? 'Opening Balance' },
             { id: 'note', header: 'Note', cell: ({ row }) => <span className="text-muted-foreground">{row.original.note}</span> },
@@ -212,7 +212,7 @@ export default function CashBookIndex({ cashBook, entries, categories, filters, 
                     {entry.type === 'expense' ? `- ${money(entry.amount)}` : `+ ${money(entry.amount)}`}
                 </span>
             </div>
-            <div className="text-muted-foreground mt-2 text-xs whitespace-nowrap">{formatDate(entry.entry_date)}</div>
+            <div className="text-muted-foreground mt-2 text-xs whitespace-nowrap">{formatDateTime(entry.entry_date)}</div>
         </div>
     );
 

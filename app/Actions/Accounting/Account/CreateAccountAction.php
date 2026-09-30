@@ -82,7 +82,7 @@ class CreateAccountAction
     private function createSubAccount(AccountType $accountType, string $name): ChartOfAccount
     {
         $parent = ChartOfAccount::query()
-            ->where('code', $accountType->name === 'Cash' ? '1010' : '1020')
+            ->where('code', $accountType->isProtected() ? '1010' : '1020')
             ->firstOrFail();
 
         return ChartOfAccount::create([

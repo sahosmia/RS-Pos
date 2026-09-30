@@ -1,5 +1,5 @@
 import { useMoneyFormat } from '@/hooks/use-money-format';
-import { formatDate } from '@/lib/format-date';
+import { formatDateTime } from '@/lib/format-date';
 
 export interface LedgerRow {
     id: number | string;
@@ -43,7 +43,7 @@ export default function LedgerTable({ rows, broughtForward, broughtForwardLabel 
 
                     {rows.map((row) => (
                         <tr key={row.id} className="border-t">
-                            <td className="px-4 py-2 whitespace-nowrap">{formatDate(row.date)}</td>
+                            <td className="px-4 py-2 whitespace-nowrap">{formatDateTime(row.date)}</td>
                             <td className="px-4 py-2">{row.description}</td>
                             <td className="px-4 py-2 text-right tabular-nums">{row.amount > 0 ? money(row.amount) : ''}</td>
                             <td className="px-4 py-2 text-right tabular-nums">{row.amount < 0 ? money(Math.abs(row.amount)) : ''}</td>

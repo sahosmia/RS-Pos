@@ -482,7 +482,7 @@ export default function SaleForm({ mode, sale, initialCustomer, products, accoun
                                     key={recent.id}
                                     type="button"
                                     onClick={() => addRecentSale(recent)}
-                                    className="group flex items-center gap-2 rounded-full border bg-background px-3 py-1.5 text-xs transition-colors hover:border-primary/40 hover:bg-primary/5"
+                                    className="group flex items-center gap-2 rounded-full border bg-card px-3 py-1.5 text-xs transition-colors hover:border-primary/40 hover:bg-primary/5"
                                 >
                                     <Sparkles className="size-3 text-primary opacity-0 transition-opacity group-hover:opacity-100" />
                                     <span className="max-w-[200px] truncate font-medium">
@@ -535,7 +535,7 @@ export default function SaleForm({ mode, sale, initialCustomer, products, accoun
                         {form.data.items.map((item, index) => {
                             const product = productById(item.product_id);
                             return (
-                                <div key={index} className="flex items-center gap-3 rounded-lg border bg-background p-3">
+                                <div key={index} className="flex items-center gap-3 rounded-lg border bg-card p-3">
                                     <div className="min-w-0 flex-1">
                                         <div className="truncate text-sm font-medium">{product?.name}</div>
                                         <div className="text-muted-foreground text-xs tabular-nums">

@@ -4,7 +4,10 @@ import { getInvestorActions } from '@/components/investors/investor-actions';
 import ConfirmDialog from '@/components/shared/confirm-dialog';
 import EmptyState from '@/components/shared/empty-state';
 import FormModal from '@/components/shared/form-modal';
+import MoneyInput from '@/components/shared/money-input';
+import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
 import DataTable from '@/components/data-table/data-table';
 import DataTableCheckbox from '@/components/data-table/data-table-checkbox';
 import DataTableColumnHeader from '@/components/data-table/data-table-column-header';
@@ -58,7 +61,7 @@ export default function InvestorsIndex({ investors, totalInvested, filters }: In
     const [editing, setEditing] = useState<InvestorListItem | null>(null);
     const [deleting, setDeleting] = useState<InvestorListItem | null>(null);
 
-    const form = useForm({ name: '' });
+    const form = useForm({ name: '', opening_amount: 0 });
 
     const { isLoading, applyFilters, handleSort, activeFilterCount, canReset, resetFilters } = useTableFilters({
         routeName: 'investors.index',
@@ -80,7 +83,7 @@ export default function InvestorsIndex({ investors, totalInvested, filters }: In
 
     const openCreate = () => {
         form.clearErrors();
-        form.setData('name', '');
+        form.setData({ name: '', opening_amount: 0 });
         setEditing(null);
         setModalOpen(true);
     };
@@ -88,7 +91,7 @@ export default function InvestorsIndex({ investors, totalInvested, filters }: In
     const openEdit = useCallback(
         (investor: InvestorListItem) => {
             form.clearErrors();
-            form.setData('name', investor.name);
+            form.setData({ name: investor.name, opening_amount: investor.opening_amount });
             setEditing(investor);
             setModalOpen(true);
         },
@@ -299,6 +302,22 @@ export default function InvestorsIndex({ investors, totalInvested, filters }: In
                     error={form.errors.name}
                     required
                 />
+
+                <div className="grid gap-2">
+                    <Label htmlFor="opening_amount">Opening Balance</Label>
+                    <MoneyInput
+                        id="opening_amount"
+                        value={form.data.opening_amount}
+                        disabled={editing !== null && !editing.can_edit_opening_amount}
+                        onChange={(e) => form.setData('opening_amount', Number(e.target.value))}
+                        required
+                    />
+                    <p className="text-muted-foreground text-xs">সিস্টেমে আসার আগে এই investor যে মূলধন আগেই দিয়েছেন (কোনো account-এর টাকা বাড়বে না)।</p>
+                    {editing !== null && !editing.can_edit_opening_amount && (
+                        <p className="text-muted-foreground text-xs">এই investor-এর লেনদেন হয়ে গেছে — opening balance আর বদলানো যাবে না।</p>
+                    )}
+                    <InputError message={form.errors.opening_amount} />
+                </div>
             </FormModal>
 
             <ConfirmDialog
