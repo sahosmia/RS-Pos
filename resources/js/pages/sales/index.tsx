@@ -271,7 +271,7 @@ export default function SalesIndex({ sales, stats, accounts, initialCustomer, fi
                 <div className="flex flex-wrap items-end justify-between gap-4">
                     <HeadingSmall title="Sales" description="Draft, Quotation ও Confirmed — একই তালিকা, filter করে দেখুন" />
                     <Button asChild>
-                        <Link href={route('sales.create')}>Add Sale</Link>
+                        <Link href={filters.customer_id ? route('sales.create', { customer_id: filters.customer_id }) : route('sales.create')}>Add Sale</Link>
                     </Button>
                 </div>
 
@@ -423,7 +423,7 @@ export default function SalesIndex({ sales, stats, accounts, initialCustomer, fi
                     emptyState={
                         <EmptyState title="No sales yet" description="প্রথম sale যোগ করুন">
                             <Button className="mt-2" asChild>
-                                <Link href={route('sales.create')}>Add Sale</Link>
+                                <Link href={filters.customer_id ? route('sales.create', { customer_id: filters.customer_id }) : route('sales.create')}>Add Sale</Link>
                             </Button>
                         </EmptyState>
                     }

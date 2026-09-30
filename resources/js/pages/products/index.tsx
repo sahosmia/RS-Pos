@@ -71,6 +71,8 @@ export default function ProductsIndex({ products, stats, categories, brands, fil
         if (isVisible('product')) ids.push('name', 'sku');
         if (isVisible('category')) ids.push('category', 'brand');
         if (isVisible('stock')) ids.push('stock');
+        if (isVisible('pap')) ids.push('pap');
+        if (isVisible('tpp')) ids.push('tpp');
         if (isVisible('price')) ids.push('price');
         if (isVisible('margin')) ids.push('margin');
         if (isVisible('status')) ids.push('status');

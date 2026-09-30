@@ -17,6 +17,7 @@ use App\Models\User;
 
 beforeEach(function () {
     Settings::factory()->create();
+    $this->seed(ChartOfAccountSeeder::class);
 });
 
 test('creating an account with an opening balance posts a balanced journal entry against Opening Balance Equity', function () {
@@ -71,6 +72,8 @@ test('creating a contact with a positive opening balance debits Accounts Receiva
 
     $this->post('/contacts', [
         'name' => 'Verify Customer',
+        'first_name' => 'Verify',
+        'last_name' => 'Customer',
         'phone' => '01700000000',
         'type' => 'customer',
         'entity_type' => 'individual',
@@ -93,6 +96,8 @@ test('creating a contact with a negative opening balance credits Accounts Payabl
 
     $this->post('/contacts', [
         'name' => 'Verify Supplier',
+        'first_name' => 'Verify',
+        'last_name' => 'Supplier',
         'phone' => '01700000001',
         'type' => 'supplier',
         'entity_type' => 'individual',

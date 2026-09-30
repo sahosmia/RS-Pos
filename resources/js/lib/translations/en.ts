@@ -207,6 +207,8 @@ export interface Dictionary {
         product: string;
         category_brand: string;
         stock: string;
+        pap: string;
+        tpp: string;
         price: string;
         margin: string;
         status: string;
@@ -653,6 +655,8 @@ const en: Dictionary = {
         product: 'Product',
         category_brand: 'Category / Brand',
         stock: 'Stock',
+        pap: 'Purchase Average Price (P.A.P)',
+        tpp: 'Total Purchase Price (T.P.P)',
         price: 'Price',
         margin: 'Margin',
         status: 'Status',

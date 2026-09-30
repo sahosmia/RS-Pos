@@ -46,7 +46,7 @@ class DatabaseSeeder extends Seeder
             BrandSeeder::class,
             ProductSeeder::class,
 
-            //  // Account 
+            //  // Account
             // AccountTypeSeeder::class,
             // AccountSeeder::class,
             // ChartOfAccountSeeder::class,
@@ -55,8 +55,6 @@ class DatabaseSeeder extends Seeder
             // CashBookSeeder::class,
             // FundTransferSeeder::class,
             // CashBookEntrySeeder::class,
-
-       
 
             // // Customer/Supplier
             // CustomerGroupSeeder::class,
@@ -68,8 +66,6 @@ class DatabaseSeeder extends Seeder
             // SaleSeeder::class,
             // SalesOrderSeeder::class,
 
-           
-            
             // //staff
             // StaffSeeder::class,
             // StaffTransactionTypeSeeder::class,
@@ -77,11 +73,10 @@ class DatabaseSeeder extends Seeder
             // // Expense
             // ExpenseCategorySeeder::class,
             // ExpenseSeeder::class,
-            
-            // // investor 
+
+            // // investor
             // CompanyLoanSeeder::class,
             // InvestorSeeder::class,
-
 
             // AssetSeeder::class,
             // OtherLiabilitySeeder::class,

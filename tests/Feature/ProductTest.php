@@ -297,3 +297,30 @@ test('a brand in use by a product cannot be deleted', function () {
 
     expect(Brand::query()->find($brand->id))->not->toBeNull();
 });
+
+test('products index includes avg_cost (P.A.P) in products listing', function () {
+    $this->actingAs(User::factory()->create());
+    Product::factory()->create(['name' => 'Test Item', 'avg_cost' => 1500, 'current_stock' => 10, 'selling_price' => 2000]);
+
+    $this->get('/products')
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('products/index')
+            ->where('products.data.0.avg_cost', 1500)
+            ->where('products.data.0.current_stock', 10)
+            ->where('products.data.0.selling_price', 2000));
+});
+
+test('products export handles pap and tpp columns', function () {
+    $this->actingAs(User::factory()->create());
+    Product::factory()->create(['name' => 'Export Item', 'sku' => 'EXP-1', 'avg_cost' => 500, 'current_stock' => 4, 'selling_price' => 800, 'manage_stock' => true]);
+
+    $response = $this->get('/products/export?format=csv&scope=all&columns[]=name&columns[]=stock&columns[]=pap&columns[]=tpp&columns[]=price');
+
+    $response->assertOk();
+    $content = $response->streamedContent();
+    expect($content)->toContain('Purchase Average Price (P.A.P)')
+        ->and($content)->toContain('Total Purchase Price (T.P.P)')
+        ->and($content)->toContain('500')
+        ->and($content)->toContain('2000');
+});

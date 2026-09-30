@@ -208,6 +208,8 @@ const bn: Dictionary = {
         product: 'পণ্য',
         category_brand: 'ক্যাটাগরি / ব্র্যান্ড',
         stock: 'স্টক',
+        pap: 'ক্রয় গড় মূল্য (P.A.P)',
+        tpp: 'মোট ক্রয় মূল্য (T.P.P)',
         price: 'দাম',
         margin: 'মার্জিন',
         status: 'স্ট্যাটাস',
