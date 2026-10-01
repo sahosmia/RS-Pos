@@ -585,6 +585,7 @@ export interface ChartOfAccountListItem {
 export interface JournalEntryListItem {
     id: number;
     entry_date: string;
+    created_at?: string;
     description: string;
     reference_type: string | null;
     reference_id: number | null;

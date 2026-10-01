@@ -86,6 +86,7 @@ export default function LedgerTransactionModal({
                 options={typeOptions}
                 placeholder="Select type"
                 error={form.errors.type}
+                required
             />
 
             <div className="grid min-w-0 content-start gap-2">

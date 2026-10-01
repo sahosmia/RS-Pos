@@ -27,6 +27,7 @@ import { type CashBookEntry, type CashBookEntryType, type MiscTransactionCategor
 import { Head, useForm, usePage } from '@inertiajs/react';
 import { type ColumnDef, type VisibilityState } from '@tanstack/react-table';
 import { FormEventHandler, useMemo, useState } from 'react';
+import { toast } from 'sonner';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -112,7 +113,10 @@ export default function CashBookIndex({ cashBook, entries, categories, filters, 
 
         entryForm.post(route('cash-book.store'), {
             preserveScroll: true,
-            onSuccess: () => setEntryModalOpen(false),
+            onSuccess: () => {
+                toast.success('Entry added.');
+                setEntryModalOpen(false);
+            },
         });
     };
 

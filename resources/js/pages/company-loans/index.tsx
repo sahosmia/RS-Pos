@@ -87,7 +87,7 @@ export default function CompanyLoansIndex({ loans, totalOutstanding, accounts, f
     });
 
     const emptyForm = {
-        loan_type: 'existing' as 'existing' | 'new',
+        loan_type: 'new' as 'existing' | 'new',
         lender_name: '',
         loan_amount: 0,
         current_balance: 0,
@@ -392,6 +392,7 @@ export default function CompanyLoansIndex({ loans, totalOutstanding, accounts, f
                     value={form.data.lender_name}
                     onChange={(e) => form.setData('lender_name', e.target.value)}
                     error={form.errors.lender_name}
+                    placeholder="e.g. Bank Asia or John Doe"
                     required
                 />
 
@@ -438,6 +439,7 @@ export default function CompanyLoansIndex({ loans, totalOutstanding, accounts, f
                     value={form.data.interest_rate ?? ''}
                     onChange={(e) => form.setData('interest_rate', e.target.value === '' ? null : Number(e.target.value))}
                     error={form.errors.interest_rate}
+                    placeholder="e.g. 10"
                     helperText="শুধু তথ্যের জন্য — কোনো automatic হিসাব হবে না।"
                 />
 

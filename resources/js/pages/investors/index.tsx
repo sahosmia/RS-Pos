@@ -27,6 +27,7 @@ import { type InvestorListItem, type Paginated } from '@/types/models';
 import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
 import { type ColumnDef, type VisibilityState } from '@tanstack/react-table';
 import { FormEventHandler, useCallback, useMemo, useState } from 'react';
+import { toast } from 'sonner';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const breadcrumbs: BreadcrumbItem[] = [{ title: 'Investors', href: '/investors' }, { title: 'Investors', href: '/investors' }];
@@ -111,7 +112,14 @@ export default function InvestorsIndex({ investors, totalInvested, filters }: In
     const submit: FormEventHandler = (e) => {
         e.preventDefault();
 
-        const options = { preserveScroll: true, onSuccess: () => setModalOpen(false) };
+        const isEditing = editing !== null;
+        const options = {
+            preserveScroll: true,
+            onSuccess: () => {
+                toast.success(isEditing ? 'Investor updated.' : 'Investor added.');
+                setModalOpen(false);
+            },
+        };
 
         if (editing) {
             form.patch(route('investors.update', editing.id), options);
@@ -125,7 +133,14 @@ export default function InvestorsIndex({ investors, totalInvested, filters }: In
             return;
         }
 
-        router.delete(route('investors.destroy', deleting.id), { preserveScroll: true, onFinish: () => setDeleting(null) });
+        const name = deleting.name;
+
+        router.delete(route('investors.destroy', deleting.id), {
+            preserveScroll: true,
+            onSuccess: () => toast.success(`"${name}" deleted.`),
+            onError: (errors) => toast.error(errors.investor ?? 'Could not delete investor.'),
+            onFinish: () => setDeleting(null),
+        });
     };
 
     // Table-column visibility → which fine-grained export columns should start checked.

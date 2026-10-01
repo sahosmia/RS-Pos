@@ -19,6 +19,7 @@ import { useTableSelection } from '@/hooks/table/use-table-selection';
 import { useMoneyFormat } from '@/hooks/use-money-format';
 import { useTableViewMode } from '@/hooks/use-table-view-mode';
 import AppLayout from '@/layouts/app-layout';
+import { formatDateTime } from '@/lib/format-date';
 import { type BreadcrumbItem, type SharedData } from '@/types';
 import { type ChartOfAccountOption, type JournalEntryListItem, type Paginated } from '@/types/models';
 import { Head, Link, router, usePage } from '@inertiajs/react';
@@ -159,8 +160,8 @@ export default function JournalEntriesIndex({ entries, accounts, filters }: Jour
                         onSort={handleSort}
                     />
                 ),
-                meta: { cellClassName: 'whitespace-nowrap' },
-                cell: ({ row }) => row.original.entry_date,
+                meta: { cellClassName: 'whitespace-nowrap', label: 'Date & Time' },
+                cell: ({ row }) => formatDateTime(row.original.created_at ?? row.original.entry_date),
             },
             {
                 id: 'description',
@@ -229,7 +230,7 @@ export default function JournalEntriesIndex({ entries, accounts, filters }: Jour
                 </div>
 
                 <div className="mt-2 flex items-center justify-between gap-2">
-                    <span className="text-muted-foreground text-xs whitespace-nowrap">{entry.entry_date}</span>
+                    <span className="text-muted-foreground text-xs whitespace-nowrap">{formatDateTime(entry.created_at ?? entry.entry_date)}</span>
                     <span className="text-xs tabular-nums">
                         Dr {money(entry.total_debit)} · Cr {money(entry.total_credit)}
                     </span>

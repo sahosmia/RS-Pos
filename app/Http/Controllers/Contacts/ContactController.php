@@ -3,9 +3,9 @@
 namespace App\Http\Controllers\Contacts;
 
 use App\Actions\Contact\CreateContactAction;
-use App\Enums\ContactType;
 use App\Actions\Contact\DeleteContactAction;
 use App\Actions\Contact\UpdateContactAction;
+use App\Enums\ContactType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Contacts\Contact\BulkDestroyContactsRequest;
 use App\Http\Requests\Contacts\Contact\StoreContactRequest;

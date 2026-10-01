@@ -66,7 +66,7 @@ class DatabaseSeeder extends Seeder
             // SaleSeeder::class,
             // SalesOrderSeeder::class,
 
-            //staff
+            // staff
             StaffTransactionTypeSeeder::class,
             // StaffSeeder::class,
 
