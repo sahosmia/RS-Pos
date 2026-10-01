@@ -6,6 +6,7 @@ use App\Actions\Asset\UpdateAssetAction;
 use App\Exceptions\AssetAlreadyDisposedException;
 use App\Models\Account;
 use App\Models\AccountType;
+use App\Models\Asset;
 use App\Models\ChartOfAccount;
 use App\Models\JournalEntry;
 use App\Models\Settings;
@@ -18,7 +19,7 @@ beforeEach(function () {
 test('creating an asset with an opening value posts a balanced journal entry against Opening Balance Equity', function () {
     $this->actingAs(User::factory()->create());
 
-    $asset = app(CreateAssetAction::class)->execute(['name' => 'Delivery Van', 'category' => 'Vehicle', 'opening_value' => 200000]);
+    $asset = app(CreateAssetAction::class)->execute(['name' => 'Delivery Van', 'opening_value' => 200000]);
 
     expect($asset->current_value)->toBe(200000.0);
 
@@ -113,4 +114,42 @@ test('the opening value can be corrected before any other transaction, and is lo
     app(AddAssetTransactionAction::class)->execute($asset->fresh(), ['type' => 'addition', 'amount' => 1000, 'account_id' => $account->id]);
 
     expect($asset->fresh()->canEditOpeningValue())->toBeFalse();
+});
+
+test('an existing asset can be created with no opening value — it simply starts at 0 with no journal entry', function () {
+    $this->actingAs(User::factory()->create());
+
+    $this->post(route('assets.store'), ['asset_type' => 'existing', 'name' => 'Old Shelf', 'opening_value' => null])
+        ->assertSessionHasNoErrors();
+
+    $asset = Asset::where('name', 'Old Shelf')->firstOrFail();
+
+    expect($asset->current_value)->toBe(0.0)
+        ->and(JournalEntry::where('reference_type', 'asset_opening_value')->where('reference_id', $asset->id)->exists())->toBeFalse();
+});
+
+test('a new asset is bought from an account at creation, never an opening balance', function () {
+    $this->actingAs(User::factory()->create());
+    $account = Account::factory()->create(['account_type_id' => AccountType::factory()->create()->id, 'current_balance' => 100000]);
+
+    $this->post(route('assets.store'), [
+        'asset_type' => 'new',
+        'name' => 'New Laptop',
+        'purchase_amount' => 30000,
+        'account_id' => $account->id,
+        'opening_value' => 0,
+    ])->assertSessionHasNoErrors();
+
+    $asset = Asset::where('name', 'New Laptop')->firstOrFail();
+
+    expect($asset->current_value)->toBe(30000.0)
+        ->and($account->fresh()->current_balance)->toBe(70000.0)
+        ->and(JournalEntry::where('reference_type', 'asset_opening_value')->where('reference_id', $asset->id)->exists())->toBeFalse();
+});
+
+test('a new asset requires a purchase amount and an account', function () {
+    $this->actingAs(User::factory()->create());
+
+    $this->post(route('assets.store'), ['asset_type' => 'new', 'name' => 'X'])
+        ->assertSessionHasErrors(['purchase_amount', 'account_id']);
 });

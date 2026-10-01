@@ -1,3 +1,4 @@
+import { MetricCard } from '@/components/shared/metric-card';
 import HeadingSmall from '@/components/heading-small';
 import EmptyState from '@/components/shared/empty-state';
 import LedgerTable, { type LedgerRow } from '@/components/shared/ledger-table';
@@ -51,10 +52,7 @@ export default function OtherLiabilityShow({ liability, transactions, accounts }
                     <Button onClick={() => setAddOpen(true)}>Add Transaction</Button>
                 </div>
 
-                <div className="rounded-lg border p-4 sm:max-w-xs">
-                    <p className="text-muted-foreground text-sm">Current Balance</p>
-                    <p className="text-xl font-semibold tabular-nums">{money(liability.current_balance)}</p>
-                </div>
+                <MetricCard label="Current Balance" value={money(liability.current_balance)} accent="warning" className="sm:max-w-xs" />
 
                 {rows.length === 0 ? (
                     <EmptyState title="No transactions yet" description="Add Transaction দিয়ে শুরু করুন" />

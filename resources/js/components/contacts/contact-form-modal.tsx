@@ -199,7 +199,7 @@ export default function ContactFormModal({ open, onOpenChange, editing, customer
         >
             <div className="space-y-8">
                 {/* Entity Type */}
-                <div className="grid gap-2">
+                <div className="grid min-w-0 content-start gap-2">
                     <Label required>{t('contactForm', 'entity_type')}</Label>
                     <Tabs value={form.data.entity_type} onValueChange={(value) => form.setData('entity_type', value as ContactEntityType)}>
                         <TabsList className="grid w-full grid-cols-2 sm:w-64">
@@ -358,7 +358,7 @@ export default function ContactFormModal({ open, onOpenChange, editing, customer
                     </CollapsibleTrigger>
                     <CollapsibleContent className="space-y-5 border-t p-4">
                         {canSetOpeningBalance ? (
-                            <div className="grid gap-2">
+                            <div className="grid min-w-0 content-start gap-2">
                                 <Label htmlFor="opening_balance">{t('contactForm', 'opening_balance')}</Label>
                                 <MoneyInput
                                     id="opening_balance"

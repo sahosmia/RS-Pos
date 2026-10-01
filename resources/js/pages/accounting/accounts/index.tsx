@@ -398,7 +398,7 @@ export default function AccountsIndex({ accounts, accountTypes, totalBalance }: 
                     error={accountForm.errors.account_number}
                 />
 
-                <div className="grid gap-2">
+                <div className="grid min-w-0 content-start gap-2">
                     <Label htmlFor="opening_balance">Opening Balance</Label>
                     <MoneyInput
                         id="opening_balance"
@@ -473,7 +473,7 @@ export default function AccountsIndex({ accounts, accountTypes, totalBalance }: 
                     error={transferForm.errors.to_account_id}
                 />
 
-                <div className="grid gap-2">
+                <div className="grid min-w-0 content-start gap-2">
                     <Label htmlFor="amount" required>
                         Amount
                     </Label>
@@ -496,7 +496,7 @@ export default function AccountsIndex({ accounts, accountTypes, totalBalance }: 
                     required
                 />
 
-                <div className="grid gap-2">
+                <div className="grid min-w-0 content-start gap-2">
                     <Label htmlFor="note">Note</Label>
                     <Textarea id="note" value={transferForm.data.note} onChange={(e) => transferForm.setData('note', e.target.value)} />
                     <InputError message={transferForm.errors.note} />

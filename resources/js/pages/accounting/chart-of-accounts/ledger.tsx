@@ -1,3 +1,4 @@
+import { MetricCard } from '@/components/shared/metric-card';
 import HeadingSmall from '@/components/heading-small';
 import EmptyState from '@/components/shared/empty-state';
 import { useMoneyFormat } from '@/hooks/use-money-format';
@@ -38,10 +39,7 @@ export default function GeneralLedger({ account, lines }: GeneralLedgerProps) {
                     description={`${humanize(account.type)} · Normal balance: ${humanize(account.normal_balance)}`}
                 />
 
-                <div className="rounded-lg border p-4">
-                    <p className="text-muted-foreground text-sm">Current Balance</p>
-                    <p className="text-2xl font-semibold tabular-nums">{money(account.balance)}</p>
-                </div>
+                <MetricCard label="Current Balance" value={money(account.balance)} accent="info" className="sm:max-w-xs" />
 
                 {lines.length === 0 ? (
                     <EmptyState title="No journal lines yet" description="এই account-এ এখনো কোনো entry পোস্ট হয়নি" />

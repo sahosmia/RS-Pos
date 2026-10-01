@@ -60,7 +60,7 @@ export default function RefundCreditModal({ open, onOpenChange, contact, account
             processing={form.processing}
             onSubmit={submit}
         >
-            <div className="grid gap-2">
+            <div className="grid min-w-0 content-start gap-2">
                 <Label htmlFor="refund_account_id">{t('common', 'account')}</Label>
                 <Select value={form.data.account_id ? String(form.data.account_id) : ''} onValueChange={(value) => form.setData('account_id', Number(value))}>
                     <SelectTrigger id="refund_account_id">
@@ -77,7 +77,7 @@ export default function RefundCreditModal({ open, onOpenChange, contact, account
                 <InputError message={form.errors.account_id} />
             </div>
 
-            <div className="grid gap-2">
+            <div className="grid min-w-0 content-start gap-2">
                 <Label htmlFor="refund_amount">{t('common', 'amount')}</Label>
                 <MoneyInput
                     id="refund_amount"
@@ -88,7 +88,7 @@ export default function RefundCreditModal({ open, onOpenChange, contact, account
                 <InputError message={form.errors.amount} />
             </div>
 
-            <div className="grid gap-2">
+            <div className="grid min-w-0 content-start gap-2">
                 <Label htmlFor="refund_note">{t('common', 'note')}</Label>
                 <Textarea
                     id="refund_note"

@@ -308,7 +308,7 @@ export default function OtherLiabilitiesIndex({ liabilities, totalBalance, filte
                     required
                 />
 
-                <div className="grid gap-2">
+                <div className="grid min-w-0 content-start gap-2">
                     <Label htmlFor="opening_amount">Opening Amount</Label>
                     <MoneyInput
                         id="opening_amount"

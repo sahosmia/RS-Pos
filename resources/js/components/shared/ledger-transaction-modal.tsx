@@ -88,7 +88,7 @@ export default function LedgerTransactionModal({
                 error={form.errors.type}
             />
 
-            <div className="grid gap-2">
+            <div className="grid min-w-0 content-start gap-2">
                 <Label htmlFor="amount" required>Amount</Label>
                 <MoneyInput
                     id="amount"
@@ -115,7 +115,7 @@ export default function LedgerTransactionModal({
                 />
             )}
 
-            <div className="grid gap-2">
+            <div className="grid min-w-0 content-start gap-2">
                 <Label htmlFor="note">Note</Label>
                 <Textarea
                     id="note"

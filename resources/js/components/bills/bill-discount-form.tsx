@@ -53,7 +53,7 @@ export default function BillDiscountForm() {
 
     return (
         <form onSubmit={submit} className="max-w-lg space-y-4 rounded-lg border p-4">
-            <div className="grid gap-2">
+            <div className="grid min-w-0 content-start gap-2">
                 <Label htmlFor="contact_id" required>
                     Contact
                 </Label>
@@ -73,7 +73,7 @@ export default function BillDiscountForm() {
                 )}
             </div>
 
-            <div className="grid gap-2">
+            <div className="grid min-w-0 content-start gap-2">
                 <Label htmlFor="amount" required>
                     Amount
                 </Label>
@@ -81,7 +81,7 @@ export default function BillDiscountForm() {
                 <InputError message={form.errors.amount} />
             </div>
 
-            <div className="grid gap-2">
+            <div className="grid min-w-0 content-start gap-2">
                 <Label htmlFor="note">Reason</Label>
                 <Textarea
                     id="note"

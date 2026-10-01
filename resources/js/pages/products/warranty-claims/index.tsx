@@ -292,7 +292,7 @@ export default function WarrantyClaimsIndex({ claims, searchQuery, searchResults
                     onExport={handleExport}
                     filterSlot={
                         <div className="flex flex-wrap items-end gap-3">
-                            <div className="grid gap-2">
+                            <div className="grid min-w-0 content-start gap-2">
                                 <Label htmlFor="status">{t('warrantyClaims', 'status')}</Label>
                                 <Select
                                     value={filters.status ?? 'all'}
@@ -428,7 +428,7 @@ export default function WarrantyClaimsIndex({ claims, searchQuery, searchResults
                             required
                         />
 
-                        <div className="grid gap-2">
+                        <div className="grid min-w-0 content-start gap-2">
                             <Label htmlFor="issue_description">{t('warrantyClaims', 'issue')}</Label>
                             <Textarea
                                 id="issue_description"
@@ -460,7 +460,7 @@ export default function WarrantyClaimsIndex({ claims, searchQuery, searchResults
                     error={editForm.errors.status}
                 />
 
-                <div className="grid gap-2">
+                <div className="grid min-w-0 content-start gap-2">
                     <Label htmlFor="resolution_note">{t('warrantyClaims', 'resolution_note')}</Label>
                     <Textarea
                         id="resolution_note"

@@ -134,7 +134,7 @@ export default function BrandsIndex({ brands }: BrandsIndexProps) {
                     error={form.errors.name}
                     required
                 />
-                <div className="grid gap-2">
+                <div className="grid min-w-0 content-start gap-2">
                     <label htmlFor="description" className="text-sm font-medium leading-none">Description</label>
                     <textarea
                         id="description"

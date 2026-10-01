@@ -112,7 +112,7 @@ export default function PurchaseForm({ mode, purchase, initialSupplier, initialP
     return (
         <form onSubmit={submit} className="space-y-6">
             <div className="grid gap-4 rounded-lg border p-4 sm:grid-cols-3">
-                <div className="grid gap-2">
+                <div className="grid min-w-0 content-start gap-2">
                     <Label htmlFor="supplier_id" required>
                         Supplier
                     </Label>
@@ -142,7 +142,7 @@ export default function PurchaseForm({ mode, purchase, initialSupplier, initialP
                     required
                 />
 
-                <div className="grid gap-2">
+                <div className="grid min-w-0 content-start gap-2">
                     <Label htmlFor="status">Status</Label>
                     <Select value={form.data.status} onValueChange={(value) => form.setData('status', value as PurchaseStatusValue)}>
                         <SelectTrigger id="status">

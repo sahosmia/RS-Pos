@@ -73,3 +73,56 @@ test('recalculateLedgerBalance re-derives outstanding_balance from the transacti
 
     expect($loan->fresh()->outstanding_balance)->toBe(103000.0);
 });
+
+test('an existing loan brings in only what is still owed as an opening balance — no account moves', function () {
+    $this->actingAs(User::factory()->create());
+    $account = Account::factory()->create(['account_type_id' => AccountType::factory()->create()->id, 'current_balance' => 5000]);
+
+    $this->post(route('company-loans.store'), [
+        'loan_type' => 'existing',
+        'lender_name' => 'Old Lender',
+        'loan_amount' => 50000,
+        'current_balance' => 40000,
+        'start_date' => today()->toDateString(),
+    ])->assertSessionHasNoErrors();
+
+    $loan = CompanyLoan::where('lender_name', 'Old Lender')->firstOrFail();
+    $entry = JournalEntry::where('reference_type', 'company_loan_opening')->where('reference_id', $loan->id)->firstOrFail();
+
+    expect($loan->outstanding_balance)->toBe(40000.0)
+        ->and($loan->loan_amount)->toBe(50000.0)
+        ->and($account->fresh()->current_balance)->toBe(5000.0)
+        ->and($entry->lines->sum('debit'))->toBe($entry->lines->sum('credit'));
+});
+
+test('a new loan is received into an account in one step', function () {
+    $this->actingAs(User::factory()->create());
+    $account = Account::factory()->create(['account_type_id' => AccountType::factory()->create()->id, 'current_balance' => 0]);
+
+    $this->post(route('company-loans.store'), [
+        'loan_type' => 'new',
+        'lender_name' => 'New Lender',
+        'loan_amount' => 10000,
+        'current_balance' => 0,
+        'account_id' => $account->id,
+        'start_date' => today()->toDateString(),
+    ])->assertSessionHasNoErrors();
+
+    $loan = CompanyLoan::where('lender_name', 'New Lender')->firstOrFail();
+
+    expect($loan->outstanding_balance)->toBe(10000.0)
+        ->and($loan->transactions()->count())->toBe(1)
+        ->and($account->fresh()->current_balance)->toBe(10000.0);
+});
+
+test('an existing loan cannot have a current balance above the original amount', function () {
+    $this->actingAs(User::factory()->create());
+
+    $this->post(route('company-loans.store'), [
+        'loan_type' => 'existing',
+        'lender_name' => 'X',
+        'loan_amount' => 1000,
+        'current_balance' => 5000,
+        'start_date' => today()->toDateString(),
+    ])->assertSessionHasErrors('current_balance');
+});

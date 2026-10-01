@@ -40,8 +40,8 @@ class StaffSeeder extends Seeder
         $addTransaction = app(AddStaffTransactionAction::class);
         $types = StaffTransactionType::query()->pluck('id', 'name');
 
-        // Rafiqul Islam — also an investor (see seedInvestors); two months
-        // salary charged, one paid, plus an advance, leaving a due balance.
+        // Rafiqul Islam — also an investor (see seedInvestors); a month's
+        // salary paid, plus an advance still owed back.
         $rafiqul = Staff::factory()->create([
             'name' => 'Rafiqul Islam',
             'designation' => 'Sales Executive',
@@ -49,20 +49,17 @@ class StaffSeeder extends Seeder
             'salary_amount' => 18000,
             'investor_id' => $investors['rafiqul']->id,
         ]);
-        $addTransaction->execute($rafiqul, ['staff_transaction_type_id' => $types['Salary Charge'], 'amount' => 18000]);
-        $addTransaction->execute($rafiqul->fresh(), ['staff_transaction_type_id' => $types['Salary Charge'], 'amount' => 18000]);
-        $addTransaction->execute($rafiqul->fresh(), ['staff_transaction_type_id' => $types['Salary Payment'], 'amount' => 18000, 'account_id' => $accounts['bank']->id]);
-        $addTransaction->execute($rafiqul->fresh(), ['staff_transaction_type_id' => $types['Advance Given'], 'amount' => 3000, 'account_id' => $accounts['cash']->id]);
+        $addTransaction->execute($rafiqul->fresh(), ['staff_transaction_type_id' => $types['Salary'], 'amount' => 18000, 'account_id' => $accounts['bank']->id]);
+        $addTransaction->execute($rafiqul->fresh(), ['staff_transaction_type_id' => $types['Advance'], 'amount' => 3000, 'account_id' => $accounts['cash']->id]);
 
-        // Nasrin Akter — fully settled salary, then a small loan.
+        // Nasrin Akter — salary paid, then a small advance.
         $nasrin = Staff::factory()->create([
             'name' => 'Nasrin Akter',
             'designation' => 'Cashier',
             'joining_date' => Carbon::today()->subMonths(3)->toDateString(),
             'salary_amount' => 15000,
         ]);
-        $addTransaction->execute($nasrin, ['staff_transaction_type_id' => $types['Salary Charge'], 'amount' => 15000]);
-        $addTransaction->execute($nasrin->fresh(), ['staff_transaction_type_id' => $types['Salary Payment'], 'amount' => 15000, 'account_id' => $accounts['cash']->id]);
-        $addTransaction->execute($nasrin->fresh(), ['staff_transaction_type_id' => $types['Loan Given'], 'amount' => 5000, 'account_id' => $accounts['bank']->id]);
+        $addTransaction->execute($nasrin->fresh(), ['staff_transaction_type_id' => $types['Salary'], 'amount' => 15000, 'account_id' => $accounts['cash']->id]);
+        $addTransaction->execute($nasrin->fresh(), ['staff_transaction_type_id' => $types['Advance'], 'amount' => 5000, 'account_id' => $accounts['bank']->id]);
     }
 }

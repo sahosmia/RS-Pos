@@ -39,7 +39,7 @@ export default function ConfirmPassword() {
             >
                 <form className="flex flex-col gap-5" onSubmit={submit}>
                     <div className="grid gap-5">
-                        <div className="grid gap-2">
+                        <div className="grid min-w-0 content-start gap-2">
                             <Label htmlFor="password">Password</Label>
                             <PasswordInput
                                 id="password"

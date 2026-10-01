@@ -17,7 +17,7 @@ class UpdateAssetAction
     ) {}
 
     /**
-     * @param  array{name: string, category?: string|null, purchase_date?: string|null, opening_value?: float|string|null}  $data
+     * @param  array{name: string, purchase_date?: string|null, opening_value?: float|string|null}  $data
      */
     public function execute(Asset $asset, array $data): Asset
     {
@@ -27,7 +27,6 @@ class UpdateAssetAction
 
             $asset->update([
                 'name' => $data['name'],
-                'category' => $data['category'] ?? null,
                 'purchase_date' => $data['purchase_date'] ?? null,
                 'opening_value' => $canEditOpeningValue ? $openingValue : $asset->opening_value,
             ]);

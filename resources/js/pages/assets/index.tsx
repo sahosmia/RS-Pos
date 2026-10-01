@@ -1,7 +1,7 @@
 import { getAssetActions } from '@/components/assets/asset-actions';
 import { FormInput } from '@/components/form/form-input';
+import { FormSelect } from '@/components/form/form-select';
 import HeadingSmall from '@/components/heading-small';
-import InputError from '@/components/input-error';
 import ConfirmDialog from '@/components/shared/confirm-dialog';
 import EmptyState from '@/components/shared/empty-state';
 import FormModal from '@/components/shared/form-modal';
@@ -14,7 +14,6 @@ import DataTablePagination from '@/components/data-table/data-table-pagination';
 import DataTableRowActions from '@/components/data-table/data-table-row-actions';
 import DataTableToolbar from '@/components/data-table/data-table-toolbar';
 import { type DataTableColumnOption } from '@/components/data-table/types';
-import { Label } from '@/components/ui/label';
 import { useTableExport } from '@/hooks/table/use-table-export';
 import { type TableFilterBase } from '@/hooks/table/use-table-filters';
 import { useTableFilters } from '@/hooks/table/use-table-filters';
@@ -23,7 +22,7 @@ import { useMoneyFormat } from '@/hooks/use-money-format';
 import { useTableViewMode } from '@/hooks/use-table-view-mode';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem, type SharedData } from '@/types';
-import { type AssetListItem, type Paginated } from '@/types/models';
+import { type Account, type AssetListItem, type Paginated } from '@/types/models';
 import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
 import { type ColumnDef, type VisibilityState } from '@tanstack/react-table';
 import { FormEventHandler, useCallback, useEffect, useMemo, useState } from 'react';
@@ -39,25 +38,24 @@ interface AssetFilters extends TableFilterBase {
 interface AssetsIndexProps {
     assets: Paginated<AssetListItem>;
     totalValue: number;
+    accounts: Account[];
     filters: AssetFilters;
 }
 
 const getVisibilityColumns = (): DataTableColumnOption[] => [
     { id: 'name', label: 'Name' },
-    { id: 'category', label: 'Category' },
     { id: 'current_value', label: 'Current Value' },
 ];
 
 /** Matches `AssetExportController::COLUMN_LABELS` on the backend. */
 const getExportColumns = (): DataTableColumnOption[] => [
     { id: 'name', label: 'Name' },
-    { id: 'category', label: 'Category' },
     { id: 'opening_value', label: 'Opening Value' },
     { id: 'current_value', label: 'Current Value' },
     { id: 'purchase_date', label: 'Purchase Date' },
 ];
 
-export default function AssetsIndex({ assets, totalValue, filters }: AssetsIndexProps) {
+export default function AssetsIndex({ assets, totalValue, accounts, filters }: AssetsIndexProps) {
     const { shop } = usePage<SharedData>().props;
     const money = useMoneyFormat();
     const [viewMode, setViewMode] = useTableViewMode();
@@ -67,10 +65,12 @@ export default function AssetsIndex({ assets, totalValue, filters }: AssetsIndex
     const [deleting, setDeleting] = useState<AssetListItem | null>(null);
 
     const form = useForm({
+        asset_type: 'existing' as 'existing' | 'new',
         name: '',
-        category: '',
         purchase_date: '',
         opening_value: 0,
+        purchase_amount: 0,
+        account_id: null as number | null,
     });
 
     const { isLoading, applyFilters, handleSort, activeFilterCount, canReset, resetFilters } = useTableFilters({
@@ -91,7 +91,14 @@ export default function AssetsIndex({ assets, totalValue, filters }: AssetsIndex
 
     const openCreate = () => {
         form.clearErrors();
-        form.setData({ name: '', category: '', purchase_date: '', opening_value: 0 });
+        form.setData({
+            asset_type: 'existing',
+            name: '',
+            purchase_date: '',
+            opening_value: 0,
+            purchase_amount: 0,
+            account_id: accounts.find((account) => account.is_default)?.id ?? accounts[0]?.id ?? null,
+        });
         setEditing(null);
         setModalOpen(true);
     };
@@ -113,8 +120,10 @@ export default function AssetsIndex({ assets, totalValue, filters }: AssetsIndex
     const openEdit = (asset: AssetListItem) => {
         form.clearErrors();
         form.setData({
+            asset_type: 'existing',
+            purchase_amount: 0,
+            account_id: null,
             name: asset.name,
-            category: asset.category ?? '',
             purchase_date: asset.purchase_date ?? '',
             opening_value: asset.opening_value,
         });
@@ -162,7 +171,6 @@ export default function AssetsIndex({ assets, totalValue, filters }: AssetsIndex
         const ids: string[] = [];
 
         if (isVisible('name')) ids.push('name');
-        if (isVisible('category')) ids.push('category');
         if (isVisible('current_value')) ids.push('current_value');
 
         return ids;
@@ -209,7 +217,6 @@ export default function AssetsIndex({ assets, totalValue, filters }: AssetsIndex
                     </Link>
                 ),
             },
-            { id: 'category', header: 'Category', cell: ({ row }) => row.original.category ?? '—' },
             {
                 id: 'current_value',
                 header: () => (
@@ -240,7 +247,7 @@ export default function AssetsIndex({ assets, totalValue, filters }: AssetsIndex
                             <Link href={route('assets.show', asset.id)} className="truncate font-medium underline-offset-2 hover:underline">
                                 {asset.name}
                             </Link>
-                            <div className="text-muted-foreground text-xs">{asset.category ?? '—'}</div>
+                            <div className="text-muted-foreground text-xs">{asset.purchase_date ?? '—'}</div>
                         </div>
                     </div>
                     <div className="flex shrink-0 items-center gap-1">
@@ -323,6 +330,20 @@ export default function AssetsIndex({ assets, totalValue, filters }: AssetsIndex
             </div>
 
             <FormModal open={modalOpen} onOpenChange={setModalOpen} title={editing ? 'Edit Asset' : 'Add Asset'} processing={form.processing} onSubmit={submit}>
+                {!editing && (
+                    <FormSelect
+                        id="asset_type"
+                        label="Asset Type"
+                        value={form.data.asset_type}
+                        onChange={(value) => form.setData('asset_type', value === 'new' ? 'new' : 'existing')}
+                        options={[
+                            { value: 'existing', label: 'Existing asset — আগে থেকেই আছে' },
+                            { value: 'new', label: 'New asset — এখন কিনলাম' },
+                        ]}
+                        required
+                    />
+                )}
+
                 <FormInput
                     id="name"
                     label="Name"
@@ -330,15 +351,6 @@ export default function AssetsIndex({ assets, totalValue, filters }: AssetsIndex
                     onChange={(e) => form.setData('name', e.target.value)}
                     error={form.errors.name}
                     required
-                />
-
-                <FormInput
-                    id="category"
-                    label="Category"
-                    placeholder="Equipment, Vehicle, Furniture..."
-                    value={form.data.category}
-                    onChange={(e) => form.setData('category', e.target.value)}
-                    error={form.errors.category}
                 />
 
                 <FormInput
@@ -350,20 +362,46 @@ export default function AssetsIndex({ assets, totalValue, filters }: AssetsIndex
                     error={form.errors.purchase_date}
                 />
 
-                <div className="grid gap-2">
-                    <Label htmlFor="opening_value">Opening Value</Label>
+                {(editing !== null || form.data.asset_type === 'existing') && (
                     <MoneyInput
                         id="opening_value"
+                        label="Opening Value"
                         value={form.data.opening_value}
                         disabled={editing !== null && !editing.can_edit_opening_value}
                         onChange={(e) => form.setData('opening_value', Number(e.target.value))}
-                        required
+                        error={form.errors.opening_value}
+                        helperText={
+                            editing !== null && !editing.can_edit_opening_value
+                                ? 'এই asset-এ লেনদেন হয়ে গেছে — opening value আর বদলানো যাবে না।'
+                                : 'ঐচ্ছিক — খালি রাখলে ০ ধরা হবে। কোনো account-এ হিট করবে না।'
+                        }
                     />
-                    {editing !== null && !editing.can_edit_opening_value && (
-                        <p className="text-muted-foreground text-xs">এই asset-এ লেনদেন হয়ে গেছে — opening value আর বদলানো যাবে না।</p>
-                    )}
-                    <InputError message={form.errors.opening_value} />
-                </div>
+                )}
+
+                {!editing && form.data.asset_type === 'new' && (
+                    <>
+                        <MoneyInput
+                            id="purchase_amount"
+                            label="Purchase Amount"
+                            value={form.data.purchase_amount}
+                            onChange={(e) => form.setData('purchase_amount', Number(e.target.value))}
+                            error={form.errors.purchase_amount}
+                            required
+                        />
+
+                        <FormSelect
+                            id="account_id"
+                            label="Paid From Account"
+                            value={form.data.account_id}
+                            onChange={(value) => form.setData('account_id', value ? Number(value) : null)}
+                            options={accounts.map((account) => ({ value: String(account.id), label: account.name }))}
+                            placeholder="Select account"
+                            error={form.errors.account_id}
+                            helperText="Purchase Amount এই account থেকে কাটা হবে।"
+                            required
+                        />
+                    </>
+                )}
             </FormModal>
 
             <ConfirmDialog

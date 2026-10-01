@@ -67,7 +67,7 @@ export default function ResetPassword({ token, email }: ResetPasswordProps) {
                             error={errors.email}
                         />
 
-                        <div className="grid gap-2">
+                        <div className="grid min-w-0 content-start gap-2">
                             <Label htmlFor="password">New Password</Label>
                             <PasswordInput
                                 id="password"
@@ -81,7 +81,7 @@ export default function ResetPassword({ token, email }: ResetPasswordProps) {
                             <InputError message={errors.password} />
                         </div>
 
-                        <div className="grid gap-2">
+                        <div className="grid min-w-0 content-start gap-2">
                             <Label htmlFor="password_confirmation">Confirm Password</Label>
                             <PasswordInput
                                 id="password_confirmation"

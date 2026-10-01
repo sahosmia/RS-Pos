@@ -323,7 +323,7 @@ export default function InvestorsIndex({ investors, totalInvested, filters }: In
                     error={form.errors.phone}
                 />
 
-                <div className="grid gap-2">
+                <div className="grid min-w-0 content-start gap-2">
                     <Label htmlFor="opening_amount" required>Opening Balance</Label>
                     <MoneyInput
                         id="opening_amount"
@@ -339,7 +339,7 @@ export default function InvestorsIndex({ investors, totalInvested, filters }: In
                     <InputError message={form.errors.opening_amount} />
                 </div>
 
-                <div className="grid gap-2">
+                <div className="grid min-w-0 content-start gap-2">
                     <Label htmlFor="note">Note</Label>
                     <textarea
                         id="note"

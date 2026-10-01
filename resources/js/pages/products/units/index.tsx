@@ -146,7 +146,7 @@ export default function UnitsIndex({ units }: UnitsIndexProps) {
                     placeholder="e.g. pcs, kg, box"
                     error={form.errors.short_name}
                 />
-                <div className="grid gap-2">
+                <div className="grid min-w-0 content-start gap-2">
                     <label htmlFor="description" className="text-sm font-medium leading-none">Description</label>
                     <textarea
                         id="description"

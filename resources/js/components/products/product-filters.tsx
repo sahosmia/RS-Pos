@@ -28,7 +28,7 @@ export default function ProductFilters({ categoryId, brandId, stockStatus, prese
 
     return (
         <div className="flex flex-wrap items-end gap-3 pt-3">
-            <div className="grid gap-2">
+            <div className="grid min-w-0 content-start gap-2">
                 <Select
                     value={categoryId ? String(categoryId) : 'all'}
                     onValueChange={(value) => onChange({ category_id: value === 'all' ? null : Number(value) })}
@@ -47,7 +47,7 @@ export default function ProductFilters({ categoryId, brandId, stockStatus, prese
                 </Select>
             </div>
 
-            <div className="grid gap-2">
+            <div className="grid min-w-0 content-start gap-2">
                 <Select
                     value={brandId ? String(brandId) : 'all'}
                     onValueChange={(value) => onChange({ brand_id: value === 'all' ? null : Number(value) })}
@@ -66,7 +66,7 @@ export default function ProductFilters({ categoryId, brandId, stockStatus, prese
                 </Select>
             </div>
 
-            <div className="grid gap-2">
+            <div className="grid min-w-0 content-start gap-2">
                 <Select
                     value={stockStatus ?? 'all'}
                     onValueChange={(value) => onChange({ stock_status: value === 'all' ? null : (value as StockStatus) })}
@@ -83,7 +83,7 @@ export default function ProductFilters({ categoryId, brandId, stockStatus, prese
                 </Select>
             </div>
 
-            <div className="grid gap-2">
+            <div className="grid min-w-0 content-start gap-2">
                 <DateRangeFilter
                     range={{ preset, from, to }}
                     onChange={(next) => onChange({ preset: next.preset, from: next.from ?? null, to: next.to ?? null })}

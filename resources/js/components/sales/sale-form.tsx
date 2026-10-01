@@ -893,7 +893,7 @@ export default function SaleForm({ mode, sale, initialCustomer, products, accoun
                                         placeholder="1"
                                     />
                                 </div>
-                                <div className="grid gap-2">
+                                <div className="grid min-w-0 content-start gap-2">
                                     <Label htmlFor="cart-price">Price</Label>
                                     <MoneyInput
                                         id="cart-price"

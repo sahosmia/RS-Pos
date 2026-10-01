@@ -1,3 +1,4 @@
+import { MetricCard, MetricGrid } from '@/components/shared/metric-card';
 import HeadingSmall from '@/components/heading-small';
 import EmptyState from '@/components/shared/empty-state';
 import LedgerTable, { type LedgerRow } from '@/components/shared/ledger-table';
@@ -52,20 +53,11 @@ export default function CompanyLoanShow({ loan, transactions, accounts }: Compan
                     <Button onClick={() => setAddOpen(true)}>Add Transaction</Button>
                 </div>
 
-                <div className="grid gap-4 sm:grid-cols-3">
-                    <div className="rounded-lg border p-4">
-                        <p className="text-muted-foreground text-sm">Loan Amount</p>
-                        <p className="text-xl font-semibold tabular-nums">{money(loan.loan_amount)}</p>
-                    </div>
-                    <div className="rounded-lg border p-4">
-                        <p className="text-muted-foreground text-sm">Outstanding Balance</p>
-                        <p className="text-xl font-semibold tabular-nums">{money(loan.outstanding_balance)}</p>
-                    </div>
-                    <div className="rounded-lg border p-4">
-                        <p className="text-muted-foreground text-sm">Start Date</p>
-                        <p className="text-xl font-semibold">{loan.start_date}</p>
-                    </div>
-                </div>
+                <MetricGrid columns={3}>
+                    <MetricCard label="Loan Amount" value={money(loan.loan_amount)} accent="info" />
+                    <MetricCard label="Outstanding Balance" value={money(loan.outstanding_balance)} accent="warning" />
+                    <MetricCard label="Start Date" value={loan.start_date} />
+                </MetricGrid>
 
                 {rows.length === 0 ? (
                     <EmptyState title="No transactions yet" description="Add Transaction দিয়ে শুরু করুন" />

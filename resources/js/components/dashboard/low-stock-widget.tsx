@@ -12,8 +12,8 @@ export function LowStockWidget({ products }: LowStockWidgetProps) {
     const { t } = useTranslation();
 
     return (
-        <Card className="flex h-full flex-col">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+        <Card className="flex max-h-96 flex-col lg:absolute lg:inset-0 lg:max-h-none">
+            <CardHeader className="flex shrink-0 flex-row items-center justify-between space-y-0 pb-3">
                 <CardTitle className="flex items-center gap-2 text-base font-medium">
                     <AlertTriangle className="h-4 w-4 text-amber-500" />
                     <span>{t('dashboard', 'low_stock_products')}</span>
@@ -26,7 +26,7 @@ export function LowStockWidget({ products }: LowStockWidgetProps) {
                     <ArrowRight className="h-3 w-3" />
                 </Link>
             </CardHeader>
-            <CardContent className="flex-1 p-0">
+            <CardContent className="min-h-0 flex-1 overflow-y-auto p-0">
                 {products.length === 0 ? (
                     <div className="flex h-40 items-center justify-center p-4 text-center text-xs text-muted-foreground">
                         {t('common', 'no_results_title')}

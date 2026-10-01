@@ -20,7 +20,6 @@ class AssetExportController extends Controller
      */
     private const COLUMN_LABELS = [
         'name' => 'Name',
-        'category' => 'Category',
         'opening_value' => 'Opening Value',
         'current_value' => 'Current Value',
         'purchase_date' => 'Purchase Date',
@@ -82,7 +81,6 @@ class AssetExportController extends Controller
     {
         return match ($column) {
             'name' => $asset->name,
-            'category' => $asset->category,
             'opening_value' => $asset->opening_value,
             'current_value' => $asset->current_value,
             'purchase_date' => $asset->purchase_date?->toDateString(),

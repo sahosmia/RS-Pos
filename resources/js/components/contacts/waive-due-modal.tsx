@@ -54,13 +54,13 @@ export default function WaiveDueModal({ open, onOpenChange, contact }: WaiveDueM
             processing={form.processing}
             onSubmit={submit}
         >
-            <div className="grid gap-2">
+            <div className="grid min-w-0 content-start gap-2">
                 <Label htmlFor="waive_amount">{t('common', 'amount')}</Label>
                 <MoneyInput id="waive_amount" value={form.data.amount} onChange={(e) => form.setData('amount', Number(e.target.value))} required />
                 <InputError message={form.errors.amount} />
             </div>
 
-            <div className="grid gap-2">
+            <div className="grid min-w-0 content-start gap-2">
                 <Label htmlFor="waive_note">{t('waiveDueModal', 'reason')}</Label>
                 <Textarea
                     id="waive_note"

@@ -174,7 +174,7 @@ export default function AccountPaymentRows({
     const nextAccountName = pendingAccountChange ? (accounts.find((account) => account.id === pendingAccountChange.nextAccountId)?.name ?? '') : '';
 
     return (
-        <div className="grid gap-2">
+        <div className="grid min-w-0 content-start gap-2">
             <Label>{label}</Label>
 
             {rows.length === 0 && <p className="text-muted-foreground text-xs">{emptyHint}</p>}

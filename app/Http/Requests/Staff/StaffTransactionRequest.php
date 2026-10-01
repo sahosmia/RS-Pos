@@ -21,6 +21,7 @@ class StaffTransactionRequest extends FormRequest
     {
         $type = StaffTransactionType::find($this->input('staff_transaction_type_id'));
         $needsAccount = $type !== null && in_array($type->nature, [
+            StaffTransactionNature::Salary,
             StaffTransactionNature::Settlement,
             StaffTransactionNature::Advance,
             StaffTransactionNature::AdvanceReturn,

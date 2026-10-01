@@ -4,6 +4,9 @@ import RevenueExpenseChart from '@/components/dashboard/revenue-expense-chart';
 import SalesChart from '@/components/dashboard/sales-chart';
 import HeadingSmall from '@/components/heading-small';
 import DateRangeFilter from '@/components/shared/date-range-filter';
+import { MetricCard, MetricGrid } from '@/components/shared/metric-card';
+import { PageSection } from '@/components/shared/page-section';
+import { PanelCard } from '@/components/shared/panel-card';
 import { useMoneyFormat } from '@/hooks/use-money-format';
 import { useTranslation } from '@/hooks/use-translation';
 import AppLayout from '@/layouts/app-layout';
@@ -28,7 +31,6 @@ import {
     ArrowUpRight,
     CreditCard,
     HandCoins,
-    type LucideIcon,
     Package,
     Receipt,
     RotateCcw,
@@ -50,26 +52,28 @@ interface DashboardProps {
     bestSellersPeriod: BestSellersPeriodValue;
 }
 
-/** `2026-09-26` → `26 Sep 2026` — full date format matching the design specs. */
+/**
+ * `2026-09-26` → `26 Sep 2026`
+ */
 function shortDayLabel(isoDate: string): string {
     const [year, month, day] = isoDate.split('-').map(Number);
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+    const months = [
+        'Jan',
+        'Feb',
+        'Mar',
+        'Apr',
+        'May',
+        'Jun',
+        'Jul',
+        'Aug',
+        'Sep',
+        'Oct',
+        'Nov',
+        'Dec',
+    ];
 
     return `${day} ${months[month - 1]} ${year}`;
-}
-
-function ColorfulMetricCard({ label, value, colorClass, icon: Icon }: { label: string; value: string; colorClass: string; icon: LucideIcon }) {
-    return (
-        <div className={`flex items-center justify-between gap-3 rounded-xl p-4 shadow-2xs transition-all hover:shadow-xs ${colorClass}`}>
-            <div className="min-w-0">
-                <p className="text-xs font-semibold tracking-wider uppercase opacity-80">{label}</p>
-                <p className="mt-1 text-xl font-extrabold tabular-nums sm:text-2xl">{value}</p>
-            </div>
-            <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-current/10 p-2">
-                <Icon className="size-5" />
-            </div>
-        </div>
-    );
 }
 
 export default function Dashboard({
@@ -86,10 +90,9 @@ export default function Dashboard({
 }: DashboardProps) {
     const money = useMoneyFormat();
     const { t } = useTranslation();
+
     const breadcrumbs: BreadcrumbItem[] = [{ title: t('dashboard', 'title'), href: '/dashboard' }];
 
-    // `DateRangeFilter`'s onChange is typed for the general (nullable) case, but this
-    // page never passes `allowClear`, so `next.preset` is never actually null here.
     const changeRange = (next: { preset: DateRangePresetValue | null; from?: string | null; to?: string | null }) => {
         if (!next.preset) {
             return;
@@ -106,122 +109,108 @@ export default function Dashboard({
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={t('dashboard', 'title')} />
 
-            <div className="space-y-6 px-4 py-6">
-                <div className="flex flex-wrap items-start justify-between gap-4">
-                    <HeadingSmall title={t('dashboard', 'title')} description={t('dashboard', 'description')} />
-                    <DateRangeFilter range={range} onChange={changeRange} />
-                </div>
-
-                <div className="space-y-3">
-                    <h2 className="text-foreground text-sm font-semibold tracking-wide">{t('dashboard', 'sales_section')}</h2>
-                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                        <ColorfulMetricCard
-                            label={t('dashboard', 'total_sales')}
-                            value={money(metrics.totalSales)}
-                            icon={Receipt}
-                            colorClass="bg-emerald-50/80 text-emerald-950 dark:bg-emerald-950/20 dark:text-emerald-100"
-                        />
-                        <ColorfulMetricCard
-                            label={t('dashboard', 'net_sales')}
-                            value={money(metrics.netSales)}
-                            icon={TrendingUp}
-                            colorClass="bg-teal-50/80 text-teal-950 dark:bg-teal-950/20 dark:text-teal-100"
-                        />
-                        <ColorfulMetricCard
-                            label={t('dashboard', 'invoice_due')}
-                            value={money(metrics.invoiceDue)}
-                            icon={AlertCircle}
-                            colorClass="bg-amber-50/80 text-amber-950 dark:bg-amber-950/20 dark:text-amber-100"
-                        />
-                        <ColorfulMetricCard
-                            label={t('dashboard', 'total_sell_return')}
-                            value={money(metrics.totalSellReturn)}
-                            icon={RotateCcw}
-                            colorClass="bg-rose-50/80 text-rose-950 dark:bg-rose-950/20 dark:text-rose-100"
-                        />
-                    </div>
-                </div>
-
-                <div className="space-y-3">
-                    <h2 className="text-foreground text-sm font-semibold tracking-wide">{t('dashboard', 'purchases_expenses_section')}</h2>
-                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                        <ColorfulMetricCard
-                            label={t('dashboard', 'total_purchase')}
-                            value={money(metrics.totalPurchase)}
-                            icon={ShoppingBag}
-                            colorClass="bg-blue-50/80 text-blue-950 dark:bg-blue-950/20 dark:text-blue-100"
-                        />
-                        <ColorfulMetricCard
-                            label={t('dashboard', 'purchase_due')}
-                            value={money(metrics.purchaseDue)}
-                            icon={CreditCard}
-                            colorClass="bg-orange-50/80 text-orange-950 dark:bg-orange-950/20 dark:text-orange-100"
-                        />
-                        <ColorfulMetricCard
-                            label={t('dashboard', 'total_purchase_return')}
-                            value={money(metrics.totalPurchaseReturn)}
-                            icon={RotateCcw}
-                            colorClass="bg-pink-50/80 text-pink-950 dark:bg-pink-950/20 dark:text-pink-100"
-                        />
-                        <ColorfulMetricCard
-                            label={t('dashboard', 'expense')}
-                            value={money(metrics.totalExpense)}
-                            icon={HandCoins}
-                            colorClass="bg-purple-50/80 text-purple-950 dark:bg-purple-950/20 dark:text-purple-100"
-                        />
-                    </div>
-                </div>
-
-                <div className="space-y-3">
-                    <h2 className="text-foreground text-sm font-semibold tracking-wide">{t('dashboard', 'current_position')}</h2>
-                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                        <ColorfulMetricCard
-                            label={t('dashboard', 'total_receivable')}
-                            value={money(balances.totalReceivable)}
-                            icon={ArrowDownLeft}
-                            colorClass="bg-cyan-50/80 text-cyan-950 dark:bg-cyan-950/20 dark:text-cyan-100"
-                        />
-                        <ColorfulMetricCard
-                            label={t('dashboard', 'total_payable')}
-                            value={money(balances.totalPayable)}
-                            icon={ArrowUpRight}
-                            colorClass="bg-red-50/80 text-red-950 dark:bg-red-950/20 dark:text-red-100"
-                        />
-                        <ColorfulMetricCard
-                            label={t('dashboard', 'cash_and_bank')}
-                            value={money(balances.cashAndBank)}
-                            icon={Wallet}
-                            colorClass="bg-indigo-50/80 text-indigo-950 dark:bg-indigo-950/20 dark:text-indigo-100"
-                        />
-                        <ColorfulMetricCard
-                            label={t('dashboard', 'closing_stock_value')}
-                            value={money(balances.closingStockValue)}
-                            icon={Package}
-                            colorClass="bg-violet-50/80 text-violet-950 dark:bg-violet-950/20 dark:text-violet-100"
-                        />
-                    </div>
-                </div>
-
-                <div className="grid grid-cols-1 gap-6 pt-2">
-                    <SalesChart
-                        title="Sales Last 30 Days"
-                        data={salesLast30Days.map((point) => ({ key: point.date, label: shortDayLabel(point.date), total: point.total }))}
-                    />
-                    <SalesChart
-                        title="Sales — Current Fiscal Year"
-                        data={salesCurrentFiscalYear.map((point) => ({ key: point.month, label: point.label, total: point.total }))}
-                    />
-
-                    <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-stretch">
-                        <div className="lg:col-span-3">
-                            <RevenueExpenseChart title="Revenue vs Expense — Monthly" data={monthlyRevenueVsExpense} />
+            <div className="min-h-full bg-background">
+                <div className="space-y-7 px-4 py-5 sm:px-6 sm:py-6 lg:px-8">
+                    <div className="flex flex-col gap-4 rounded-xl border border-border/60 bg-card/60 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
+                        <div className="min-w-0">
+                            <HeadingSmall title={t('dashboard', 'title')} description={t('dashboard', 'description')} />
                         </div>
-                        <div className="lg:col-span-1">
-                            <LowStockWidget products={lowStockProducts} />
+
+                        <div className="shrink-0">
+                            <DateRangeFilter range={range} onChange={changeRange} />
                         </div>
                     </div>
 
-                    <BestSellersPurchasesWidget bestSellers={bestSellers} purchases={recentTransactions.purchases} period={bestSellersPeriod} />
+                    <PageSection title={t('dashboard', 'sales_section')}>
+                        <MetricGrid>
+                            <MetricCard label={t('dashboard', 'total_sales')} value={money(metrics.totalSales)} icon={Receipt} accent="success" />
+                            <MetricCard label={t('dashboard', 'net_sales')} value={money(metrics.netSales)} icon={TrendingUp} accent="info" />
+                            <MetricCard label={t('dashboard', 'invoice_due')} value={money(metrics.invoiceDue)} icon={AlertCircle} accent="warning" />
+                            <MetricCard
+                                label={t('dashboard', 'total_sell_return')}
+                                value={money(metrics.totalSellReturn)}
+                                icon={RotateCcw}
+                                accent="danger"
+                            />
+                        </MetricGrid>
+                    </PageSection>
+
+                    <PageSection title={t('dashboard', 'purchases_expenses_section')}>
+                        <MetricGrid>
+                            <MetricCard label={t('dashboard', 'total_purchase')} value={money(metrics.totalPurchase)} icon={ShoppingBag} accent="info" />
+                            <MetricCard label={t('dashboard', 'purchase_due')} value={money(metrics.purchaseDue)} icon={CreditCard} accent="warning" />
+                            <MetricCard
+                                label={t('dashboard', 'total_purchase_return')}
+                                value={money(metrics.totalPurchaseReturn)}
+                                icon={RotateCcw}
+                                accent="danger"
+                            />
+                            <MetricCard label={t('dashboard', 'expense')} value={money(metrics.totalExpense)} icon={HandCoins} accent="financial" />
+                        </MetricGrid>
+                    </PageSection>
+
+                    <PageSection title={t('dashboard', 'current_position')}>
+                        <MetricGrid>
+                            <MetricCard
+                                label={t('dashboard', 'total_receivable')}
+                                value={money(balances.totalReceivable)}
+                                icon={ArrowDownLeft}
+                                accent="info"
+                            />
+                            <MetricCard
+                                label={t('dashboard', 'total_payable')}
+                                value={money(balances.totalPayable)}
+                                icon={ArrowUpRight}
+                                accent="warning"
+                            />
+                            <MetricCard label={t('dashboard', 'cash_and_bank')} value={money(balances.cashAndBank)} icon={Wallet} accent="success" />
+                            <MetricCard
+                                label={t('dashboard', 'closing_stock_value')}
+                                value={money(balances.closingStockValue)}
+                                icon={Package}
+                                accent="financial"
+                            />
+                        </MetricGrid>
+                    </PageSection>
+
+                    <section className="space-y-6 pt-1">
+                        <PanelCard>
+                            <SalesChart
+                                title="Sales Last 30 Days"
+                                data={salesLast30Days.map((point) => ({ key: point.date, label: shortDayLabel(point.date), total: point.total }))}
+                            />
+                        </PanelCard>
+
+                        <PanelCard>
+                            <SalesChart
+                                title="Sales — Current Fiscal Year"
+                                data={salesCurrentFiscalYear.map((point) => ({ key: point.month, label: point.label, total: point.total }))}
+                            />
+                        </PanelCard>
+
+                        {/* The chart sets the row height; the low-stock list scrolls inside its own cell. */}
+                        <div className="grid grid-cols-1 items-stretch gap-6 lg:grid-cols-4">
+                            <div className="min-w-0 lg:col-span-3">
+                                <PanelCard className="h-full">
+                                    <RevenueExpenseChart title="Revenue vs Expense — Monthly" data={monthlyRevenueVsExpense} />
+                                </PanelCard>
+                            </div>
+
+                            <div className="relative min-w-0 lg:col-span-1">
+                                <PanelCard className="h-full">
+                                    <LowStockWidget products={lowStockProducts} />
+                                </PanelCard>
+                            </div>
+                        </div>
+
+                        <PanelCard>
+                            <BestSellersPurchasesWidget
+                                bestSellers={bestSellers}
+                                purchases={recentTransactions.purchases}
+                                period={bestSellersPeriod}
+                            />
+                        </PanelCard>
+                    </section>
                 </div>
             </div>
         </AppLayout>

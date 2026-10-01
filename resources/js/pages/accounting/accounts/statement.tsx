@@ -1,3 +1,4 @@
+import { MetricCard, MetricGrid } from '@/components/shared/metric-card';
 import { FormInput } from '@/components/form/form-input';
 import HeadingSmall from '@/components/heading-small';
 import EmptyState from '@/components/shared/empty-state';
@@ -60,20 +61,11 @@ export default function AccountStatement({ account, transactions, broughtForward
             <div className="space-y-6 px-4 py-6">
                 <HeadingSmall title={`${account.name} — Statement`} description={`${account.account_type.name} • operation date অনুযায়ী সাজানো`} />
 
-                <div className="grid gap-4 sm:grid-cols-3">
-                    <div className="rounded-lg border p-4">
-                        <p className="text-muted-foreground text-sm">Brought forward</p>
-                        <p className="text-xl font-semibold tabular-nums">{money(broughtForward)}</p>
-                    </div>
-                    <div className="rounded-lg border p-4">
-                        <p className="text-muted-foreground text-sm">Closing balance (range)</p>
-                        <p className="text-xl font-semibold tabular-nums">{money(closingBalance)}</p>
-                    </div>
-                    <div className="rounded-lg border p-4">
-                        <p className="text-muted-foreground text-sm">Current balance</p>
-                        <p className="text-xl font-semibold tabular-nums">{money(account.current_balance)}</p>
-                    </div>
-                </div>
+                <MetricGrid columns={3}>
+                    <MetricCard label="Brought forward" value={money(broughtForward)} />
+                    <MetricCard label="Closing balance (range)" value={money(closingBalance)} accent="info" />
+                    <MetricCard label="Current balance" value={money(account.current_balance)} accent="success" />
+                </MetricGrid>
 
                 <div className="flex flex-wrap items-end gap-3">
                     <FormInput id="from" label="From" type="date" value={range.from} onChange={(e) => handleFromChange(e.target.value)} />

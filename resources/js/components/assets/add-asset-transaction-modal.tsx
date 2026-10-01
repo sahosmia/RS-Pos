@@ -87,7 +87,7 @@ export default function AddAssetTransactionModal({ open, onOpenChange, assetId, 
             />
 
             {!isSold && !isDisposal && (
-                <div className="grid gap-2">
+                <div className="grid min-w-0 content-start gap-2">
                     <Label htmlFor="amount">Amount</Label>
                     <MoneyInput id="amount" value={form.data.amount} onChange={(e) => form.setData('amount', Number(e.target.value))} required />
                     <InputError message={form.errors.amount} />
@@ -95,7 +95,7 @@ export default function AddAssetTransactionModal({ open, onOpenChange, assetId, 
             )}
 
             {isSold && (
-                <div className="grid gap-2">
+                <div className="grid min-w-0 content-start gap-2">
                     <Label htmlFor="sale_price">Sale Price</Label>
                     <MoneyInput
                         id="sale_price"
@@ -121,7 +121,7 @@ export default function AddAssetTransactionModal({ open, onOpenChange, assetId, 
                 />
             )}
 
-            <div className="grid gap-2">
+            <div className="grid min-w-0 content-start gap-2">
                 <Label htmlFor="note">Note</Label>
                 <Textarea id="note" value={form.data.note} onChange={(e) => form.setData('note', e.target.value)} rows={2} />
                 <InputError message={form.errors.note} />

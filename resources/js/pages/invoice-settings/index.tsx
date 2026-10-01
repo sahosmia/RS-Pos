@@ -151,7 +151,7 @@ export default function InvoiceSettingsIndex({ settings, logoUrl, shop }: Invoic
                                     onCheckedChange={(checked) => updateSection('branding', { show_logo: checked })}
                                 />
 
-                                <div className="grid gap-2">
+                                <div className="grid min-w-0 content-start gap-2">
                                     <Label htmlFor="logo">Logo Image</Label>
                                     <input
                                         ref={fileInputRef}

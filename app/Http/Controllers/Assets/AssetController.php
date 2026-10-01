@@ -36,7 +36,6 @@ class AssetController extends Controller
         $assets->getCollection()->transform(fn (Asset $asset) => [
             'id' => $asset->id,
             'name' => $asset->name,
-            'category' => $asset->category,
             'opening_value' => $asset->opening_value,
             'current_value' => $asset->current_value,
             'purchase_date' => $asset->purchase_date?->toDateString(),
@@ -47,6 +46,7 @@ class AssetController extends Controller
         return Inertia::render('assets/index', [
             'assets' => $assets,
             'totalValue' => (float) Asset::query()->sum('current_value'),
+            'accounts' => Account::query()->active()->orderBy('name')->get(['id', 'name', 'current_balance', 'is_default']),
             'filters' => [
                 'sort' => $validated['sort'] ?? 'name',
                 'direction' => $validated['direction'] ?? 'asc',
@@ -99,7 +99,6 @@ class AssetController extends Controller
             'asset' => [
                 'id' => $asset->id,
                 'name' => $asset->name,
-                'category' => $asset->category,
                 'current_value' => $asset->current_value,
                 'purchase_date' => $asset->purchase_date?->toDateString(),
             ],

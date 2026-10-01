@@ -34,7 +34,7 @@ export default function AddStaffTransactionModal({ open, onOpenChange, staffId, 
     }, [open]);
 
     const selectedType = transactionTypes.find((type) => type.id === form.data.staff_transaction_type_id);
-    const needsAccount = selectedType ? ['settlement', 'advance', 'advance_return'].includes(selectedType.nature) : false;
+    const needsAccount = selectedType ? ['salary', 'settlement', 'advance', 'advance_return'].includes(selectedType.nature) : false;
 
     const typeOptions = transactionTypes.map((type) => ({ value: String(type.id), label: type.name }));
     const accountOptions = accounts.map((account) => ({ value: String(account.id), label: account.name }));
@@ -67,14 +67,16 @@ export default function AddStaffTransactionModal({ open, onOpenChange, staffId, 
                 error={form.errors.staff_transaction_type_id}
             />
 
-            <div className="grid gap-2">
+            <div className="grid min-w-0 content-start gap-2">
                 <Label htmlFor="amount">Amount</Label>
                 <MoneyInput id="amount" value={form.data.amount} onChange={(e) => form.setData('amount', Number(e.target.value))} required />
                 {selectedType?.effect_on_balance && (
                     <p className="text-muted-foreground text-xs">
-                        {selectedType.effect_on_balance === 'increase'
-                            ? 'staff balance বাড়বে (staff কোম্পানির কাছে ঋণী হবে)'
-                            : 'staff balance কমবে (কোম্পানি staff-এর কাছে ঋণী হবে)'}
+                        {{
+                            increase: 'staff balance বাড়বে (staff কোম্পানির কাছে ঋণী হবে)',
+                            decrease: 'staff balance কমবে (staff তার advance ফেরত দিচ্ছে)',
+                            none: 'বেতন সরাসরি খরচ হিসেবে যাবে — staff balance বদলাবে না',
+                        }[selectedType.effect_on_balance]}
                     </p>
                 )}
                 <InputError message={form.errors.amount} />
@@ -92,7 +94,7 @@ export default function AddStaffTransactionModal({ open, onOpenChange, staffId, 
                 />
             )}
 
-            <div className="grid gap-2">
+            <div className="grid min-w-0 content-start gap-2">
                 <Label htmlFor="note">Note</Label>
                 <Textarea id="note" value={form.data.note} onChange={(e) => form.setData('note', e.target.value)} rows={2} />
                 <InputError message={form.errors.note} />

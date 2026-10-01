@@ -1,4 +1,5 @@
 import { FormInput } from '@/components/form/form-input';
+import { FormSelect } from '@/components/form/form-select';
 import HeadingSmall from '@/components/heading-small';
 import { getCompanyLoanActions } from '@/components/company-loans/company-loan-actions';
 import ConfirmDialog from '@/components/shared/confirm-dialog';
@@ -13,8 +14,6 @@ import DataTableRowActions from '@/components/data-table/data-table-row-actions'
 import DataTableToolbar from '@/components/data-table/data-table-toolbar';
 import { type DataTableColumnOption } from '@/components/data-table/types';
 import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
-import InputError from '@/components/input-error';
 import { useTableExport } from '@/hooks/table/use-table-export';
 import { type TableFilterBase } from '@/hooks/table/use-table-filters';
 import { useTableFilters } from '@/hooks/table/use-table-filters';
@@ -24,7 +23,7 @@ import { useTableViewMode } from '@/hooks/use-table-view-mode';
 import AppLayout from '@/layouts/app-layout';
 import { today } from '@/lib/format-date';
 import { type BreadcrumbItem, type SharedData } from '@/types';
-import { type CompanyLoanListItem, type Paginated } from '@/types/models';
+import { type Account, type CompanyLoanListItem, type Paginated } from '@/types/models';
 import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
 import { type ColumnDef, type VisibilityState } from '@tanstack/react-table';
 import { FormEventHandler, useCallback, useMemo, useState } from 'react';
@@ -40,6 +39,7 @@ interface CompanyLoanFilters extends TableFilterBase {
 interface CompanyLoansIndexProps {
     loans: Paginated<CompanyLoanListItem>;
     totalOutstanding: number;
+    accounts: Account[];
     filters: CompanyLoanFilters;
 }
 
@@ -60,7 +60,7 @@ const getExportColumns = (): DataTableColumnOption[] => [
     { id: 'start_date', label: 'Start Date' },
 ];
 
-export default function CompanyLoansIndex({ loans, totalOutstanding, filters }: CompanyLoansIndexProps) {
+export default function CompanyLoansIndex({ loans, totalOutstanding, accounts, filters }: CompanyLoansIndexProps) {
     const { shop } = usePage<SharedData>().props;
     const money = useMoneyFormat();
     const [viewMode, setViewMode] = useTableViewMode();
@@ -86,16 +86,21 @@ export default function CompanyLoansIndex({ loans, totalOutstanding, filters }: 
         selectedIds: selection.selectedIds,
     });
 
-    const form = useForm({
+    const emptyForm = {
+        loan_type: 'existing' as 'existing' | 'new',
         lender_name: '',
         loan_amount: 0,
+        current_balance: 0,
+        account_id: null as number | null,
         interest_rate: null as number | null,
         start_date: today(),
-    });
+    };
+
+    const form = useForm(emptyForm);
 
     const openCreate = () => {
         form.clearErrors();
-        form.setData({ lender_name: '', loan_amount: 0, interest_rate: null, start_date: today() });
+        form.setData({ ...emptyForm, account_id: accounts.find((account) => account.is_default)?.id ?? accounts[0]?.id ?? null });
         setEditing(null);
         setModalOpen(true);
     };
@@ -104,6 +109,9 @@ export default function CompanyLoansIndex({ loans, totalOutstanding, filters }: 
         (loan: CompanyLoanListItem) => {
             form.clearErrors();
             form.setData({
+                loan_type: 'existing',
+                current_balance: 0,
+                account_id: null,
                 lender_name: loan.lender_name,
                 loan_amount: loan.loan_amount,
                 interest_rate: loan.interest_rate,
@@ -364,6 +372,20 @@ export default function CompanyLoansIndex({ loans, totalOutstanding, filters }: 
                 processing={form.processing}
                 onSubmit={submit}
             >
+                {!editing && (
+                    <FormSelect
+                        id="loan_type"
+                        label="Loan Type"
+                        value={form.data.loan_type}
+                        onChange={(value) => form.setData('loan_type', value === 'new' ? 'new' : 'existing')}
+                        options={[
+                            { value: 'existing', label: 'Existing loan — আগে থেকেই চলছে' },
+                            { value: 'new', label: 'New loan — এখন টাকা পেলাম' },
+                        ]}
+                        required
+                    />
+                )}
+
                 <FormInput
                     id="lender_name"
                     label="Lender"
@@ -373,29 +395,51 @@ export default function CompanyLoansIndex({ loans, totalOutstanding, filters }: 
                     required
                 />
 
-                <div className="grid gap-2">
-                    <Label htmlFor="loan_amount">Loan Amount</Label>
+                <MoneyInput
+                    id="loan_amount"
+                    label={!editing && form.data.loan_type === 'existing' ? 'Original Loan Amount' : 'Loan Amount'}
+                    value={form.data.loan_amount}
+                    onChange={(e) => form.setData('loan_amount', Number(e.target.value))}
+                    error={form.errors.loan_amount}
+                    required
+                />
+
+                {!editing && form.data.loan_type === 'existing' && (
                     <MoneyInput
-                        id="loan_amount"
-                        value={form.data.loan_amount}
-                        onChange={(e) => form.setData('loan_amount', Number(e.target.value))}
+                        id="current_balance"
+                        label="Current Outstanding Balance"
+                        value={form.data.current_balance}
+                        onChange={(e) => form.setData('current_balance', Number(e.target.value))}
+                        error={form.errors.current_balance}
+                        helperText="এখন যতটা বাকি আছে — এটাই opening balance হিসেবে যাবে। কোনো account-এ হিট করবে না।"
                         required
                     />
-                    <InputError message={form.errors.loan_amount} />
-                </div>
+                )}
 
-                <div className="grid gap-2">
-                    <FormInput
-                        id="interest_rate"
-                        label="Interest Rate (%)"
-                        type="number"
-                        step="0.01"
-                        value={form.data.interest_rate ?? ''}
-                        onChange={(e) => form.setData('interest_rate', e.target.value === '' ? null : Number(e.target.value))}
-                        error={form.errors.interest_rate}
+                {!editing && form.data.loan_type === 'new' && (
+                    <FormSelect
+                        id="account_id"
+                        label="Received Into Account"
+                        value={form.data.account_id}
+                        onChange={(value) => form.setData('account_id', value ? Number(value) : null)}
+                        options={accounts.map((account) => ({ value: String(account.id), label: account.name }))}
+                        placeholder="Select account"
+                        error={form.errors.account_id}
+                        helperText="Loan-এর টাকা এই account-এ জমা হবে।"
+                        required
                     />
-                    <p className="text-muted-foreground text-xs">শুধু তথ্যের জন্য — কোনো automatic হিসাব হবে না।</p>
-                </div>
+                )}
+
+                <FormInput
+                    id="interest_rate"
+                    label="Interest Rate (%)"
+                    type="number"
+                    step="0.01"
+                    value={form.data.interest_rate ?? ''}
+                    onChange={(e) => form.setData('interest_rate', e.target.value === '' ? null : Number(e.target.value))}
+                    error={form.errors.interest_rate}
+                    helperText="শুধু তথ্যের জন্য — কোনো automatic হিসাব হবে না।"
+                />
 
                 <FormInput
                     id="start_date"

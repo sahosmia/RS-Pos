@@ -1,3 +1,4 @@
+import { MetricCard } from '@/components/shared/metric-card';
 import HeadingSmall from '@/components/heading-small';
 import EmptyState from '@/components/shared/empty-state';
 import LedgerTable, { type LedgerRow } from '@/components/shared/ledger-table';
@@ -52,10 +53,7 @@ export default function InvestorShow({ investor, transactions, accounts }: Inves
                     <Button onClick={() => setAddOpen(true)}>Add Transaction</Button>
                 </div>
 
-                <div className="rounded-lg border p-4 sm:max-w-xs">
-                    <p className="text-muted-foreground text-sm">Total Invested</p>
-                    <p className="text-xl font-semibold tabular-nums">{money(investor.total_invested)}</p>
-                </div>
+                <MetricCard label="Total Invested" value={money(investor.total_invested)} accent="financial" className="sm:max-w-xs" />
 
                 {rows.length === 0 ? (
                     <EmptyState title="No transactions yet" description="Add Transaction দিয়ে শুরু করুন" />

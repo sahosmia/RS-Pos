@@ -120,7 +120,7 @@ export default function ExpenseModal({ open, onOpenChange, categories, accounts,
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
-                <div className="grid gap-2">
+                <div className="grid min-w-0 content-start gap-2">
                     <Label htmlFor="total_amount" required>
                         Amount
                     </Label>
@@ -144,7 +144,7 @@ export default function ExpenseModal({ open, onOpenChange, categories, accounts,
                 />
             </div>
 
-            <div className="grid gap-2">
+            <div className="grid min-w-0 content-start gap-2">
                 <Label htmlFor="attachment">Attachment (optional)</Label>
                 <Input
                     id="attachment"
@@ -164,7 +164,7 @@ export default function ExpenseModal({ open, onOpenChange, categories, accounts,
                 <InputError message={form.errors.attachment} />
             </div>
 
-            <div className="grid gap-2">
+            <div className="grid min-w-0 content-start gap-2">
                 <Label htmlFor="note">Note</Label>
                 <Textarea
                     id="note"

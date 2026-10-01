@@ -67,7 +67,7 @@ export default function BillPaymentForm({ direction, accounts }: BillPaymentForm
 
     return (
         <form onSubmit={submit} className="max-w-lg space-y-4 rounded-lg border p-4">
-            <div className="grid gap-2">
+            <div className="grid min-w-0 content-start gap-2">
                 <Label htmlFor="contact_id" required>
                     {direction === 'received' ? 'Customer' : 'Supplier'}
                 </Label>
@@ -84,7 +84,7 @@ export default function BillPaymentForm({ direction, accounts }: BillPaymentForm
                 {contact && <p className="text-muted-foreground text-xs">Current status: {dueLabel(contact.balance)}</p>}
             </div>
 
-            <div className="grid gap-2">
+            <div className="grid min-w-0 content-start gap-2">
                 <Label htmlFor="account_id" required>
                     Account
                 </Label>
@@ -106,7 +106,7 @@ export default function BillPaymentForm({ direction, accounts }: BillPaymentForm
                 <InputError message={form.errors.account_id} />
             </div>
 
-            <div className="grid gap-2">
+            <div className="grid min-w-0 content-start gap-2">
                 <Label htmlFor="amount" required>
                     Amount
                 </Label>
@@ -114,7 +114,7 @@ export default function BillPaymentForm({ direction, accounts }: BillPaymentForm
                 <InputError message={form.errors.amount} />
             </div>
 
-            <div className="grid gap-2">
+            <div className="grid min-w-0 content-start gap-2">
                 <Label htmlFor="note">Note</Label>
                 <Textarea id="note" value={form.data.note} onChange={(e) => form.setData('note', e.target.value)} />
                 <InputError message={form.errors.note} />

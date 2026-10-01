@@ -104,7 +104,7 @@ export default function DiscountModal({
             )}
 
             {type === 'flat' && (
-                <div className="grid gap-2">
+                <div className="grid min-w-0 content-start gap-2">
                     <Label htmlFor="discount_modal_value">Amount</Label>
                     <MoneyInput id="discount_modal_value" value={value} onChange={(e) => setValue(Number(e.target.value))} />
                 </div>

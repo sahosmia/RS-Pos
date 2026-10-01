@@ -1,4 +1,6 @@
+import { FormField } from '@/components/form/form-field';
 import { FormInput } from '@/components/form/form-input';
+import { ReadOnlyField } from '@/components/form/read-only-field';
 import InputError from '@/components/input-error';
 import LookupManagerModal from '@/components/products/lookup-manager-modal';
 import MoneyInput from '@/components/shared/money-input';
@@ -268,8 +270,7 @@ export default function ProductForm({ mode, product, categories, brands, units }
                         />
 
                         {/* Category */}
-                        <div className="grid gap-2">
-                            <Label htmlFor="category_id">{t('productForm', 'category')}</Label>
+                        <FormField id="category_id" label={t('productForm', 'category')} error={form.errors.category_id}>
                             <div className="flex gap-2">
                                 <SearchableSelect
                                     id="category_id"
@@ -285,12 +286,10 @@ export default function ProductForm({ mode, product, categories, brands, units }
                                     <Plus className="size-4" />
                                 </Button>
                             </div>
-                            <InputError message={form.errors.category_id} />
-                        </div>
+                        </FormField>
 
                         {/* Brand */}
-                        <div className="grid gap-2">
-                            <Label htmlFor="brand_id">{t('productForm', 'brand')}</Label>
+                        <FormField id="brand_id" label={t('productForm', 'brand')} error={form.errors.brand_id}>
                             <div className="flex gap-2">
                                 <SearchableSelect
                                     id="brand_id"
@@ -306,14 +305,10 @@ export default function ProductForm({ mode, product, categories, brands, units }
                                     <Plus className="size-4" />
                                 </Button>
                             </div>
-                            <InputError message={form.errors.brand_id} />
-                        </div>
+                        </FormField>
 
                         {/* Unit */}
-                        <div className="grid gap-2">
-                            <Label htmlFor="unit_id" required>
-                                {t('productForm', 'unit')}
-                            </Label>
+                        <FormField id="unit_id" label={t('productForm', 'unit')} required error={form.errors.unit_id}>
                             <div className="flex gap-2">
                                 <Select
                                     value={form.data.unit_id ? String(form.data.unit_id) : ''}
@@ -334,8 +329,7 @@ export default function ProductForm({ mode, product, categories, brands, units }
                                     <Plus className="size-4" />
                                 </Button>
                             </div>
-                            <InputError message={form.errors.unit_id} />
-                        </div>
+                        </FormField>
                     </div>
                 </FormSection>
 
@@ -347,18 +341,14 @@ export default function ProductForm({ mode, product, categories, brands, units }
                     accent="emerald"
                 >
                     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                        <div className="grid gap-2">
-                            <Label htmlFor="selling_price" required>
-                                {t('productForm', 'selling_price')}
-                            </Label>
-                            <MoneyInput
-                                id="selling_price"
-                                value={form.data.selling_price}
-                                onChange={(e) => form.setData('selling_price', Number(e.target.value))}
-                                required
-                            />
-                            <InputError message={form.errors.selling_price} />
-                        </div>
+                        <MoneyInput
+                            id="selling_price"
+                            label={t('productForm', 'selling_price')}
+                            value={form.data.selling_price}
+                            onChange={(e) => form.setData('selling_price', Number(e.target.value))}
+                            error={form.errors.selling_price}
+                            required
+                        />
 
                         <FormInput
                             id="minimum_stock_level"
@@ -372,14 +362,14 @@ export default function ProductForm({ mode, product, categories, brands, units }
                             icon={Layers}
                         />
 
+                        {/* Create mode simply has no third field — the row stays a normal grid. */}
                         {mode === 'edit' && product && (
-                            <div className="grid gap-2 rounded-lg border bg-muted/30 p-3">
-                                <Label className="text-muted-foreground text-xs font-medium uppercase tracking-wide">
-                                    {t('productForm', 'current_stock')}
-                                </Label>
-                                <p className="text-2xl font-bold tabular-nums leading-none">{product.current_stock}</p>
-                                <p className="text-muted-foreground text-xs">{t('productForm', 'current_stock_locked')}</p>
-                            </div>
+                            <ReadOnlyField
+                                id="current_stock"
+                                label={t('productForm', 'current_stock')}
+                                value={product.current_stock}
+                                helperText={t('productForm', 'current_stock_locked')}
+                            />
                         )}
                     </div>
 
@@ -412,15 +402,13 @@ export default function ProductForm({ mode, product, categories, brands, units }
                                         icon={Package}
                                     />
 
-                                    <div className="grid gap-2">
-                                        <Label htmlFor="opening_stock_cost">{t('productForm', 'opening_stock_cost')}</Label>
-                                        <MoneyInput
-                                            id="opening_stock_cost"
-                                            value={form.data.opening_stock_cost}
-                                            onChange={(e) => form.setData('opening_stock_cost', Number(e.target.value))}
-                                        />
-                                        <InputError message={form.errors.opening_stock_cost} />
-                                    </div>
+                                    <MoneyInput
+                                        id="opening_stock_cost"
+                                        label={t('productForm', 'opening_stock_cost')}
+                                        value={form.data.opening_stock_cost}
+                                        onChange={(e) => form.setData('opening_stock_cost', Number(e.target.value))}
+                                        error={form.errors.opening_stock_cost}
+                                    />
                                 </div>
                             ) : (
                                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -658,8 +646,8 @@ export default function ProductForm({ mode, product, categories, brands, units }
                             {form.processing
                                 ? t('common', 'saving')
                                 : mode === 'create'
-                                  ? t('productForm', 'create_product')
-                                  : t('productForm', 'save_changes')}
+                                    ? t('productForm', 'create_product')
+                                    : t('productForm', 'save_changes')}
                         </Button>
                     </div>
                 </div>
@@ -676,8 +664,8 @@ export default function ProductForm({ mode, product, categories, brands, units }
                     {form.processing
                         ? t('common', 'saving')
                         : mode === 'create'
-                          ? t('productForm', 'create_product')
-                          : t('productForm', 'save_changes')}
+                            ? t('productForm', 'create_product')
+                            : t('productForm', 'save_changes')}
                 </Button>
             </div>
 

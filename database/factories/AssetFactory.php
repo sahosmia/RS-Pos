@@ -19,7 +19,6 @@ class AssetFactory extends Factory
     {
         return [
             'name' => fake()->words(2, true),
-            'category' => 'Equipment',
             'opening_value' => 0,
             'current_value' => 0,
             'purchase_date' => fake()->date(),

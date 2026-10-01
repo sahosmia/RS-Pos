@@ -1,6 +1,4 @@
-import { LabelTooltip } from '@/components/form/label-tooltip';
-import InputError from '@/components/input-error';
-import { Label } from '@/components/ui/label';
+import { FormField, fieldAriaProps } from '@/components/form/form-field';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { type LucideIcon } from 'lucide-react';
 import React from 'react';
@@ -19,6 +17,7 @@ interface FormSelectProps {
     options: SelectOption[];
     placeholder?: string;
     error?: string;
+    helperText?: React.ReactNode;
     noneLabel?: string;
     allowNone?: boolean;
     required?: boolean;
@@ -35,6 +34,7 @@ export function FormSelect({
     options,
     placeholder,
     error,
+    helperText,
     noneLabel = '—',
     allowNone = false,
     required = false,
@@ -43,12 +43,7 @@ export function FormSelect({
     const currentValue = value ? String(value) : allowNone ? 'none' : '';
 
     return (
-        <div className="grid gap-2">
-            {label && (
-                <Label htmlFor={id} required={required}>
-                    <LabelTooltip label={label} tooltip={tooltip} />
-                </Label>
-            )}
+        <FormField id={id} label={label} tooltip={tooltip} required={required} error={error} helperText={helperText}>
             <Select
                 value={currentValue}
                 onValueChange={(val) => {
@@ -59,7 +54,7 @@ export function FormSelect({
                     }
                 }}
             >
-                <SelectTrigger id={id} className={Icon ? 'relative pl-9' : undefined}>
+                <SelectTrigger id={id} className={Icon ? 'relative pl-9' : undefined} {...fieldAriaProps(id, error, helperText)}>
                     {Icon && <Icon className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2" />}
                     <SelectValue placeholder={placeholder} />
                 </SelectTrigger>
@@ -72,7 +67,6 @@ export function FormSelect({
                     ))}
                 </SelectContent>
             </Select>
-            <InputError message={error} />
-        </div>
+        </FormField>
     );
 }

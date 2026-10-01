@@ -67,7 +67,7 @@ export default function StockAdjustmentModal({ product, onOpenChange }: StockAdj
             processing={form.processing}
             onSubmit={submit}
         >
-            <div className="grid gap-2">
+            <div className="grid min-w-0 content-start gap-2">
                 <FormInput
                     id="quantity"
                     label={
@@ -92,7 +92,7 @@ export default function StockAdjustmentModal({ product, onOpenChange }: StockAdj
             </div>
 
             {needsCost && (
-                <div className="grid gap-2">
+                <div className="grid min-w-0 content-start gap-2">
                     <Label htmlFor="unit_cost" required>
                         {t('stockAdjustment', 'unit_cost')}
                     </Label>
@@ -106,7 +106,7 @@ export default function StockAdjustmentModal({ product, onOpenChange }: StockAdj
                 </div>
             )}
 
-            <div className="grid gap-2">
+            <div className="grid min-w-0 content-start gap-2">
                 <Label htmlFor="reason">{t('stockAdjustment', 'reason')}</Label>
                 <Textarea
                     id="reason"

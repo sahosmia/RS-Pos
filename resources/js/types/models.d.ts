@@ -819,7 +819,6 @@ export type AssetTransactionTypeValue = 'opening_asset' | 'purchase' | 'addition
 export interface AssetListItem {
     id: number;
     name: string;
-    category: string | null;
     opening_value: number;
     current_value: number;
     purchase_date: string | null;
@@ -830,12 +829,11 @@ export interface AssetListItem {
 export interface AssetDetail {
     id: number;
     name: string;
-    category: string | null;
     current_value: number;
     purchase_date: string | null;
 }
 
-export type LoanTransactionTypeValue = 'disbursement' | 'repayment' | 'interest_charge' | 'adjustment';
+export type LoanTransactionTypeValue = 'opening_loan' | 'disbursement' | 'repayment' | 'interest_charge' | 'adjustment';
 
 export interface CompanyLoanListItem {
     id: number;
@@ -891,8 +889,8 @@ export interface OtherLiabilityDetail {
 }
 
 export type StaffStatusValue = 'active' | 'inactive';
-export type BalanceEffectValue = 'increase' | 'decrease';
-export type StaffTransactionNatureValue = 'expense' | 'settlement' | 'advance' | 'advance_return' | 'adjustment';
+export type BalanceEffectValue = 'increase' | 'decrease' | 'none';
+export type StaffTransactionNatureValue = 'expense' | 'settlement' | 'advance' | 'advance_return' | 'adjustment' | 'salary';
 
 export interface StaffTransactionTypeOption {
     id: number;

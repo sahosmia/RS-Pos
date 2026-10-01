@@ -126,7 +126,7 @@ export default function SalesOrdersCreate({ initialCustomer, products, accounts 
                         </CardHeader>
                         <CardContent className="p-4">
                             <div className="grid gap-4 sm:grid-cols-3">
-                                <div className="grid gap-2">
+                                <div className="grid min-w-0 content-start gap-2">
                                     <Label htmlFor="customer_id" required>Customer</Label>
                                     <SearchableSelect
                                         id="customer_id"
@@ -180,7 +180,7 @@ export default function SalesOrdersCreate({ initialCustomer, products, accounts 
                             </div>
                         </CardHeader>
                         <CardContent className="p-4 space-y-4">
-                            <div className="grid gap-2">
+                            <div className="grid min-w-0 content-start gap-2">
                                 <Label>Products</Label>
                                 <ProductSearchInput products={products} onSelect={addProduct} />
                                 <InputError message={form.errors.items} />

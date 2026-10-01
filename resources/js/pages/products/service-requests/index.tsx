@@ -272,7 +272,7 @@ export default function ServiceRequestsIndex({ requests, filters }: ServiceReque
                                 className="w-40"
                             />
 
-                            <div className="grid gap-2">
+                            <div className="grid min-w-0 content-start gap-2">
                                 <Label htmlFor="type">{t('serviceRequests', 'type')}</Label>
                                 <Select
                                     value={filters.type ?? 'all'}
@@ -289,7 +289,7 @@ export default function ServiceRequestsIndex({ requests, filters }: ServiceReque
                                 </Select>
                             </div>
 
-                            <div className="grid gap-2">
+                            <div className="grid min-w-0 content-start gap-2">
                                 <Label htmlFor="status">{t('serviceRequests', 'status')}</Label>
                                 <Select
                                     value={filters.status ?? 'all'}

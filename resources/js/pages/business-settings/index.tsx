@@ -173,7 +173,7 @@ export default function BusinessSettingsIndex({ settings }: { settings: Settings
                         </TabsContent>
 
                         <TabsContent value="branding" className="space-y-6">
-                            <div className="grid gap-2">
+                            <div className="grid min-w-0 content-start gap-2">
                                 <Label>Default accent color</Label>
                                 <p className="text-muted-foreground text-sm">
                                     পুরো অ্যাপের default color — কোনো user নিজের জন্য আলাদা color বেছে নিলে সেটাই তার জন্য priority পাবে (Settings →
@@ -185,7 +185,7 @@ export default function BusinessSettingsIndex({ settings }: { settings: Settings
                         </TabsContent>
 
                         <TabsContent value="menu-order" className="space-y-6">
-                            <div className="grid gap-2">
+                            <div className="grid min-w-0 content-start gap-2">
                                 <Label>Sidebar menu order</Label>
                                 <p className="text-muted-foreground text-sm">
                                     Up/Down দিয়ে menu-র ক্রম সাজান — প্রতিটা user-এর sidebar-এ এই order-ই দেখাবে (permission অনুযায়ী hidden menu
@@ -298,7 +298,7 @@ export default function BusinessSettingsIndex({ settings }: { settings: Settings
                         </TabsContent>
 
                         <TabsContent value="pagination" className="space-y-6">
-                            <div className="grid gap-2">
+                            <div className="grid min-w-0 content-start gap-2">
                                 <Label>Rows-per-page options</Label>
                                 <p className="text-muted-foreground text-sm">
                                     প্রতিটা list পেজের "কত সারি দেখাবো" dropdown-এ এই সংখ্যাগুলোই দেখাবে — globally সব টেবিলে প্রযোজ্য
@@ -321,7 +321,7 @@ export default function BusinessSettingsIndex({ settings }: { settings: Settings
                                 <InputError message={errors.pagination_per_page_options} />
 
                                 <div className="mt-2 flex items-end gap-2">
-                                    <div className="grid gap-2">
+                                    <div className="grid min-w-0 content-start gap-2">
                                         <Label htmlFor="new_pagination_option">Add an option</Label>
                                         <Select value={newPerPageOption} onValueChange={setNewPerPageOption}>
                                             <SelectTrigger id="new_pagination_option" className="w-32">

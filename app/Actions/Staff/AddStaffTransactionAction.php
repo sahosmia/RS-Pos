@@ -42,10 +42,15 @@ class AddStaffTransactionAction
 
         return DB::transaction(function () use ($staff, $type, $amount, $data, $note) {
             $staff = Staff::where('id', $staff->id)->lockForUpdate()->firstOrFail();
-            $delta = $type->effect_on_balance === BalanceEffect::Increase ? $amount : -$amount;
+            $delta = match ($type->effect_on_balance) {
+                BalanceEffect::Increase => $amount,
+                BalanceEffect::Decrease => -$amount,
+                BalanceEffect::None => 0.0,
+            };
             $balanceBefore = (float) $staff->balance;
 
             match ($type->nature) {
+                StaffTransactionNature::Salary => $this->postSalary($staff, $amount, $data),
                 StaffTransactionNature::Expense => $this->postExpense($staff, $amount),
                 StaffTransactionNature::Settlement => $this->postSettlement($staff, $amount, $data),
                 StaffTransactionNature::Advance => $this->postAdvance($staff, $amount, $data, $type),
@@ -65,6 +70,23 @@ class AddStaffTransactionAction
 
             return $ledgerEntry;
         });
+    }
+
+    /**
+     * Salary — paid out in one step: the expense is recognised and the cash leaves the
+     * chosen account together. Never touches the staff member's advance balance.
+     *
+     * @param  array{account_id?: int|string|null}  $data
+     */
+    private function postSalary(Staff $staff, float $amount, array $data): void
+    {
+        $account = Account::findOrFail($data['account_id']);
+        $this->accounts->record($account, AccountTransactionType::StaffSalaryPayment, -$amount, today(), 'staff', $staff->id);
+
+        $this->journal->post(today(), "Salary: {$staff->name}", [
+            ['chart_of_account_id' => $this->chartOfAccounts->code('5210')->id, 'debit' => $amount, 'credit' => 0],
+            ['chart_of_account_id' => $this->chartOfAccounts->forAccount($account)->id, 'debit' => 0, 'credit' => $amount],
+        ], 'staff', $staff->id);
     }
 
     /**

@@ -76,7 +76,7 @@ export default function DataTableExportDialog({
 
                 <div className="space-y-5">
                     {/* Format picker — card tiles instead of tabs */}
-                    <div className="grid gap-2">
+                    <div className="grid min-w-0 content-start gap-2">
                         <Label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Format</Label>
                         <div className="grid grid-cols-3 gap-2">
                             {FORMATS.map(({ value, label, description, icon: Icon }) => {
@@ -117,7 +117,7 @@ export default function DataTableExportDialog({
                     </div>
 
                     {/* Columns */}
-                    <div className="grid gap-2">
+                    <div className="grid min-w-0 content-start gap-2">
                         <div className="flex items-center justify-between">
                             <Label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Columns</Label>
                             <button

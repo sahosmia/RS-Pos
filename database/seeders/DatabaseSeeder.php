@@ -46,9 +46,9 @@ class DatabaseSeeder extends Seeder
             BrandSeeder::class,
             ProductSeeder::class,
 
-            //  // Account
-            // AccountTypeSeeder::class,
-            // AccountSeeder::class,
+            // Account
+            AccountTypeSeeder::class,
+            AccountSeeder::class,
             // ChartOfAccountSeeder::class,
             // AccountingPeriodSeeder::class,
             // MiscTransactionCategorySeeder::class,
@@ -66,12 +66,12 @@ class DatabaseSeeder extends Seeder
             // SaleSeeder::class,
             // SalesOrderSeeder::class,
 
-            // //staff
+            //staff
+            StaffTransactionTypeSeeder::class,
             // StaffSeeder::class,
-            // StaffTransactionTypeSeeder::class,
 
             // // Expense
-            // ExpenseCategorySeeder::class,
+            ExpenseCategorySeeder::class,
             // ExpenseSeeder::class,
 
             // // investor

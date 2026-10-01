@@ -14,20 +14,36 @@ class CreateAssetAction
     public function __construct(
         private JournalService $journal,
         private ChartOfAccountResolver $chartOfAccounts,
+        private AddAssetTransactionAction $addTransaction,
     ) {}
 
     /**
-     * @param  array{name: string, category?: string|null, purchase_date?: string|null, opening_value?: float|string|null}  $data
+     * One step, never create-then-purchase:
+     *  - `existing` (default): an asset owned before the system. `opening_value` is optional —
+     *    blank/0 simply creates the asset with no value and no journal entry. No account moves.
+     *  - `new`: bought today. Recorded as a purchase, so the chosen account is debited.
+     *
+     * @param  array{asset_type?: string, name: string, purchase_date?: string|null, opening_value?: float|string|null, purchase_amount?: float|string|null, account_id?: int|string|null}  $data
      */
     public function execute(array $data): Asset
     {
         return DB::transaction(function () use ($data) {
             $asset = Asset::create([
                 'name' => $data['name'],
-                'category' => $data['category'] ?? null,
                 'purchase_date' => $data['purchase_date'] ?? null,
                 'created_by' => Auth::id(),
             ]);
+
+            if (($data['asset_type'] ?? 'existing') === 'new') {
+                $this->addTransaction->execute($asset, [
+                    'type' => AssetTransactionType::Purchase->value,
+                    'amount' => $data['purchase_amount'],
+                    'account_id' => $data['account_id'],
+                    'note' => 'New asset',
+                ]);
+
+                return $asset->fresh();
+            }
 
             $openingValue = round((float) ($data['opening_value'] ?? 0), 2);
 

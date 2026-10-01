@@ -18,9 +18,13 @@ export default function FinancialPositionSectionRow({ label, section, showBreakd
 
     if (!showBreakdown || section.breakdown.length === 0) {
         return (
-            <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">{label}</span>
-                <span className="tabular-nums">{money(section.total)}</span>
+            <div className="flex items-center justify-between gap-2 text-sm">
+                {/* The spacer keeps the label on the same left edge as rows that have a chevron. */}
+                <span className="text-muted-foreground flex min-w-0 items-center gap-1">
+                    <span className="size-3.5 shrink-0" aria-hidden="true" />
+                    {label}
+                </span>
+                <span className="shrink-0 tabular-nums">{money(section.total)}</span>
             </div>
         );
     }
@@ -36,13 +40,13 @@ export default function FinancialPositionSectionRow({ label, section, showBreakd
                     )}
                     {label}
                 </span>
-                <span className="tabular-nums">{money(section.total)}</span>
+                <span className="shrink-0 tabular-nums">{money(section.total)}</span>
             </CollapsibleTrigger>
             <CollapsibleContent className="mt-1 space-y-0.5 border-l pl-4">
                 {section.breakdown.map((row) => (
-                    <div key={row.name} className="flex justify-between text-xs">
-                        <span className="text-muted-foreground truncate">{row.name}</span>
-                        <span className="tabular-nums">{money(row.amount)}</span>
+                    <div key={row.name} className="flex justify-between gap-2 text-xs">
+                        <span className="text-muted-foreground min-w-0 truncate">{row.name}</span>
+                        <span className="shrink-0 tabular-nums">{money(row.amount)}</span>
                     </div>
                 ))}
             </CollapsibleContent>

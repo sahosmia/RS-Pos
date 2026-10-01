@@ -193,11 +193,11 @@ class FinancialPositionReport
         $balances = DB::table('staff_ledger')
             ->join('staff_transaction_types', 'staff_ledger.staff_transaction_type_id', '=', 'staff_transaction_types.id')
             ->selectRaw(
-                "staff_ledger.staff_id, SUM(CASE WHEN staff_transaction_types.effect_on_balance = 'increase' THEN staff_ledger.amount ELSE -staff_ledger.amount END) as balance",
+                "staff_ledger.staff_id, SUM(CASE WHEN staff_transaction_types.effect_on_balance = 'increase' THEN staff_ledger.amount WHEN staff_transaction_types.effect_on_balance = 'decrease' THEN -staff_ledger.amount ELSE 0 END) as balance",
             )
             ->where('staff_ledger.created_at', '<=', $endDate)
             ->groupBy('staff_ledger.staff_id')
-            ->havingRaw("SUM(CASE WHEN staff_transaction_types.effect_on_balance = 'increase' THEN staff_ledger.amount ELSE -staff_ledger.amount END) != 0")
+            ->havingRaw("SUM(CASE WHEN staff_transaction_types.effect_on_balance = 'increase' THEN staff_ledger.amount WHEN staff_transaction_types.effect_on_balance = 'decrease' THEN -staff_ledger.amount ELSE 0 END) != 0")
             ->get()
             ->keyBy('staff_id');
 

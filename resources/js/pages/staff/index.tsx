@@ -195,7 +195,7 @@ export default function StaffIndex({ staff, investors }: StaffIndexProps) {
                     error={form.errors.joining_date}
                 />
 
-                <div className="grid gap-2">
+                <div className="grid min-w-0 content-start gap-2">
                     <Label htmlFor="salary_amount">Monthly Salary</Label>
                     <MoneyInput
                         id="salary_amount"

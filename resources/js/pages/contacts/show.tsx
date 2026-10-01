@@ -318,7 +318,7 @@ export default function ContactShow({ contact, ledger, ledgerFilters, payments, 
 
                     <TabsContent value="documents" className="space-y-4">
                         <form onSubmit={uploadDocument} className="flex items-end gap-2">
-                            <div className="grid gap-2">
+                            <div className="grid min-w-0 content-start gap-2">
                                 <Input
                                     type="file"
                                     accept="application/pdf,image/*"

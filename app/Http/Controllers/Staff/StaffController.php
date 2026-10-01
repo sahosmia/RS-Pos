@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Staff;
 
+use App\Enums\BalanceEffect;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Staff\StoreStaffRequest;
 use App\Http\Requests\Staff\UpdateStaffRequest;
@@ -10,6 +11,7 @@ use App\Models\Investor;
 use App\Models\Staff;
 use App\Models\StaffLedger;
 use App\Models\StaffTransactionType;
+use Database\Seeders\StaffTransactionTypeSeeder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
@@ -70,13 +72,18 @@ class StaffController extends Controller
             ->orderBy('id')
             ->get()
             ->map(function (StaffLedger $entry) use (&$runningBalance) {
-                $delta = $entry->type->effect_on_balance->value === 'increase' ? $entry->amount : -$entry->amount;
+                $delta = match ($entry->type->effect_on_balance) {
+                    BalanceEffect::Increase => $entry->amount,
+                    BalanceEffect::Decrease => -$entry->amount,
+                    BalanceEffect::None => 0.0,
+                };
                 $runningBalance += $delta;
 
                 return [
                     'id' => $entry->id,
                     'type' => $entry->type->only(['id', 'name']),
-                    'amount' => $delta,
+                    // A no-effect type (Salary) still shows what was paid, even though the balance doesn't move.
+                    'amount' => $entry->type->effect_on_balance === BalanceEffect::None ? $entry->amount : $delta,
                     'account' => $entry->account?->only(['id', 'name']),
                     'note' => $entry->note,
                     'created_at' => $entry->created_at->toDateString(),
@@ -95,7 +102,12 @@ class StaffController extends Controller
                 'balance_label' => $staff->balance_label,
             ],
             'transactions' => $rows,
-            'transactionTypes' => StaffTransactionType::query()->orderBy('name')->get(['id', 'name', 'effect_on_balance', 'nature']),
+            // Only the three active types — older ones (Salary Charge/Payment, Loan Given, Adjustment) stay in
+            // the ledger history but can't be picked for new entries.
+            'transactionTypes' => StaffTransactionType::query()
+                ->whereIn('name', StaffTransactionTypeSeeder::ACTIVE_TYPES)
+                ->orderBy('name')
+                ->get(['id', 'name', 'effect_on_balance', 'nature']),
             'accounts' => Account::query()->active()->orderBy('name')->get(['id', 'name', 'current_balance', 'is_default']),
         ]);
     }

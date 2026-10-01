@@ -60,23 +60,22 @@ export default function FinancialPosition({ report: initialReport }: FinancialPo
                         title="Financial Position"
                         description="যেকোনো তারিখ পর্যন্ত হিসাব — প্রতিটা module-এর নিজস্ব ledger থেকে সরাসরি"
                     />
-                    <div className="flex items-end gap-2">
-                        <FormInput
-                            id="end_date"
-                            type="date"
-                            value={endDate}
-                            onChange={(e) => handleEndDateChange(e.target.value)}
-                            className="h-9 w-40"
-                        />
-                    </div>
+                    <FormInput
+                        id="end_date"
+                        label="As of"
+                        type="date"
+                        value={endDate}
+                        onChange={(e) => handleEndDateChange(e.target.value)}
+                        className="w-44"
+                    />
                 </div>
 
                 {error && (
                     <div className="border-destructive/50 bg-destructive/10 text-destructive rounded-lg border p-3 text-sm">{error}</div>
                 )}
 
-                <div className="grid gap-4 lg:grid-cols-2">
-                    <div className="space-y-2 rounded-lg border p-4">
+                <div className="grid items-start gap-4 lg:grid-cols-2">
+                    <div className="flex min-w-0 flex-col gap-2 rounded-lg border p-4">
                         <h3 className="font-medium">Liabilities / DR</h3>
                         <FinancialPositionSectionRow label="Capital" section={report.liabilities.investor_capital} />
                         <FinancialPositionSectionRow label="Company Loan" section={report.liabilities.company_loans} />
@@ -92,20 +91,20 @@ export default function FinancialPosition({ report: initialReport }: FinancialPo
                             <span>{report.liabilities.net_profit < 0 ? 'Loss' : 'Gross Profit'}</span>
                             <span className="tabular-nums">{money(report.liabilities.net_profit)}</span>
                         </div>
-                        <div className="flex justify-between border-t pt-2 font-medium">
+                        <div className="flex justify-between gap-2 border-t pt-2 font-medium">
                             <span>Total Liability</span>
                             <span className="tabular-nums">{money(report.liabilities.total)}</span>
                         </div>
                     </div>
 
-                    <div className="space-y-2 rounded-lg border p-4">
+                    <div className="flex min-w-0 flex-col gap-2 rounded-lg border p-4">
                         <h3 className="font-medium">Assets / CR</h3>
                         <FinancialPositionSectionRow label="Closing Stock" section={report.assets.closing_stock} showBreakdown={false} />
                         <FinancialPositionSectionRow label="Sundry Debtors" section={report.assets.sundry_debtors} />
                         <FinancialPositionSectionRow label="Company / Staff Advances" section={report.assets.staff_advances} />
                         <FinancialPositionSectionRow label="Cash at Bank" section={report.assets.cash_and_bank} />
                         <FinancialPositionSectionRow label="Other Assets" section={report.assets.other_assets} />
-                        <div className="flex justify-between border-t pt-2 font-medium">
+                        <div className="flex justify-between gap-2 border-t pt-2 font-medium">
                             <span>Total Assets</span>
                             <span className="tabular-nums">{money(report.assets.total)}</span>
                         </div>

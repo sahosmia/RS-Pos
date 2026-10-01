@@ -1,3 +1,4 @@
+import { MetricCard, MetricGrid } from '@/components/shared/metric-card';
 import HeadingSmall from '@/components/heading-small';
 import RefundPurchaseReturnModal from '@/components/purchases/purchase-returns/refund-purchase-return-modal';
 import ContactLink from '@/components/shared/contact-link';
@@ -48,26 +49,16 @@ export default function PurchaseReturnShow({ return: purchaseReturn, accounts }:
                     {!fullyRefunded && <Button onClick={() => setRefundOpen(true)}>Refund Payment</Button>}
                 </div>
 
-                <div className="grid gap-4 sm:grid-cols-4">
-                    <div className="rounded-lg border p-4">
-                        <p className="text-muted-foreground text-sm">Return Amount</p>
-                        <p className="text-xl font-semibold tabular-nums">{money(purchaseReturn.total_amount)}</p>
-                    </div>
-                    <div className="rounded-lg border p-4">
-                        <p className="text-muted-foreground text-sm">Refunded / Remaining</p>
-                        <p className="text-xl font-semibold tabular-nums">
-                            {money(purchaseReturn.refunded_amount)} / {money(purchaseReturn.remaining_refundable)}
-                        </p>
-                    </div>
-                    <div className="rounded-lg border p-4">
-                        <p className="text-muted-foreground text-sm">Supplier Balance</p>
-                        <p className="text-xl font-semibold tabular-nums">{money(purchaseReturn.supplier.balance)}</p>
-                    </div>
-                    <div className="rounded-lg border p-4">
-                        <p className="text-muted-foreground text-sm">Reason</p>
-                        <p className="text-sm">{purchaseReturn.reason ?? '—'}</p>
-                    </div>
-                </div>
+                <MetricGrid>
+                    <MetricCard label="Return Amount" value={money(purchaseReturn.total_amount)} accent="danger" />
+                    <MetricCard
+                        label="Refunded / Remaining"
+                        value={`${money(purchaseReturn.refunded_amount)} / ${money(purchaseReturn.remaining_refundable)}`}
+                        accent="info"
+                    />
+                    <MetricCard label="Supplier Balance" value={money(purchaseReturn.supplier.balance)} accent="warning" />
+                    <MetricCard label="Reason" value={purchaseReturn.reason ?? '—'} />
+                </MetricGrid>
 
                 <div className="overflow-x-auto rounded-lg border">
                     <table className="w-full text-sm">

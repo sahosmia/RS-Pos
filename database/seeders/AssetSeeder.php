@@ -40,7 +40,6 @@ class AssetSeeder extends Seeder
         // Shop Refrigerator — opening value, then an addition (AC installed).
         $fridge = $createAsset->execute([
             'name' => 'Shop Refrigerator',
-            'category' => 'Equipment',
             'purchase_date' => Carbon::today()->subYear()->toDateString(),
             'opening_value' => 15000,
         ]);
@@ -49,7 +48,6 @@ class AssetSeeder extends Seeder
         // Delivery Van — opening value only, still in use.
         $createAsset->execute([
             'name' => 'Delivery Van',
-            'category' => 'Vehicle',
             'purchase_date' => Carbon::today()->subYears(2)->toDateString(),
             'opening_value' => 500000,
         ]);
@@ -57,7 +55,6 @@ class AssetSeeder extends Seeder
         // Old Display Rack — sold at a gain over its book value.
         $rack = $createAsset->execute([
             'name' => 'Old Display Rack',
-            'category' => 'Furniture',
             'purchase_date' => Carbon::today()->subYears(3)->toDateString(),
             'opening_value' => 5000,
         ]);

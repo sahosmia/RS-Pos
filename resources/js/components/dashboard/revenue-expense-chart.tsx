@@ -179,7 +179,7 @@ export default function RevenueExpenseChart({ title, data }: RevenueExpenseChart
     };
 
     return (
-        <div className="bg-card rounded-xl border p-4 shadow-xs">
+        <div className="bg-card h-full rounded-xl border p-4 shadow-xs">
             <div className="mb-4 flex items-center gap-3 border-b pb-3">
                 <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-violet-100 text-violet-600 dark:bg-violet-950 dark:text-violet-300">
                     <BarChart3 className="size-5" />

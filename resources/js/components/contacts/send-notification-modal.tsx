@@ -79,7 +79,7 @@ export default function SendNotificationModal({ open, onOpenChange, recipients, 
             processing={form.processing}
             onSubmit={submit}
         >
-            <div className="grid gap-2">
+            <div className="grid min-w-0 content-start gap-2">
                 <Label htmlFor="channel">{t('contactNotification', 'channel')}</Label>
                 <Select value={form.data.channel} onValueChange={(value) => form.setData('channel', value as MessageChannel)}>
                     <SelectTrigger id="channel">
@@ -108,7 +108,7 @@ export default function SendNotificationModal({ open, onOpenChange, recipients, 
                 />
             )}
 
-            <div className="grid gap-2">
+            <div className="grid min-w-0 content-start gap-2">
                 <Label htmlFor="message">{t('contactNotification', 'message')}</Label>
                 <Textarea
                     id="message"

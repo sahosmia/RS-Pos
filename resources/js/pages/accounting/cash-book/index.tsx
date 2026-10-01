@@ -246,7 +246,7 @@ export default function CashBookIndex({ cashBook, entries, categories, filters, 
                     selectedCount={selection.selectedIds.length}
                     onExport={handleExport}
                     filterSlot={
-                        <div className="grid gap-2">
+                        <div className="grid min-w-0 content-start gap-2">
                             <Label htmlFor="category_filter">Category</Label>
                             <Select
                                 value={filters.category_id ? String(filters.category_id) : 'all'}
@@ -337,7 +337,7 @@ export default function CashBookIndex({ cashBook, entries, categories, filters, 
                     />
                 )}
 
-                <div className="grid gap-2">
+                <div className="grid min-w-0 content-start gap-2">
                     <Label htmlFor="amount">Amount</Label>
                     <MoneyInput
                         id="amount"
@@ -358,7 +358,7 @@ export default function CashBookIndex({ cashBook, entries, categories, filters, 
                     required
                 />
 
-                <div className="grid gap-2">
+                <div className="grid min-w-0 content-start gap-2">
                     <Label htmlFor="entry_note">Note</Label>
                     <Textarea id="entry_note" value={entryForm.data.note} onChange={(e) => entryForm.setData('note', e.target.value)} />
                     <InputError message={entryForm.errors.note} />

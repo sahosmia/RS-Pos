@@ -299,7 +299,7 @@ export default function EmiInstallmentsIndex({ installments, accounts, filters }
                     onExport={handleExport}
                     filterSlot={
                         <div className="flex flex-wrap items-end gap-3">
-                            <div className="grid gap-2">
+                            <div className="grid min-w-0 content-start gap-2">
                                 <Label htmlFor="status">Status</Label>
                                 <Select
                                     value={filters.status ?? 'all'}
@@ -368,7 +368,7 @@ export default function EmiInstallmentsIndex({ installments, accounts, filters }
                     error={payForm.errors.account_id}
                 />
 
-                <div className="grid gap-2">
+                <div className="grid min-w-0 content-start gap-2">
                     <Label htmlFor="amount">Amount</Label>
                     <MoneyInput id="amount" value={payForm.data.amount} onChange={(e) => payForm.setData('amount', Number(e.target.value))} />
                     <InputError message={payForm.errors.amount} />

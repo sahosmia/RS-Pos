@@ -70,7 +70,7 @@ export default function ConfirmPurchaseModal({ open, onOpenChange, purchase, acc
             </p>
 
             {supplierCredit > 0 && (
-                <div className="grid gap-2">
+                <div className="grid min-w-0 content-start gap-2">
                     <FormInput
                         id="credit_applied"
                         label={`Apply Supplier Credit (available: ${money(supplierCredit)})`}
@@ -89,7 +89,7 @@ export default function ConfirmPurchaseModal({ open, onOpenChange, purchase, acc
             {serialTrackedItems.length > 0 && (
                 <div className="space-y-3">
                     {serialTrackedItems.map((item) => (
-                        <div key={item.id} className="grid gap-2">
+                        <div key={item.id} className="grid min-w-0 content-start gap-2">
                             <Label>
                                 {item.product.name} — {item.quantity}টা unit-এর serial number
                             </Label>

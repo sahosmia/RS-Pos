@@ -162,7 +162,7 @@ export default function PayDueModal({ open, onOpenChange, contact, accounts, sal
                 />
             )}
 
-            <div className="grid gap-2">
+            <div className="grid min-w-0 content-start gap-2">
                 <Label htmlFor="account_id">{t('common', 'account')}</Label>
                 <Select
                     value={form.data.account_id ? String(form.data.account_id) : ''}
@@ -182,14 +182,14 @@ export default function PayDueModal({ open, onOpenChange, contact, accounts, sal
                 <InputError message={form.errors.account_id} />
             </div>
 
-            <div className="grid gap-2">
+            <div className="grid min-w-0 content-start gap-2">
                 <Label htmlFor="amount">{t('common', 'amount')}</Label>
                 <MoneyInput id="amount" value={form.data.amount} onChange={(e) => onAmountChange(Number(e.target.value))} required />
                 {targetedDue !== null && <p className="text-muted-foreground text-xs">Capped at the invoice&apos;s remaining due, {money(targetedDue)}</p>}
                 <InputError message={form.errors.amount} />
             </div>
 
-            <div className="grid gap-2">
+            <div className="grid min-w-0 content-start gap-2">
                 <Label htmlFor="note">{t('common', 'note')}</Label>
                 <Textarea id="note" value={form.data.note} onChange={(e) => form.setData('note', e.target.value)} />
                 <InputError message={form.errors.note} />

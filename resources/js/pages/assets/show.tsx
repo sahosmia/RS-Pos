@@ -1,3 +1,4 @@
+import { MetricCard, MetricGrid } from '@/components/shared/metric-card';
 import AddAssetTransactionModal from '@/components/assets/add-asset-transaction-modal';
 import HeadingSmall from '@/components/heading-small';
 import EmptyState from '@/components/shared/empty-state';
@@ -41,20 +42,14 @@ export default function AssetShow({ asset, transactions, accounts }: AssetShowPr
 
             <div className="space-y-6 px-4 py-6">
                 <div className="flex flex-wrap items-start justify-between gap-4">
-                    <HeadingSmall title={asset.name} description={asset.category ?? undefined} />
+                    <HeadingSmall title={asset.name} />
                     <Button onClick={() => setAddOpen(true)}>Add Transaction</Button>
                 </div>
 
-                <div className="grid gap-4 sm:grid-cols-2">
-                    <div className="rounded-lg border p-4">
-                        <p className="text-muted-foreground text-sm">Current Value</p>
-                        <p className="text-xl font-semibold tabular-nums">{money(asset.current_value)}</p>
-                    </div>
-                    <div className="rounded-lg border p-4">
-                        <p className="text-muted-foreground text-sm">Purchase Date</p>
-                        <p className="text-xl font-semibold">{asset.purchase_date ?? '—'}</p>
-                    </div>
-                </div>
+                <MetricGrid columns={2}>
+                    <MetricCard label="Current Value" value={money(asset.current_value)} accent="success" />
+                    <MetricCard label="Purchase Date" value={asset.purchase_date ?? '—'} />
+                </MetricGrid>
 
                 {rows.length === 0 ? (
                     <EmptyState title="No transactions yet" description="Add Transaction দিয়ে শুরু করুন" />

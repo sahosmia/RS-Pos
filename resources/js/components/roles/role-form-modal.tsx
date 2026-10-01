@@ -87,7 +87,7 @@ export default function RoleFormModal({ open, onOpenChange, editing, permissions
             onSubmit={submit}
             contentClassName="sm:max-w-4xl lg:max-w-5xl max-h-[90vh] overflow-y-auto"
         >
-            <div className="grid gap-2">
+            <div className="grid min-w-0 content-start gap-2">
                 <FormInput
                     id="name"
                     label="Role name"

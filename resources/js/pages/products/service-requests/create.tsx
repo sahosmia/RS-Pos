@@ -206,7 +206,7 @@ export default function ServiceRequestsCreate({ query, items, staff, accounts }:
 
                                 {!selected.is_next_free && (
                                     <div className="grid gap-4 sm:grid-cols-2">
-                                        <div className="grid gap-2">
+                                        <div className="grid min-w-0 content-start gap-2">
                                             <Label htmlFor="charge_amount">{t('serviceRequests', 'charge_amount')}</Label>
                                             <MoneyInput
                                                 id="charge_amount"
@@ -229,7 +229,7 @@ export default function ServiceRequestsCreate({ query, items, staff, accounts }:
                                     </div>
                                 )}
 
-                                <div className="grid gap-2">
+                                <div className="grid min-w-0 content-start gap-2">
                                     <Label htmlFor="note">{t('serviceRequests', 'note')}</Label>
                                     <Textarea id="note" value={form.data.note} onChange={(e) => form.setData('note', e.target.value)} rows={2} />
                                     <InputError message={form.errors.note} />

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\CompanyLoans;
 
+use App\Actions\CompanyLoan\CreateCompanyLoanAction;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\CompanyLoan\StoreCompanyLoanRequest;
 use App\Http\Requests\CompanyLoan\UpdateCompanyLoanRequest;
@@ -12,7 +13,6 @@ use App\Models\Settings;
 use App\Queries\CompanyLoan\CompanyLoanQuery;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -45,6 +45,7 @@ class CompanyLoanController extends Controller
         return Inertia::render('company-loans/index', [
             'loans' => $loans,
             'totalOutstanding' => (float) CompanyLoan::query()->sum('outstanding_balance'),
+            'accounts' => Account::query()->active()->orderBy('name')->get(['id', 'name', 'current_balance', 'is_default']),
             'filters' => [
                 'sort' => $validated['sort'] ?? 'lender_name',
                 'direction' => $validated['direction'] ?? 'asc',
@@ -54,13 +55,13 @@ class CompanyLoanController extends Controller
     }
 
     /**
-     * `loan_amount`/`interest_rate` are purely informational (see
-     * UpdateCompanyLoanRequest) — no journal/ledger effect here at all;
-     * actual cash only moves via AddLoanTransactionAction afterward.
+     * Creating a loan posts its `loan_amount` as the opening balance (see CreateCompanyLoanAction).
+     * Editing afterwards only changes the informational terms — no journal/ledger effect;
+     * every later balance change goes through AddLoanTransactionAction.
      */
-    public function store(StoreCompanyLoanRequest $request): RedirectResponse
+    public function store(StoreCompanyLoanRequest $request, CreateCompanyLoanAction $createLoan): RedirectResponse
     {
-        CompanyLoan::create([...$request->validated(), 'created_by' => Auth::id()]);
+        $createLoan->execute($request->validated());
 
         return to_route('company-loans.index');
     }
