@@ -17,6 +17,7 @@ import { type BreadcrumbItem } from '@/types';
 import { type StaffListItem, type StaffStatusValue } from '@/types/models';
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import { FormEventHandler, useState } from 'react';
+import { toast } from 'sonner';
 
 const breadcrumbs: BreadcrumbItem[] = [{ title: 'Staff', href: '/staff' }];
 
@@ -66,7 +67,14 @@ export default function StaffIndex({ staff, investors }: StaffIndexProps) {
     const submit: FormEventHandler = (e) => {
         e.preventDefault();
 
-        const options = { preserveScroll: true, onSuccess: () => setModalOpen(false) };
+        const isEditing = editing !== null;
+        const options = {
+            preserveScroll: true,
+            onSuccess: () => {
+                toast.success(isEditing ? 'Staff updated.' : 'Staff added.');
+                setModalOpen(false);
+            },
+        };
 
         if (editing) {
             form.patch(route('staff.update', editing.id), options);
@@ -80,7 +88,14 @@ export default function StaffIndex({ staff, investors }: StaffIndexProps) {
             return;
         }
 
-        router.delete(route('staff.destroy', deleting.id), { preserveScroll: true, onFinish: () => setDeleting(null) });
+        const name = deleting.name;
+
+        router.delete(route('staff.destroy', deleting.id), {
+            preserveScroll: true,
+            onSuccess: () => toast.success(`"${name}" deleted.`),
+            onError: (errors) => toast.error(errors.staff ?? 'Could not delete staff.'),
+            onFinish: () => setDeleting(null),
+        });
     };
 
     const investorOptions = investors.map((investor) => ({ value: String(investor.id), label: investor.name }));
@@ -111,17 +126,22 @@ export default function StaffIndex({ staff, investors }: StaffIndexProps) {
                         <table className="w-full text-sm">
                             <thead className="bg-muted/50 text-muted-foreground">
                                 <tr>
+                                    <th className="w-10 px-4 py-2"></th>
                                     <th className="px-4 py-2 text-left font-medium">Name</th>
                                     <th className="px-4 py-2 text-left font-medium">Designation</th>
                                     <th className="px-4 py-2 text-right font-medium">Salary</th>
                                     <th className="px-4 py-2 text-right font-medium">Balance</th>
                                     <th className="px-4 py-2 text-left font-medium">Status</th>
-                                    <th className="px-4 py-2 text-right font-medium">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {staff.map((member) => (
                                     <tr key={member.id} className="border-t">
+                                        <td className="w-10 px-4 py-2">
+                                            <DataTableRowActions
+                                                actions={getStaffActions(member, { onEdit: openEdit, onDelete: setDeleting })}
+                                            />
+                                        </td>
                                         <td className="px-4 py-2">
                                             <Link href={route('staff.show', member.id)} className="font-medium underline-offset-2 hover:underline">
                                                 {member.name}
@@ -135,13 +155,6 @@ export default function StaffIndex({ staff, investors }: StaffIndexProps) {
                                             <Badge variant={member.status === 'active' ? 'secondary' : 'outline'}>
                                                 {member.status === 'active' ? 'Active' : 'Inactive'}
                                             </Badge>
-                                        </td>
-                                        <td className="px-4 py-2">
-                                            <div className="flex justify-end">
-                                                <DataTableRowActions
-                                                    actions={getStaffActions(member, { onEdit: openEdit, onDelete: setDeleting })}
-                                                />
-                                            </div>
                                         </td>
                                     </tr>
                                 ))}

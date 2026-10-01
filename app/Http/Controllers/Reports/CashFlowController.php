@@ -33,6 +33,9 @@ class CashFlowController extends Controller
         ]);
 
         $preset = isset($validated['preset']) ? DateRangePreset::tryFrom($validated['preset']) : null;
+        if (! $preset && ! isset($validated['from']) && ! isset($validated['to'])) {
+            $preset = DateRangePreset::Today;
+        }
 
         if ($preset && $preset !== DateRangePreset::Custom) {
             $range = $preset->resolve();

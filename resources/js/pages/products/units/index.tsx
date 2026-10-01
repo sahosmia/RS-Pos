@@ -12,6 +12,7 @@ import { type BreadcrumbItem } from '@/types';
 import { type UnitListItem } from '@/types/models';
 import { Head, router, useForm } from '@inertiajs/react';
 import { FormEventHandler, useState } from 'react';
+import { toast } from 'sonner';
 
 interface UnitsIndexProps {
     units: UnitListItem[];
@@ -54,7 +55,14 @@ export default function UnitsIndex({ units }: UnitsIndexProps) {
     const submit: FormEventHandler = (e) => {
         e.preventDefault();
 
-        const options = { preserveScroll: true, onSuccess: () => setModalOpen(false) };
+        const isEditing = editing !== null;
+        const options = {
+            preserveScroll: true,
+            onSuccess: () => {
+                toast.success(isEditing ? 'Unit updated.' : 'Unit created.');
+                setModalOpen(false);
+            },
+        };
 
         if (editing) {
             form.patch(route('units.update', editing.id), options);
@@ -68,8 +76,12 @@ export default function UnitsIndex({ units }: UnitsIndexProps) {
             return;
         }
 
+        const name = deleting.name;
+
         router.delete(route('units.destroy', deleting.id), {
             preserveScroll: true,
+            onSuccess: () => toast.success(`"${name}" deleted.`),
+            onError: (errors) => toast.error(errors.unit ?? 'Could not delete unit.'),
             onFinish: () => setDeleting(null),
         });
     };

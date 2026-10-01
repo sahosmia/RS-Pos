@@ -13,6 +13,7 @@ import { type BreadcrumbItem } from '@/types';
 import { type CategoryListItem } from '@/types/models';
 import { Head, router, useForm } from '@inertiajs/react';
 import { FormEventHandler, useState } from 'react';
+import { toast } from 'sonner';
 
 interface CategoriesIndexProps {
     categories: CategoryListItem[];
@@ -56,7 +57,14 @@ export default function CategoriesIndex({ categories, allCategories }: Categorie
     const submit: FormEventHandler = (e) => {
         e.preventDefault();
 
-        const options = { preserveScroll: true, onSuccess: () => setModalOpen(false) };
+        const isEditing = editing !== null;
+        const options = {
+            preserveScroll: true,
+            onSuccess: () => {
+                toast.success(isEditing ? 'Category updated.' : 'Category created.');
+                setModalOpen(false);
+            },
+        };
 
         if (editing) {
             form.patch(route('categories.update', editing.id), options);
@@ -70,8 +78,12 @@ export default function CategoriesIndex({ categories, allCategories }: Categorie
             return;
         }
 
+        const name = deleting.name;
+
         router.delete(route('categories.destroy', deleting.id), {
             preserveScroll: true,
+            onSuccess: () => toast.success(`"${name}" deleted.`),
+            onError: (errors) => toast.error(errors.category ?? 'Could not delete category.'),
             onFinish: () => setDeleting(null),
         });
     };

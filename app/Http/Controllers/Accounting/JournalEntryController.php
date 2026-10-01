@@ -38,6 +38,7 @@ class JournalEntryController extends Controller
         $entries->getCollection()->transform(fn (JournalEntry $entry) => [
             'id' => $entry->id,
             'entry_date' => $entry->entry_date->toDateString(),
+            'created_at' => $entry->created_at?->toIso8601String(),
             'description' => $entry->description,
             'reference_type' => $entry->reference_type,
             'reference_id' => $entry->reference_id,

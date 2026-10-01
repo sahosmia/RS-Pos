@@ -12,6 +12,7 @@ import { type BreadcrumbItem } from '@/types';
 import { type ExpenseCategoryListItem } from '@/types/models';
 import { Head, router, useForm } from '@inertiajs/react';
 import { FormEventHandler, useState } from 'react';
+import { toast } from 'sonner';
 
 interface ExpenseCategoriesIndexProps {
     categories: ExpenseCategoryListItem[];
@@ -48,7 +49,14 @@ export default function ExpenseCategoriesIndex({ categories, allCategories }: Ex
     const submit: FormEventHandler = (e) => {
         e.preventDefault();
 
-        const options = { preserveScroll: true, onSuccess: () => setModalOpen(false) };
+        const isEditing = editing !== null;
+        const options = {
+            preserveScroll: true,
+            onSuccess: () => {
+                toast.success(isEditing ? 'Category updated.' : 'Category created.');
+                setModalOpen(false);
+            },
+        };
 
         if (editing) {
             form.patch(route('expense-categories.update', editing.id), options);
@@ -62,8 +70,12 @@ export default function ExpenseCategoriesIndex({ categories, allCategories }: Ex
             return;
         }
 
+        const name = deleting.name;
+
         router.delete(route('expense-categories.destroy', deleting.id), {
             preserveScroll: true,
+            onSuccess: () => toast.success(`"${name}" deleted.`),
+            onError: (errors) => toast.error(errors.expense_category ?? 'Could not delete category.'),
             onFinish: () => setDeleting(null),
         });
     };
