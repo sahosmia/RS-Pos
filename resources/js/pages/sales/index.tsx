@@ -23,7 +23,7 @@ import { useTableSelection } from '@/hooks/table/use-table-selection';
 import { useMoneyFormat } from '@/hooks/use-money-format';
 import { useTableViewMode } from '@/hooks/use-table-view-mode';
 import AppLayout from '@/layouts/app-layout';
-import { formatDate } from '@/lib/format-date';
+import { formatDateTime } from '@/lib/format-date';
 import { cn } from '@/lib/utils';
 import { type BreadcrumbItem, type SharedData } from '@/types';
 import { type Account, type CustomerOption, type Paginated, type PaymentStatusValue, type SaleListItem, type SaleStatusValue } from '@/types/models';
@@ -231,7 +231,7 @@ export default function SalesIndex({ sales, stats, accounts, initialCustomer, fi
                                 <div className="text-muted-foreground truncate text-xs">
                                     <ContactLink id={sale.customer.id} name={sale.customer.name} />
                                 </div>
-                                <div className="text-muted-foreground truncate text-xs">{formatDate(sale.sale_date)}</div>
+                                <div className="text-muted-foreground truncate text-xs">{formatDateTime(sale.created_at ?? sale.sale_date)}</div>
                             </div>
                         </div>
                         <DataTableRowActions

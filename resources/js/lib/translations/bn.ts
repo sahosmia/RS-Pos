@@ -49,6 +49,7 @@ const bn: Dictionary = {
         sales: 'বিক্রি',
         sale_returns: 'বিক্রি ফেরত',
         sales_order: 'সেলস অর্ডার',
+        draft_sales: 'ড্রাফট সেলস লিস্ট',
         add_sale: 'বিক্রি যোগ করুন',
         emi_installments: 'EMI কিস্তি',
         product: 'পণ্য',
