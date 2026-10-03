@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { useTranslation } from '@/hooks/use-translation';
+import { useUnsavedChangesWarning } from '@/hooks/use-unsaved-changes-warning';
 import { cn } from '@/lib/utils';
 import { type SharedData } from '@/types';
 import { type Brand, type Category, type ProductDetail, type ServicePlanPeriod, type Unit } from '@/types/models';
@@ -169,6 +170,8 @@ export default function ProductForm({ mode, product, categories, brands, units }
         service_plan: product?.service_plan ?? ([] as ServicePlanPeriod[]),
     });
 
+    const { bypass, UnsavedChangesModal } = useUnsavedChangesWarning(form.isDirty, form.processing);
+
     useEffect(() => {
         if (!pendingSelect) {
             return;
@@ -211,6 +214,7 @@ export default function ProductForm({ mode, product, categories, brands, units }
 
     const submit: FormEventHandler = (e) => {
         e.preventDefault();
+        bypass();
 
         const options = {
             forceFormData: true,
@@ -737,6 +741,8 @@ export default function ProductForm({ mode, product, categories, brands, units }
                     setLookupModal(null);
                 }}
             />
+
+            <UnsavedChangesModal />
         </>
     );
 }
