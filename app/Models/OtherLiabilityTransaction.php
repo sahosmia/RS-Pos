@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\OtherLiabilityTransactionType;
+use App\Models\Concerns\HasCreator;
 use Database\Factories\OtherLiabilityTransactionFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -12,6 +13,8 @@ class OtherLiabilityTransaction extends Model
 {
     /** @use HasFactory<OtherLiabilityTransactionFactory> */
     use HasFactory;
+
+    use HasCreator;
 
     /**
      * @var list<string>

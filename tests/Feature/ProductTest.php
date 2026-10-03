@@ -359,3 +359,43 @@ test('products export handles pap and tpp columns', function () {
         ->and($content)->toContain('500')
         ->and($content)->toContain('2000');
 });
+
+test('selling price is optional — a product without one is saved at 0, on create and on edit', function () {
+    $this->actingAs(User::factory()->create());
+    $unit = Unit::factory()->create();
+    $payload = [
+        'name' => 'Price Later',
+        'unit_id' => $unit->id,
+        'manage_stock' => true,
+        'is_for_sale' => true,
+        'is_active' => true,
+        'has_installation_service' => false,
+        'emi_available' => false,
+        'track_serial_number' => false,
+    ];
+
+    $this->post('/products', $payload)->assertSessionHasNoErrors();
+
+    $product = Product::where('name', 'Price Later')->firstOrFail();
+    expect($product->selling_price)->toBe(0.0);
+
+    $this->patch("/products/{$product->id}", [...$payload, 'selling_price' => 250])->assertSessionHasNoErrors();
+    expect($product->fresh()->selling_price)->toBe(250.0);
+
+    $this->patch("/products/{$product->id}", [...$payload, 'selling_price' => ''])->assertSessionHasNoErrors();
+    expect($product->fresh()->selling_price)->toBe(0.0);
+
+    $this->patch("/products/{$product->id}", [...$payload, 'selling_price' => -5])->assertSessionHasErrors('selling_price');
+});
+
+test('the product list has no date filter: an old product is always listed, and no date keys are sent back', function () {
+    $this->actingAs(User::factory()->create());
+    Product::factory()->create(['name' => 'Old Stock Item', 'created_at' => now()->subDays(40)]);
+
+    // A leftover `preset` in a bookmarked URL must not hide anything.
+    $this->get('/products?preset=today')->assertInertia(fn ($page) => $page
+        ->where('products.data.0.name', 'Old Stock Item')
+        ->missing('filters.preset')
+        ->missing('filters.from')
+        ->missing('filters.to'));
+});

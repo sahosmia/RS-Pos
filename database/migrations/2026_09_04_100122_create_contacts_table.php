@@ -29,9 +29,10 @@ return new class extends Migration
             $table->string('entity_type')->default('individual');
             $table->string('business_name')->nullable();
             $table->foreignId('customer_group_id')->nullable()->constrained()->nullOnDelete();
-            $table->decimal('balance', 15, 2)->default(0);
+            $table->decimal('balance', 19, 4)->default(0);
             $table->boolean('is_active')->default(true);
             $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('updated_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();
 
             $table->index('phone');

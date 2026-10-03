@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\AssetTransactionType;
+use App\Models\Concerns\HasCreator;
 use App\Models\Concerns\LogsActivityDefaults;
 use App\Traits\HasLedger;
 use Database\Factories\AssetFactory;
@@ -20,6 +21,7 @@ class Asset extends Model
     /** @use HasFactory<AssetFactory> */
     use HasFactory;
 
+    use HasCreator;
     use HasLedger;
     use LogsActivityDefaults;
 

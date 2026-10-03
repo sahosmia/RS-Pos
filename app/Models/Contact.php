@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\ContactEntityType;
 use App\Enums\ContactPrefix;
 use App\Enums\ContactType;
+use App\Models\Concerns\HasCreator;
 use App\Models\Concerns\LogsActivityDefaults;
 use Database\Factories\ContactFactory;
 use Illuminate\Database\Eloquent\Builder;
@@ -21,6 +22,7 @@ class Contact extends Model implements HasMedia
     /** @use HasFactory<ContactFactory> */
     use HasFactory;
 
+    use HasCreator;
     use InteractsWithMedia;
     use LogsActivityDefaults;
 

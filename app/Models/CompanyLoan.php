@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasCreator;
 use App\Models\Concerns\LogsActivityDefaults;
 use App\Traits\HasLedger;
 use Database\Factories\CompanyLoanFactory;
@@ -20,6 +21,7 @@ class CompanyLoan extends Model
     /** @use HasFactory<CompanyLoanFactory> */
     use HasFactory;
 
+    use HasCreator;
     use HasLedger;
     use LogsActivityDefaults;
 

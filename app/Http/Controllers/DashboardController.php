@@ -17,6 +17,8 @@ use App\Models\SaleItem;
 use App\Models\SaleReturn;
 use App\Models\Settings;
 use App\Support\FiscalYear;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Validation\Rule;
@@ -227,23 +229,18 @@ class DashboardController extends Controller
      */
     private function salesLast30Days(): array
     {
-        $start = Carbon::today()->subDays(29)->startOfDay();
-        $end = Carbon::today()->endOfDay();
-
-        $byDay = Sale::query()
-            ->where('status', SaleStatus::Confirmed)
-            ->whereBetween('sale_date', [$start, $end])
-            ->get(['sale_date', 'total_amount'])
-            ->groupBy(fn (Sale $sale) => $sale->sale_date->toDateString());
+        $byDay = $this->dailyTotals(
+            Sale::query()
+                ->where('status', SaleStatus::Confirmed)
+                ->whereBetween('sale_date', [Carbon::today()->subDays(29)->startOfDay(), Carbon::today()->endOfDay()]),
+            'sale_date',
+        );
 
         return collect(range(29, 0))
             ->map(function (int $daysAgo) use ($byDay) {
-                $day = Carbon::today()->subDays($daysAgo);
+                $day = Carbon::today()->subDays($daysAgo)->toDateString();
 
-                return [
-                    'date' => $day->toDateString(),
-                    'total' => round((float) ($byDay->get($day->toDateString())?->sum('total_amount') ?? 0), 2),
-                ];
+                return ['date' => $day, 'total' => round($byDay[$day] ?? 0.0, 2)];
             })
             ->values()
             ->all();
@@ -259,22 +256,19 @@ class DashboardController extends Controller
         $fiscalYear = FiscalYear::current(Settings::current()->fiscal_year_start_month);
         $fyStart = $fiscalYear['start'];
 
-        $byMonth = Sale::query()
-            ->where('status', SaleStatus::Confirmed)
-            ->whereBetween('sale_date', [$fiscalYear['start'], $fiscalYear['end']])
-            ->get(['sale_date', 'total_amount'])
-            ->groupBy(fn (Sale $sale) => $sale->sale_date->format('Y-m'));
+        $byMonth = $this->monthlyTotals(
+            Sale::query()
+                ->where('status', SaleStatus::Confirmed)
+                ->whereBetween('sale_date', [$fiscalYear['start'], $fiscalYear['end']]),
+            'sale_date',
+        );
 
         return collect(range(0, 11))
             ->map(function (int $i) use ($fyStart, $byMonth) {
                 $month = $fyStart->copy()->addMonths($i);
                 $key = $month->format('Y-m');
 
-                return [
-                    'month' => $key,
-                    'label' => $month->format('M Y'),
-                    'total' => round((float) ($byMonth->get($key)?->sum('total_amount') ?? 0), 2),
-                ];
+                return ['month' => $key, 'label' => $month->format('M Y'), 'total' => round($byMonth[$key] ?? 0.0, 2)];
             })
             ->values()
             ->all();
@@ -292,16 +286,17 @@ class DashboardController extends Controller
         $fiscalYear = FiscalYear::current(Settings::current()->fiscal_year_start_month);
         $fyStart = $fiscalYear['start'];
 
-        $revenueByMonth = Sale::query()
-            ->where('status', SaleStatus::Confirmed)
-            ->whereBetween('sale_date', [$fiscalYear['start'], $fiscalYear['end']])
-            ->get(['sale_date', 'total_amount'])
-            ->groupBy(fn (Sale $sale) => $sale->sale_date->format('Y-m'));
+        $revenueByMonth = $this->monthlyTotals(
+            Sale::query()
+                ->where('status', SaleStatus::Confirmed)
+                ->whereBetween('sale_date', [$fiscalYear['start'], $fiscalYear['end']]),
+            'sale_date',
+        );
 
-        $expenseByMonth = Expense::query()
-            ->whereBetween('expense_date', [$fiscalYear['start'], $fiscalYear['end']])
-            ->get(['expense_date', 'total_amount'])
-            ->groupBy(fn (Expense $expense) => $expense->expense_date->format('Y-m'));
+        $expenseByMonth = $this->monthlyTotals(
+            Expense::query()->whereBetween('expense_date', [$fiscalYear['start'], $fiscalYear['end']]),
+            'expense_date',
+        );
 
         return collect(range(0, 11))
             ->map(function (int $i) use ($fyStart, $revenueByMonth, $expenseByMonth) {
@@ -311,11 +306,48 @@ class DashboardController extends Controller
                 return [
                     'month' => $key,
                     'label' => $month->format('M Y'),
-                    'revenue' => round((float) ($revenueByMonth->get($key)?->sum('total_amount') ?? 0), 2),
-                    'expense' => round((float) ($expenseByMonth->get($key)?->sum('total_amount') ?? 0), 2),
+                    'revenue' => round($revenueByMonth[$key] ?? 0.0, 2),
+                    'expense' => round($expenseByMonth[$key] ?? 0.0, 2),
                 ];
             })
             ->values()
             ->all();
+    }
+
+    /**
+     * Sum of total_amount per calendar day, computed by the database (at most one row per day in
+     * the range) instead of loading every sale/expense as a model just to add them up in PHP.
+     *
+     * @param  Builder<Model>  $query
+     * @return array<string, float> keyed Y-m-d
+     */
+    private function dailyTotals($query, string $dateColumn): array
+    {
+        $totals = [];
+
+        foreach ($query->toBase()->selectRaw("{$dateColumn} as day, SUM(total_amount) as total")->groupBy($dateColumn)->get() as $row) {
+            $day = substr((string) $row->day, 0, 10);
+            $totals[$day] = ($totals[$day] ?? 0.0) + (float) $row->total;
+        }
+
+        return $totals;
+    }
+
+    /**
+     * Same, rolled up to months.
+     *
+     * @param  Builder<Model>  $query
+     * @return array<string, float> keyed Y-m
+     */
+    private function monthlyTotals($query, string $dateColumn): array
+    {
+        $totals = [];
+
+        foreach ($this->dailyTotals($query, $dateColumn) as $day => $total) {
+            $month = substr($day, 0, 7);
+            $totals[$month] = ($totals[$month] ?? 0.0) + $total;
+        }
+
+        return $totals;
     }
 }

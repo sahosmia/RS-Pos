@@ -34,4 +34,5 @@ enum AccountTransactionType: string
     case StaffLoan = 'staff_loan';
     case StaffAdvanceReturn = 'staff_advance_return';
     case EmiPayment = 'emi_payment';
+    case OtherIncome = 'other_income';
 }

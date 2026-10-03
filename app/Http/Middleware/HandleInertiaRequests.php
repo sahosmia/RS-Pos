@@ -48,12 +48,17 @@ class HandleInertiaRequests extends Middleware
                 'user' => $request->user(),
                 'permissions' => $request->user()?->getAllPermissions()->pluck('name') ?? [],
             ],
+            'exportLimits' => config('exports.limits'),
             'freshLogin' => (bool) $request->session()->get('freshLogin'),
             'shop' => function () {
                 $settings = Settings::currentOrNull();
+                $branding = $settings?->brandingUrls() ?? [];
 
                 return [
                     'shop_name' => $settings?->shop_name,
+                    'shop_logo_url' => $branding['logo'] ?? null,
+                    'shop_logo_small_url' => $branding['logo_small'] ?? null,
+                    'favicon_url' => $branding['favicon'] ?? null,
                     'currency_symbol' => $settings?->currency_symbol ?? '৳',
                     'emi_module_enabled' => (bool) $settings?->emi_module_enabled,
                     'serial_number_module_enabled' => (bool) $settings?->serial_number_module_enabled,
@@ -62,6 +67,7 @@ class HandleInertiaRequests extends Middleware
                     'pagination_allow_all' => $settings === null || (bool) $settings->pagination_allow_all,
                     'theme_color' => $settings?->theme_color?->value ?? ThemeColor::Neutral->value,
                     'menu_order' => $settings?->menu_order,
+                    'quick_actions' => $settings?->quick_actions,
                 ];
             },
         ]);

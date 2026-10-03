@@ -20,6 +20,7 @@ return new class extends Migration
             $table->foreignId('target_group_id')->nullable()->constrained('customer_groups')->nullOnDelete();
             $table->string('status')->default('draft');
             $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('updated_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();
 
             $table->index('status');

@@ -8,6 +8,8 @@ export interface LedgerRow {
     /** Signed: positive is money in, negative is money out. */
     amount: number;
     balance: number;
+    /** Name of the user who recorded this line — when any row has it, an "Added by" column appears. */
+    by?: string | null;
 }
 
 interface LedgerTableProps {
@@ -18,6 +20,7 @@ interface LedgerTableProps {
 
 export default function LedgerTable({ rows, broughtForward, broughtForwardLabel = 'Brought forward' }: LedgerTableProps) {
     const money = useMoneyFormat();
+    const showBy = rows.some((row) => row.by !== undefined);
 
     return (
         <div className="overflow-x-auto rounded-lg border">
@@ -29,6 +32,7 @@ export default function LedgerTable({ rows, broughtForward, broughtForwardLabel 
                         <th className="px-4 py-2 text-right font-medium">In</th>
                         <th className="px-4 py-2 text-right font-medium">Out</th>
                         <th className="px-4 py-2 text-right font-medium">Balance</th>
+                        {showBy && <th className="px-4 py-2 text-left font-medium">Added by</th>}
                     </tr>
                 </thead>
                 <tbody>
@@ -38,6 +42,7 @@ export default function LedgerTable({ rows, broughtForward, broughtForwardLabel 
                                 {broughtForwardLabel}
                             </td>
                             <td className="px-4 py-2 text-right tabular-nums">{money(broughtForward)}</td>
+                            {showBy && <td />}
                         </tr>
                     )}
 
@@ -48,6 +53,7 @@ export default function LedgerTable({ rows, broughtForward, broughtForwardLabel 
                             <td className="px-4 py-2 text-right tabular-nums">{row.amount > 0 ? money(row.amount) : ''}</td>
                             <td className="px-4 py-2 text-right tabular-nums">{row.amount < 0 ? money(Math.abs(row.amount)) : ''}</td>
                             <td className="px-4 py-2 text-right tabular-nums">{money(row.balance)}</td>
+                            {showBy && <td className="text-muted-foreground px-4 py-2 whitespace-nowrap">{row.by ?? '—'}</td>}
                         </tr>
                     ))}
                 </tbody>

@@ -148,6 +148,7 @@ export default function PayDueModal({ open, onOpenChange, contact, accounts, sal
                     onChange={(val) => val && form.setData({ ...form.data, direction: val as Direction, sale_id: null, purchase_id: null })}
                     options={directionOptions}
                     error={form.errors.direction}
+                    required
                 />
             )}
 
@@ -163,7 +164,7 @@ export default function PayDueModal({ open, onOpenChange, contact, accounts, sal
             )}
 
             <div className="grid min-w-0 content-start gap-2">
-                <Label htmlFor="account_id">{t('common', 'account')}</Label>
+                <Label htmlFor="account_id" required>{t('common', 'account')}</Label>
                 <Select
                     value={form.data.account_id ? String(form.data.account_id) : ''}
                     onValueChange={(value) => form.setData('account_id', Number(value))}
@@ -183,7 +184,7 @@ export default function PayDueModal({ open, onOpenChange, contact, accounts, sal
             </div>
 
             <div className="grid min-w-0 content-start gap-2">
-                <Label htmlFor="amount">{t('common', 'amount')}</Label>
+                <Label htmlFor="amount" required>{t('common', 'amount')}</Label>
                 <MoneyInput id="amount" value={form.data.amount} onChange={(e) => onAmountChange(Number(e.target.value))} required />
                 {targetedDue !== null && <p className="text-muted-foreground text-xs">Capped at the invoice&apos;s remaining due, {money(targetedDue)}</p>}
                 <InputError message={form.errors.amount} />
@@ -191,7 +192,7 @@ export default function PayDueModal({ open, onOpenChange, contact, accounts, sal
 
             <div className="grid min-w-0 content-start gap-2">
                 <Label htmlFor="note">{t('common', 'note')}</Label>
-                <Textarea id="note" value={form.data.note} onChange={(e) => form.setData('note', e.target.value)} />
+                <Textarea id="note" placeholder="Add a note (optional)" value={form.data.note} onChange={(e) => form.setData('note', e.target.value)} />
                 <InputError message={form.errors.note} />
             </div>
         </FormModal>

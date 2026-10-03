@@ -6,7 +6,6 @@
 ### Account 
 [x] Account Create
 [x] Fund Transfer
-[ ] Petty Cash
 [x] Account Type
 [ ] Jurnal Entry
 [ ] Financial Position
@@ -21,6 +20,12 @@
 
 ### Staff ✅  
 [x] staff
+
+### Expence
+[x] expences
+[x] category
+[x] other income
+
 
 
 

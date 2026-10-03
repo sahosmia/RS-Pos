@@ -27,6 +27,8 @@ interface LookupManagerModalProps {
     destroyRouteName: string;
     /** Category only — lets each entry optionally belong to a parent category. */
     parentOptions?: Category[];
+    /** Fired after a new entry is created, with the name it was saved under — lets a form auto-select it. */
+    onCreated?: (name: string) => void;
 }
 
 /**
@@ -44,6 +46,7 @@ export default function LookupManagerModal({
     updateRouteName,
     destroyRouteName,
     parentOptions,
+    onCreated,
 }: LookupManagerModalProps) {
     const { t } = useTranslation();
     const [editingId, setEditingId] = useState<number | null>(null);
@@ -62,6 +65,7 @@ export default function LookupManagerModal({
             onSuccess: () => {
                 toast.success(`"${name}" ${t('lookupManager', 'added_toast')}`);
                 createForm.reset();
+                onCreated?.(name);
             },
         });
     };

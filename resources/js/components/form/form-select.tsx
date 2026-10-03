@@ -1,4 +1,5 @@
 import { FormField, fieldAriaProps } from '@/components/form/form-field';
+import { useTranslation } from '@/hooks/use-translation';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { type LucideIcon } from 'lucide-react';
 import React from 'react';
@@ -40,7 +41,9 @@ export function FormSelect({
     required = false,
     icon: Icon,
 }: FormSelectProps) {
+    const { t } = useTranslation();
     const currentValue = value ? String(value) : allowNone ? 'none' : '';
+    const resolvedPlaceholder = placeholder ?? (typeof label === 'string' ? t('common', 'select_placeholder').replace('{label}', label) : undefined);
 
     return (
         <FormField id={id} label={label} tooltip={tooltip} required={required} error={error} helperText={helperText}>
@@ -56,7 +59,7 @@ export function FormSelect({
             >
                 <SelectTrigger id={id} className={Icon ? 'relative pl-9' : undefined} {...fieldAriaProps(id, error, helperText)}>
                     {Icon && <Icon className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2" />}
-                    <SelectValue placeholder={placeholder} />
+                    <SelectValue placeholder={resolvedPlaceholder} />
                 </SelectTrigger>
                 <SelectContent>
                     {allowNone && <SelectItem value="none">{noneLabel}</SelectItem>}

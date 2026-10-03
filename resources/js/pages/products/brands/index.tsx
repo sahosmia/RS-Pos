@@ -12,6 +12,7 @@ import { type BreadcrumbItem } from '@/types';
 import { type BrandListItem } from '@/types/models';
 import { Head, router, useForm } from '@inertiajs/react';
 import { FormEventHandler, useState } from 'react';
+import { toast } from 'sonner';
 
 interface BrandsIndexProps {
     brands: BrandListItem[];
@@ -52,7 +53,14 @@ export default function BrandsIndex({ brands }: BrandsIndexProps) {
     const submit: FormEventHandler = (e) => {
         e.preventDefault();
 
-        const options = { preserveScroll: true, onSuccess: () => setModalOpen(false) };
+        const isEditing = editing !== null;
+        const options = {
+            preserveScroll: true,
+            onSuccess: () => {
+                toast.success(isEditing ? 'Brand updated.' : 'Brand created.');
+                setModalOpen(false);
+            },
+        };
 
         if (editing) {
             form.patch(route('brands.update', editing.id), options);
@@ -66,8 +74,12 @@ export default function BrandsIndex({ brands }: BrandsIndexProps) {
             return;
         }
 
+        const name = deleting.name;
+
         router.delete(route('brands.destroy', deleting.id), {
             preserveScroll: true,
+            onSuccess: () => toast.success(`"${name}" deleted.`),
+            onError: (errors) => toast.error(errors.brand ?? 'Could not delete brand.'),
             onFinish: () => setDeleting(null),
         });
     };

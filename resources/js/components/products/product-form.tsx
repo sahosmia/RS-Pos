@@ -141,6 +141,8 @@ export default function ProductForm({ mode, product, categories, brands, units }
     const { t } = useTranslation();
     const [imagePreview, setImagePreview] = useState<string | null>(product?.image_url ?? null);
     const [lookupModal, setLookupModal] = useState<'category' | 'unit' | 'brand' | null>(null);
+    // A category/unit/brand just created from the "+" modal — selected as soon as it shows up in the refreshed list.
+    const [pendingSelect, setPendingSelect] = useState<{ kind: 'category' | 'unit' | 'brand'; name: string } | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const canSetOpeningStock = product ? product.can_set_opening_stock : true;
@@ -166,6 +168,31 @@ export default function ProductForm({ mode, product, categories, brands, units }
         image: null as File | null,
         service_plan: product?.service_plan ?? ([] as ServicePlanPeriod[]),
     });
+
+    useEffect(() => {
+        if (!pendingSelect) {
+            return;
+        }
+
+        const list: { id: number; name: string }[] = { category: categories, brand: brands, unit: units }[pendingSelect.kind];
+        const wanted = pendingSelect.name.trim().toLowerCase();
+        const created = list.filter((item) => item.name.trim().toLowerCase() === wanted).sort((a, b) => b.id - a.id)[0];
+
+        if (!created) {
+            return; // the refreshed list hasn't arrived yet — runs again when it does
+        }
+
+        if (pendingSelect.kind === 'category') {
+            form.setData('category_id', created.id);
+        } else if (pendingSelect.kind === 'brand') {
+            form.setData('brand_id', created.id);
+        } else {
+            form.setData('unit_id', created.id);
+        }
+
+        setPendingSelect(null);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [pendingSelect, categories, brands, units]);
 
     const addServicePeriod = () => {
         form.setData('service_plan', [...form.data.service_plan, { period_months: 12, free_quota: 0 }]);
@@ -347,7 +374,6 @@ export default function ProductForm({ mode, product, categories, brands, units }
                             value={form.data.selling_price}
                             onChange={(e) => form.setData('selling_price', Number(e.target.value))}
                             error={form.errors.selling_price}
-                            required
                         />
 
                         <FormInput
@@ -678,6 +704,10 @@ export default function ProductForm({ mode, product, categories, brands, units }
                 updateRouteName="categories.update"
                 destroyRouteName="categories.destroy"
                 parentOptions={categories}
+                onCreated={(name) => {
+                    setPendingSelect({ kind: 'category', name });
+                    setLookupModal(null);
+                }}
             />
 
             <LookupManagerModal
@@ -688,6 +718,10 @@ export default function ProductForm({ mode, product, categories, brands, units }
                 storeRouteName="brands.store"
                 updateRouteName="brands.update"
                 destroyRouteName="brands.destroy"
+                onCreated={(name) => {
+                    setPendingSelect({ kind: 'brand', name });
+                    setLookupModal(null);
+                }}
             />
 
             <LookupManagerModal
@@ -698,6 +732,10 @@ export default function ProductForm({ mode, product, categories, brands, units }
                 storeRouteName="units.store"
                 updateRouteName="units.update"
                 destroyRouteName="units.destroy"
+                onCreated={(name) => {
+                    setPendingSelect({ kind: 'unit', name });
+                    setLookupModal(null);
+                }}
             />
         </>
     );

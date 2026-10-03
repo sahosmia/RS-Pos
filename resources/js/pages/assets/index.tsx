@@ -21,6 +21,7 @@ import { useTableSelection } from '@/hooks/table/use-table-selection';
 import { useMoneyFormat } from '@/hooks/use-money-format';
 import { useTableViewMode } from '@/hooks/use-table-view-mode';
 import AppLayout from '@/layouts/app-layout';
+import { today } from '@/lib/format-date';
 import { type BreadcrumbItem, type SharedData } from '@/types';
 import { type Account, type AssetListItem, type Paginated } from '@/types/models';
 import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
@@ -65,9 +66,9 @@ export default function AssetsIndex({ assets, totalValue, accounts, filters }: A
     const [deleting, setDeleting] = useState<AssetListItem | null>(null);
 
     const form = useForm({
-        asset_type: 'existing' as 'existing' | 'new',
+        asset_type: 'new' as 'existing' | 'new',
         name: '',
-        purchase_date: '',
+        purchase_date: today(),
         opening_value: 0,
         purchase_amount: 0,
         account_id: null as number | null,
@@ -92,9 +93,9 @@ export default function AssetsIndex({ assets, totalValue, accounts, filters }: A
     const openCreate = () => {
         form.clearErrors();
         form.setData({
-            asset_type: 'existing',
+            asset_type: 'new',
             name: '',
-            purchase_date: '',
+            purchase_date: today(),
             opening_value: 0,
             purchase_amount: 0,
             account_id: accounts.find((account) => account.is_default)?.id ?? accounts[0]?.id ?? null,
@@ -350,6 +351,7 @@ export default function AssetsIndex({ assets, totalValue, accounts, filters }: A
                     value={form.data.name}
                     onChange={(e) => form.setData('name', e.target.value)}
                     error={form.errors.name}
+                    placeholder="e.g. Office Chair, Laptop, Delivery Van"
                     required
                 />
 
@@ -370,6 +372,7 @@ export default function AssetsIndex({ assets, totalValue, accounts, filters }: A
                         disabled={editing !== null && !editing.can_edit_opening_value}
                         onChange={(e) => form.setData('opening_value', Number(e.target.value))}
                         error={form.errors.opening_value}
+                        required={editing !== null}
                         helperText={
                             editing !== null && !editing.can_edit_opening_value
                                 ? 'এই asset-এ লেনদেন হয়ে গেছে — opening value আর বদলানো যাবে না।'

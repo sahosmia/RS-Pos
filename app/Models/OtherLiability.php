@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\OtherLiabilityTransactionType;
+use App\Models\Concerns\HasCreator;
 use App\Models\Concerns\LogsActivityDefaults;
 use App\Traits\HasLedger;
 use Database\Factories\OtherLiabilityFactory;
@@ -21,6 +22,7 @@ class OtherLiability extends Model
     /** @use HasFactory<OtherLiabilityFactory> */
     use HasFactory;
 
+    use HasCreator;
     use HasLedger;
     use LogsActivityDefaults;
 

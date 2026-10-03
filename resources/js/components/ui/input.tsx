@@ -2,7 +2,7 @@ import * as React from 'react';
 
 import { cn } from '@/lib/utils';
 
-const Input = React.forwardRef<HTMLInputElement, React.ComponentProps<'input'>>(({ className, type, onWheel, value, ...props }, ref) => {
+const Input = React.forwardRef<HTMLInputElement, React.ComponentProps<'input'>>(({ className, type, onWheel, value, placeholder, ...props }, ref) => {
     // A focused number input silently changes value on mouse-wheel scroll — nobody wants that while
     // scrolling the page (doc/corrections2.md #9, applied here so every number input gets it for free).
     // Blurring first lets the scroll just... scroll, same as it would over any other input.
@@ -23,6 +23,7 @@ const Input = React.forwardRef<HTMLInputElement, React.ComponentProps<'input'>>(
     return (
         <input
             type={type}
+            placeholder={placeholder ?? (type === 'number' ? '0' : undefined)}
             value={displayValue}
             onWheel={handleWheel}
             className={cn(

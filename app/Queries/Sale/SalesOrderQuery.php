@@ -28,9 +28,9 @@ class SalesOrderQuery
         }
 
         return SalesOrder::query()
-            ->with('customer:id,name')
-            ->when($filters['from'] ?? null, fn (Builder $q, string $from) => $q->whereDate('order_date', '>=', $from))
-            ->when($filters['to'] ?? null, fn (Builder $q, string $to) => $q->whereDate('order_date', '<=', $to))
+            ->with(['customer:id,name', 'creator:id,name'])
+            ->when($filters['from'] ?? null, fn (Builder $q, string $from) => $q->where('order_date', '>=', $from))
+            ->when($filters['to'] ?? null, fn (Builder $q, string $to) => $q->where('order_date', '<=', $to))
             ->when($filters['customer_id'] ?? null, fn (Builder $q, int $id) => $q->where('customer_id', $id))
             ->when($filters['status'] ?? null, fn (Builder $q, string $status) => $q->where('status', $status))
             ->orderBy($sort, $direction)

@@ -1,29 +1,22 @@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import DateRangeFilter from '@/components/shared/date-range-filter';
 import { useTranslation } from '@/hooks/use-translation';
-import { type Brand, type Category, type DateRangePresetValue, type StockStatus } from '@/types/models';
+import { type Brand, type Category, type StockStatus } from '@/types/models';
 
 interface ProductFiltersProps {
     categoryId: number | null;
     brandId: number | null;
     stockStatus: StockStatus | null;
-    preset: DateRangePresetValue | null;
-    from: string | null;
-    to: string | null;
     categories: Category[];
     brands: Brand[];
     onChange: (next: {
         category_id?: number | null;
         brand_id?: number | null;
         stock_status?: StockStatus | null;
-        preset?: DateRangePresetValue | null;
-        from?: string | null;
-        to?: string | null;
     }) => void;
 }
 
 /** Dumb filter row — only renders the selects and reports what changed; the page decides what to do about it. */
-export default function ProductFilters({ categoryId, brandId, stockStatus, preset, from, to, categories, brands, onChange }: ProductFiltersProps) {
+export default function ProductFilters({ categoryId, brandId, stockStatus, categories, brands, onChange }: ProductFiltersProps) {
     const { t } = useTranslation();
 
     return (
@@ -81,14 +74,6 @@ export default function ProductFilters({ categoryId, brandId, stockStatus, prese
                         <SelectItem value="out_of_stock">{t('productList', 'out_of_stock')}</SelectItem>
                     </SelectContent>
                 </Select>
-            </div>
-
-            <div className="grid min-w-0 content-start gap-2">
-                <DateRangeFilter
-                    range={{ preset, from, to }}
-                    onChange={(next) => onChange({ preset: next.preset, from: next.from ?? null, to: next.to ?? null })}
-                    allowClear
-                />
             </div>
         </div>
     );

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\AccountTransactionType;
+use App\Models\Concerns\HasCreator;
 use Database\Factories\AccountTransactionFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -12,6 +13,8 @@ class AccountTransaction extends Model
 {
     /** @use HasFactory<AccountTransactionFactory> */
     use HasFactory;
+
+    use HasCreator;
 
     /**
      * @var list<string>

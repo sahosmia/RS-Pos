@@ -21,11 +21,9 @@ class ExpenseExportController extends Controller
     private const COLUMN_LABELS = [
         'expense_date' => 'Date',
         'category' => 'Category',
-        'contact' => 'Vendor',
-        'total_amount' => 'Total',
-        'due_amount' => 'Due',
-        'payment_status' => 'Status',
+        'account' => 'Account',
         'note' => 'Note',
+        'total_amount' => 'Amount',
     ];
 
     /**
@@ -45,7 +43,6 @@ class ExpenseExportController extends Controller
             'from' => ['nullable', 'date'],
             'to' => ['nullable', 'date', 'after_or_equal:from'],
             'expense_category_id' => ['nullable', 'integer', 'exists:expense_categories,id'],
-            'payment_status' => ['nullable', 'in:due,partial,paid'],
             'page' => ['nullable', 'integer', 'min:1'],
             'per_page' => ['nullable', 'string', 'max:10'],
         ]);
@@ -55,7 +52,7 @@ class ExpenseExportController extends Controller
         $expenses = match ($validated['scope']) {
             'selected' => $query->whereIn('id', $validated['ids'])->get(),
             'page' => $this->pageOf($query, $validated),
-            'all' => $query->get(),
+            'all' => TableExport::chunked($query),
         };
 
         $headings = array_map(fn (string $id) => self::COLUMN_LABELS[$id], $validated['columns']);
@@ -63,7 +60,7 @@ class ExpenseExportController extends Controller
         $rows = $expenses->map(fn (Expense $expense) => array_map(
             fn (string $id) => $this->cell($expense, $id),
             $validated['columns'],
-        ))->all();
+        ));
 
         return TableExport::respond($validated['format'], 'expenses', 'Expenses', $headings, $rows);
     }
@@ -78,7 +75,7 @@ class ExpenseExportController extends Controller
         $perPage = Settings::resolveRequestedPerPage($validated['per_page'] ?? null);
 
         if ($perPage === null) {
-            return $query->get();
+            return TableExport::chunked($query);
         }
 
         return $query->forPage($validated['page'] ?? 1, $perPage)->get();
@@ -89,11 +86,9 @@ class ExpenseExportController extends Controller
         return match ($column) {
             'expense_date' => $expense->expense_date->toDateString(),
             'category' => $expense->category->name,
-            'contact' => $expense->contact?->name,
-            'total_amount' => $expense->total_amount,
-            'due_amount' => $expense->due_amount,
-            'payment_status' => ucfirst($expense->payment_status->value),
+            'account' => $expense->account?->name,
             'note' => $expense->note,
+            'total_amount' => $expense->total_amount,
         };
     }
 }

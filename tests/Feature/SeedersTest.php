@@ -92,7 +92,7 @@ test('every other module seeder runs on its own', function () {
         $this->seed($seeder);
     }
 
-    expect(Expense::query()->count())->toBe(6)
+    expect(Expense::query()->count())->toBe(5)
         ->and(Asset::query()->count())->toBe(3)
         ->and(CompanyLoan::query()->count())->toBe(1)
         ->and(Investor::query()->count())->toBe(2)

@@ -21,6 +21,7 @@ return new class extends Migration
             // JournalService::reverse(), which posts a mirrored entry and marks this one `reversed`.
             $table->string('status')->default('posted');
             $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('updated_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamp('reversed_at')->nullable();
             $table->foreignId('reversed_by')->nullable()->constrained('users')->nullOnDelete();
             $table->foreignId('reversal_of_id')->nullable()->constrained('journal_entries')->nullOnDelete();

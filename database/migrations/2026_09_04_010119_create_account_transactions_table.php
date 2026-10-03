@@ -21,10 +21,13 @@ return new class extends Migration
             $table->date('operation_date');
             $table->text('note')->nullable();
             $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('updated_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();
 
             $table->index(['reference_type', 'reference_id']);
             $table->index('operation_date');
+            // Account statement: one account's rows in a date range, in date order.
+            $table->index(['account_id', 'operation_date']);
         });
     }
 

@@ -34,6 +34,8 @@ export interface Dictionary {
         invoice: string;
         account: string;
         select_account: string;
+        enter_placeholder: string;
+        select_placeholder: string;
         note: string;
         amount: string;
         phone: string;
@@ -74,7 +76,7 @@ export interface Dictionary {
         expense_categories: string;
         payment_accounts: string;
         accounts: string;
-        petty_cash: string;
+        other_income: string;
         accounting: string;
         chart_of_accounts: string;
         journal_entries: string;
@@ -100,6 +102,7 @@ export interface Dictionary {
         trending_products: string;
         import_tools: string;
         backups: string;
+        activity_log: string;
         user_management: string;
         users: string;
         roles: string;
@@ -495,6 +498,8 @@ const en: Dictionary = {
         invoice: 'Invoice',
         account: 'Account',
         select_account: 'Select an account',
+        enter_placeholder: 'Enter {label}',
+        select_placeholder: 'Select {label}',
         note: 'Note',
         amount: 'Amount',
         phone: 'Phone',
@@ -535,7 +540,7 @@ const en: Dictionary = {
         expense_categories: 'Categories',
         payment_accounts: 'Payment Accounts',
         accounts: 'Accounts',
-        petty_cash: 'Petty Cash',
+        other_income: 'Other Income',
         accounting: 'Accounting',
         chart_of_accounts: 'Chart of Accounts',
         journal_entries: 'Journal Entries',
@@ -561,6 +566,7 @@ const en: Dictionary = {
         trending_products: 'Trending Products',
         import_tools: 'Import Tools',
         backups: 'Backups',
+        activity_log: 'Activity Log',
         user_management: 'User Management',
         users: 'Users',
         roles: 'Roles',

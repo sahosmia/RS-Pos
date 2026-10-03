@@ -355,3 +355,32 @@ test('sending twice to the same contact within one call does not violate the rec
 
     expect(CampaignRecipient::count())->toBe(1);
 });
+
+test('a contact with a long ledger is paged and each page carries the running balance forward', function () {
+    $this->actingAs(User::factory()->create());
+    $contact = Contact::factory()->create();
+    foreach (range(1, 130) as $n) {
+        ContactLedger::factory()->create([
+            'contact_id' => $contact->id,
+            'type' => ContactLedgerType::SaleInvoice,
+            'amount' => 10,
+            'created_at' => now()->subMinutes(200 - $n),
+        ]);
+    }
+
+    // opens on the newest page: the 30 latest entries, behind a "carried" row holding the first 100
+    $this->get("/contacts/{$contact->id}")
+        ->assertInertia(fn ($page) => $page
+            ->where('ledgerPagination.total', 130)
+            ->where('ledgerPagination.current_page', 2)
+            ->has('ledger', 31)
+            ->where('ledger.0.id', 0)
+            ->where('ledger.0.balance', 1000)
+            ->where('ledger.30.balance', 1300));
+
+    $this->get("/contacts/{$contact->id}?page=1")
+        ->assertInertia(fn ($page) => $page
+            ->has('ledger', 100)
+            ->where('ledger.0.balance', 10)
+            ->where('ledger.99.balance', 1000));
+});

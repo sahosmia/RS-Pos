@@ -4,7 +4,6 @@ namespace App\Console\Commands;
 
 use App\Enums\NotificationType;
 use App\Enums\PaymentStatus;
-use App\Models\Expense;
 use App\Models\Notification;
 use App\Models\Product;
 use App\Models\Sale;
@@ -14,7 +13,6 @@ use Illuminate\Console\Command;
  * Daily sweep raising shop-owner alerts for:
  * - Low stock (product current_stock <= minimum_stock_level)
  * - Due payment (sale not yet fully paid)
- * - Expense due (expense not yet fully paid)
  *
  * Each check is deduped against any already-unread notification for the
  * same reference, so a condition that persists across days doesn't spam a
@@ -34,9 +32,8 @@ class GenerateDailyNotifications extends Command
     {
         $lowStock = $this->generateLowStockNotifications();
         $dueSales = $this->generateSaleDueNotifications();
-        $dueExpenses = $this->generateExpenseDueNotifications();
 
-        $this->info("Created {$lowStock} low-stock, {$dueSales} sale-due, {$dueExpenses} expense-due notification(s).");
+        $this->info("Created {$lowStock} low-stock, {$dueSales} sale-due notification(s).");
     }
 
     private function generateLowStockNotifications(): int
@@ -88,34 +85,6 @@ class GenerateDailyNotifications extends Command
                 'message' => "{$sale->customer?->name} owes {$sale->due_amount} on sale {$sale->invoice_no}.",
                 'reference_type' => Sale::class,
                 'reference_id' => $sale->id,
-            ]);
-
-            $created++;
-        }
-
-        return $created;
-    }
-
-    private function generateExpenseDueNotifications(): int
-    {
-        $expenses = Expense::query()
-            ->where('payment_status', '!=', PaymentStatus::Paid)
-            ->with('category:id,name')
-            ->get(['id', 'expense_category_id', 'due_amount']);
-
-        $created = 0;
-
-        foreach ($expenses as $expense) {
-            if (Notification::existsUnreadFor(NotificationType::ExpenseDue, Expense::class, $expense->id)) {
-                continue;
-            }
-
-            Notification::create([
-                'type' => NotificationType::ExpenseDue,
-                'title' => "Expense due: {$expense->category?->name}",
-                'message' => "{$expense->due_amount} is still due on this expense.",
-                'reference_type' => Expense::class,
-                'reference_id' => $expense->id,
             ]);
 
             $created++;

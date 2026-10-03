@@ -14,14 +14,17 @@ return new class extends Migration
         Schema::create('accounts', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            $table->foreignId('account_type_id')->constrained()->restrictOnDelete();
+            $table->foreignId('account_type_id')->nullable()->constrained()->restrictOnDelete();
             $table->string('account_sub_type')->nullable();
             $table->text('account_number')->nullable();
+            // Every payment account has its own ledger account — chart_of_accounts is created before this table.
+            $table->foreignId('chart_of_account_id')->constrained()->restrictOnDelete();
             $table->decimal('opening_balance', 19, 4)->default(0);
             $table->decimal('current_balance', 19, 4)->default(0);
             $table->boolean('is_active')->default(true);
             $table->boolean('is_default')->default(false);
             $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('updated_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();
         });
     }

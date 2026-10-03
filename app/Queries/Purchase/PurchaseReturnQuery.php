@@ -31,9 +31,9 @@ class PurchaseReturnQuery
         }
 
         return PurchaseReturn::query()
-            ->with('supplier:id,name', 'purchase:id,invoice_no')
-            ->when($filters['from'] ?? null, fn (Builder $q, string $from) => $q->whereDate('return_date', '>=', $from))
-            ->when($filters['to'] ?? null, fn (Builder $q, string $to) => $q->whereDate('return_date', '<=', $to))
+            ->with('supplier:id,name', 'purchase:id,invoice_no', 'creator:id,name')
+            ->when($filters['from'] ?? null, fn (Builder $q, string $from) => $q->where('return_date', '>=', $from))
+            ->when($filters['to'] ?? null, fn (Builder $q, string $to) => $q->where('return_date', '<=', $to))
             ->orderBy($sort, $direction)
             ->orderByDesc('id');
     }

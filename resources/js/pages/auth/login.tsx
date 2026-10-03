@@ -73,7 +73,7 @@ export default function Login({ status, canResetPassword }: LoginProps) {
 
                         <div className="grid min-w-0 content-start gap-2">
                             <div className="flex items-center justify-between">
-                                <Label htmlFor="password">Password</Label>
+                                <Label htmlFor="password" required>Password</Label>
                                 {canResetPassword && (
                                     <TextLink href={route('password.request')} className="text-xs" tabIndex={5}>
                                         Forgot password?

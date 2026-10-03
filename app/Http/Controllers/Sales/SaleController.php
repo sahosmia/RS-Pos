@@ -56,6 +56,7 @@ class SaleController extends Controller
             'payment_status' => $sale->payment_status,
             'status' => $sale->status,
             'source' => $sale->source,
+            'added_by' => $sale->creator?->name,
             'can_edit' => $sale->canEdit(),
         ]);
 

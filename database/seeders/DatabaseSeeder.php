@@ -18,12 +18,12 @@ class DatabaseSeeder extends Seeder
      * prerequisites, and is safe to run again):
      *
      *  Reference data   AccountTypeSeeder, ChartOfAccountSeeder, AccountingPeriodSeeder,
-     *                   MiscTransactionCategorySeeder, StaffTransactionTypeSeeder, CashBookSeeder
+     *                   OtherIncomeCategorySeeder, StaffTransactionTypeSeeder
      *  Master data      CategorySeeder, UnitSeeder, BrandSeeder, CustomerGroupSeeder,
      *                   ExpenseCategorySeeder, AccountSeeder, ProductSeeder,
      *                   CustomerSeeder, SupplierSeeder, HomeApplianceProductSeeder (~300 products)
      *  Demo transactions PurchaseSeeder, SaleSeeder, SalesOrderSeeder, ExpenseSeeder,
-     *                   FundTransferSeeder, CashBookEntrySeeder, AssetSeeder,
+     *                   FundTransferSeeder, OtherIncomeSeeder, AssetSeeder,
      *                   CompanyLoanSeeder, InvestorSeeder, OtherLiabilitySeeder, StaffSeeder
      *  Everything       DummyDataSeeder (all of the above, in order)
      */
@@ -51,10 +51,9 @@ class DatabaseSeeder extends Seeder
             AccountSeeder::class,
             // ChartOfAccountSeeder::class,
             // AccountingPeriodSeeder::class,
-            // MiscTransactionCategorySeeder::class,
-            // CashBookSeeder::class,
+            // OtherIncomeCategorySeeder::class,
             // FundTransferSeeder::class,
-            // CashBookEntrySeeder::class,
+            // OtherIncomeSeeder::class,
 
             // // Customer/Supplier
             // CustomerGroupSeeder::class,
@@ -66,7 +65,7 @@ class DatabaseSeeder extends Seeder
             // SaleSeeder::class,
             // SalesOrderSeeder::class,
 
-            //staff
+            // staff
             StaffTransactionTypeSeeder::class,
             // StaffSeeder::class,
 

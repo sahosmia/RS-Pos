@@ -107,7 +107,7 @@ export default function StockAdjustmentModal({ product, onOpenChange }: StockAdj
             )}
 
             <div className="grid min-w-0 content-start gap-2">
-                <Label htmlFor="reason">{t('stockAdjustment', 'reason')}</Label>
+                <Label htmlFor="reason" required>{t('stockAdjustment', 'reason')}</Label>
                 <Textarea
                     id="reason"
                     placeholder={t('stockAdjustment', 'reason_placeholder')}

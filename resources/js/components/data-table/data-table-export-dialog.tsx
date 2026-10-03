@@ -1,11 +1,26 @@
+
 import DataTableCheckbox from '@/components/data-table/data-table-checkbox';
 import { type DataTableColumnOption } from '@/components/data-table/types';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
+import { type SharedData } from '@/types';
 import { cn } from '@/lib/utils';
-import { FileSpreadsheet, FileText, FileType2, type LucideIcon } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { usePage } from '@inertiajs/react';
+import {
+    FileSpreadsheet,
+    FileText,
+    FileType2,
+    type LucideIcon,
+} from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
 
 export type DataTableExportFormat = 'csv' | 'xlsx' | 'pdf';
 export type DataTableExportScope = 'all' | 'selected';
@@ -26,10 +41,30 @@ interface DataTableExportDialogProps {
     onExport: (params: DataTableExportParams) => void;
 }
 
-const FORMATS: { value: DataTableExportFormat; label: string; description: string; icon: LucideIcon }[] = [
-    { value: 'csv', label: 'CSV', description: 'Plain text, universal', icon: FileText },
-    { value: 'xlsx', label: 'Excel', description: 'Best for analysis', icon: FileSpreadsheet },
-    { value: 'pdf', label: 'PDF', description: 'Print-ready', icon: FileType2 },
+const FORMATS: {
+    value: DataTableExportFormat;
+    label: string;
+    description: string;
+    icon: LucideIcon;
+}[] = [
+    {
+        value: 'csv',
+        label: 'CSV',
+        description: 'Plain text, universal',
+        icon: FileText,
+    },
+    {
+        value: 'xlsx',
+        label: 'Excel',
+        description: 'Best for analysis',
+        icon: FileSpreadsheet,
+    },
+    {
+        value: 'pdf',
+        label: 'PDF',
+        description: 'Print-ready',
+        icon: FileType2,
+    },
 ];
 
 export default function DataTableExportDialog({
@@ -42,27 +77,81 @@ export default function DataTableExportDialog({
     onExport,
 }: DataTableExportDialogProps) {
     const [format, setFormat] = useState<DataTableExportFormat>('xlsx');
+    const [scope, setScope] = useState<DataTableExportScope>('all');
     const [checkedColumns, setCheckedColumns] = useState<Record<string, boolean>>({});
+    const { exportLimits } = usePage<SharedData>().props;
 
-    useEffect(() => {
-        if (open) {
-            setCheckedColumns(
-                Object.fromEntries(columns.map((column) => [column.id, defaultVisibleColumns.includes(column.id)])),
-            );
-        }
-    }, [open, columns, defaultVisibleColumns]);
+    const exportCount = scope === 'selected' ? selectedCount : totalCount;
 
-    const selectedColumnIds = columns.filter((column) => checkedColumns[column.id]).map((column) => column.id);
-    const scope: DataTableExportScope = selectedCount > 0 ? 'selected' : 'all';
-
-    const allChecked = selectedColumnIds.length === columns.length;
-    const toggleAll = () => {
-        const next = !allChecked;
-        setCheckedColumns(Object.fromEntries(columns.map((column) => [column.id, next])));
+    // Excel/PDF are built in memory server-side, so they have a row cap; CSV streams and has none.
+    const limitOf = (value: DataTableExportFormat): number | null =>
+        value === 'csv' ? null : exportLimits[value];
+    const overLimit = (value: DataTableExportFormat): boolean => {
+        const limit = limitOf(value);
+        return limit !== null && exportCount > limit;
     };
 
-    const submit = () => {
-        onExport({ format, scope, columns: selectedColumnIds });
+    useEffect(() => {
+        if (overLimit(format)) setFormat('csv');
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [exportCount, format, exportLimits]);
+
+    useEffect(() => {
+        if (!open) return;
+
+        setCheckedColumns(
+            Object.fromEntries(
+                columns.map((column) => [
+                    column.id,
+                    defaultVisibleColumns.includes(column.id),
+                ]),
+            ),
+        );
+
+        setScope(selectedCount > 0 ? 'selected' : 'all');
+    }, [open, columns, defaultVisibleColumns, selectedCount]);
+
+    const selectedColumnIds = useMemo(
+        () =>
+            columns
+                .filter((column) => checkedColumns[column.id] === true)
+                .map((column) => column.id),
+        [columns, checkedColumns],
+    );
+
+    const allChecked =
+        columns.length > 0 &&
+        selectedColumnIds.length === columns.length;
+
+    const someChecked =
+        selectedColumnIds.length > 0 && !allChecked;
+
+    const toggleAll = () => {
+        const next = !allChecked;
+
+        setCheckedColumns(
+            Object.fromEntries(
+                columns.map((column) => [column.id, next]),
+            ),
+        );
+    };
+
+    const toggleColumn = (id: string, checked: boolean | 'indeterminate') => {
+        setCheckedColumns((current) => ({
+            ...current,
+            [id]: checked === true,
+        }));
+    };
+
+    const handleExport = () => {
+        if (selectedColumnIds.length === 0 || exportCount === 0) return;
+
+        onExport({
+            format,
+            scope,
+            columns: selectedColumnIds,
+        });
+
         onOpenChange(false);
     };
 
@@ -71,88 +160,194 @@ export default function DataTableExportDialog({
             <DialogContent className="sm:max-w-md">
                 <DialogHeader>
                     <DialogTitle>Export data</DialogTitle>
-                    <DialogDescription>Choose a format and which columns to include.</DialogDescription>
+                    <DialogDescription>
+                        Choose a format, rows, and columns to include in your export.
+                    </DialogDescription>
                 </DialogHeader>
 
                 <div className="space-y-5">
-                    {/* Format picker — card tiles instead of tabs */}
-                    <div className="grid min-w-0 content-start gap-2">
-                        <Label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Format</Label>
+                    {/* Format */}
+                    <section className="grid min-w-0 gap-2">
+                        <Label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                            Format
+                        </Label>
+
                         <div className="grid grid-cols-3 gap-2">
                             {FORMATS.map(({ value, label, description, icon: Icon }) => {
                                 const active = format === value;
+                                const blocked = overLimit(value);
+                                const limit = limitOf(value);
+
                                 return (
                                     <button
                                         key={value}
                                         type="button"
+                                        aria-pressed={active}
+                                        disabled={blocked}
                                         onClick={() => setFormat(value)}
                                         className={cn(
-                                            'flex flex-col items-center gap-1.5 rounded-lg border p-3 text-center transition-all',
+                                            'flex min-w-0 flex-col items-center gap-1.5 rounded-lg border p-3 text-center transition-colors disabled:cursor-not-allowed disabled:opacity-50',
                                             active
                                                 ? 'border-primary/50 bg-primary/5 ring-1 ring-primary/20'
                                                 : 'hover:border-primary/30 hover:bg-muted/40',
                                         )}
                                     >
-                                        <div
+                                        <span
                                             className={cn(
-                                                'flex size-8 items-center justify-center rounded-md transition-colors',
-                                                active ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground',
+                                                'flex size-8 items-center justify-center rounded-md',
+                                                active
+                                                    ? 'bg-primary/10 text-primary'
+                                                    : 'bg-muted text-muted-foreground',
                                             )}
                                         >
-                                            <Icon className="size-4" />
-                                        </div>
-                                        <div className="text-sm font-medium">{label}</div>
-                                        <div className="text-[10px] leading-tight text-muted-foreground">{description}</div>
+                                            <Icon className="size-4" aria-hidden="true" />
+                                        </span>
+
+                                        <span className="text-sm font-medium">
+                                            {label}
+                                        </span>
+
+                                        <span className="text-[10px] leading-tight text-muted-foreground">
+                                            {blocked && limit !== null
+                                                ? `Max ${limit.toLocaleString()} rows`
+                                                : description}
+                                        </span>
                                     </button>
                                 );
                             })}
                         </div>
-                    </div>
 
-                    {/* Scope hint */}
-                    <div className="bg-muted/40 text-muted-foreground rounded-lg border p-3 text-xs">
-                        {scope === 'selected'
-                            ? `${selectedCount} selected row${selectedCount === 1 ? '' : 's'} will be exported.`
-                            : `Nothing is selected — all ${totalCount} row${totalCount === 1 ? '' : 's'} matching the current filters will be exported.`}
-                    </div>
+                        {(overLimit('xlsx') || overLimit('pdf')) && (
+                            <p className="text-xs text-amber-600 dark:text-amber-500">
+                                {exportCount.toLocaleString()} rows is too many for{' '}
+                                {[overLimit('xlsx') && 'Excel', overLimit('pdf') && 'PDF']
+                                    .filter(Boolean)
+                                    .join(' and ')}
+                                . Use CSV, or narrow the filters first.
+                            </p>
+                        )}
+                    </section>
+
+                    {/* Export scope */}
+                    <section className="grid gap-2">
+                        <Label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                            Rows
+                        </Label>
+
+                        <div className="grid grid-cols-2 gap-2">
+                            <button
+                                type="button"
+                                aria-pressed={scope === 'all'}
+                                onClick={() => setScope('all')}
+                                className={cn(
+                                    'rounded-lg border p-3 text-left text-sm transition-colors',
+                                    scope === 'all'
+                                        ? 'border-primary/50 bg-primary/5 ring-1 ring-primary/20'
+                                        : 'hover:bg-muted/40',
+                                )}
+                            >
+                                <span className="block font-medium">All rows</span>
+                                <span className="text-xs text-muted-foreground">
+                                    {totalCount.toLocaleString()} available
+                                </span>
+                            </button>
+
+                            <button
+                                type="button"
+                                aria-pressed={scope === 'selected'}
+                                disabled={selectedCount === 0}
+                                onClick={() => setScope('selected')}
+                                className={cn(
+                                    'rounded-lg border p-3 text-left text-sm transition-colors disabled:cursor-not-allowed disabled:opacity-50',
+                                    scope === 'selected'
+                                        ? 'border-primary/50 bg-primary/5 ring-1 ring-primary/20'
+                                        : 'hover:bg-muted/40',
+                                )}
+                            >
+                                <span className="block font-medium">Selected rows</span>
+                                <span className="text-xs text-muted-foreground">
+                                    {selectedCount} selected
+                                </span>
+                            </button>
+                        </div>
+
+                        <p className="rounded-lg border bg-muted/40 p-3 text-xs text-muted-foreground">
+                            {scope === 'selected'
+                                ? `${selectedCount} selected row${selectedCount === 1 ? '' : 's'} will be exported.`
+                                : `All ${totalCount.toLocaleString()} row${totalCount === 1 ? '' : 's'} matching the current filters will be exported.`}
+                        </p>
+                    </section>
 
                     {/* Columns */}
-                    <div className="grid min-w-0 content-start gap-2">
-                        <div className="flex items-center justify-between">
-                            <Label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Columns</Label>
+                    <section className="grid min-w-0 gap-2">
+                        <div className="flex items-center justify-between gap-2">
+                            <Label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                                Columns ({selectedColumnIds.length} of {columns.length})
+                            </Label>
+
                             <button
                                 type="button"
                                 onClick={toggleAll}
-                                className="text-primary text-xs font-medium hover:underline"
+                                disabled={columns.length === 0}
+                                className="text-xs font-medium text-primary hover:underline disabled:cursor-not-allowed disabled:opacity-50"
                             >
                                 {allChecked ? 'Deselect all' : 'Select all'}
                             </button>
                         </div>
+
+                        {someChecked && (
+                            <span className="sr-only" aria-live="polite">
+                                {selectedColumnIds.length} of {columns.length} columns selected
+                            </span>
+                        )}
+
                         <div className="grid max-h-56 grid-cols-2 gap-x-4 gap-y-2 overflow-y-auto rounded-lg border p-3">
-                            {columns.map((column) => (
-                                <label
-                                    key={column.id}
-                                    className="flex cursor-pointer items-center gap-2 text-sm hover:text-foreground"
-                                >
-                                    <DataTableCheckbox
-                                        checked={checkedColumns[column.id] ?? false}
-                                        onCheckedChange={(checked) =>
-                                            setCheckedColumns((current) => ({ ...current, [column.id]: checked }))
-                                        }
-                                    />
-                                    <span className="truncate">{column.label}</span>
-                                </label>
-                            ))}
+                            {columns.length > 0 ? (
+                                columns.map((column) => (
+                                    <label
+                                        key={column.id}
+                                        className="flex min-w-0 cursor-pointer items-center gap-2 text-sm hover:text-foreground"
+                                    >
+                                        <DataTableCheckbox
+                                            checked={checkedColumns[column.id] ?? false}
+                                            onCheckedChange={(checked) =>
+                                                toggleColumn(column.id, checked)
+                                            }
+                                        />
+                                        <span className="truncate">
+                                            {column.label}
+                                        </span>
+                                    </label>
+                                ))
+                            ) : (
+                                <p className="col-span-2 py-3 text-center text-sm text-muted-foreground">
+                                    No exportable columns available.
+                                </p>
+                            )}
                         </div>
-                    </div>
+                    </section>
                 </div>
 
                 <DialogFooter>
-                    <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+                    <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => onOpenChange(false)}
+                    >
                         Cancel
                     </Button>
-                    <Button type="button" onClick={submit} disabled={selectedColumnIds.length === 0}>
-                        Export {selectedColumnIds.length > 0 && `(${selectedColumnIds.length})`}
+
+                    <Button
+                        type="button"
+                        onClick={handleExport}
+                        disabled={
+                            selectedColumnIds.length === 0 ||
+                            exportCount === 0
+                        }
+                    >
+                        {exportCount > 0
+                            ? `Export ${exportCount.toLocaleString()} ${exportCount === 1 ? 'row' : 'rows'}`
+                            : 'Nothing to export'}
                     </Button>
                 </DialogFooter>
             </DialogContent>

@@ -18,6 +18,7 @@ return new class extends Migration
             $table->decimal('current_value', 19, 4)->default(0);
             $table->date('purchase_date')->nullable();
             $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('updated_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();
         });
     }

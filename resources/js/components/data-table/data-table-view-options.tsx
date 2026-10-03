@@ -1,3 +1,4 @@
+
 import { type DataTableColumnOption } from '@/components/data-table/types';
 import { Button } from '@/components/ui/button';
 import {
@@ -8,7 +9,7 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Columns3 } from 'lucide-react';
+import { Check, Columns3, RotateCcw } from 'lucide-react';
 
 interface DataTableViewOptionsProps {
     columns: DataTableColumnOption[];
@@ -16,8 +17,34 @@ interface DataTableViewOptionsProps {
     onVisibilityChange: (id: string, visible: boolean) => void;
 }
 
-export default function DataTableViewOptions({ columns, visibility, onVisibilityChange }: DataTableViewOptionsProps) {
-    const visibleCount = columns.filter((column) => visibility[column.id] !== false).length;
+export default function DataTableViewOptions({
+    columns,
+    visibility,
+    onVisibilityChange,
+}: DataTableViewOptionsProps) {
+    const visibleCount = columns.filter(
+        (column) => visibility[column.id] !== false,
+    ).length;
+
+    const totalCount = columns.length;
+    const allVisible = visibleCount === totalCount;
+    const noneVisible = visibleCount === 0;
+
+    const showAllColumns = () => {
+        columns.forEach((column) => {
+            if (visibility[column.id] === false) {
+                onVisibilityChange(column.id, true);
+            }
+        });
+    };
+
+    const hideAllColumns = () => {
+        columns.forEach((column) => {
+            if (visibility[column.id] !== false) {
+                onVisibilityChange(column.id, false);
+            }
+        });
+    };
 
     return (
         <DropdownMenu>
@@ -26,34 +53,88 @@ export default function DataTableViewOptions({ columns, visibility, onVisibility
                     type="button"
                     variant="outline"
                     size="sm"
-                    className="gap-1.5"
-                    aria-label="Toggle columns"
+                    disabled={totalCount === 0}
+                    className="h-9 gap-2"
+                    aria-label={`Column visibility: ${visibleCount} of ${totalCount} visible`}
                 >
-                    <Columns3 className="size-3.5" />
+                    <Columns3 className="size-4" />
                     <span className="hidden sm:inline">Columns</span>
-                    <span className="text-muted-foreground tabular-nums text-xs">
-                        {visibleCount}/{columns.length}
+
+                    <span className="rounded-md bg-muted px-1.5 py-0.5 text-xs font-medium tabular-nums text-muted-foreground">
+                        {visibleCount}/{totalCount}
                     </span>
                 </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-52">
-                <DropdownMenuLabel className="flex items-center justify-between">
-                    <span>Toggle columns</span>
-                    <span className="text-muted-foreground text-xs tabular-nums">
-                        {visibleCount}/{columns.length}
+
+            <DropdownMenuContent
+                align="end"
+                className="w-60"
+                onCloseAutoFocus={(event) => event.preventDefault()}
+            >
+                <DropdownMenuLabel className="flex items-center justify-between gap-2">
+                    <span className="text-sm font-semibold">
+                        Column visibility
+                    </span>
+                    <span className="text-xs font-normal tabular-nums text-muted-foreground">
+                        {visibleCount} of {totalCount}
                     </span>
                 </DropdownMenuLabel>
+
                 <DropdownMenuSeparator />
-                {columns.map((column) => (
-                    <DropdownMenuCheckboxItem
-                        key={column.id}
-                        checked={visibility[column.id] !== false}
-                        onCheckedChange={(checked) => onVisibilityChange(column.id, checked)}
-                        onSelect={(e) => e.preventDefault()}
+
+                <div className="flex items-center justify-between gap-2 px-2 py-1.5">
+                    <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 gap-1.5 px-2 text-xs"
+                        onClick={showAllColumns}
+                        disabled={allVisible}
                     >
-                        {column.label}
-                    </DropdownMenuCheckboxItem>
-                ))}
+                        <Check className="size-3.5" />
+                        Show all
+                    </Button>
+
+                    <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 gap-1.5 px-2 text-xs text-muted-foreground"
+                        onClick={hideAllColumns}
+                        disabled={noneVisible}
+                    >
+                        <RotateCcw className="size-3.5" />
+                        Hide all
+                    </Button>
+                </div>
+
+                <DropdownMenuSeparator />
+
+                {columns.length > 0 ? (
+                    columns.map((column) => {
+                        const isVisible = visibility[column.id] !== false;
+
+                        return (
+                            <DropdownMenuCheckboxItem
+                                key={column.id}
+                                checked={isVisible}
+                                onCheckedChange={(checked) =>
+                                    onVisibilityChange(column.id, checked)
+                                }
+                                onSelect={(event) => event.preventDefault()}
+                                className="cursor-pointer capitalize"
+                            >
+                                <span className="truncate">
+                                    {column.label}
+                                </span>
+                            </DropdownMenuCheckboxItem>
+                        );
+                    })
+                ) : (
+                    <p className="px-2 py-4 text-center text-sm text-muted-foreground">
+                        No columns available
+                    </p>
+                )}
             </DropdownMenuContent>
         </DropdownMenu>
     );

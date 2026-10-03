@@ -37,13 +37,13 @@ class SaleQuery
         }
 
         return $query
-            ->with('customer:id,name')
+            ->with(['customer:id,name', 'creator:id,name'])
             ->when($filters['search'] ?? null, fn (Builder $q, string $search) => $q->where(function (Builder $q) use ($search) {
                 $q->where('invoice_no', 'like', "%{$search}%")
                     ->orWhereHas('customer', fn (Builder $q) => $q->where('name', 'like', "%{$search}%"));
             }))
-            ->when($filters['from'] ?? null, fn (Builder $q, string $from) => $q->whereDate('sale_date', '>=', $from))
-            ->when($filters['to'] ?? null, fn (Builder $q, string $to) => $q->whereDate('sale_date', '<=', $to))
+            ->when($filters['from'] ?? null, fn (Builder $q, string $from) => $q->where('sale_date', '>=', $from))
+            ->when($filters['to'] ?? null, fn (Builder $q, string $to) => $q->where('sale_date', '<=', $to))
             ->when($filters['customer_id'] ?? null, fn (Builder $q, int $id) => $q->where('customer_id', $id))
             ->when($filters['status'] ?? null, fn (Builder $q, string $status) => $q->where('status', $status))
             ->when($filters['payment_status'] ?? null, fn (Builder $q, string $status) => $q->where('payment_status', $status))

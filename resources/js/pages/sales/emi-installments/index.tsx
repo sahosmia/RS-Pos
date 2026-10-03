@@ -84,7 +84,7 @@ export default function EmiInstallmentsIndex({ installments, accounts, filters }
     const { search, setSearch, isLoading, isSearching, applyFilters, submitSearchNow, handleSort, activeFilterCount, canReset, resetFilters } = useTableFilters({
         routeName: 'emi-installments.index',
         filters,
-        emptyFilters: { status: null, search: null },
+        emptyFilters: { status: null },
     });
 
     const selection = useTableSelection({

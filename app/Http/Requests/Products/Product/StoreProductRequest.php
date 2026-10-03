@@ -23,6 +23,8 @@ class StoreProductRequest extends FormRequest
         $this->merge([
             'sku' => $this->filled('sku') ? $this->sku : null,
             'category_id' => $this->filled('category_id') && (int) $this->category_id !== 0 ? $this->category_id : null,
+            // Optional — a product can be created before it has a price; blank means 0 (the column's default).
+            'selling_price' => $this->filled('selling_price') ? $this->selling_price : 0,
         ]);
     }
 
@@ -38,7 +40,7 @@ class StoreProductRequest extends FormRequest
             'category_id' => ['nullable', 'integer', 'exists:categories,id'],
             'brand_id' => ['nullable', 'integer', 'exists:brands,id'],
             'unit_id' => ['required', 'integer', 'exists:units,id'],
-            'selling_price' => ['required', 'numeric', 'min:0'],
+            'selling_price' => ['nullable', 'numeric', 'min:0'],
             'minimum_stock_level' => ['nullable', 'numeric', 'min:0'],
             'manage_stock' => ['required', 'boolean'],
             'is_for_sale' => ['required', 'boolean'],

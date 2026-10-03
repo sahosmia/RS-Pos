@@ -116,7 +116,7 @@ export default function BillPaymentForm({ direction, accounts }: BillPaymentForm
 
             <div className="grid min-w-0 content-start gap-2">
                 <Label htmlFor="note">Note</Label>
-                <Textarea id="note" value={form.data.note} onChange={(e) => form.setData('note', e.target.value)} />
+                <Textarea id="note" placeholder="Add a note (optional)" value={form.data.note} onChange={(e) => form.setData('note', e.target.value)} />
                 <InputError message={form.errors.note} />
             </div>
 

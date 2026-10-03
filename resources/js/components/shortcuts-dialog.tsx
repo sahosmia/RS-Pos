@@ -16,6 +16,7 @@ const GROUPS: ShortcutGroup[] = [
         shortcuts: [
             { keys: [mod, 'K'], description: 'Open global search (Products, Contacts, Sales, Purchases, Expenses)' },
             { keys: [mod, 'B'], description: 'Collapse/expand the sidebar' },
+            { keys: ['Ctrl', 'Space'], description: 'Open Quick actions — keep Ctrl held and press Space for the next one, release Ctrl to open it' },
         ],
     },
     {

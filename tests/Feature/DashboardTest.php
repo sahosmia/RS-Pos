@@ -99,3 +99,27 @@ test('a custom range needs both dates and rejects an invalid one', function () {
     $this->get('/dashboard?preset=custom&from=2026-01-01&to=2026-01-31')
         ->assertInertia(fn ($page) => $page->where('range.from', '2026-01-01')->where('range.to', '2026-01-31'));
 });
+
+test('the revenue-vs-expense chart sums confirmed sales and expenses per month of the fiscal year', function () {
+    Carbon::setTestNow('2026-09-25');
+    Settings::factory()->create(['fiscal_year_start_month' => 7]);
+    $this->actingAs(User::factory()->create());
+
+    // two sales on the same day plus one later in the month must add up, drafts and other fiscal years must not
+    Sale::factory()->confirmed()->create(['sale_date' => '2026-08-03', 'total_amount' => 100]);
+    Sale::factory()->confirmed()->create(['sale_date' => '2026-08-03', 'total_amount' => 150]);
+    Sale::factory()->confirmed()->create(['sale_date' => '2026-08-20', 'total_amount' => 250]);
+    Sale::factory()->create(['sale_date' => '2026-08-03', 'status' => 'draft', 'total_amount' => 9999]);
+    Sale::factory()->confirmed()->create(['sale_date' => '2025-08-03', 'total_amount' => 7777]);
+    Expense::factory()->create(['expense_date' => '2026-08-10', 'total_amount' => 40]);
+    Expense::factory()->create(['expense_date' => '2026-08-11', 'total_amount' => 60]);
+
+    $this->get('/dashboard')->assertInertia(fn ($page) => $page
+        ->has('monthlyRevenueVsExpense', 12)
+        ->where('monthlyRevenueVsExpense.1.month', '2026-08')
+        ->where('monthlyRevenueVsExpense.1.revenue', 500)
+        ->where('monthlyRevenueVsExpense.1.expense', 100)
+        ->where('monthlyRevenueVsExpense.0.revenue', 0));
+
+    Carbon::setTestNow();
+});

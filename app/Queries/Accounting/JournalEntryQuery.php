@@ -29,8 +29,8 @@ class JournalEntryQuery
 
         return JournalEntry::query()
             ->with('lines.chartOfAccount:id,code,name')
-            ->when($filters['from'] ?? null, fn (Builder $q, string $from) => $q->whereDate('entry_date', '>=', $from))
-            ->when($filters['to'] ?? null, fn (Builder $q, string $to) => $q->whereDate('entry_date', '<=', $to))
+            ->when($filters['from'] ?? null, fn (Builder $q, string $from) => $q->where('entry_date', '>=', $from))
+            ->when($filters['to'] ?? null, fn (Builder $q, string $to) => $q->where('entry_date', '<=', $to))
             ->when(
                 $filters['chart_of_account_id'] ?? null,
                 fn (Builder $q, int $id) => $q->whereHas('lines', fn (Builder $lines) => $lines->where('chart_of_account_id', $id)),

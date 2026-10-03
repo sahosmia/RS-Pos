@@ -45,6 +45,7 @@ class SalesOrderController extends Controller
             'advance_paid' => $order->advance_paid,
             'due_amount' => round($order->total_amount - $order->advance_paid, 2),
             'status' => $order->status,
+            'added_by' => $order->creator?->name,
             'can_convert' => $order->canConvert(),
         ]);
 

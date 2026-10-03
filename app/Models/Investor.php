@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\InvestorTransactionType;
+use App\Models\Concerns\HasCreator;
 use App\Models\Concerns\LogsActivityDefaults;
 use App\Traits\HasLedger;
 use Database\Factories\InvestorFactory;
@@ -20,6 +21,7 @@ class Investor extends Model
     /** @use HasFactory<InvestorFactory> */
     use HasFactory;
 
+    use HasCreator;
     use HasLedger;
     use LogsActivityDefaults;
 

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasCreator;
 use App\Models\Concerns\LogsActivityDefaults;
 use Database\Factories\PurchaseReturnFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -18,6 +19,7 @@ class PurchaseReturn extends Model
     /** @use HasFactory<PurchaseReturnFactory> */
     use HasFactory;
 
+    use HasCreator;
     use LogsActivityDefaults;
 
     /**

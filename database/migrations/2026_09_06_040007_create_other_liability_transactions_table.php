@@ -19,6 +19,7 @@ return new class extends Migration
             $table->foreignId('account_id')->nullable()->constrained('accounts')->restrictOnDelete();
             $table->text('note')->nullable();
             $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('updated_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();
 
             $table->index('other_liability_id');

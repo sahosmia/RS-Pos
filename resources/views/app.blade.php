@@ -8,7 +8,7 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
 
-        <title inertia>{{ \App\Models\Settings::currentOrNull()?->shop_name ?: 'RS Pos' }}</title>
+        <title inertia>{{ \App\Models\Settings::currentOrNull()?->shop_name ?: 'Sahos POS' }}</title>
 
         @if ($appearance === 'system')
             {{-- 'system' can't be resolved server-side — inline + render-blocking so it still applies before first paint (no flash) --}}
@@ -19,6 +19,10 @@
                     }
                 })();
             </script>
+        @endif
+
+        @if ($favicon = \App\Models\Settings::currentOrNull()?->brandingUrls()['favicon'])
+            <link rel="icon" href="{{ $favicon }}">
         @endif
 
         <link rel="preconnect" href="https://fonts.bunny.net">

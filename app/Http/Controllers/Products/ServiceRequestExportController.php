@@ -56,7 +56,7 @@ class ServiceRequestExportController extends Controller
         $requests = match ($validated['scope']) {
             'selected' => $query->whereIn('id', $validated['ids'])->get(),
             'page' => $this->pageOf($query, $validated),
-            'all' => $query->get(),
+            'all' => TableExport::chunked($query),
         };
 
         $headings = array_map(fn (string $id) => self::COLUMN_LABELS[$id], $validated['columns']);
@@ -64,7 +64,7 @@ class ServiceRequestExportController extends Controller
         $rows = $requests->map(fn (ServiceRequest $serviceRequest) => array_map(
             fn (string $id) => $this->cell($serviceRequest, $id),
             $validated['columns'],
-        ))->all();
+        ));
 
         return TableExport::respond($validated['format'], 'service-requests', 'Service Requests', $headings, $rows);
     }
@@ -79,7 +79,7 @@ class ServiceRequestExportController extends Controller
         $perPage = Settings::resolveRequestedPerPage($validated['per_page'] ?? null);
 
         if ($perPage === null) {
-            return $query->get();
+            return TableExport::chunked($query);
         }
 
         return $query->forPage($validated['page'] ?? 1, $perPage)->get();

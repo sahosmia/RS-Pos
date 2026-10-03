@@ -15,11 +15,12 @@ return new class extends Migration
             $table->id();
             $table->foreignId('contact_id')->constrained()->restrictOnDelete();
             $table->string('type');
-            $table->decimal('amount', 15, 2);
+            $table->decimal('amount', 19, 4);
             $table->string('reference_type')->nullable();
             $table->unsignedBigInteger('reference_id')->nullable();
             $table->text('note')->nullable();
             $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('updated_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();
 
             $table->index('type');

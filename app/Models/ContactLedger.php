@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\ContactLedgerType;
+use App\Models\Concerns\HasCreator;
 use Database\Factories\ContactLedgerFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -17,6 +18,8 @@ class ContactLedger extends Model
 {
     /** @use HasFactory<ContactLedgerFactory> */
     use HasFactory;
+
+    use HasCreator;
 
     protected $table = 'contact_ledger';
 

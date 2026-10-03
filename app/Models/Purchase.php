@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\DiscountType;
 use App\Enums\PaymentStatus;
 use App\Enums\PurchaseStatus;
+use App\Models\Concerns\HasCreator;
 use App\Models\Concerns\LogsActivityDefaults;
 use App\Traits\HasAccountTransactions;
 use Database\Factories\PurchaseFactory;
@@ -22,6 +23,7 @@ class Purchase extends Model
     /** @use HasFactory<PurchaseFactory> */
     use HasFactory;
 
+    use HasCreator;
     use LogsActivityDefaults;
 
     /**
@@ -66,14 +68,6 @@ class Purchase extends Model
     public function supplier(): BelongsTo
     {
         return $this->belongsTo(Contact::class);
-    }
-
-    /**
-     * @return BelongsTo<User, $this>
-     */
-    public function creator(): BelongsTo
-    {
-        return $this->belongsTo(User::class, 'created_by');
     }
 
     /**

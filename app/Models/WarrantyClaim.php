@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\WarrantyClaimStatus;
+use App\Models\Concerns\HasCreator;
 use App\Models\Concerns\LogsActivityDefaults;
 use Database\Factories\WarrantyClaimFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -14,6 +15,7 @@ class WarrantyClaim extends Model
     /** @use HasFactory<WarrantyClaimFactory> */
     use HasFactory;
 
+    use HasCreator;
     use LogsActivityDefaults;
 
     /**

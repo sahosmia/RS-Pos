@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\StaffStatus;
+use App\Models\Concerns\HasCreator;
 use App\Models\Concerns\LogsActivityDefaults;
 use Database\Factories\StaffFactory;
 use Illuminate\Database\Eloquent\Casts\Attribute;
@@ -23,6 +24,7 @@ class Staff extends Model
     /** @use HasFactory<StaffFactory> */
     use HasFactory;
 
+    use HasCreator;
     use LogsActivityDefaults;
 
     /**

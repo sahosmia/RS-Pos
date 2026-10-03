@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\AccountTransactionType;
+use App\Models\Concerns\HasCreator;
 use App\Models\Concerns\LogsActivityDefaults;
 use Database\Factories\AccountFactory;
 use Illuminate\Database\Eloquent\Builder;
@@ -16,6 +17,7 @@ class Account extends Model
     /** @use HasFactory<AccountFactory> */
     use HasFactory;
 
+    use HasCreator;
     use LogsActivityDefaults;
 
     /**

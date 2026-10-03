@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->foreignId('parent_id')->nullable()->constrained('categories')->nullOnDelete();
+            $table->text('description')->nullable();
             $table->timestamps();
 
             $table->unique(['name', 'parent_id']);

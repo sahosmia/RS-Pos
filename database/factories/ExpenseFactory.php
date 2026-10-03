@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Models\Account;
 use App\Models\Expense;
 use App\Models\ExpenseCategory;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -20,11 +21,8 @@ class ExpenseFactory extends Factory
     {
         return [
             'expense_category_id' => ExpenseCategory::factory(),
-            'contact_id' => null,
+            'account_id' => Account::factory(),
             'total_amount' => fake()->randomFloat(2, 100, 5000),
-            'paid_amount' => 0,
-            'due_amount' => 0,
-            'payment_status' => 'due',
             'expense_date' => fake()->date(),
             'note' => null,
         ];

@@ -15,6 +15,7 @@ import { type BreadcrumbItem } from '@/types';
 import { type ChartOfAccountListItem, type ChartOfAccountOption, type ChartOfAccountTypeValue, type NormalBalanceValue } from '@/types/models';
 import { Head, router, useForm } from '@inertiajs/react';
 import { FormEventHandler, useState } from 'react';
+import { toast } from 'sonner';
 
 const breadcrumbs: BreadcrumbItem[] = [{ title: 'Chart of Accounts', href: '/chart-of-accounts' }];
 
@@ -72,7 +73,14 @@ export default function ChartOfAccountsIndex({ accounts, allAccounts }: ChartOfA
     const submit: FormEventHandler = (e) => {
         e.preventDefault();
 
-        const options = { preserveScroll: true, onSuccess: () => setModalOpen(false) };
+        const isEditing = editing !== null;
+        const options = {
+            preserveScroll: true,
+            onSuccess: () => {
+                toast.success(isEditing ? 'Account updated.' : 'Account created.');
+                setModalOpen(false);
+            },
+        };
 
         if (editing) {
             form.patch(route('chart-of-accounts.update', editing.id), options);
@@ -84,8 +92,12 @@ export default function ChartOfAccountsIndex({ accounts, allAccounts }: ChartOfA
     const confirmDelete = () => {
         if (!deleting) return;
 
+        const name = deleting.name;
+
         router.delete(route('chart-of-accounts.destroy', deleting.id), {
             preserveScroll: true,
+            onSuccess: () => toast.success(`"${name}" deleted.`),
+            onError: (errors) => toast.error(errors.account ?? 'Could not delete account.'),
             onFinish: () => setDeleting(null),
         });
     };
@@ -199,6 +211,7 @@ export default function ChartOfAccountsIndex({ accounts, allAccounts }: ChartOfA
                             onChange={(val) => val && form.setData('type', val as ChartOfAccountTypeValue)}
                             options={typeOptions}
                             error={form.errors.type}
+                            required
                         />
 
                         <FormSelect
@@ -208,6 +221,7 @@ export default function ChartOfAccountsIndex({ accounts, allAccounts }: ChartOfA
                             onChange={(val) => val && form.setData('normal_balance', val as NormalBalanceValue)}
                             options={normalBalanceOptions}
                             error={form.errors.normal_balance}
+                            required
                         />
 
                         <FormSelect

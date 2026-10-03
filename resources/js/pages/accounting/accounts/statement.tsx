@@ -1,4 +1,6 @@
 import { MetricCard, MetricGrid } from '@/components/shared/metric-card';
+import DataTablePagination from '@/components/data-table/data-table-pagination';
+import { type DataTablePaginationMeta } from '@/components/data-table/types';
 import { FormInput } from '@/components/form/form-input';
 import HeadingSmall from '@/components/heading-small';
 import EmptyState from '@/components/shared/empty-state';
@@ -16,12 +18,15 @@ interface StatementProps {
     transactions: StatementRow[];
     broughtForward: number;
     closingBalance: number;
+    /** Balance carried into the first row of this page (brought forward + earlier pages). */
+    openingBalance: number;
+    pagination: DataTablePaginationMeta;
     filters: { from: string; to: string };
 }
 
 const humanize = (value: string) => value.replaceAll('_', ' ').replace(/\b\w/g, (character) => character.toUpperCase());
 
-export default function AccountStatement({ account, transactions, broughtForward, closingBalance, filters }: StatementProps) {
+export default function AccountStatement({ account, transactions, broughtForward, closingBalance, openingBalance, pagination, filters }: StatementProps) {
     const money = useMoneyFormat();
     const [range, setRange] = useState(filters);
 
@@ -52,6 +57,7 @@ export default function AccountStatement({ account, transactions, broughtForward
         description: transaction.note ? `${humanize(transaction.type)} — ${transaction.note}` : humanize(transaction.type),
         amount: transaction.amount,
         balance: transaction.balance,
+        by: transaction.added_by,
     }));
 
     return (
@@ -75,7 +81,25 @@ export default function AccountStatement({ account, transactions, broughtForward
                 {rows.length === 0 ? (
                     <EmptyState title="No transactions in this range" description="তারিখের সীমা বদলে দেখুন" />
                 ) : (
-                    <LedgerTable rows={rows} broughtForward={broughtForward} />
+                    <LedgerTable
+                        rows={rows}
+                        broughtForward={pagination.current_page > 1 ? openingBalance : broughtForward}
+                        broughtForwardLabel={pagination.current_page > 1 ? 'Balance brought forward from previous page' : 'Brought forward'}
+                    />
+                )}
+
+                {pagination.total > 0 && (
+                    <DataTablePagination
+                        pagination={pagination}
+                        perPage={100}
+                        perPageOptions={[]}
+                        allowAll={false}
+                        onPerPageChange={() => undefined}
+                        onPageChange={(page) =>
+                            router.get(route('accounts.statement', account.id), { ...range, page }, { preserveState: true, preserveScroll: true })
+                        }
+                        itemLabel="transactions"
+                    />
                 )}
             </div>
         </AppLayout>

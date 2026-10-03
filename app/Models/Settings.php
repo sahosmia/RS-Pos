@@ -35,7 +35,24 @@ class Settings extends Model implements HasMedia
      *
      * @var list<int>
      */
-    public const ACTIVITY_LOG_RETENTION_OPTIONS = [3, 6, 12, 18];
+    public const ACTIVITY_LOG_RETENTION_OPTIONS = [3, 6, 12, 18, 24];
+
+    /**
+     * Every action the Ctrl+Space quick-action switcher can offer. The labels, icons and links live in
+     * resources/js/lib/quick-actions.ts; this list only guards what an admin may save.
+     *
+     * @var list<string>
+     */
+    public const QUICK_ACTION_KEYS = [
+        'add_sale',
+        'add_purchase',
+        'add_contact',
+        'add_product',
+        'add_expense',
+        'add_other_income',
+        'add_sales_order',
+        'add_asset',
+    ];
 
     /**
      * @var list<string>
@@ -62,6 +79,7 @@ class Settings extends Model implements HasMedia
         'activity_log_retention_months',
         'theme_color',
         'menu_order',
+        'quick_actions',
         'invoice_settings',
         'license_key',
         'license_status',
@@ -88,6 +106,7 @@ class Settings extends Model implements HasMedia
             'activity_log_retention_months' => 'integer',
             'theme_color' => ThemeColor::class,
             'menu_order' => 'array',
+            'quick_actions' => 'array',
             'invoice_settings' => 'array',
             'license_key' => 'encrypted',
             'license_last_verified_at' => 'datetime',
@@ -328,8 +347,52 @@ class Settings extends Model implements HasMedia
         return $defaults;
     }
 
+    /**
+     * The URL slots an admin can upload to in Business Settings → Branding, mapped to their media
+     * collection. `logo` shows while the sidebar is open, `logo-small` while it is collapsed to icons.
+     *
+     * @var array<string, string>
+     */
+    public const BRANDING_SLOTS = [
+        'logo' => 'shop_logo',
+        'logo-small' => 'shop_logo_small',
+        'favicon' => 'favicon',
+    ];
+
+    /**
+     * Public URLs of the branding images (null where none was uploaded) — read with one media query.
+     * `Settings::current()` hands back a cached instance, so a `media` relation loaded earlier (possibly
+     * empty) would otherwise hide an image uploaded since; it is always reloaded here.
+     *
+     * @return array{logo: ?string, logo_small: ?string, favicon: ?string}
+     */
+    public function brandingUrls(): array
+    {
+        $this->unsetRelation('media')->load('media');
+
+        return [
+            'logo' => $this->getFirstMediaUrl('shop_logo') ?: null,
+            'logo_small' => $this->getFirstMediaUrl('shop_logo_small') ?: null,
+            'favicon' => $this->getFirstMediaUrl('favicon') ?: null,
+        ];
+    }
+
     public function registerMediaCollections(): void
     {
+        // Sidebar logo (open), its small icon-only twin (collapsed sidebar), and the browser favicon —
+        // all separate from the invoice logo below.
+        $this->addMediaCollection('shop_logo')
+            ->singleFile()
+            ->acceptsMimeTypes(['image/jpeg', 'image/png', 'image/webp']);
+
+        $this->addMediaCollection('shop_logo_small')
+            ->singleFile()
+            ->acceptsMimeTypes(['image/jpeg', 'image/png', 'image/webp']);
+
+        $this->addMediaCollection('favicon')
+            ->singleFile()
+            ->acceptsMimeTypes(['image/png', 'image/x-icon', 'image/vnd.microsoft.icon', 'image/webp', 'image/jpeg']);
+
         $this->addMediaCollection('invoice_logo')
             ->singleFile()
             ->acceptsMimeTypes(['image/jpeg', 'image/png', 'image/webp']);

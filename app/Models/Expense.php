@@ -2,9 +2,8 @@
 
 namespace App\Models;
 
-use App\Enums\PaymentStatus;
+use App\Models\Concerns\HasCreator;
 use App\Models\Concerns\LogsActivityDefaults;
-use App\Traits\HasAccountTransactions;
 use Database\Factories\ExpenseFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -12,29 +11,26 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 
+/**
+ * Money spent and paid in full on the spot from `account` — no vendor, no due.
+ */
 class Expense extends Model implements HasMedia
 {
-    use HasAccountTransactions;
-
     /** @use HasFactory<ExpenseFactory> */
     use HasFactory;
 
+    use HasCreator;
     use InteractsWithMedia;
     use LogsActivityDefaults;
 
     /**
-     * `paid_amount`/`due_amount`/`payment_status` are deliberately not
-     * fillable — they're derived and only ever written by
-     * CreateExpenseAction/UpdateExpenseAction/AddExpensePaymentAction.
-     *
      * @var list<string>
      */
     protected $fillable = [
         'expense_category_id',
-        'contact_id',
+        'account_id',
         'total_amount',
         'expense_date',
-        'due_date',
         'note',
         'created_by',
     ];
@@ -46,11 +42,7 @@ class Expense extends Model implements HasMedia
     {
         return [
             'expense_date' => 'date',
-            'due_date' => 'date',
             'total_amount' => 'float',
-            'paid_amount' => 'float',
-            'due_amount' => 'float',
-            'payment_status' => PaymentStatus::class,
         ];
     }
 
@@ -74,43 +66,10 @@ class Expense extends Model implements HasMedia
     }
 
     /**
-     * The landlord/vendor this is owed to — nullable, only set when the
-     * expense is actually owed to a tracked party.
-     *
-     * @return BelongsTo<Contact, $this>
+     * @return BelongsTo<Account, $this>
      */
-    public function contact(): BelongsTo
+    public function account(): BelongsTo
     {
-        return $this->belongsTo(Contact::class);
-    }
-
-    /**
-     * Nothing paid yet — the journal/ledger footprint so far is exactly one
-     * (reversible) due entry, so category/contact/total_amount/date can
-     * still be corrected. Once any payment lands, corrections go through a
-     * new adjustment instead of an in-place edit.
-     */
-    public function canEdit(): bool
-    {
-        return $this->paid_amount <= 0.0;
-    }
-
-    /**
-     * Re-derive paid_amount/due_amount/payment_status from the actual
-     * account_transactions referencing this expense — the source of truth,
-     * never accumulated incrementally.
-     */
-    public function recalculatePaymentTotals(): void
-    {
-        $paidViaAccounts = $this->sumAccountTransactions('expense', $this->id);
-
-        $paidAmount = round($paidViaAccounts, 2);
-        $dueAmount = round($this->total_amount - $paidAmount, 2);
-
-        $this->forceFill([
-            'paid_amount' => $paidAmount,
-            'due_amount' => $dueAmount,
-            'payment_status' => PaymentStatus::fromAmounts($paidAmount, $this->total_amount),
-        ])->save();
+        return $this->belongsTo(Account::class);
     }
 }

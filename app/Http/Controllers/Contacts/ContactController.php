@@ -3,9 +3,9 @@
 namespace App\Http\Controllers\Contacts;
 
 use App\Actions\Contact\CreateContactAction;
-use App\Enums\ContactType;
 use App\Actions\Contact\DeleteContactAction;
 use App\Actions\Contact\UpdateContactAction;
+use App\Enums\ContactType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Contacts\Contact\BulkDestroyContactsRequest;
 use App\Http\Requests\Contacts\Contact\StoreContactRequest;
@@ -145,6 +145,7 @@ class ContactController extends Controller
         $validated = $request->validate([
             'from' => ['nullable', 'date'],
             'to' => ['nullable', 'date', 'after_or_equal:from'],
+            'page' => ['nullable', 'integer', 'min:1'],
         ]);
 
         $from = isset($validated['from']) ? Carbon::parse($validated['from'])->startOfDay() : now()->subDays(90)->startOfDay();
@@ -152,7 +153,9 @@ class ContactController extends Controller
 
         $contact->load('customerGroup:id,name');
 
-        $ledger = ContactLedgerDetails::rowsFor($contact, $from, $to)
+        $ledgerPage = ContactLedgerDetails::pageFor($contact, $from, $to, $validated['page'] ?? null);
+
+        $ledger = $ledgerPage['rows']
             ->map(fn (array $row) => [
                 ...$row,
                 'type' => $row['type']->value,
@@ -202,6 +205,7 @@ class ContactController extends Controller
             ],
             'ledger' => $ledger,
             'ledgerFilters' => ['from' => $from->toDateString(), 'to' => $to->toDateString()],
+            'ledgerPagination' => $ledgerPage['pagination'],
             'payments' => $payments,
             'documents' => $documents,
             'accounts' => Account::query()->active()->orderBy('name')->get(['id', 'name', 'current_balance', 'is_default']),
@@ -294,7 +298,7 @@ class ContactController extends Controller
         $contacts = match ($validated['scope']) {
             'selected' => $query->whereIn('id', $validated['ids'])->get(),
             'page' => $this->pageOf($query, $validated),
-            'all' => $query->get(),
+            'all' => TableExport::chunked($query),
         };
 
         $headings = array_map(fn (string $id) => self::COLUMN_LABELS[$id], $validated['columns']);
@@ -302,7 +306,7 @@ class ContactController extends Controller
         $rows = $contacts->map(fn (Contact $contact) => array_map(
             fn (string $id) => $this->cell($contact, $id),
             $validated['columns'],
-        ))->all();
+        ));
 
         return TableExport::respond($validated['format'], 'contacts', 'Contacts', $headings, $rows);
     }
@@ -317,7 +321,7 @@ class ContactController extends Controller
         $perPage = Settings::resolveRequestedPerPage($validated['per_page'] ?? null);
 
         if ($perPage === null) {
-            return $query->get();
+            return TableExport::chunked($query);
         }
 
         return $query->forPage($validated['page'] ?? 1, $perPage)->get();

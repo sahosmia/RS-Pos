@@ -3,8 +3,6 @@
 use App\Http\Controllers\Accounting\AccountController;
 use App\Http\Controllers\Accounting\AccountStatementController;
 use App\Http\Controllers\Accounting\AccountTypeController;
-use App\Http\Controllers\Accounting\CashBookController;
-use App\Http\Controllers\Accounting\CashBookExportController;
 use App\Http\Controllers\Accounting\FundTransferController;
 use Illuminate\Support\Facades\Route;
 
@@ -17,10 +15,6 @@ Route::middleware(['auth', 'module:account'])->group(function () {
 
     Route::resource('account-types', AccountTypeController::class)
         ->only(['store', 'update', 'destroy']);
-
-    Route::get('cash-book', [CashBookController::class, 'index'])->name('cash-book.index');
-    Route::post('cash-book', [CashBookController::class, 'store'])->name('cash-book.store');
-    Route::get('cash-book/export', CashBookExportController::class)->name('cash-book.export');
 });
 
 Route::middleware(['auth', 'module:account,transfer'])

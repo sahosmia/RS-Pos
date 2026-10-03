@@ -1,5 +1,7 @@
 import ContactFormModal from '@/components/contacts/contact-form-modal';
 import ContactLedgerTable from '@/components/contacts/contact-ledger-table';
+import DataTablePagination from '@/components/data-table/data-table-pagination';
+import { type DataTablePaginationMeta } from '@/components/data-table/types';
 import PayDueModal from '@/components/contacts/pay-due-modal';
 import RefundCreditModal from '@/components/contacts/refund-credit-modal';
 import WaiveDueModal from '@/components/contacts/waive-due-modal';
@@ -37,6 +39,7 @@ interface ContactShowProps {
     contact: ContactDetail;
     ledger: ContactLedgerEntry[];
     ledgerFilters: { from: string; to: string };
+    ledgerPagination: DataTablePaginationMeta;
     payments: ContactLedgerEntry[];
     documents: ContactDocument[];
     accounts: Account[];
@@ -47,7 +50,7 @@ interface ContactShowProps {
 
 const humanize = (value: string) => value.replaceAll('_', ' ').replace(/\b\w/g, (character) => character.toUpperCase());
 
-export default function ContactShow({ contact, ledger, ledgerFilters, payments, documents, accounts, customerGroups, purchases, sales }: ContactShowProps) {
+export default function ContactShow({ contact, ledger, ledgerFilters, ledgerPagination, payments, documents, accounts, customerGroups, purchases, sales }: ContactShowProps) {
     const money = useMoneyFormat();
     const { t } = useTranslation();
     const [editModalOpen, setEditModalOpen] = useState(false);
@@ -59,11 +62,11 @@ export default function ContactShow({ contact, ledger, ledgerFilters, payments, 
     const [ledgerFrom, setLedgerFrom] = useState(ledgerFilters.from);
     const [ledgerTo, setLedgerTo] = useState(ledgerFilters.to);
 
-    const applyLedgerFilter = (from: string, to: string) => {
+    const applyLedgerFilter = (from: string, to: string, page?: number) => {
         router.get(
             route('contacts.show', contact.id),
-            { from, to },
-            { preserveScroll: true, preserveState: true, only: ['ledger', 'ledgerFilters', 'payments'] },
+            { from, to, ...(page ? { page } : {}) },
+            { preserveScroll: true, preserveState: true, only: ['ledger', 'ledgerFilters', 'ledgerPagination', 'payments'] },
         );
     };
 
@@ -236,6 +239,19 @@ export default function ContactShow({ contact, ledger, ledgerFilters, payments, 
                             <EmptyState title={t('contactShow', 'empty_ledger_title')} description={t('contactShow', 'empty_ledger_description')} />
                         ) : (
                             <ContactLedgerTable rows={ledger} />
+                        )}
+                        {ledgerPagination.last_page > 1 && (
+                            <div className="mt-3">
+                                <DataTablePagination
+                                    pagination={ledgerPagination}
+                                    perPage={100}
+                                    perPageOptions={[]}
+                                    allowAll={false}
+                                    onPerPageChange={() => undefined}
+                                    onPageChange={(page) => applyLedgerFilter(ledgerFrom, ledgerTo, page)}
+                                    itemLabel="entries"
+                                />
+                            </div>
                         )}
                     </TabsContent>
 

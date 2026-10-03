@@ -17,6 +17,7 @@ return new class extends Migration
             $table->decimal('opening_amount', 19, 4)->default(0);
             $table->decimal('current_balance', 19, 4)->default(0);
             $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('updated_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();
         });
     }

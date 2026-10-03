@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasCreator;
 use Database\Factories\FundTransferFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -11,6 +12,8 @@ class FundTransfer extends Model
 {
     /** @use HasFactory<FundTransferFactory> */
     use HasFactory;
+
+    use HasCreator;
 
     /**
      * @var list<string>

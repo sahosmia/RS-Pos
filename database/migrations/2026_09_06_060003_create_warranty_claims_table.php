@@ -19,6 +19,7 @@ return new class extends Migration
             $table->string('status')->default('pending');
             $table->text('resolution_note')->nullable();
             $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('updated_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();
 
             $table->index('sale_item_id');

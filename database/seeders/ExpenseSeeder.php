@@ -2,10 +2,8 @@
 
 namespace Database\Seeders;
 
-use App\Actions\Expenses\Expense\AddExpensePaymentAction;
 use App\Actions\Expenses\Expense\CreateExpenseAction;
 use App\Models\Account;
-use App\Models\Contact;
 use App\Models\Expense;
 use App\Models\ExpenseCategory;
 use Database\Seeders\Support\DemoLookup;
@@ -13,9 +11,8 @@ use Illuminate\Database\Seeder;
 use Illuminate\Support\Carbon;
 
 /**
- * Demo expenses — rent, electricity, salary, transport, internet; paid in
- * full, part-paid, and fully due. Seeds once: skipped if the demo scenario is
- * already in the database.
+ * Demo expenses — rent, electricity, salary, transport, internet; each paid in full from an account
+ * the moment it is recorded. Seeds once: skipped if the demo scenario is already in the database.
  */
 class ExpenseSeeder extends Seeder
 {
@@ -27,70 +24,33 @@ class ExpenseSeeder extends Seeder
             return;
         }
 
-        $this->call([AccountSeeder::class, ExpenseCategorySeeder::class, SupplierSeeder::class]);
+        $this->call([AccountSeeder::class, ExpenseCategorySeeder::class]);
 
-        $this->seedExpenses(['customers' => [], 'suppliers' => DemoLookup::suppliers()], DemoLookup::accounts());
+        $this->seedExpenses(DemoLookup::accounts());
     }
 
     /**
-     * @param  array{customers: array<int, Contact>, suppliers: array<string, Contact>}  $contacts
      * @param  array<string, Account>  $accounts
      */
-    private function seedExpenses(array $contacts, array $accounts): void
+    private function seedExpenses(array $accounts): void
     {
         $createExpense = app(CreateExpenseAction::class);
-        $addPayment = app(AddExpensePaymentAction::class);
-        $suppliers = $contacts['suppliers'];
-
         $categories = ExpenseCategory::query()->get()->keyBy('name');
 
-        // Room Rent — this month, paid in full.
-        $rent1 = $createExpense->execute([
-            'expense_category_id' => $categories['Room Rent']->id,
-            'contact_id' => $suppliers['landlord']->id,
-            'total_amount' => 15000,
-            'expense_date' => Carbon::today()->subDays(25)->toDateString(),
-        ]);
-        $addPayment->execute($rent1, [['account_id' => $accounts['bank']->id, 'amount' => 15000]]);
-
-        // Electricity Bill — partially paid.
-        $electricity = $createExpense->execute([
-            'expense_category_id' => $categories['Electricity Bill']->id,
-            'contact_id' => $suppliers['desco']->id,
-            'total_amount' => 4500,
-            'expense_date' => Carbon::today()->subDays(10)->toDateString(),
-        ]);
-        $addPayment->execute($electricity, [['account_id' => $accounts['cash']->id, 'amount' => 2000]]);
-
-        // Staff Salary — accrued, fully due.
-        $createExpense->execute([
-            'expense_category_id' => $categories['Staff Salary']->id,
-            'total_amount' => 45000,
-            'expense_date' => Carbon::today()->subDays(5)->toDateString(),
-            'note' => 'Monthly salary — 2 staff',
-        ]);
-
-        // Transport — small, paid immediately.
-        $transport = $createExpense->execute([
-            'expense_category_id' => $categories['Transport']->id,
-            'total_amount' => 1200,
-            'expense_date' => Carbon::today()->subDays(3)->toDateString(),
-        ]);
-        $addPayment->execute($transport, [['account_id' => $accounts['cash']->id, 'amount' => 1200]]);
-
-        // Internet Bill — fully due.
-        $createExpense->execute([
-            'expense_category_id' => $categories['Internet Bill']->id,
-            'total_amount' => 2000,
-            'expense_date' => Carbon::today()->subDays(2)->toDateString(),
-        ]);
-
-        // Room Rent — next month's row (recurring = a new row each period, never edited into the last one).
-        $createExpense->execute([
-            'expense_category_id' => $categories['Room Rent']->id,
-            'contact_id' => $suppliers['landlord']->id,
-            'total_amount' => 15000,
-            'expense_date' => Carbon::today()->addDays(5)->toDateString(),
-        ]);
+        foreach ([
+            ['Room Rent', 15000, 25, 'bank', 'Shop rent'],
+            ['Electricity Bill', 4500, 10, 'bank', 'Electricity — monthly bill'],
+            ['Staff Salary', 45000, 5, 'bank', 'Monthly salary — 2 staff'],
+            ['Transport', 1200, 3, 'cash', 'Delivery van fuel'],
+            ['Internet Bill', 2000, 2, 'cash', 'Internet — monthly'],
+        ] as [$category, $amount, $daysAgo, $account, $note]) {
+            $createExpense->execute([
+                'expense_category_id' => $categories[$category]->id,
+                'account_id' => $accounts[$account]->id,
+                'total_amount' => $amount,
+                'expense_date' => Carbon::today()->subDays($daysAgo)->toDateString(),
+                'note' => $note,
+            ]);
+        }
     }
 }

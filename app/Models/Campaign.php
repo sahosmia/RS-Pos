@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\CampaignStatus;
 use App\Enums\CampaignTargetType;
 use App\Enums\MessageChannel;
+use App\Models\Concerns\HasCreator;
 use App\Models\Concerns\LogsActivityDefaults;
 use Database\Factories\CampaignFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -23,6 +24,7 @@ class Campaign extends Model
     /** @use HasFactory<CampaignFactory> */
     use HasFactory;
 
+    use HasCreator;
     use LogsActivityDefaults;
 
     /**
@@ -64,13 +66,5 @@ class Campaign extends Model
     public function recipients(): HasMany
     {
         return $this->hasMany(CampaignRecipient::class);
-    }
-
-    /**
-     * @return BelongsTo<User, $this>
-     */
-    public function creator(): BelongsTo
-    {
-        return $this->belongsTo(User::class, 'created_by');
     }
 }

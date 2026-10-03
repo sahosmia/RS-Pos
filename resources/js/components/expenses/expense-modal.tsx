@@ -33,7 +33,7 @@ export default function ExpenseModal({ open, onOpenChange, categories, accounts,
         attachment: File | null;
     }>({
         expense_category_id: expense?.category.id ?? categories[0]?.id ?? 0,
-        account_id: defaultAccountId,
+        account_id: expense?.account?.id ?? defaultAccountId,
         total_amount: expense?.total_amount ?? 0,
         expense_date: expense?.expense_date ?? today(),
         note: expense?.note ?? '',
@@ -44,7 +44,7 @@ export default function ExpenseModal({ open, onOpenChange, categories, accounts,
         if (open) {
             form.setData({
                 expense_category_id: expense?.category.id ?? categories[0]?.id ?? 0,
-                account_id: defaultAccountId,
+                account_id: expense?.account?.id ?? defaultAccountId,
                 total_amount: expense?.total_amount ?? 0,
                 expense_date: expense?.expense_date ?? today(),
                 note: expense?.note ?? '',

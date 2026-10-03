@@ -40,6 +40,7 @@ class PurchaseReturnController extends Controller
             'supplier' => $return->supplier->only(['id', 'name']),
             'return_date' => $return->return_date->toDateString(),
             'total_amount' => $return->total_amount,
+            'added_by' => $return->creator?->name,
         ]);
 
         return Inertia::render('purchases/purchase-returns/index', [

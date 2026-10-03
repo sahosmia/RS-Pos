@@ -102,10 +102,13 @@ export function useTableFilters<TFilters extends TableFilterBase>({
 
     const filterKeys = useMemo(() => Object.keys(emptyFilters) as (keyof TFilters)[], [emptyFilters]);
 
-    const activeFilterCount = useMemo(
-        () => filterKeys.filter((key) => filters[key] !== emptyFilters[key]).length,
-        [filterKeys, filters, emptyFilters],
-    );
+    // A filter the server didn't echo back (absent from the query string) arrives as `undefined`, and a
+    // cleared one can be `''` — both mean "not set", exactly like the `null` an empty filter is declared as.
+    const activeFilterCount = useMemo(() => {
+        const normalize = (value: unknown) => (value === undefined || value === '' ? null : value);
+
+        return filterKeys.filter((key) => normalize(filters[key]) !== normalize(emptyFilters[key])).length;
+    }, [filterKeys, filters, emptyFilters]);
 
     const canReset = activeFilterCount > 0 || search !== '';
 

@@ -8,6 +8,7 @@ use App\Enums\PaymentStatus;
 use App\Enums\SalePaymentType;
 use App\Enums\SaleSource;
 use App\Enums\SaleStatus;
+use App\Models\Concerns\HasCreator;
 use App\Models\Concerns\LogsActivityDefaults;
 use App\Traits\HasAccountTransactions;
 use Database\Factories\SaleFactory;
@@ -25,6 +26,7 @@ class Sale extends Model
     /** @use HasFactory<SaleFactory> */
     use HasFactory;
 
+    use HasCreator;
     use LogsActivityDefaults;
 
     /**
@@ -83,14 +85,6 @@ class Sale extends Model
     public function customer(): BelongsTo
     {
         return $this->belongsTo(Contact::class);
-    }
-
-    /**
-     * @return BelongsTo<User, $this>
-     */
-    public function creator(): BelongsTo
-    {
-        return $this->belongsTo(User::class, 'created_by');
     }
 
     /**

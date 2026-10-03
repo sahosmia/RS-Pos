@@ -85,7 +85,7 @@ test('the status column exports a human label, not the raw enum value', function
 
     $response->assertOk();
 
-    expect($response->getFile()->getContent())
+    expect($response->streamedContent())
         ->toContain('In Stock')
         ->not->toContain('in_stock');
 });
@@ -108,4 +108,46 @@ test('an unknown column is rejected', function () {
         'scope' => 'all',
         'columns' => ['not_a_real_column'],
     ], '', '&', PHP_QUERY_RFC3986))->assertInvalid('columns.0');
+});
+
+function productExportUrl(string $format, array $extra = []): string
+{
+    return '/products/export?'.http_build_query([
+        'format' => $format,
+        'scope' => 'all',
+        'columns' => ['name'],
+        ...$extra,
+    ], '', '&', PHP_QUERY_RFC3986);
+}
+
+test('csv streams every row across chunk boundaries, each exactly once', function () {
+    config(['exports.chunk_size' => 3]);
+    $this->actingAs(User::factory()->create());
+    // the same sort value on every row: only the primary-key tiebreaker keeps chunks from skipping or repeating rows
+    $names = collect(range(1, 10))->map(fn (int $n) => "Item {$n}");
+    $names->each(fn (string $name) => Product::factory()->create(['name' => $name]));
+
+    $lines = array_filter(explode("\n", $this->get(productExportUrl('csv'))->streamedContent()));
+
+    expect($lines)->toHaveCount(11)
+        ->and(array_map(fn (string $line) => trim($line, '"'), array_slice($lines, 1)))->toEqualCanonicalizing($names->all());
+});
+
+test('xlsx and pdf refuse to build more rows than their limit instead of exhausting memory', function (string $format) {
+    config(["exports.limits.{$format}" => 2]);
+    $this->actingAs(User::factory()->create());
+    Product::factory()->count(3)->create();
+
+    $this->get(productExportUrl($format))->assertStatus(422);
+
+    Product::query()->latest('id')->first()->delete();
+    $this->get(productExportUrl($format))->assertOk();
+})->with(['xlsx', 'pdf']);
+
+test('csv has no row limit', function () {
+    config(['exports.limits.xlsx' => 1, 'exports.limits.pdf' => 1]);
+    $this->actingAs(User::factory()->create());
+    Product::factory()->count(3)->create();
+
+    $this->get(productExportUrl('csv'))->assertOk();
 });

@@ -13,10 +13,14 @@ class CreateActivityLogTable extends Migration
             $table->string('log_name')->nullable();
             $table->text('description');
             $table->nullableMorphs('subject', 'subject');
+            $table->string('event')->nullable();
             $table->nullableMorphs('causer', 'causer');
             $table->json('properties')->nullable();
+            $table->uuid('batch_uuid')->nullable();
             $table->timestamps();
             $table->index('log_name');
+            // The Activity Log page filters/sorts by date, and the monthly prune deletes by it.
+            $table->index('created_at');
         });
     }
 

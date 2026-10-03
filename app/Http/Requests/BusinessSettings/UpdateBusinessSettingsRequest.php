@@ -58,6 +58,11 @@ class UpdateBusinessSettingsRequest extends FormRequest
             'menu_order.sub' => ['nullable', 'array'],
             'menu_order.sub.*' => ['array'],
             'menu_order.sub.*.*' => ['string', 'max:64', 'distinct'],
+
+            // Quick actions — the Ctrl+Space switcher: which actions show, and the order they cycle in
+            'quick_actions' => ['nullable', 'array', 'max:'.count(Settings::QUICK_ACTION_KEYS)],
+            'quick_actions.*.key' => ['required', 'string', Rule::in(Settings::QUICK_ACTION_KEYS), 'distinct'],
+            'quick_actions.*.enabled' => ['required', 'boolean'],
         ];
     }
 }

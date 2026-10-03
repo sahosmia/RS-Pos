@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\LoanTransactionType;
+use App\Models\Concerns\HasCreator;
 use Database\Factories\LoanTransactionFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -12,6 +13,8 @@ class LoanTransaction extends Model
 {
     /** @use HasFactory<LoanTransactionFactory> */
     use HasFactory;
+
+    use HasCreator;
 
     /**
      * @var list<string>

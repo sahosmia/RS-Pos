@@ -1,13 +1,10 @@
-import AddExpensePaymentModal from '@/components/expenses/add-expense-payment-modal';
 import { getExpenseActions } from '@/components/expenses/expense-actions';
 import ExpenseModal from '@/components/expenses/expense-modal';
 import HeadingSmall from '@/components/heading-small';
 import LookupManagerModal from '@/components/products/lookup-manager-modal';
 import ConfirmDialog from '@/components/shared/confirm-dialog';
 import StatCards from '@/components/shared/stat-cards';
-import ContactLink from '@/components/shared/contact-link';
 import EmptyState from '@/components/shared/empty-state';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import DataTable from '@/components/data-table/data-table';
 import DataTableCheckbox from '@/components/data-table/data-table-checkbox';
@@ -27,9 +24,9 @@ import { useTableViewMode } from '@/hooks/use-table-view-mode';
 import AppLayout from '@/layouts/app-layout';
 import { formatDateTime } from '@/lib/format-date';
 import { type BreadcrumbItem, type SharedData } from '@/types';
-import { type Account, type ExpenseCategoryOption, type ExpenseListItem, type Paginated, type PaymentStatusValue } from '@/types/models';
+import { type Account, type ExpenseCategoryOption, type ExpenseListItem, type Paginated } from '@/types/models';
 import { Head, router, usePage } from '@inertiajs/react';
-import { ArrowDownCircle, ArrowUpCircle, DollarSign, Receipt } from 'lucide-react';
+import { DollarSign, Receipt } from 'lucide-react';
 import { type ColumnDef, type VisibilityState } from '@tanstack/react-table';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
@@ -40,15 +37,12 @@ interface ExpenseFilters extends TableFilterBase {
     from: string | null;
     to: string | null;
     expense_category_id: number | null;
-    payment_status: PaymentStatusValue | null;
     per_page: number | 'all';
 }
 
 export interface ExpenseStats {
     total_expenses: number;
     total_amount: number;
-    total_paid: number;
-    total_due: number;
 }
 
 interface ExpensesIndexProps {
@@ -62,30 +56,20 @@ interface ExpensesIndexProps {
 const getVisibilityColumns = (): DataTableColumnOption[] => [
     { id: 'date', label: 'Date' },
     { id: 'category', label: 'Category' },
-    { id: 'vendor', label: 'Vendor' },
-    { id: 'total', label: 'Total' },
-    { id: 'due', label: 'Due' },
-    { id: 'status', label: 'Status' },
+    { id: 'account', label: 'Account' },
+    { id: 'note', label: 'Note' },
+    { id: 'total', label: 'Amount' },
+    { id: 'added_by', label: 'Added by' },
 ];
 
 /** Matches `ExpenseExportController::COLUMN_LABELS` on the backend. */
 const getExportColumns = (): DataTableColumnOption[] => [
     { id: 'expense_date', label: 'Date' },
     { id: 'category', label: 'Category' },
-    { id: 'contact', label: 'Vendor' },
-    { id: 'total_amount', label: 'Total' },
-    { id: 'due_amount', label: 'Due' },
-    { id: 'payment_status', label: 'Status' },
+    { id: 'account', label: 'Account' },
     { id: 'note', label: 'Note' },
+    { id: 'total_amount', label: 'Amount' },
 ];
-
-const paymentStatusVariant: Record<PaymentStatusValue, 'secondary' | 'outline' | 'destructive'> = {
-    due: 'destructive',
-    partial: 'outline',
-    paid: 'secondary',
-};
-
-const humanize = (value: string) => value.replaceAll('_', ' ').replace(/\b\w/g, (character) => character.toUpperCase());
 
 export default function ExpensesIndex({ expenses, stats, categories, accounts, filters }: ExpensesIndexProps) {
     const { shop } = usePage<SharedData>().props;
@@ -95,7 +79,6 @@ export default function ExpensesIndex({ expenses, stats, categories, accounts, f
     const [addOpen, setAddOpen] = useState(false);
     const [categoriesOpen, setCategoriesOpen] = useState(false);
     const [editing, setEditing] = useState<ExpenseListItem | null>(null);
-    const [paying, setPaying] = useState<ExpenseListItem | null>(null);
     const [deleting, setDeleting] = useState<ExpenseListItem | null>(null);
 
     const confirmDelete = () => {
@@ -110,7 +93,7 @@ export default function ExpensesIndex({ expenses, stats, categories, accounts, f
     const { isLoading, applyFilters, handleSort, activeFilterCount, canReset, resetFilters } = useTableFilters({
         routeName: 'expenses.index',
         filters,
-        emptyFilters: { from: null, to: null, expense_category_id: null, payment_status: null },
+        emptyFilters: { from: null, to: null, expense_category_id: null },
     });
 
     // The header's global "Quick Create" menu links here with `?quick_create=1`
@@ -134,7 +117,7 @@ export default function ExpensesIndex({ expenses, stats, categories, accounts, f
     const handleExport = useTableExport({
         routeName: 'expenses.export',
         filters,
-        filterKeys: ['from', 'to', 'expense_category_id', 'payment_status'],
+        filterKeys: ['from', 'to', 'expense_category_id'],
         selectedIds: selection.selectedIds,
     });
 
@@ -145,10 +128,9 @@ export default function ExpensesIndex({ expenses, stats, categories, accounts, f
 
         if (isVisible('date')) ids.push('expense_date');
         if (isVisible('category')) ids.push('category');
-        if (isVisible('vendor')) ids.push('contact');
+        if (isVisible('account')) ids.push('account');
+        if (isVisible('note')) ids.push('note');
         if (isVisible('total')) ids.push('total_amount');
-        if (isVisible('due')) ids.push('due_amount');
-        if (isVisible('status')) ids.push('payment_status');
 
         return ids;
     }, [columnVisibility]);
@@ -177,7 +159,7 @@ export default function ExpensesIndex({ expenses, stats, categories, accounts, f
                 meta: { headerClassName: 'w-10', cellClassName: 'w-10', printHidden: true },
                 cell: ({ row }) => (
                     <DataTableRowActions
-                        actions={getExpenseActions(row.original, { onEdit: setEditing, onPay: setPaying, onDelete: setDeleting })}
+                        actions={getExpenseActions(row.original, { onEdit: setEditing, onDelete: setDeleting })}
                     />
                 ),
             },
@@ -196,16 +178,25 @@ export default function ExpensesIndex({ expenses, stats, categories, accounts, f
                 cell: ({ row }) => formatDateTime(row.original.created_at ?? row.original.expense_date),
             },
             { id: 'category', header: 'Category', cell: ({ row }) => row.original.category.name },
+            { id: 'account', header: 'Account', cell: ({ row }) => row.original.account?.name ?? '—' },
             {
-                id: 'vendor',
-                header: 'Vendor',
-                cell: ({ row }) => (row.original.contact ? <ContactLink id={row.original.contact.id} name={row.original.contact.name} /> : '—'),
+                id: 'note',
+                header: 'Note',
+                meta: { cellClassName: 'max-w-xs' },
+                cell: ({ row }) =>
+                    row.original.note ? (
+                        <span className="text-muted-foreground line-clamp-2 break-words" title={row.original.note}>
+                            {row.original.note}
+                        </span>
+                    ) : (
+                        <span className="text-muted-foreground/60">—</span>
+                    ),
             },
             {
                 id: 'total',
                 header: () => (
                     <DataTableColumnHeader
-                        title="Total"
+                        title="Amount"
                         sortKey="total_amount"
                         currentSort={filters.sort ?? ''}
                         currentDirection={filters.direction ?? 'desc'}
@@ -216,36 +207,7 @@ export default function ExpensesIndex({ expenses, stats, categories, accounts, f
                 meta: { headerClassName: 'text-right', cellClassName: 'text-right tabular-nums' },
                 cell: ({ row }) => money(row.original.total_amount),
             },
-            {
-                id: 'due',
-                header: () => (
-                    <DataTableColumnHeader
-                        title="Due"
-                        sortKey="due_amount"
-                        currentSort={filters.sort ?? ''}
-                        currentDirection={filters.direction ?? 'desc'}
-                        onSort={handleSort}
-                        align="right"
-                    />
-                ),
-                meta: { headerClassName: 'text-right', cellClassName: 'text-right tabular-nums' },
-                cell: ({ row }) => money(row.original.due_amount),
-            },
-            {
-                id: 'status',
-                header: () => (
-                    <DataTableColumnHeader
-                        title="Status"
-                        sortKey="payment_status"
-                        currentSort={filters.sort ?? ''}
-                        currentDirection={filters.direction ?? 'desc'}
-                        onSort={handleSort}
-                    />
-                ),
-                cell: ({ row }) => (
-                    <Badge variant={paymentStatusVariant[row.original.payment_status]}>{humanize(row.original.payment_status)}</Badge>
-                ),
-            },
+            { id: 'added_by', header: 'Added by', cell: ({ row }) => <span className="text-muted-foreground">{row.original.added_by ?? '—'}</span> },
         ],
         [money, selection, filters.sort, filters.direction, handleSort],
     );
@@ -261,25 +223,20 @@ export default function ExpensesIndex({ expenses, stats, categories, accounts, f
                         />
                         <div className="min-w-0">
                             <div className="font-medium">{expense.category.name}</div>
-                            <div className="text-muted-foreground text-xs">
-                                {expense.contact ? <ContactLink id={expense.contact.id} name={expense.contact.name} /> : '—'}
-                            </div>
+                            {expense.note && <div className="text-muted-foreground line-clamp-2 text-xs break-words">{expense.note}</div>}
                         </div>
                     </div>
                     <div className="flex shrink-0 items-center gap-1">
                         <span className="font-medium tabular-nums">{money(expense.total_amount)}</span>
                         <DataTableRowActions
-                            actions={getExpenseActions(expense, { onEdit: setEditing, onPay: setPaying, onDelete: setDeleting })}
+                            actions={getExpenseActions(expense, { onEdit: setEditing, onDelete: setDeleting })}
                         />
                     </div>
                 </div>
 
-                <div className="mt-2 flex items-center justify-between gap-2">
-                    <span className="text-muted-foreground text-xs whitespace-nowrap">
-                        {formatDateTime(expense.created_at ?? expense.expense_date)}
-                        {expense.due_amount > 0 && ` · Due ${money(expense.due_amount)}`}
-                    </span>
-                    <Badge variant={paymentStatusVariant[expense.payment_status]}>{humanize(expense.payment_status)}</Badge>
+                <div className="text-muted-foreground mt-2 flex justify-between gap-2 text-xs">
+                    <span className="whitespace-nowrap">{formatDateTime(expense.created_at ?? expense.expense_date)}</span>
+                    <span className="truncate">{expense.account?.name ?? '—'}</span>
                 </div>
             </div>
         ),
@@ -292,7 +249,7 @@ export default function ExpensesIndex({ expenses, stats, categories, accounts, f
 
             <div className="space-y-6 px-4 py-6">
                 <div className="flex flex-wrap items-end justify-between gap-4">
-                    <HeadingSmall title="Expenses" description="Rent, Utility, Salary, Transport — Purchase-এর মতোই due/partial/paid" />
+                    <HeadingSmall title="Expenses" description="Rent, Utility, Salary, Transport — যে account থেকে দেওয়া হয়েছে সেখান থেকে সরাসরি কাটা হয়" />
                     <div className="flex gap-2">
                         <Button variant="outline" onClick={() => setCategoriesOpen(true)}>
                             Manage Categories
@@ -315,18 +272,6 @@ export default function ExpensesIndex({ expenses, stats, categories, accounts, f
                                 value: money(stats.total_amount),
                                 icon: DollarSign,
                                 tone: 'text-violet-600 bg-violet-100 dark:text-violet-400 dark:bg-violet-500/15',
-                            },
-                            {
-                                label: 'Total Paid',
-                                value: money(stats.total_paid),
-                                icon: ArrowDownCircle,
-                                tone: 'text-emerald-600 bg-emerald-100 dark:text-emerald-400 dark:bg-emerald-500/15',
-                            },
-                            {
-                                label: 'Total Due',
-                                value: money(stats.total_due),
-                                icon: ArrowUpCircle,
-                                tone: 'text-rose-600 bg-rose-100 dark:text-rose-400 dark:bg-rose-500/15',
                             },
                         ]}
                     />
@@ -381,21 +326,6 @@ export default function ExpensesIndex({ expenses, stats, categories, accounts, f
                                     ))}
                                 </SelectContent>
                             </Select>
-
-                            <Select
-                                value={filters.payment_status ?? 'all'}
-                                onValueChange={(value) => applyFilters({ payment_status: value === 'all' ? null : (value as PaymentStatusValue) })}
-                            >
-                                <SelectTrigger className="w-40">
-                                    <SelectValue placeholder="Payment" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="all">All payments</SelectItem>
-                                    <SelectItem value="due">Due</SelectItem>
-                                    <SelectItem value="partial">Partial</SelectItem>
-                                    <SelectItem value="paid">Paid</SelectItem>
-                                </SelectContent>
-                            </Select>
                         </div>
                     }
                 />
@@ -447,10 +377,6 @@ export default function ExpensesIndex({ expenses, stats, categories, accounts, f
                     accounts={accounts}
                     expense={editing}
                 />
-            )}
-
-            {paying && (
-                <AddExpensePaymentModal open={paying !== null} onOpenChange={(open) => !open && setPaying(null)} expense={paying} accounts={accounts} />
             )}
 
             <LookupManagerModal

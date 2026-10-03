@@ -5,6 +5,7 @@ import {
     BarChart3,
     BookText,
     DatabaseBackup,
+    History,
     HandCoins,
     IdCard,
     KeyRound,
@@ -113,6 +114,7 @@ export function buildMainNavItems(emiModuleEnabled: boolean, t: ReturnType<typeo
             items: [
                 { key: 'expenses', title: t('nav', 'expenses'), url: '/expenses' },
                 { key: 'expense_categories', title: t('nav', 'expense_categories'), url: '/expense-categories' },
+                { key: 'other_income', title: t('nav', 'other_income'), url: '/other-income' },
             ],
         },
         {
@@ -123,7 +125,6 @@ export function buildMainNavItems(emiModuleEnabled: boolean, t: ReturnType<typeo
             permission: 'account.view',
             items: [
                 { key: 'accounts', title: t('nav', 'accounts'), url: '/accounts' },
-                { key: 'petty_cash', title: t('nav', 'petty_cash'), url: '/cash-book' },
                 {
                     key: 'financial_position',
                     title: t('nav', 'financial_position'),
@@ -213,6 +214,13 @@ export function buildMainNavItems(emiModuleEnabled: boolean, t: ReturnType<typeo
             url: '/backups',
             icon: DatabaseBackup,
             permission: 'backup.manage',
+        },
+        {
+            key: 'activity_log',
+            title: t('nav', 'activity_log'),
+            url: '/activity-log',
+            icon: History,
+            permission: 'activity_log.view',
         },
         {
             key: 'user_management',

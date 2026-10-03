@@ -36,6 +36,7 @@ class RolePermissionSeeder extends Seeder
         'financial_position' => ['view'],
         'import' => ['view'],
         'backup' => ['manage'],
+        'activity_log' => ['view'],
         'settings' => ['manage'],
         'role' => ['manage'],
     ];

@@ -78,7 +78,7 @@ class CompanyLoanController extends Controller
         $runningBalance = 0.0;
 
         $rows = $companyLoan->transactions()
-            ->with('account:id,name')
+            ->with(['account:id,name', 'creator:id,name'])
             ->orderBy('created_at')
             ->orderBy('id')
             ->get()
@@ -92,6 +92,7 @@ class CompanyLoanController extends Controller
                     'account' => $transaction->account?->only(['id', 'name']),
                     'note' => $transaction->note,
                     'created_at' => $transaction->created_at->toDateString(),
+                    'added_by' => $transaction->creator?->name,
                     'balance' => round($runningBalance, 2),
                 ];
             });

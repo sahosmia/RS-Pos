@@ -19,10 +19,10 @@ return new class extends Migration
             $table->foreignId('category_id')->nullable()->constrained()->restrictOnDelete();
             $table->foreignId('brand_id')->nullable()->constrained()->nullOnDelete();
             $table->foreignId('unit_id')->constrained()->restrictOnDelete();
-            $table->decimal('avg_cost', 15, 2)->default(0);
-            $table->decimal('selling_price', 15, 2)->default(0);
-            $table->decimal('current_stock', 12, 2)->default(0);
-            $table->decimal('minimum_stock_level', 12, 2)->default(0);
+            $table->decimal('avg_cost', 19, 4)->default(0);
+            $table->decimal('selling_price', 19, 4)->default(0);
+            $table->decimal('current_stock', 19, 4)->default(0);
+            $table->decimal('minimum_stock_level', 19, 4)->default(0);
             $table->boolean('manage_stock')->default(true);
             $table->boolean('is_for_sale')->default(true);
             $table->boolean('is_active')->default(true);
@@ -31,11 +31,12 @@ return new class extends Migration
             $table->boolean('emi_available')->default(false);
             $table->boolean('track_serial_number')->default(false);
             $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('updated_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();
 
             $table->index('category_id');
             $table->index('brand_id');
-            $table->index('name');
+            $table->unique('name');
             $table->index(['is_active', 'name']);
         });
     }

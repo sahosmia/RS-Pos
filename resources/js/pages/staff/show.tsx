@@ -38,6 +38,7 @@ export default function StaffShow({ staffMember, transactions, transactionTypes,
         description: [transaction.type.name, transaction.account?.name, transaction.note].filter(Boolean).join(' — '),
         amount: transaction.amount,
         balance: transaction.balance,
+        by: transaction.added_by,
     }));
 
     /** `transactions` is oldest-first (see StaffController::show) — reverse for a most-recent-first WhatsApp summary. */

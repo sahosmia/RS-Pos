@@ -14,20 +14,18 @@ return new class extends Migration
         Schema::create('expenses', function (Blueprint $table) {
             $table->id();
             $table->foreignId('expense_category_id')->constrained()->restrictOnDelete();
-            $table->foreignId('contact_id')->nullable()->constrained('contacts')->restrictOnDelete();
+            // The account the expense was paid from — an expense is always paid in full, on the spot.
+            $table->foreignId('account_id')->nullable()->constrained('accounts')->restrictOnDelete();
             $table->decimal('total_amount', 19, 4);
-            $table->decimal('paid_amount', 19, 4)->default(0);
-            $table->decimal('due_amount', 19, 4)->default(0);
-            $table->string('payment_status')->default('due');
             $table->date('expense_date');
-            $table->date('due_date')->nullable();
             $table->text('note')->nullable();
             $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('updated_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();
 
             $table->index('expense_category_id');
-            $table->index('contact_id');
-            $table->index(['expense_date', 'payment_status']);
+            $table->index('account_id');
+            $table->index('expense_date');
         });
     }
 

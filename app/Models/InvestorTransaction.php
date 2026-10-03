@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\InvestorTransactionType;
+use App\Models\Concerns\HasCreator;
 use Database\Factories\InvestorTransactionFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -12,6 +13,8 @@ class InvestorTransaction extends Model
 {
     /** @use HasFactory<InvestorTransactionFactory> */
     use HasFactory;
+
+    use HasCreator;
 
     /**
      * @var list<string>

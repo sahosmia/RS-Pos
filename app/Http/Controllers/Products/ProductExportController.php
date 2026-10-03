@@ -70,7 +70,7 @@ class ProductExportController extends Controller
         $products = match ($validated['scope']) {
             'selected' => $query->whereIn('id', $validated['ids'])->get(),
             'page' => $this->pageOf($query, $validated),
-            'all' => $query->get(),
+            'all' => TableExport::chunked($query),
         };
 
         $headings = array_map(fn (string $id) => self::COLUMN_LABELS[$id], $validated['columns']);
@@ -78,7 +78,7 @@ class ProductExportController extends Controller
         $rows = $products->map(fn (Product $product) => array_map(
             fn (string $id) => $this->cell($product, $id),
             $validated['columns'],
-        ))->all();
+        ));
 
         return TableExport::respond($validated['format'], 'products', 'Products', $headings, $rows);
     }
@@ -93,7 +93,7 @@ class ProductExportController extends Controller
         $perPage = Settings::resolveRequestedPerPage($validated['per_page'] ?? null);
 
         if ($perPage === null) {
-            return $query->get();
+            return TableExport::chunked($query);
         }
 
         return $query->forPage($validated['page'] ?? 1, $perPage)->get();

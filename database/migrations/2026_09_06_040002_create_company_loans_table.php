@@ -19,6 +19,7 @@ return new class extends Migration
             $table->decimal('outstanding_balance', 19, 4)->default(0);
             $table->date('start_date');
             $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('updated_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();
         });
     }

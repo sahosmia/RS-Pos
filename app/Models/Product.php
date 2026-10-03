@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasCreator;
 use App\Models\Concerns\LogsActivityDefaults;
 use Database\Factories\ProductFactory;
 use Illuminate\Database\Eloquent\Casts\Attribute;
@@ -15,9 +16,10 @@ use Spatie\MediaLibrary\InteractsWithMedia;
 
 class Product extends Model implements HasMedia
 {
+    use HasCreator;
+
     /** @use HasFactory<ProductFactory> */
     use HasFactory;
-
     use InteractsWithMedia;
     use LogsActivityDefaults;
 
@@ -202,7 +204,7 @@ class Product extends Model implements HasMedia
         }
 
         $this->forceFill([
-            'current_stock' => round($total, 2),
+            'current_stock' => round($total, 4),
         ])->save();
     }
 

@@ -41,6 +41,7 @@ const getVisibilityColumns = (): DataTableColumnOption[] => [
     { id: 'sale', label: 'Sale' },
     { id: 'customer', label: 'Customer' },
     { id: 'amount', label: 'Amount' },
+    { id: 'added_by', label: 'Added by' },
 ];
 
 /** Matches `SaleReturnExportController::COLUMN_LABELS` on the backend. */
@@ -158,6 +159,7 @@ export default function SaleReturnsIndex({ returns, filters }: SaleReturnsIndexP
                 meta: { headerClassName: 'text-right', cellClassName: 'text-right tabular-nums' },
                 cell: ({ row }) => money(row.original.total_amount),
             },
+            { id: 'added_by', header: 'Added by', cell: ({ row }) => <span className="text-muted-foreground">{row.original.added_by ?? '—'}</span> },
         ],
         [money, selection, filters.sort, filters.direction, handleSort],
     );

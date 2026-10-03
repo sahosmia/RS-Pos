@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\MessageChannel;
 use App\Enums\MessageStatus;
+use App\Models\Concerns\HasCreator;
 use Database\Factories\MessageLogFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -18,6 +19,8 @@ class MessageLog extends Model
 {
     /** @use HasFactory<MessageLogFactory> */
     use HasFactory;
+
+    use HasCreator;
 
     /**
      * @var list<string>
@@ -54,13 +57,5 @@ class MessageLog extends Model
     public function contact(): BelongsTo
     {
         return $this->belongsTo(Contact::class);
-    }
-
-    /**
-     * @return BelongsTo<User, $this>
-     */
-    public function creator(): BelongsTo
-    {
-        return $this->belongsTo(User::class, 'created_by');
     }
 }

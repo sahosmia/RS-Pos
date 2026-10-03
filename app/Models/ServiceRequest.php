@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\ServiceRequestStatus;
 use App\Enums\ServiceRequestType;
+use App\Models\Concerns\HasCreator;
 use App\Models\Concerns\LogsActivityDefaults;
 use Database\Factories\ServiceRequestFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -15,6 +16,7 @@ class ServiceRequest extends Model
     /** @use HasFactory<ServiceRequestFactory> */
     use HasFactory;
 
+    use HasCreator;
     use LogsActivityDefaults;
 
     /**

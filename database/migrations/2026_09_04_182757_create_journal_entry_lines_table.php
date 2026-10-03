@@ -20,7 +20,9 @@ return new class extends Migration
             $table->text('note')->nullable();
             $table->timestamps();
 
-            $table->index('chart_of_account_id');
+            // Ledger/report reads: one account's lines joined to their entries. Leads with chart_of_account_id,
+            // so it still serves plain account lookups (and the foreign key).
+            $table->index(['chart_of_account_id', 'journal_entry_id']);
         });
     }
 

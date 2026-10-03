@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Accounting;
 use App\Http\Controllers\Controller;
 use App\Models\Account;
 use App\Models\AccountTransaction;
+use App\Support\LedgerPage;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Inertia\Inertia;
@@ -21,22 +22,29 @@ class AccountStatementController extends Controller
         $validated = $request->validate([
             'from' => ['nullable', 'date'],
             'to' => ['nullable', 'date', 'after_or_equal:from'],
+            'page' => ['nullable', 'integer', 'min:1'],
         ]);
 
         $from = isset($validated['from']) ? Carbon::parse($validated['from']) : now()->startOfMonth();
         $to = isset($validated['to']) ? Carbon::parse($validated['to']) : now();
 
         $broughtForward = (float) $account->transactions()
-            ->whereDate('operation_date', '<', $from->toDateString())
+            ->where('operation_date', '<', $from->toDateString())
             ->sum('amount');
 
-        $runningBalance = $broughtForward;
-
-        $rows = $account->transactions()
+        $query = $account->transactions()
             ->whereBetween('operation_date', [$from->toDateString(), $to->toDateString()])
             ->orderBy('operation_date')
-            ->orderBy('id')
-            ->get()
+            ->orderBy('id');
+
+        $closingBalance = $broughtForward + (float) (clone $query)->sum('amount');
+
+        $page = LedgerPage::of($query, 'amount', $broughtForward, $validated['page'] ?? null);
+
+        $runningBalance = $page['openingBalance'];
+
+        $rows = $page['rows']
+            ->load('creator:id,name')
             ->map(function (AccountTransaction $transaction) use (&$runningBalance) {
                 $runningBalance += $transaction->amount;
 
@@ -48,6 +56,7 @@ class AccountStatementController extends Controller
                     'note' => $transaction->note,
                     'reference_type' => $transaction->reference_type,
                     'reference_id' => $transaction->reference_id,
+                    'added_by' => $transaction->creator?->name,
                     'balance' => round($runningBalance, 2),
                 ];
             });
@@ -65,7 +74,9 @@ class AccountStatementController extends Controller
             ],
             'transactions' => $rows,
             'broughtForward' => round($broughtForward, 2),
-            'closingBalance' => round($runningBalance, 2),
+            'openingBalance' => round($page['openingBalance'], 2),
+            'closingBalance' => round($closingBalance, 2),
+            'pagination' => $page['pagination'],
             'filters' => [
                 'from' => $from->toDateString(),
                 'to' => $to->toDateString(),

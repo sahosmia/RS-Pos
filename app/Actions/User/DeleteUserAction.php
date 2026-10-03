@@ -18,7 +18,7 @@ class DeleteUserAction
      * @var list<string>
      */
     private const TABLES_WITH_CREATED_BY = [
-        'accounts', 'account_transactions', 'fund_transfers', 'cash_book_entries',
+        'accounts', 'account_transactions', 'fund_transfers', 'other_incomes',
         'products', 'stock_movements', 'contacts', 'contact_ledger',
         'purchases', 'sales', 'journal_entries', 'sale_returns', 'purchase_returns',
         'sales_orders', 'expenses', 'assets', 'asset_transactions',

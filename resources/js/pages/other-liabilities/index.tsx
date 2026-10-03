@@ -27,6 +27,7 @@ import { type OtherLiabilityListItem, type Paginated } from '@/types/models';
 import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
 import { type ColumnDef, type VisibilityState } from '@tanstack/react-table';
 import { FormEventHandler, useCallback, useMemo, useState } from 'react';
+import { toast } from 'sonner';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const breadcrumbs: BreadcrumbItem[] = [{ title: 'Assets & Liabilities', href: '/assets' }, { title: 'Other Liabilities', href: '/other-liabilities' }];
@@ -102,7 +103,14 @@ export default function OtherLiabilitiesIndex({ liabilities, totalBalance, filte
     const submit: FormEventHandler = (e) => {
         e.preventDefault();
 
-        const options = { preserveScroll: true, onSuccess: () => setModalOpen(false) };
+        const isEditing = editing !== null;
+        const options = {
+            preserveScroll: true,
+            onSuccess: () => {
+                toast.success(isEditing ? 'Liability updated.' : 'Liability added.');
+                setModalOpen(false);
+            },
+        };
 
         if (editing) {
             form.patch(route('other-liabilities.update', editing.id), options);
@@ -116,7 +124,14 @@ export default function OtherLiabilitiesIndex({ liabilities, totalBalance, filte
             return;
         }
 
-        router.delete(route('other-liabilities.destroy', deleting.id), { preserveScroll: true, onFinish: () => setDeleting(null) });
+        const name = deleting.name;
+
+        router.delete(route('other-liabilities.destroy', deleting.id), {
+            preserveScroll: true,
+            onSuccess: () => toast.success(`"${name}" deleted.`),
+            onError: (errors) => toast.error(errors.liability ?? 'Could not delete liability.'),
+            onFinish: () => setDeleting(null),
+        });
     };
 
     // Table-column visibility → which fine-grained export columns should start checked.
@@ -309,13 +324,15 @@ export default function OtherLiabilitiesIndex({ liabilities, totalBalance, filte
                 />
 
                 <div className="grid min-w-0 content-start gap-2">
-                    <Label htmlFor="opening_amount">Opening Amount</Label>
+                    <Label htmlFor="opening_amount" required={editing !== null}>
+                        Opening Amount
+                    </Label>
                     <MoneyInput
                         id="opening_amount"
                         value={form.data.opening_amount}
                         disabled={editing !== null && !editing.can_edit_opening_amount}
                         onChange={(e) => form.setData('opening_amount', Number(e.target.value))}
-                        required
+                        required={editing !== null}
                     />
                     {editing !== null && !editing.can_edit_opening_amount && (
                         <p className="text-muted-foreground text-xs">এই liability-তে লেনদেন হয়ে গেছে — opening amount আর বদলানো যাবে না।</p>

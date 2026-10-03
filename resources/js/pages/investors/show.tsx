@@ -41,6 +41,7 @@ export default function InvestorShow({ investor, transactions, accounts }: Inves
         description: [humanize(transaction.type), transaction.account?.name, transaction.note].filter(Boolean).join(' — '),
         amount: transaction.amount,
         balance: transaction.balance,
+        by: transaction.added_by,
     }));
 
     return (

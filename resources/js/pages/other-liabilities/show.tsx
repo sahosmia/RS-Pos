@@ -40,6 +40,7 @@ export default function OtherLiabilityShow({ liability, transactions, accounts }
         description: [humanize(transaction.type), transaction.account?.name, transaction.note].filter(Boolean).join(' — '),
         amount: transaction.amount,
         balance: transaction.balance,
+        by: transaction.added_by,
     }));
 
     return (

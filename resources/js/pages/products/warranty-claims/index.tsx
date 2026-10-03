@@ -429,9 +429,10 @@ export default function WarrantyClaimsIndex({ claims, searchQuery, searchResults
                         />
 
                         <div className="grid min-w-0 content-start gap-2">
-                            <Label htmlFor="issue_description">{t('warrantyClaims', 'issue')}</Label>
+                            <Label htmlFor="issue_description" required>{t('warrantyClaims', 'issue')}</Label>
                             <Textarea
                                 id="issue_description"
+                                placeholder="Describe the issue"
                                 value={addForm.data.issue_description}
                                 onChange={(e) => addForm.setData('issue_description', e.target.value)}
                                 rows={3}
@@ -458,12 +459,14 @@ export default function WarrantyClaimsIndex({ claims, searchQuery, searchResults
                     onChange={(val) => val && editForm.setData('status', val as WarrantyClaimStatusValue)}
                     options={statusOptions}
                     error={editForm.errors.status}
+                    required
                 />
 
                 <div className="grid min-w-0 content-start gap-2">
                     <Label htmlFor="resolution_note">{t('warrantyClaims', 'resolution_note')}</Label>
                     <Textarea
                         id="resolution_note"
+                        placeholder="Add a note (optional)"
                         value={editForm.data.resolution_note}
                         onChange={(e) => editForm.setData('resolution_note', e.target.value)}
                         rows={3}

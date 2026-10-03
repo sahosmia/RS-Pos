@@ -22,6 +22,7 @@ return new class extends Migration
             $table->unsignedBigInteger('reference_id')->nullable();
             $table->text('note')->nullable();
             $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('updated_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();
 
             $table->index('staff_id');

@@ -78,7 +78,7 @@ export default function RefundCreditModal({ open, onOpenChange, contact, account
             </div>
 
             <div className="grid min-w-0 content-start gap-2">
-                <Label htmlFor="refund_amount">{t('common', 'amount')}</Label>
+                <Label htmlFor="refund_amount" required>{t('common', 'amount')}</Label>
                 <MoneyInput
                     id="refund_amount"
                     value={form.data.amount}

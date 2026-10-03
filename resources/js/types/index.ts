@@ -37,6 +37,12 @@ export interface SharedData {
     shop: {
         /** Editable at `business-settings`; falls back to `null` before it's ever been set — see `app.tsx`'s page-title fallback. */
         shop_name: string | null;
+        /** Public URL of the uploaded sidebar logo (Business Settings → Branding); null falls back to the shop name. */
+        shop_logo_url: string | null;
+        /** Compact logo shown while the sidebar is collapsed to icons. */
+        shop_logo_small_url: string | null;
+        /** Browser tab icon — also rendered into the page head by the Blade layout. */
+        favicon_url: string | null;
         currency_symbol: string;
         emi_module_enabled: boolean;
         serial_number_module_enabled: boolean;
@@ -47,7 +53,11 @@ export interface SharedData {
         theme_color: string;
         /** Admin-configured sidebar order (corrections.md #8) — null/missing keys fall back to the built-in order. */
         menu_order: { top: string[]; sub: Record<string, string[]> } | null;
+        /** Ctrl+Space switcher: which actions are on and their order — null until an admin saves a list. */
+        quick_actions: { key: string; enabled: boolean }[] | null;
     };
+    /** Max rows per in-memory export format (config/exports.php); CSV streams and has no limit. */
+    exportLimits: { xlsx: number; pdf: number };
     [key: string]: unknown;
 }
 

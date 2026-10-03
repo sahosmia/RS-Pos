@@ -2,6 +2,9 @@ export interface Settings {
     id: number;
     shop_name: string;
     shop_logo: string | null;
+    shop_logo_url: string | null;
+    shop_logo_small_url: string | null;
+    favicon_url: string | null;
     shop_address: string | null;
     shop_phone: string | null;
     currency_symbol: string;
@@ -19,6 +22,7 @@ export interface Settings {
     activity_log_retention_months: number;
     theme_color: string;
     menu_order: { top: string[]; sub: Record<string, string[]> } | null;
+    quick_actions: { key: string; enabled: boolean }[] | null;
 }
 
 export interface InvoiceSettingsConfig {
@@ -84,25 +88,25 @@ export interface StatementRow {
     reference_type: string | null;
     reference_id: number | null;
     balance: number;
+    added_by: string | null;
 }
 
-export type MiscTransactionCategoryType = 'income' | 'expense';
-
-export interface MiscTransactionCategory {
-    id: number;
-    name: string;
-    type: MiscTransactionCategoryType;
+export interface ActivityLogChange {
+    field: string;
+    old: string | null;
+    new: string | null;
 }
 
-export type CashBookEntryType = 'opening_balance' | 'income' | 'expense';
-
-export interface CashBookEntry {
+export interface ActivityLogEntry {
     id: number;
-    type: CashBookEntryType;
-    category: MiscTransactionCategory | null;
-    amount: number;
-    note: string | null;
-    entry_date: string;
+    created_at: string | null;
+    user: string | null;
+    event: string;
+    record_type: string;
+    record: string;
+    changes: ActivityLogChange[];
+    more_changes: number;
+    ip_address: string | null;
 }
 
 export interface Paginated<T> {
@@ -321,6 +325,8 @@ export type PurchaseStatusValue = 'draft' | 'ordered' | 'received' | 'cancelled'
 export type PaymentStatusValue = 'due' | 'partial' | 'paid';
 
 export interface PurchaseListItem {
+    /** Name of the user who added this — filled in automatically from who was logged in. */
+    added_by: string | null;
     id: number;
     invoice_no: string;
     supplier: { id: number; name: string };
@@ -413,6 +419,8 @@ export type SaleStatusValue = 'draft' | 'quotation' | 'confirmed' | 'cancelled';
 export type SaleSourceValue = 'manual' | 'imported';
 
 export interface SaleListItem {
+    /** Name of the user who added this — filled in automatically from who was logged in. */
+    added_by: string | null;
     id: number;
     invoice_no: string;
     customer: { id: number; name: string };
@@ -585,6 +593,7 @@ export interface ChartOfAccountListItem {
 export interface JournalEntryListItem {
     id: number;
     entry_date: string;
+    created_at?: string;
     description: string;
     reference_type: string | null;
     reference_id: number | null;
@@ -644,6 +653,8 @@ export interface BackupListItem {
 }
 
 export interface SaleReturnListItem {
+    /** Name of the user who added this — filled in automatically from who was logged in. */
+    added_by: string | null;
     id: number;
     sale: { id: number; invoice_no: string };
     customer: { id: number; name: string };
@@ -677,6 +688,8 @@ export interface SaleReturnItemDetail {
 export type SalesOrderStatusValue = 'pending' | 'partial' | 'completed' | 'cancelled';
 
 export interface SalesOrderListItem {
+    /** Name of the user who added this — filled in automatically from who was logged in. */
+    added_by: string | null;
     id: number;
     order_no: string;
     customer: { id: number; name: string };
@@ -718,18 +731,15 @@ export interface ExpenseAttachment {
 }
 
 export interface ExpenseListItem {
+    /** Name of the user who added this — filled in automatically from who was logged in. */
+    added_by: string | null;
     id: number;
     category: { id: number; name: string };
-    contact: { id: number; name: string } | null;
+    account: { id: number; name: string } | null;
     total_amount: number;
-    paid_amount: number;
-    due_amount: number;
-    payment_status: PaymentStatusValue;
     expense_date: string;
     created_at?: string;
-    due_date: string | null;
     note: string | null;
-    can_edit: boolean;
     attachment: ExpenseAttachment | null;
 }
 
@@ -761,6 +771,8 @@ export interface SaleReturnDetail {
 }
 
 export interface PurchaseReturnListItem {
+    /** Name of the user who added this — filled in automatically from who was logged in. */
+    added_by: string | null;
     id: number;
     purchase: { id: number; invoice_no: string };
     supplier: { id: number; name: string };
@@ -812,6 +824,7 @@ export interface LedgerTransactionRow {
     note: string | null;
     created_at: string;
     balance: number;
+    added_by: string | null;
 }
 
 export type AssetTransactionTypeValue = 'opening_asset' | 'purchase' | 'addition' | 'sold' | 'disposal' | 'adjustment';
@@ -930,6 +943,7 @@ export interface StaffLedgerRow {
     note: string | null;
     created_at: string;
     balance: number;
+    added_by: string | null;
 }
 
 export type ServiceRequestTypeValue = 'installation' | 'service';
@@ -1192,5 +1206,23 @@ export interface RoleUserListItem {
     username: string | null;
     is_active: boolean;
     roles: string[];
+    can_delete: boolean;
+}
+
+export interface OtherIncomeListItem {
+    /** Name of the user who added this — filled in automatically from who was logged in. */
+    added_by: string | null;
+    id: number;
+    category: { id: number; name: string };
+    account: { id: number; name: string };
+    amount: number;
+    income_date: string;
+    note: string | null;
+}
+
+export interface OtherIncomeCategoryRow {
+    id: number;
+    name: string;
+    incomes_count: number;
     can_delete: boolean;
 }

@@ -35,6 +35,7 @@ export const getVisibilityColumns = (): DataTableColumnOption[] => [
     { id: 'due', label: 'Due' },
     { id: 'payment_status', label: 'Payment' },
     { id: 'status', label: 'Status' },
+    { id: 'added_by', label: 'Added by' },
 ];
 
 /** Fine-grained export columns — matches `SaleExportController::COLUMN_LABELS` on the backend. */
@@ -199,6 +200,7 @@ export function useSaleColumns({ sort, direction, onSort, money, selection, onDe
                     </Badge>
                 ),
             },
+            { id: 'added_by', header: 'Added by', cell: ({ row }) => <span className="text-muted-foreground">{row.original.added_by ?? '—'}</span> },
         ],
         [money, selection, onDelete, onAddPayment, onViewPayments, sort, direction, onSort],
     );

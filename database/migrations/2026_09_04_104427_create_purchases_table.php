@@ -16,12 +16,17 @@ return new class extends Migration
             $table->foreignId('supplier_id')->constrained('contacts')->restrictOnDelete();
             $table->string('invoice_no')->unique();
             $table->date('purchase_date');
+            $table->decimal('subtotal', 19, 4)->default(0);
+            $table->string('discount_type')->nullable();
+            $table->decimal('discount_value', 19, 4)->default(0);
+            $table->decimal('discount_amount', 19, 4)->default(0);
             $table->decimal('total_amount', 19, 4)->default(0);
             $table->decimal('paid_amount', 19, 4)->default(0);
             $table->decimal('due_amount', 19, 4)->default(0);
             $table->string('payment_status')->default('due');
             $table->string('status')->default('draft');
             $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('updated_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();
 
             $table->index('supplier_id');

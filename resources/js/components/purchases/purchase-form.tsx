@@ -143,7 +143,9 @@ export default function PurchaseForm({ mode, purchase, initialSupplier, initialP
                 />
 
                 <div className="grid min-w-0 content-start gap-2">
-                    <Label htmlFor="status">Status</Label>
+                    <Label htmlFor="status" required>
+                        Status
+                    </Label>
                     <Select value={form.data.status} onValueChange={(value) => form.setData('status', value as PurchaseStatusValue)}>
                         <SelectTrigger id="status">
                             <SelectValue />

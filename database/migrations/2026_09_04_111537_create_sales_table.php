@@ -14,6 +14,7 @@ return new class extends Migration
         Schema::create('sales', function (Blueprint $table) {
             $table->id();
             $table->foreignId('customer_id')->constrained('contacts')->restrictOnDelete();
+            $table->foreignId('sales_order_id')->nullable()->constrained('sales_orders')->nullOnDelete();
             $table->string('invoice_no')->unique();
             $table->date('sale_date');
             $table->decimal('subtotal', 19, 4)->default(0);
@@ -34,6 +35,7 @@ return new class extends Migration
             $table->string('financing_type')->default('one_time');
             $table->unsignedInteger('installment_count')->nullable();
             $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('updated_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();
 
             $table->index('customer_id');

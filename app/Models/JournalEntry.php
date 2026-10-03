@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\JournalEntryStatus;
+use App\Models\Concerns\HasCreator;
 use Database\Factories\JournalEntryFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -13,6 +14,8 @@ class JournalEntry extends Model
 {
     /** @use HasFactory<JournalEntryFactory> */
     use HasFactory;
+
+    use HasCreator;
 
     /**
      * @var list<string>

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\AssetTransactionType;
+use App\Models\Concerns\HasCreator;
 use Database\Factories\AssetTransactionFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -12,6 +13,8 @@ class AssetTransaction extends Model
 {
     /** @use HasFactory<AssetTransactionFactory> */
     use HasFactory;
+
+    use HasCreator;
 
     /**
      * @var list<string>

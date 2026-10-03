@@ -1,4 +1,5 @@
-import { Store, type LucideIcon } from 'lucide-react';
+import { BrandLogo, useShopBrand } from '@/components/brand-logo';
+import { type LucideIcon } from 'lucide-react';
 import { type ReactNode } from 'react';
 
 interface AuthSplitShellProps {
@@ -19,10 +20,7 @@ const badgeToneClasses = {
 
 const Logo = ({ className }: { className?: string }) => (
     <div className={className}>
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-600 font-bold text-white shadow-lg shadow-indigo-500/30">
-            <Store className="h-6 w-6" />
-        </div>
-        <span className="text-xl font-bold tracking-tight">ApexPOS</span>
+        <BrandLogo imageClassName="h-10 max-w-56" nameClassName="text-xl font-bold tracking-tight" />
     </div>
 );
 
@@ -36,6 +34,7 @@ const Logo = ({ className }: { className?: string }) => (
  */
 export default function AuthSplitShell({ heading, subheading, badge, heroTitle, heroDescription, features, children }: AuthSplitShellProps) {
     const BadgeIcon = badge.icon;
+    const { name } = useShopBrand();
 
     return (
         <div className="bg-background flex min-h-screen w-full font-sans antialiased overflow-hidden">
@@ -72,7 +71,7 @@ export default function AuthSplitShell({ heading, subheading, badge, heroTitle, 
                     </div>
                 </div>
 
-                <div className="relative z-10 text-xs text-slate-500">&copy; {new Date().getFullYear()} ApexPOS Systems. All rights reserved.</div>
+                <div className="relative z-10 text-xs text-slate-500">&copy; {new Date().getFullYear()} {name}. All rights reserved.</div>
             </div>
 
             {/* Right Side: Page content */}

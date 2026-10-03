@@ -22,7 +22,7 @@ class DummyDataSeeder extends Seeder
             // Reference data
             AccountTypeSeeder::class,
             ChartOfAccountSeeder::class,
-            MiscTransactionCategorySeeder::class,
+            OtherIncomeCategorySeeder::class,
             StaffTransactionTypeSeeder::class,
 
             // Master data
@@ -42,7 +42,7 @@ class DummyDataSeeder extends Seeder
             SalesOrderSeeder::class,
             ExpenseSeeder::class,
             FundTransferSeeder::class,
-            CashBookEntrySeeder::class,
+            OtherIncomeSeeder::class,
             AssetSeeder::class,
             CompanyLoanSeeder::class,
             InvestorSeeder::class,

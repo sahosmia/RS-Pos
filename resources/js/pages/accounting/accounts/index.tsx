@@ -19,7 +19,7 @@ import AppLayout from '@/layouts/app-layout';
 import { today } from '@/lib/format-date';
 import { type BreadcrumbItem } from '@/types';
 import { type AccountListItem, type AccountTypeListItem } from '@/types/models';
-import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
+import { Head, router, useForm, usePage } from '@inertiajs/react';
 import { Pencil, Trash2 } from 'lucide-react';
 import { FormEventHandler, useEffect, useState } from 'react';
 
@@ -202,9 +202,6 @@ export default function AccountsIndex({ accounts, accountTypes, totalBalance }: 
 
                     <TabsContent value="accounts" className="space-y-6">
                         <div className="flex flex-wrap items-center justify-end gap-2">
-                            <Button variant="outline" asChild>
-                                <Link href={route('cash-book.index')}>Petty Cash</Link>
-                            </Button>
                             <Button variant="outline" onClick={() => setTransferModalOpen(true)} disabled={accounts.length < 2}>
                                 Fund Transfer
                             </Button>
@@ -498,7 +495,7 @@ export default function AccountsIndex({ accounts, accountTypes, totalBalance }: 
 
                 <div className="grid min-w-0 content-start gap-2">
                     <Label htmlFor="note">Note</Label>
-                    <Textarea id="note" value={transferForm.data.note} onChange={(e) => transferForm.setData('note', e.target.value)} />
+                    <Textarea id="note" placeholder="Add a note (optional)" value={transferForm.data.note} onChange={(e) => transferForm.setData('note', e.target.value)} />
                     <InputError message={transferForm.errors.note} />
                 </div>
             </FormModal>

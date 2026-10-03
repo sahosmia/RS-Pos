@@ -67,7 +67,7 @@ class StaffController extends Controller
         $runningBalance = 0.0;
 
         $rows = $staff->ledgerEntries()
-            ->with(['type:id,name,effect_on_balance', 'account:id,name'])
+            ->with(['type:id,name,effect_on_balance', 'account:id,name', 'creator:id,name'])
             ->orderBy('created_at')
             ->orderBy('id')
             ->get()
@@ -87,6 +87,7 @@ class StaffController extends Controller
                     'account' => $entry->account?->only(['id', 'name']),
                     'note' => $entry->note,
                     'created_at' => $entry->created_at->toDateString(),
+                    'added_by' => $entry->creator?->name,
                     'balance' => round($runningBalance, 2),
                 ];
             });

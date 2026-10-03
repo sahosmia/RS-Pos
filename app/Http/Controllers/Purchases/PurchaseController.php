@@ -54,6 +54,7 @@ class PurchaseController extends Controller
             'due_amount' => $purchase->due_amount,
             'payment_status' => $purchase->payment_status,
             'status' => $purchase->status,
+            'added_by' => $purchase->creator?->name,
             'can_edit' => $purchase->canEdit(),
         ]);
 

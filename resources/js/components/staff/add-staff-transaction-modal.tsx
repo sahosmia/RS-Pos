@@ -65,11 +65,12 @@ export default function AddStaffTransactionModal({ open, onOpenChange, staffId, 
                 options={typeOptions}
                 placeholder="Select type"
                 error={form.errors.staff_transaction_type_id}
+                required
             />
 
             <div className="grid min-w-0 content-start gap-2">
-                <Label htmlFor="amount">Amount</Label>
-                <MoneyInput id="amount" value={form.data.amount} onChange={(e) => form.setData('amount', Number(e.target.value))} required />
+                <Label htmlFor="amount" required>Amount</Label>
+                <MoneyInput id="amount" value={form.data.amount} onChange={(e) => form.setData('amount', Number(e.target.value))} placeholder="0.00" required />
                 {selectedType?.effect_on_balance && (
                     <p className="text-muted-foreground text-xs">
                         {{
@@ -91,12 +92,13 @@ export default function AddStaffTransactionModal({ open, onOpenChange, staffId, 
                     options={accountOptions}
                     placeholder="Select an account"
                     error={form.errors.account_id}
+                    required
                 />
             )}
 
             <div className="grid min-w-0 content-start gap-2">
                 <Label htmlFor="note">Note</Label>
-                <Textarea id="note" value={form.data.note} onChange={(e) => form.setData('note', e.target.value)} rows={2} />
+                <Textarea id="note" value={form.data.note} onChange={(e) => form.setData('note', e.target.value)} placeholder="e.g. Transaction note or reference details" rows={2} />
                 <InputError message={form.errors.note} />
             </div>
         </FormModal>

@@ -62,6 +62,7 @@ const getVisibilityColumns = (): DataTableColumnOption[] => [
     { id: 'advance', label: 'Advance' },
     { id: 'due', label: 'Due' },
     { id: 'status', label: 'Status' },
+    { id: 'added_by', label: 'Added by' },
 ];
 
 /** Matches `SalesOrderExportController::COLUMN_LABELS` on the backend. */
@@ -239,6 +240,7 @@ export default function SalesOrdersIndex({ orders, initialCustomer, filters }: S
                 ),
                 cell: ({ row }) => <Badge variant={statusVariant[row.original.status]}>{humanize(row.original.status)}</Badge>,
             },
+            { id: 'added_by', header: 'Added by', cell: ({ row }) => <span className="text-muted-foreground">{row.original.added_by ?? '—'}</span> },
         ],
         [money, selection, filters.sort, filters.direction, handleSort],
     );

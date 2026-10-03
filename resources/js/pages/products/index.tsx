@@ -50,7 +50,7 @@ export default function ProductsIndex({ products, stats, categories, brands, fil
     } = useTableFilters({
         routeName: 'products.index',
         filters,
-        emptyFilters: { category_id: null, brand_id: null, stock_status: null, preset: null, from: null, to: null },
+        emptyFilters: { category_id: null, brand_id: null, stock_status: null },
     });
 
     const selection = useTableSelection({
@@ -147,9 +147,6 @@ export default function ProductsIndex({ products, stats, categories, brands, fil
                             categoryId={filters.category_id}
                             brandId={filters.brand_id}
                             stockStatus={filters.stock_status}
-                            preset={filters.preset}
-                            from={filters.from}
-                            to={filters.to}
                             categories={categories}
                             brands={brands}
                             onChange={applyFilters}

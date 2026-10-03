@@ -24,6 +24,7 @@ return new class extends Migration
             $table->string('attachment_path')->nullable();
             $table->timestamp('sent_at')->nullable();
             $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('updated_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();
 
             $table->index('channel');

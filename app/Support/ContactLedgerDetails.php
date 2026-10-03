@@ -14,6 +14,7 @@ use App\Models\SaleReturn;
 use App\Models\SalesOrder;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 
@@ -61,6 +62,45 @@ class ContactLedgerDetails
      */
     public static function rowsFor(Contact $contact, ?Carbon $from = null, ?Carbon $to = null): Collection
     {
+        [$query, $broughtForward, $hasEarlierEntries] = self::window($contact, $from, $to);
+
+        $rows = self::rowsFrom($query->get(), $broughtForward);
+
+        return $hasEarlierEntries ? self::carriedRow($broughtForward, $from)->concat($rows) : $rows;
+    }
+
+    /**
+     * One page (100 entries) of the same ledger, newest page first. The running balance of each
+     * page continues from everything before it — summed in the database, not loaded — and any
+     * page after the first (or a window with earlier history) opens with a "Brought Forward" row.
+     *
+     * @return array{rows: Collection<int, array<string, mixed>>, pagination: array{current_page: int, last_page: int, total: int, from: int|null, to: int|null}}
+     */
+    public static function pageFor(Contact $contact, ?Carbon $from, ?Carbon $to, ?int $requestedPage): array
+    {
+        [$query, $broughtForward, $hasEarlierEntries] = self::window($contact, $from, $to);
+
+        $page = LedgerPage::of($query, 'amount', $broughtForward, $requestedPage);
+        $rows = self::rowsFrom($page['rows'], $page['openingBalance']);
+
+        $isLaterPage = $page['pagination']['current_page'] > 1;
+
+        if ($isLaterPage) {
+            $rows = self::carriedRow($page['openingBalance'], $from, 'Carried from the previous page')->concat($rows);
+        } elseif ($hasEarlierEntries) {
+            $rows = self::carriedRow($broughtForward, $from)->concat($rows);
+        }
+
+        return ['rows' => $rows, 'pagination' => $page['pagination']];
+    }
+
+    /**
+     * The ordered entries inside the window, plus the balance and existence of everything before it.
+     *
+     * @return array{0: HasMany<ContactLedger, Contact>, 1: float, 2: bool}
+     */
+    private static function window(Contact $contact, ?Carbon $from, ?Carbon $to): array
+    {
         $query = $contact->ledgerEntries()->orderBy('created_at')->orderBy('id');
 
         $broughtForward = 0.0;
@@ -75,12 +115,19 @@ class ContactLedgerDetails
             $query->where('created_at', '<=', $to);
         }
 
-        $entries = $query->get();
+        return [$query, $broughtForward, $hasEarlierEntries];
+    }
+
+    /**
+     * @param  EloquentCollection<int, ContactLedger>  $entries
+     * @return Collection<int, array{id: int, type: ContactLedgerType, amount: float, note: ?string, reference_type: ?string, reference_id: ?int, reference_label: ?string, items: array<int, array<string, mixed>>, created_at: Carbon, balance: float}>
+     */
+    private static function rowsFrom(EloquentCollection $entries, float $startingBalance): Collection
+    {
         $details = self::resolve($entries);
+        $runningBalance = $startingBalance;
 
-        $runningBalance = $broughtForward;
-
-        $rows = $entries->map(function (ContactLedger $entry) use (&$runningBalance, $details) {
+        return $entries->map(function (ContactLedger $entry) use (&$runningBalance, $details) {
             $runningBalance += $entry->amount;
 
             return [
@@ -96,25 +143,27 @@ class ContactLedgerDetails
                 'balance' => round($runningBalance, 2),
             ];
         });
+    }
 
-        if (! $hasEarlierEntries) {
-            return $rows;
-        }
-
-        $broughtForwardRow = collect([[
+    /**
+     * Synthetic "Brought Forward" row (id 0, no reference/items) carrying the balance at the top of a window or page.
+     *
+     * @return Collection<int, array<string, mixed>>
+     */
+    private static function carriedRow(float $balance, ?Carbon $at, ?string $note = null): Collection
+    {
+        return collect([[
             'id' => 0,
             'type' => ContactLedgerType::OpeningBalance,
-            'amount' => $broughtForward,
-            'note' => null,
+            'amount' => $balance,
+            'note' => $note,
             'reference_type' => null,
             'reference_id' => null,
             'reference_label' => null,
             'items' => [],
-            'created_at' => $from,
-            'balance' => round($broughtForward, 2),
+            'created_at' => $at ?? now(),
+            'balance' => round($balance, 2),
         ]]);
-
-        return $broughtForwardRow->concat($rows);
     }
 
     /**

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasCreator;
 use Database\Factories\StaffLedgerFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -11,6 +12,8 @@ class StaffLedger extends Model
 {
     /** @use HasFactory<StaffLedgerFactory> */
     use HasFactory;
+
+    use HasCreator;
 
     /**
      * The design doc names this table `staff_ledger` (singular, matching

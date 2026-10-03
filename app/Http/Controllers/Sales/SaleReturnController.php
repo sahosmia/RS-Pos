@@ -40,6 +40,7 @@ class SaleReturnController extends Controller
             'customer' => $return->customer->only(['id', 'name']),
             'return_date' => $return->return_date->toDateString(),
             'total_amount' => $return->total_amount,
+            'added_by' => $return->creator?->name,
         ]);
 
         return Inertia::render('sales/sale-returns/index', [
