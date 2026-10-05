@@ -34,18 +34,12 @@ export default function InvoicePreview({ settings, logoPreview, shop }: InvoiceP
         settings.business.show_phone;
 
     const hasCustomerDetails =
-        settings.customer.show_name ||
-        settings.customer.show_phone ||
-        settings.customer.show_email ||
-        settings.customer.show_address;
+        settings.customer.show_name || settings.customer.show_phone || settings.customer.show_email || settings.customer.show_address;
 
-    const hasOrderDetails =
-        settings.general.show_number ||
-        settings.general.show_date ||
-        settings.general.show_due_date;
+    const hasOrderDetails = settings.general.show_number || settings.general.show_date || settings.general.show_due_date;
 
     return (
-        <div className="space-y-4 rounded-lg border bg-card p-6 text-sm shadow-2xs">
+        <div className="bg-card space-y-4 rounded-lg border p-6 text-sm shadow-2xs">
             {hasHeader && (
                 <div className="flex items-start justify-between gap-4 border-b pb-4">
                     <div className="space-y-1">
@@ -72,7 +66,7 @@ export default function InvoicePreview({ settings, logoPreview, shop }: InvoiceP
                     <div>
                         {hasCustomerDetails && (
                             <div className="space-y-0.5">
-                                <p className="mb-1 text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">Customer Details</p>
+                                <p className="text-muted-foreground mb-1 text-[11px] font-semibold tracking-wider uppercase">Customer Details</p>
                                 {settings.customer.show_name && <p className="font-medium">{SAMPLE.customer.name}</p>}
                                 {settings.customer.show_phone && <p className="text-muted-foreground">{SAMPLE.customer.phone}</p>}
                                 {settings.customer.show_email && <p className="text-muted-foreground">{SAMPLE.customer.email}</p>}
@@ -83,7 +77,7 @@ export default function InvoicePreview({ settings, logoPreview, shop }: InvoiceP
                     <div>
                         {hasOrderDetails && (
                             <div className="space-y-0.5 sm:text-right">
-                                <p className="mb-1 text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">Order Details</p>
+                                <p className="text-muted-foreground mb-1 text-[11px] font-semibold tracking-wider uppercase">Order Details</p>
                                 {settings.general.show_number && (
                                     <p>
                                         <span className="text-muted-foreground">Invoice No: </span>

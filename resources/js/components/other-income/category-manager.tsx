@@ -74,7 +74,9 @@ export default function OtherIncomeCategoryManager({ categories }: CategoryManag
     return (
         <div className="space-y-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
-                <p className="text-muted-foreground text-sm">Other Income-এ যে category গুলো বেছে নেওয়া যায় — এখান থেকে যোগ, নাম বদল বা মুছে ফেলা যায়।</p>
+                <p className="text-muted-foreground text-sm">
+                    Other Income-এ যে category গুলো বেছে নেওয়া যায় — এখান থেকে যোগ, নাম বদল বা মুছে ফেলা যায়।
+                </p>
                 <Button onClick={openCreate} className="gap-1.5">
                     <Plus className="size-4" />
                     Add Category
@@ -104,7 +106,13 @@ export default function OtherIncomeCategoryManager({ categories }: CategoryManag
                                     <td className="px-4 py-2 text-right tabular-nums">{category.incomes_count}</td>
                                     <td className="px-4 py-2">
                                         <div className="flex justify-end gap-1">
-                                            <Button variant="ghost" size="icon" className="size-8" onClick={() => openEdit(category)} aria-label={`Edit ${category.name}`}>
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="size-8"
+                                                onClick={() => openEdit(category)}
+                                                aria-label={`Edit ${category.name}`}
+                                            >
                                                 <Pencil className="size-4" />
                                             </Button>
                                             <Button

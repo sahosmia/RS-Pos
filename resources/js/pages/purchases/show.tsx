@@ -6,8 +6,8 @@ import ContactLink from '@/components/shared/contact-link';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useMoneyFormat } from '@/hooks/use-money-format';
-import { formatDateTime } from '@/lib/format-date';
 import AppLayout from '@/layouts/app-layout';
+import { formatDateTime } from '@/lib/format-date';
 import { type BreadcrumbItem } from '@/types';
 import { type Account, type PurchaseDetail } from '@/types/models';
 import { Head, Link, router } from '@inertiajs/react';
@@ -63,7 +63,8 @@ export default function PurchaseShow({ purchase, accounts }: PurchaseShowProps) 
                         title={purchase.invoice_no}
                         description={
                             <>
-                                <ContactLink id={purchase.supplier.id} name={purchase.supplier.name} /> • {formatDateTime(purchase.created_at ?? purchase.purchase_date)}
+                                <ContactLink id={purchase.supplier.id} name={purchase.supplier.name} /> •{' '}
+                                {formatDateTime(purchase.created_at ?? purchase.purchase_date)}
                                 {purchase.creator && ` • Added by: ${purchase.creator.name}`}
                             </>
                         }
@@ -89,18 +90,21 @@ export default function PurchaseShow({ purchase, accounts }: PurchaseShowProps) 
                             </>
                         )}
 
+                        {purchase.status !== 'cancelled' && (
+                            <Button variant="outline" onClick={() => setCancelling(true)}>
+                                Cancel Purchase
+                            </Button>
+                        )}
+
                         {purchase.status === 'received' && (
                             <>
-                                <Button variant="outline" onClick={() => setCancelling(true)}>
-                                    Cancel Purchase
-                                </Button>
                                 <Button variant="outline" asChild>
                                     <Link href={`/purchase-returns/create?purchase_id=${purchase.id}`}>Return</Link>
                                 </Button>
                             </>
                         )}
 
-                        {purchase.status === 'received' && purchase.due_amount > 0 && (
+                        {purchase.status !== 'cancelled' && purchase.due_amount > 0 && (
                             <Button onClick={() => setPaymentOpen(true)}>Add Payment</Button>
                         )}
                     </div>
@@ -145,7 +149,7 @@ export default function PurchaseShow({ purchase, accounts }: PurchaseShowProps) 
                                     <td className="px-4 py-2 text-right tabular-nums">
                                         <div>{money(item.unit_price)}</div>
                                         {item.discount_amount !== undefined && item.discount_amount > 0 && (
-                                            <div className="text-emerald-600 text-xs dark:text-emerald-400">
+                                            <div className="text-xs text-emerald-600 dark:text-emerald-400">
                                                 Discount {item.discount_type === 'percentage' ? `(${item.discount_value}%)` : ''}: -
                                                 {money(item.discount_amount)}
                                             </div>

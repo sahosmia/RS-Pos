@@ -59,10 +59,7 @@ export default function ContactLedgerTable({ rows }: ContactLedgerTableProps) {
                                     <td className="px-4 py-2">
                                         {row.reference_label ? (
                                             routeName ? (
-                                                <Link
-                                                    href={route(routeName, row.reference_id!)}
-                                                    className="underline-offset-2 hover:underline"
-                                                >
+                                                <Link href={route(routeName, row.reference_id!)} className="underline-offset-2 hover:underline">
                                                     {row.reference_label}
                                                 </Link>
                                             ) : (
@@ -73,7 +70,9 @@ export default function ContactLedgerTable({ rows }: ContactLedgerTableProps) {
                                         )}
                                     </td>
                                     <td className="px-4 py-2">
-                                        <span className={cn('inline-flex items-center gap-1', isReturn && 'font-medium text-red-600 dark:text-red-400')}>
+                                        <span
+                                            className={cn('inline-flex items-center gap-1', isReturn && 'font-medium text-red-600 dark:text-red-400')}
+                                        >
                                             {isReturn && <TriangleAlert className="size-3.5" />}
                                             {humanize(row.type)}
                                         </span>

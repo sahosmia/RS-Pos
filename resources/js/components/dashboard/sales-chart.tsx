@@ -5,7 +5,7 @@ import HighchartsOfflineExporting from 'highcharts/modules/offline-exporting';
 import HighchartsReact from 'highcharts-react-official';
 import { jsPDF } from 'jspdf';
 import { ShoppingCart } from 'lucide-react';
-import { useEffect, useRef } from 'react';
+import { useRef } from 'react';
 import 'svg2pdf.js';
 
 // Highcharts' exporting modules touch `window` at import time — guard for SSR.

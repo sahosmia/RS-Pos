@@ -288,6 +288,14 @@ export default function SaleShow({ sale, accounts, justConfirmed, invoiceSetting
                                 </td>
                                 <td className="px-4 py-2 text-right tabular-nums">{money(sale.subtotal)}</td>
                             </tr>
+                            {sale.installation_amount > 0 && (
+                                <tr>
+                                    <td colSpan={3} className="text-muted-foreground px-4 py-2 text-right">
+                                        Installation
+                                    </td>
+                                    <td className="px-4 py-2 text-right tabular-nums">+{money(sale.installation_amount)}</td>
+                                </tr>
+                            )}
                             {invoiceSettings.totals.show_discount && sale.discount_amount > 0 && (
                                 <tr>
                                     <td colSpan={3} className="text-muted-foreground px-4 py-2 text-right">

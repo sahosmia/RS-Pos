@@ -22,11 +22,11 @@ use Illuminate\Support\Facades\DB;
 class Sale extends Model
 {
     use HasAccountTransactions;
+    use HasCreator;
 
     /** @use HasFactory<SaleFactory> */
     use HasFactory;
 
-    use HasCreator;
     use LogsActivityDefaults;
 
     /**
@@ -153,6 +153,15 @@ class Sale extends Model
      * Sale's paid_amount" behaviour ConvertSalesOrderToSaleAction relies on,
      * without ever double-recording the cash itself.
      */
+    /**
+     * Installation charge billed on this sale — whatever the total carries beyond the goods after discount.
+     * Derived (not stored) so sales made before installation was billed keep reading 0.
+     */
+    public function getInstallationAmountAttribute(): float
+    {
+        return max(round($this->total_amount - ($this->subtotal - $this->discount_amount), 2), 0.0);
+    }
+
     public function recalculatePaymentTotals(): void
     {
         $paidViaAccounts = $this->sumAccountTransactions('sale', $this->id);

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Purchases;
 
 use App\Actions\Purchases\Purchase\CreatePurchaseAction;
+use App\Actions\Purchases\Purchase\SettlePurchaseOnSaveAction;
 use App\Actions\Purchases\Purchase\UpdatePurchaseAction;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Purchases\Purchase\StorePurchaseRequest;
@@ -15,6 +16,7 @@ use App\Models\Settings;
 use App\Queries\Purchase\PurchaseQuery;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -103,13 +105,31 @@ class PurchaseController extends Controller
 
         return Inertia::render('purchases/create', [
             'initialSupplier' => $initialSupplier,
-            'initialProducts' => [],
+            'accounts' => Account::query()->active()->orderBy('name')->get(['id', 'name', 'current_balance', 'is_default']),
+            // "Add Purchase" from a product's row menu arrives with that product pre-picked
+            'initialProducts' => $request->integer('product_id')
+                ? Product::query()
+                    ->whereKey($request->integer('product_id'))
+                    ->get(['id', 'name', 'sku', 'barcode', 'selling_price', 'avg_cost', 'current_stock', 'track_serial_number', 'has_installation_service'])
+                : [],
         ]);
     }
 
-    public function store(StorePurchaseRequest $request, CreatePurchaseAction $createPurchase): RedirectResponse
+    /**
+     * Saving as `received` stores a Draft and receives it in the same transaction (stock/ledger move
+     * through ConfirmPurchaseAction); a payment entered on the form is recorded in every status. If the
+     * receipt or the payment fails — bad serials, overpayment — nothing is saved.
+     */
+    public function store(StorePurchaseRequest $request, CreatePurchaseAction $createPurchase, SettlePurchaseOnSaveAction $settle): RedirectResponse
     {
-        $purchase = $createPurchase->execute($request->validated());
+        $data = $request->validated();
+        $receiveNow = $data['status'] === 'received';
+
+        $purchase = DB::transaction(function () use ($data, $receiveNow, $createPurchase, $settle) {
+            $purchase = $createPurchase->execute([...$data, 'status' => $receiveNow ? 'draft' : $data['status']]);
+
+            return $settle->execute($purchase, $data, $receiveNow);
+        });
 
         return to_route('purchases.show', $purchase);
     }
@@ -143,6 +163,7 @@ class PurchaseController extends Controller
                 'supplier_id' => $purchase->supplier_id,
                 'purchase_date' => $purchase->purchase_date->toDateString(),
                 'status' => $purchase->status,
+                'paid_amount' => $purchase->paid_amount,
                 'discount_type' => $purchase->discount_type?->value,
                 'discount_value' => $purchase->discount_value,
                 'items' => $purchase->items->map(fn ($item) => [
@@ -156,16 +177,24 @@ class PurchaseController extends Controller
             ],
             'initialSupplier' => $purchase->supplier->only(['id', 'name', 'display_name', 'phone', 'business_name', 'balance']),
             'initialProducts' => $initialProducts,
+            'accounts' => Account::query()->active()->orderBy('name')->get(['id', 'name', 'current_balance', 'is_default']),
         ]);
     }
 
-    public function update(UpdatePurchaseRequest $request, Purchase $purchase, UpdatePurchaseAction $updatePurchase): RedirectResponse
+    public function update(UpdatePurchaseRequest $request, Purchase $purchase, UpdatePurchaseAction $updatePurchase, SettlePurchaseOnSaveAction $settle): RedirectResponse
     {
         if (! $purchase->canEdit()) {
             return back()->withErrors(['purchase' => 'This purchase has already been received and can no longer be edited directly.']);
         }
 
-        $updatePurchase->execute($purchase, $request->validated());
+        $data = $request->validated();
+        $receiveNow = $data['status'] === 'received';
+
+        DB::transaction(function () use ($purchase, $data, $receiveNow, $updatePurchase, $settle) {
+            $updatePurchase->execute($purchase, [...$data, 'status' => $receiveNow ? 'draft' : $data['status']]);
+
+            $settle->execute($purchase->refresh(), $data, $receiveNow);
+        });
 
         return to_route('purchases.show', $purchase);
     }
@@ -177,6 +206,10 @@ class PurchaseController extends Controller
     {
         if (! $purchase->canEdit()) {
             return back()->withErrors(['purchase' => 'This purchase has already been received and cannot be deleted.']);
+        }
+
+        if ($purchase->paid_amount > 0) {
+            return back()->withErrors(['purchase' => 'This purchase already has a payment recorded — cancel it instead, so the payment is reversed properly.']);
         }
 
         $purchase->delete();

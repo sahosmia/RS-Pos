@@ -286,12 +286,15 @@ class CheckReconciliation extends Command
 
     private function checkReceivable(): void
     {
-        $subsidiary = (float) Contact::query()
-            ->whereIn('type', ['customer', 'both'])
-            ->where('balance', '>', 0)
-            ->sum('balance');
+        // A customer's balance is signed: owed to us (+), or credit we hold (−) after an overpayment or an advance.
+        // Customer-only contacts count with their sign; a customer-and-supplier ("both") contact counts only the
+        // part owed to us (its credit side is Accounts Payable's, below).
+        $subsidiary = (float) Contact::query()->where('type', 'customer')->sum('balance')
+            + (float) Contact::query()->where('type', 'both')->where('balance', '>', 0)->sum('balance');
 
-        $this->compare('Accounts Receivable', $subsidiary, '1100');
+        // The books hold an advance (a sales-order deposit) in Customer Advances (2150), not in Receivable, while the
+        // customer's own balance already nets it off — so the customers must add up to Receivable less Advances.
+        $this->compare('Accounts Receivable', $subsidiary, '1100', '2150');
     }
 
     private function checkPayable(): void
@@ -311,9 +314,14 @@ class CheckReconciliation extends Command
         $this->compare('Inventory', $subsidiary, '1200');
     }
 
-    private function compare(string $label, float $subsidiaryTotal, string $chartOfAccountCode): void
+    /**
+     * @param  string|null  $lessChartOfAccountCode  an account whose balance is held apart in the books but already netted off in the subsidiary figure
+     */
+    private function compare(string $label, float $subsidiaryTotal, string $chartOfAccountCode, ?string $lessChartOfAccountCode = null): void
     {
-        $glBalance = (float) (ChartOfAccount::query()->where('code', $chartOfAccountCode)->value('balance') ?? 0);
+        $balanceOf = fn (string $code): float => (float) (ChartOfAccount::query()->where('code', $code)->value('balance') ?? 0);
+
+        $glBalance = $balanceOf($chartOfAccountCode) - ($lessChartOfAccountCode !== null ? $balanceOf($lessChartOfAccountCode) : 0.0);
         $difference = round($subsidiaryTotal - $glBalance, 2);
 
         if (abs($difference) > self::TOLERANCE) {

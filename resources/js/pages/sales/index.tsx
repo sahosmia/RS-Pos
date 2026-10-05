@@ -1,87 +1,30 @@
-import DataTable from '@/components/data-table/data-table';
-import DataTableCheckbox from '@/components/data-table/data-table-checkbox';
-import DataTablePagination from '@/components/data-table/data-table-pagination';
-import DataTableRowActions from '@/components/data-table/data-table-row-actions';
-import DataTableToolbar from '@/components/data-table/data-table-toolbar';
-import { FormInput } from '@/components/form/form-input';
-import AddSalePaymentModal from '@/components/sales/add-sale-payment-modal';
-import { getSaleActions } from '@/components/sales/sale-actions';
-import ViewSalePaymentsModal from '@/components/sales/view-sale-payments-modal';
-import ContactLink from '@/components/shared/contact-link';
+import ListTable from '@/components/data-table/list-table';
 import HeadingSmall from '@/components/heading-small';
-import StatCards from '@/components/shared/stat-cards';
+import AddSalePaymentModal from '@/components/sales/add-sale-payment-modal';
+import { SaleFilters, type SaleFilterValues } from '@/components/sales/sale-filters';
+import { SaleGridCard } from '@/components/sales/sale-grid-card';
+import ViewSalePaymentsModal from '@/components/sales/view-sale-payments-modal';
 import ConfirmDialog from '@/components/shared/confirm-dialog';
+import { DocumentStatCards } from '@/components/shared/document-stat-cards';
 import EmptyState from '@/components/shared/empty-state';
-import SearchableSelect from '@/components/shared/searchable-select';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useTableExport } from '@/hooks/table/use-table-export';
-import { useTableFilters, type TableFilterBase } from '@/hooks/table/use-table-filters';
-import { useTableSelection } from '@/hooks/table/use-table-selection';
+import { useListPage } from '@/hooks/table/use-list-page';
+import { type TableFilterBase } from '@/hooks/table/use-table-filters';
+import { useConfirmDelete } from '@/hooks/use-confirm-delete';
 import { useMoneyFormat } from '@/hooks/use-money-format';
-import { useTableViewMode } from '@/hooks/use-table-view-mode';
 import AppLayout from '@/layouts/app-layout';
-import { formatDateTime } from '@/lib/format-date';
-import { cn } from '@/lib/utils';
-import { type BreadcrumbItem, type SharedData } from '@/types';
+import { type BreadcrumbItem } from '@/types';
 import { type Account, type CustomerOption, type Paginated, type PaymentStatusValue, type SaleListItem, type SaleStatusValue } from '@/types/models';
-import { Head, Link, router, usePage } from '@inertiajs/react';
-import { ArrowDownCircle, ArrowUpCircle, CalendarRange, DollarSign, ShoppingCart } from 'lucide-react';
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { toast } from 'sonner';
-import { getExportColumns, getVisibilityColumns, humanize, paymentStatusColor, statusColor, useSaleColumns } from './table/columns';
-import { type VisibilityState } from '@tanstack/react-table';
-
-
-type DatePreset = 'today' | 'yesterday' | 'this_month' | 'last_month' | 'this_year' | 'last_year';
-
-const datePresetLabels: Record<DatePreset, string> = {
-    today: 'Today',
-    yesterday: 'Yesterday',
-    this_month: 'This Month',
-    last_month: 'Last Month',
-    this_year: 'This Year',
-    last_year: 'Last Year',
-};
-
-/** Local-date "YYYY-MM-DD" for query params — avoids the off-by-one day `toISOString()` causes by converting to UTC first. */
-const toQueryDate = (date: Date) => {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-};
-
-function datePresetRange(preset: DatePreset): { from: Date; to: Date } {
-    const today = new Date();
-
-    switch (preset) {
-        case 'today':
-            return { from: today, to: today };
-        case 'yesterday': {
-            const yesterday = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 1);
-            return { from: yesterday, to: yesterday };
-        }
-        case 'this_month':
-            return { from: new Date(today.getFullYear(), today.getMonth(), 1), to: today };
-        case 'last_month':
-            return {
-                from: new Date(today.getFullYear(), today.getMonth() - 1, 1),
-                to: new Date(today.getFullYear(), today.getMonth(), 0),
-            };
-        case 'this_year':
-            return { from: new Date(today.getFullYear(), 0, 1), to: today };
-        case 'last_year':
-            return { from: new Date(today.getFullYear() - 1, 0, 1), to: new Date(today.getFullYear() - 1, 11, 31) };
-    }
-}
+import { Head, Link } from '@inertiajs/react';
+import { ShoppingCart } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { getExportColumns, getVisibilityColumns, useSaleColumns } from './table/columns';
 
 const breadcrumbs: BreadcrumbItem[] = [{ title: 'Sales', href: '/sales' }];
 
 /** No `sort` here — the backend's `SaleController::index()` doesn't accept it today. */
-interface SaleFilters extends TableFilterBase {
+interface SaleFilterState extends TableFilterBase {
+    preset: SaleFilterValues['preset'];
     from: string | null;
     to: string | null;
     customer_id: number | null;
@@ -103,16 +46,12 @@ interface SalesIndexProps {
     accounts: Account[];
     /** The currently-filtered customer's own label, or `null` when no customer filter is active. */
     initialCustomer: CustomerOption | null;
-    filters: SaleFilters;
+    filters: SaleFilterState;
 }
 
 export default function SalesIndex({ sales, stats, accounts, initialCustomer, filters }: SalesIndexProps) {
-    const { shop } = usePage<SharedData>().props;
     const money = useMoneyFormat();
-    const [viewMode, setViewMode] = useTableViewMode();
     const [customer, setCustomer] = useState<CustomerOption | null>(initialCustomer);
-    const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
-    const [deleting, setDeleting] = useState<SaleListItem | null>(null);
     const [addingPayment, setAddingPayment] = useState<SaleListItem | null>(null);
     const [viewingPayments, setViewingPayments] = useState<SaleListItem | null>(null);
 
@@ -122,146 +61,46 @@ export default function SalesIndex({ sales, stats, accounts, initialCustomer, fi
         setCustomer(initialCustomer);
     }, [initialCustomer]);
 
-    const { search, setSearch, isLoading, isSearching, submitSearchNow, applyFilters, handleSort, activeFilterCount, canReset, resetFilters } = useTableFilters({
+    const list = useListPage({
         routeName: 'sales.index',
         filters,
-        emptyFilters: { from: null, to: null, customer_id: null, status: null, payment_status: null },
-    });
-
-    const selection = useTableSelection({
+        emptyFilters: { preset: 'today', from: null, to: null, customer_id: null, status: null, payment_status: null },
         rows: sales.data,
         getId: (sale) => sale.id,
+        export: {
+            routeName: 'sales.export',
+            filterKeys: ['search', 'preset', 'from', 'to', 'customer_id', 'status', 'payment_status'],
+            columnMap: {
+                invoice: ['invoice_no'],
+                customer: ['customer'],
+                date: ['sale_date'],
+                total: ['total_amount'],
+                due: ['due_amount'],
+                payment_status: ['payment_status'],
+                status: ['status'],
+            },
+        },
     });
 
-    const handleExport = useTableExport({
-        routeName: 'sales.export',
-        filters,
-        filterKeys: ['search', 'from', 'to', 'customer_id', 'status', 'payment_status'],
-        selectedIds: selection.selectedIds,
+    const deletion = useConfirmDelete<SaleListItem>({
+        routeName: 'sales.destroy',
+        errorKey: 'sale',
+        fallbackError: 'Could not delete this sale.',
+        label: (sale) => sale.invoice_no,
     });
 
-    const confirmDelete = () => {
-        if (!deleting) {
-            return;
-        }
-
-        const invoiceNo = deleting.invoice_no;
-
-        router.delete(route('sales.destroy', deleting.id), {
-            preserveScroll: true,
-            onSuccess: () => toast.success(`"${invoiceNo}" deleted.`),
-            onError: (errors) => toast.error(errors.sale ?? 'Could not delete this sale.'),
-            onFinish: () => setDeleting(null),
-        });
-    };
-
-    const applyDatePreset = (preset: DatePreset) => {
-        const { from, to } = datePresetRange(preset);
-        applyFilters({ from: toQueryDate(from), to: toQueryDate(to) });
-    };
-
-    // Table-column visibility → which fine-grained export columns should start checked,
-    // so "Export" defaults to what's actually on screen.
-    const defaultExportColumns = useMemo(() => {
-        const isVisible = (id: string) => columnVisibility[id] !== false;
-        const ids: string[] = [];
-
-        if (isVisible('invoice')) ids.push('invoice_no');
-        if (isVisible('customer')) ids.push('customer');
-        if (isVisible('date')) ids.push('sale_date');
-        if (isVisible('total')) ids.push('total_amount');
-        if (isVisible('due')) ids.push('due_amount');
-        if (isVisible('payment_status')) ids.push('payment_status');
-        if (isVisible('status')) ids.push('status');
-
-        return ids;
-    }, [columnVisibility]);
+    const rowHandlers = { onDelete: deletion.setTarget, onAddPayment: setAddingPayment, onViewPayments: setViewingPayments };
 
     const columns = useSaleColumns({
         sort: filters.sort,
         direction: filters.direction,
-        onSort: handleSort,
+        onSort: list.handleSort,
         money,
-        selection,
-        onDelete: setDeleting,
-        onAddPayment: setAddingPayment,
-        onViewPayments: setViewingPayments,
+        selection: list.selection,
+        ...rowHandlers,
     });
 
-    const renderGridCard = useCallback(
-        (sale: SaleListItem) => {
-            const isPaid = sale.payment_status === 'paid';
-            const isDue = sale.payment_status === 'due' || sale.due_amount > 0;
-
-            const accentBorder = isPaid
-                ? 'border-l-emerald-500'
-                : isDue
-                  ? 'border-l-rose-500'
-                  : 'border-l-amber-500';
-
-            return (
-                <div
-                    className={cn(
-                        'group rounded-xl border border-l-4 bg-card p-4 transition-all hover:border-primary/30 hover:shadow-md',
-                        accentBorder,
-                        selection.isSelected(sale.id) && 'border-primary/40 bg-primary/5 ring-1 ring-primary/20',
-                    )}
-                >
-                    <div className="flex items-start justify-between gap-2">
-                        <div className="flex min-w-0 items-start gap-3">
-                            <DataTableCheckbox
-                                checked={selection.isSelected(sale.id)}
-                                onCheckedChange={(checked) => selection.toggle(sale.id, checked)}
-                                className="mt-1"
-                            />
-                            <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-sky-500/10 text-sky-600 ring-1 ring-sky-500/20 dark:text-sky-400">
-                                <ShoppingCart className="size-5" />
-                            </div>
-                            <div className="min-w-0">
-                                <div className="flex items-center gap-1.5 flex-wrap">
-                                    <Link href={route('sales.show', sale.id)} className="truncate font-semibold text-foreground underline-offset-2 hover:underline">
-                                        {sale.invoice_no}
-                                    </Link>
-                                    {sale.source === 'imported' && (
-                                        <Badge variant="outline" className="text-[10px] px-1 py-0">
-                                            Historical
-                                        </Badge>
-                                    )}
-                                </div>
-                                <div className="text-muted-foreground truncate text-xs">
-                                    <ContactLink id={sale.customer.id} name={sale.customer.name} />
-                                </div>
-                                <div className="text-muted-foreground truncate text-xs">{formatDateTime(sale.created_at ?? sale.sale_date)}</div>
-                            </div>
-                        </div>
-                        <DataTableRowActions
-                            actions={getSaleActions(sale, { onDelete: setDeleting, onAddPayment: setAddingPayment, onViewPayments: setViewingPayments })}
-                        />
-                    </div>
-
-                    <div className="mt-3 flex items-center justify-between gap-2 border-t pt-3">
-                        <div className="flex flex-wrap items-center gap-1">
-                            <Badge variant="outline" className={paymentStatusColor[sale.payment_status]}>
-                                {humanize(sale.payment_status)}
-                            </Badge>
-                            <Badge variant="outline" className={statusColor[sale.status]}>
-                                {humanize(sale.status)}
-                            </Badge>
-                        </div>
-                        <div className="text-right">
-                            <div className="font-semibold tabular-nums text-foreground">{money(sale.total_amount)}</div>
-                            {sale.due_amount > 0 && (
-                                <div className="text-rose-600 dark:text-rose-400 text-xs font-medium tabular-nums">
-                                    Due: {money(sale.due_amount)}
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                </div>
-            );
-        },
-        [money, selection],
-    );
+    const addSaleHref = filters.customer_id ? route('sales.create', { customer_id: filters.customer_id }) : route('sales.create');
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
@@ -271,190 +110,64 @@ export default function SalesIndex({ sales, stats, accounts, initialCustomer, fi
                 <div className="flex flex-wrap items-end justify-between gap-4">
                     <HeadingSmall title="Sales" description="Draft, Quotation ও Confirmed — একই তালিকা, filter করে দেখুন" />
                     <Button asChild>
-                        <Link href={filters.customer_id ? route('sales.create', { customer_id: filters.customer_id }) : route('sales.create')}>Add Sale</Link>
+                        <Link href={addSaleHref}>Add Sale</Link>
                     </Button>
                 </div>
 
                 {stats && (
-                    <StatCards
-                        cards={[
-                            {
-                                label: 'Total Sales',
-                                value: stats.total_sales.toLocaleString(),
-                                icon: ShoppingCart,
-                                tone: 'text-sky-600 bg-sky-100 dark:text-sky-400 dark:bg-sky-500/15',
-                            },
-                            {
-                                label: 'Total Amount',
-                                value: money(stats.total_amount),
-                                icon: DollarSign,
-                                tone: 'text-violet-600 bg-violet-100 dark:text-violet-400 dark:bg-violet-500/15',
-                            },
-                            {
-                                label: 'Total Paid',
-                                value: money(stats.total_paid),
-                                icon: ArrowDownCircle,
-                                tone: 'text-emerald-600 bg-emerald-100 dark:text-emerald-400 dark:bg-emerald-500/15',
-                            },
-                            {
-                                label: 'Total Due',
-                                value: money(stats.total_due),
-                                icon: ArrowUpCircle,
-                                tone: 'text-rose-600 bg-rose-100 dark:text-rose-400 dark:bg-rose-500/15',
-                            },
-                        ]}
+                    <DocumentStatCards
+                        noun="Sales"
+                        icon={ShoppingCart}
+                        count={stats.total_sales}
+                        totalAmount={stats.total_amount}
+                        totalPaid={stats.total_paid}
+                        totalDue={stats.total_due}
                     />
                 )}
 
-                <DataTableToolbar
-                    search={search}
-                    onSearchChange={setSearch}
-                    onSearchSubmit={submitSearchNow}
-                    isSearching={isSearching}
-                    searchPlaceholder="Invoice or customer name"
-                    activeFilterCount={activeFilterCount}
-                    canReset={canReset}
-                    onReset={resetFilters}
-                    viewMode={viewMode}
-                    onViewModeChange={setViewMode}
-                    visibilityColumns={getVisibilityColumns()}
-                    columnVisibility={columnVisibility}
-                    onVisibilityChange={(id, visible) => setColumnVisibility((current) => ({ ...current, [id]: visible }))}
-                    exportColumns={getExportColumns()}
-                    defaultExportColumns={defaultExportColumns}
-                    totalCount={sales.total}
-                    selectedCount={selection.selectedIds.length}
-                    onExport={handleExport}
-                    filterSlot={
-                        <div className="flex flex-wrap items-end gap-3">
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <Button type="button" variant="outline" className="gap-2">
-                                        <CalendarRange className="size-4" />
-                                        Quick Range
-                                    </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="start">
-                                    {(Object.keys(datePresetLabels) as DatePreset[]).map((preset) => (
-                                        <DropdownMenuItem key={preset} onClick={() => applyDatePreset(preset)}>
-                                            {datePresetLabels[preset]}
-                                        </DropdownMenuItem>
-                                    ))}
-                                    <DropdownMenuSeparator />
-                                    <DropdownMenuItem onClick={() => applyFilters({ from: null, to: null })}>Clear dates</DropdownMenuItem>
-                                </DropdownMenuContent>
-                            </DropdownMenu>
-
-                            <FormInput
-                                id="from"
-                                label="From"
-                                type="date"
-                                value={filters.from ?? ''}
-                                onChange={(e) => applyFilters({ from: e.target.value || null })}
-                                className="w-40"
-                            />
-                            <FormInput
-                                id="to"
-                                label="To"
-                                type="date"
-                                value={filters.to ?? ''}
-                                onChange={(e) => applyFilters({ to: e.target.value || null })}
-                                className="w-40"
-                            />
-
-                            <SearchableSelect
-                                className="w-48"
-                                value={customer}
-                                onChange={(next) => {
-                                    setCustomer(next);
-                                    applyFilters({ customer_id: next?.id ?? null });
-                                }}
-                                getLabel={(option) => option.name}
-                                getSublabel={(option) => option.phone ?? ''}
-                                searchUrl={route('contacts.search')}
-                                searchParams={{ type: 'customer' }}
-                                placeholder="All customers"
-                                clearable
-                            />
-
-                            <Select
-                                value={filters.status ?? 'all'}
-                                onValueChange={(value) => applyFilters({ status: value === 'all' ? null : (value as SaleStatusValue) })}
-                            >
-                                <SelectTrigger className="w-40">
-                                    <SelectValue placeholder="Status" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="all">All statuses</SelectItem>
-                                    <SelectItem value="draft">Draft</SelectItem>
-                                    <SelectItem value="quotation">Quotation</SelectItem>
-                                    <SelectItem value="confirmed">Confirmed</SelectItem>
-                                    <SelectItem value="cancelled">Cancelled</SelectItem>
-                                </SelectContent>
-                            </Select>
-
-                            <Select
-                                value={filters.payment_status ?? 'all'}
-                                onValueChange={(value) => applyFilters({ payment_status: value === 'all' ? null : (value as PaymentStatusValue) })}
-                            >
-                                <SelectTrigger className="w-40">
-                                    <SelectValue placeholder="Payment" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="all">All payments</SelectItem>
-                                    <SelectItem value="due">Due</SelectItem>
-                                    <SelectItem value="partial">Partial</SelectItem>
-                                    <SelectItem value="paid">Paid</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-                    }
-                />
-
-                <DataTable
+                <ListTable
+                    list={list}
+                    data={sales}
+                    filters={filters}
                     columns={columns}
-                    data={sales.data}
                     getRowKey={(sale) => sale.id}
-                    renderGridCard={renderGridCard}
-                    viewMode={viewMode}
-                    columnVisibility={columnVisibility}
-                    loading={isLoading}
-                    canReset={canReset}
+                    renderGridCard={(sale) => (
+                        <SaleGridCard
+                            sale={sale}
+                            selected={list.selection.isSelected(sale.id)}
+                            onToggleSelected={(checked) => list.selection.toggle(sale.id, checked)}
+                            handlers={rowHandlers}
+                        />
+                    )}
+                    itemLabel="sales"
+                    searchPlaceholder="Invoice or customer name"
+                    visibilityColumns={getVisibilityColumns()}
+                    exportColumns={getExportColumns()}
+                    filterSlot={<SaleFilters filters={filters} customer={customer} onCustomerChange={setCustomer} onChange={list.applyFilters} />}
                     emptyState={
                         <EmptyState title="No sales yet" description="প্রথম sale যোগ করুন">
                             <Button className="mt-2" asChild>
-                                <Link href={filters.customer_id ? route('sales.create', { customer_id: filters.customer_id }) : route('sales.create')}>Add Sale</Link>
+                                <Link href={addSaleHref}>Add Sale</Link>
                             </Button>
                         </EmptyState>
                     }
                     filteredEmptyState={
                         <EmptyState title="No sales match your filters" description="অন্য filter/date range দিয়ে আবার চেষ্টা করুন">
-                            <Button className="mt-2" variant="outline" onClick={resetFilters}>
+                            <Button className="mt-2" variant="outline" onClick={list.resetFilters}>
                                 Clear filters
                             </Button>
                         </EmptyState>
-                    }
-                    footer={
-                        <DataTablePagination
-                            pagination={sales}
-                            perPage={filters.per_page}
-                            perPageOptions={shop.pagination_options}
-                            allowAll={shop.pagination_allow_all}
-                            onPerPageChange={(value) => applyFilters({ per_page: value })}
-                            onPageChange={(page) => applyFilters({ page })}
-                            itemLabel="sales"
-                        />
                     }
                 />
             </div>
 
             <ConfirmDialog
-                open={deleting !== null}
-                onOpenChange={(open) => !open && setDeleting(null)}
+                open={deletion.target !== null}
+                onOpenChange={(open) => !open && deletion.setTarget(null)}
                 title="Delete sale?"
-                description={`"${deleting?.invoice_no}" will be permanently deleted.`}
+                description={`"${deletion.target?.invoice_no}" will be permanently deleted.`}
                 confirmLabel="Delete"
-                onConfirm={confirmDelete}
+                onConfirm={deletion.confirm}
             />
 
             {addingPayment && (

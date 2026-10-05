@@ -1,5 +1,6 @@
 import { getProductActions } from '@/components/products/product-actions';
 import ProductStatusBadge from '@/components/products/product-status-badge';
+import StockQuantity from '@/components/products/stock-quantity';
 import DataTableCheckbox from '@/components/data-table/data-table-checkbox';
 import DataTableColumnHeader from '@/components/data-table/data-table-column-header';
 import DataTableRowActions from '@/components/data-table/data-table-row-actions';
@@ -136,7 +137,7 @@ export function useProductColumns({ sort, direction, onSort, selection, onAdjust
                     />
                 ),
                 meta: { headerClassName: 'text-right', cellClassName: 'text-right tabular-nums', label: t('productColumns', 'stock') },
-                cell: ({ row }) => (row.original.manage_stock ? `${row.original.current_stock} ${row.original.unit.name}` : '—'),
+                cell: ({ row }) => <StockQuantity product={row.original} />,
             },
             {
                 id: 'pap',
@@ -184,7 +185,7 @@ export function useProductColumns({ sort, direction, onSort, selection, onAdjust
                 id: 'status',
                 header: t('productColumns', 'status'),
                 meta: { label: t('productColumns', 'status') },
-                cell: ({ row }) => <ProductStatusBadge product={row.original} />,
+                cell: ({ row }) => <ProductStatusBadge product={row.original} hideStockStatus />,
             },
         ],
         [selection, onAdjustStock, onDelete, sort, direction, onSort, money, t],

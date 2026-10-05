@@ -62,7 +62,10 @@ export default function RefundCreditModal({ open, onOpenChange, contact, account
         >
             <div className="grid min-w-0 content-start gap-2">
                 <Label htmlFor="refund_account_id">{t('common', 'account')}</Label>
-                <Select value={form.data.account_id ? String(form.data.account_id) : ''} onValueChange={(value) => form.setData('account_id', Number(value))}>
+                <Select
+                    value={form.data.account_id ? String(form.data.account_id) : ''}
+                    onValueChange={(value) => form.setData('account_id', Number(value))}
+                >
                     <SelectTrigger id="refund_account_id">
                         <SelectValue placeholder={t('common', 'select_account')} />
                     </SelectTrigger>
@@ -78,7 +81,9 @@ export default function RefundCreditModal({ open, onOpenChange, contact, account
             </div>
 
             <div className="grid min-w-0 content-start gap-2">
-                <Label htmlFor="refund_amount" required>{t('common', 'amount')}</Label>
+                <Label htmlFor="refund_amount" required>
+                    {t('common', 'amount')}
+                </Label>
                 <MoneyInput
                     id="refund_amount"
                     value={form.data.amount}

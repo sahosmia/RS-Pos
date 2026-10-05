@@ -22,7 +22,7 @@ const SIDEBAR_KEYBOARD_SHORTCUT = 'b';
 type SidebarContext = {
     state: 'expanded' | 'collapsed';
     open: boolean;
-    setOpen: (open: boolean) => void;
+    setOpen: React.Dispatch<React.SetStateAction<boolean>>;
     openMobile: boolean;
     setOpenMobile: (open: boolean) => void;
     isMobile: boolean;
@@ -54,18 +54,22 @@ const SidebarProvider = React.forwardRef<
     // Uncontrolled fallback state; openProp/setOpenProp let a parent control it instead.
     const [_open, _setOpen] = React.useState(defaultOpen);
     const open = openProp ?? _open;
-    const setOpen = React.useCallback(
-        (value: boolean | ((value: boolean) => boolean)) => {
+    const setOpen = React.useCallback<React.Dispatch<React.SetStateAction<boolean>>>(
+        (value) => {
             const openState = typeof value === 'function' ? value(open) : value;
+
             if (setOpenProp) {
                 setOpenProp(openState);
             } else {
                 _setOpen(openState);
             }
 
-            document.cookie = `${SIDEBAR_COOKIE_NAME}=${openState}; path=/; max-age=${SIDEBAR_COOKIE_MAX_AGE}`;
+            // Cookie persistence only runs in the browser.
+            if (typeof document !== 'undefined') {
+                document.cookie = `${SIDEBAR_COOKIE_NAME}=${openState}; path=/; max-age=${SIDEBAR_COOKIE_MAX_AGE}; SameSite=Lax`;
+            }
         },
-        [setOpenProp, open],
+        [open, setOpenProp],
     );
 
     const toggleSidebar = React.useCallback(() => {
@@ -85,7 +89,18 @@ const SidebarProvider = React.forwardRef<
 
     React.useEffect(() => {
         const handleKeyDown = (event: KeyboardEvent) => {
-            if (event.key === SIDEBAR_KEYBOARD_SHORTCUT && (event.metaKey || event.ctrlKey)) {
+            const target = event.target as HTMLElement | null;
+            const isTypingTarget =
+                target instanceof HTMLInputElement ||
+                target instanceof HTMLTextAreaElement ||
+                target instanceof HTMLSelectElement ||
+                target?.isContentEditable;
+
+            if (
+                !isTypingTarget &&
+                event.key.toLowerCase() === SIDEBAR_KEYBOARD_SHORTCUT &&
+                (event.metaKey || event.ctrlKey)
+            ) {
                 event.preventDefault();
                 toggleSidebar();
             }
@@ -222,20 +237,25 @@ const SidebarTrigger = React.forwardRef<React.ElementRef<typeof Button>, React.C
     ({ className, onClick, ...props }, ref) => {
         const { toggleSidebar } = useSidebar();
 
+        const { state, isMobile } = useSidebar();
+
         return (
             <Button
                 ref={ref}
+                type="button"
                 data-sidebar="trigger"
                 variant="ghost"
                 size="icon"
-                className={cn('h-7 w-7', className)}
+                aria-label="Toggle sidebar"
+                aria-expanded={isMobile ? undefined : state === 'expanded'}
+                className={cn('size-8 shrink-0', className)}
                 onClick={(event) => {
                     onClick?.(event);
                     toggleSidebar();
                 }}
                 {...props}
             >
-                <Menu />
+                <Menu className="size-4" aria-hidden="true" />
                 <span className="sr-only">Toggle Sidebar</span>
             </Button>
         );
@@ -249,6 +269,7 @@ const SidebarRail = React.forwardRef<HTMLButtonElement, React.ComponentProps<'bu
     return (
         <button
             ref={ref}
+            type="button"
             data-sidebar="rail"
             aria-label="Toggle Sidebar"
             tabIndex={-1}
@@ -303,12 +324,12 @@ const SidebarInput = React.forwardRef<React.ElementRef<typeof Input>, React.Comp
 SidebarInput.displayName = 'SidebarInput';
 
 const SidebarHeader = React.forwardRef<HTMLDivElement, React.ComponentProps<'div'>>(({ className, ...props }, ref) => {
-    return <div ref={ref} data-sidebar="header" className={cn('flex flex-col gap-2 p-2', className)} {...props} />;
+    return <div ref={ref} data-sidebar="header" className={cn('flex shrink-0 flex-col gap-2 p-2', className)} {...props} />;
 });
 SidebarHeader.displayName = 'SidebarHeader';
 
 const SidebarFooter = React.forwardRef<HTMLDivElement, React.ComponentProps<'div'>>(({ className, ...props }, ref) => {
-    return <div ref={ref} data-sidebar="footer" className={cn('flex flex-col gap-2 p-2', className)} {...props} />;
+    return <div ref={ref} data-sidebar="footer" className={cn('flex shrink-0 flex-col gap-2 p-2', className)} {...props} />;
 });
 SidebarFooter.displayName = 'SidebarFooter';
 
@@ -348,7 +369,7 @@ const SidebarGroupLabel = React.forwardRef<HTMLDivElement, React.ComponentProps<
                 ref={ref}
                 data-sidebar="group-label"
                 className={cn(
-                    'flex h-8 shrink-0 items-center rounded-md px-2 text-xs font-medium text-sidebar-foreground/70 outline-hidden ring-sidebar-ring transition-[margin,opacity] duration-300 ease-in-out focus-visible:ring-2 [&>svg]:size-4 [&>svg]:shrink-0',
+                    'flex h-8 shrink-0 items-center rounded-md px-2 text-xs font-semibold text-sidebar-foreground/60 outline-hidden ring-sidebar-ring transition-[margin,opacity] duration-300 ease-in-out focus-visible:ring-2 [&>svg]:size-4 [&>svg]:shrink-0',
                     'group-data-[collapsible=icon]:-mt-8 group-data-[collapsible=icon]:opacity-0',
                     className,
                 )}
@@ -406,8 +427,8 @@ const sidebarMenuButtonVariants = cva(
                     'bg-background shadow-[0_0_0_1px_hsl(var(--sidebar-border))] hover:bg-sidebar-accent hover:text-sidebar-accent-foreground hover:shadow-[0_0_0_1px_hsl(var(--sidebar-accent))]',
             },
             size: {
-                default: 'h-8 text-sm max-md:h-11',
-                sm: 'h-7 text-xs',
+                default: 'h-9 text-sm max-md:h-11',
+                sm: 'h-8 text-xs max-md:h-10',
                 lg: 'h-12 text-sm group-data-[collapsible=icon]:p-0!',
             },
         },
@@ -432,9 +453,11 @@ const SidebarMenuButton = React.forwardRef<
     const button = (
         <Comp
             ref={ref}
+            type={asChild ? undefined : 'button'}
             data-sidebar="menu-button"
             data-size={size}
             data-active={isActive}
+            aria-current={isActive ? 'page' : undefined}
             className={cn(sidebarMenuButtonVariants({ variant, size }), className)}
             {...props}
         />
@@ -514,10 +537,8 @@ const SidebarMenuSkeleton = React.forwardRef<
         showIcon?: boolean;
     }
 >(({ className, showIcon = false, ...props }, ref) => {
-    // Random width between 50 to 90%.
-    const width = React.useMemo(() => {
-        return `${Math.floor(Math.random() * 40) + 50}%`;
-    }, []);
+    // Keep the default deterministic so SSR and hydration always render the same markup.
+    const width = '68%';
 
     return (
         <div ref={ref} data-sidebar="menu-skeleton" className={cn('flex h-8 items-center gap-2 rounded-md px-2', className)} {...props}>
@@ -552,7 +573,11 @@ const SidebarMenuSub = React.forwardRef<HTMLUListElement, React.ComponentProps<'
 ));
 SidebarMenuSub.displayName = 'SidebarMenuSub';
 
-const SidebarMenuSubItem = React.forwardRef<HTMLLIElement, React.ComponentProps<'li'>>(({ ...props }, ref) => <li ref={ref} {...props} />);
+const SidebarMenuSubItem = React.forwardRef<HTMLLIElement, React.ComponentProps<'li'>>(
+    ({ className, ...props }, ref) => (
+        <li ref={ref} className={cn('group/sub-menu-item relative min-w-0', className)} {...props} />
+    ),
+);
 SidebarMenuSubItem.displayName = 'SidebarMenuSubItem';
 
 const SidebarMenuSubButton = React.forwardRef<
@@ -571,6 +596,7 @@ const SidebarMenuSubButton = React.forwardRef<
             data-sidebar="menu-sub-button"
             data-size={size}
             data-active={isActive}
+            aria-current={isActive ? 'page' : undefined}
             className={cn(
                 // Full container width, edge-to-edge — a plain rounded rect, not inset inside a rail.
                 'flex h-7 max-md:h-10 min-w-0 w-full items-center gap-2 overflow-hidden rounded-md px-3 text-sidebar-foreground outline-hidden ring-sidebar-ring hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 active:bg-sidebar-accent active:text-sidebar-accent-foreground disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50 [&>span:last-child]:truncate [&>svg]:size-4 [&>svg]:shrink-0 [&>svg]:text-sidebar-accent-foreground',

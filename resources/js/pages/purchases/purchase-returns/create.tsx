@@ -118,7 +118,13 @@ export default function PurchaseReturnsCreate({ purchase }: PurchaseReturnsCreat
 
                     <div className="grid max-w-md gap-2">
                         <Label htmlFor="reason">Reason</Label>
-                        <Textarea id="reason" placeholder="Write the reason" value={form.data.reason} onChange={(e) => form.setData('reason', e.target.value)} rows={3} />
+                        <Textarea
+                            id="reason"
+                            placeholder="Write the reason"
+                            value={form.data.reason}
+                            onChange={(e) => form.setData('reason', e.target.value)}
+                            rows={3}
+                        />
                     </div>
 
                     <Button type="submit" disabled={!hasAnyQuantity || form.processing}>

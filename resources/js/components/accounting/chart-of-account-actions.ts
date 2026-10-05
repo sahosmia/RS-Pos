@@ -8,10 +8,7 @@ interface ChartOfAccountActionHandlers {
 }
 
 /** Row actions for the Chart of Accounts list's action menu. */
-export function getChartOfAccountActions(
-    account: ChartOfAccountListItem,
-    { onEdit, onDelete }: ChartOfAccountActionHandlers,
-): RowAction[] {
+export function getChartOfAccountActions(account: ChartOfAccountListItem, { onEdit, onDelete }: ChartOfAccountActionHandlers): RowAction[] {
     return [
         { label: 'Ledger', icon: BookText, href: route('chart-of-accounts.ledger', account.id) },
         { label: 'Edit', icon: Pencil, onClick: () => onEdit(account) },

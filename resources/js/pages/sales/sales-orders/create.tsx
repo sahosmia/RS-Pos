@@ -11,7 +11,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useMoneyFormat } from '@/hooks/use-money-format';
 import AppLayout from '@/layouts/app-layout';
-import { cn } from '@/lib/utils';
 import { type BreadcrumbItem } from '@/types';
 import { type Account, type CustomerOption } from '@/types/models';
 import { Head, Link, useForm } from '@inertiajs/react';
@@ -115,7 +114,7 @@ export default function SalesOrdersCreate({ initialCustomer, products, accounts 
                 <form onSubmit={submit} className="space-y-5">
                     {/* Order Details */}
                     <Card className="overflow-hidden shadow-xs">
-                        <CardHeader className="flex flex-row items-center gap-3 space-y-0 border-b bg-muted/30 px-4 py-3">
+                        <CardHeader className="bg-muted/30 flex flex-row items-center gap-3 space-y-0 border-b px-4 py-3">
                             <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-sky-500/10 text-sky-600 ring-1 ring-sky-500/20 dark:text-sky-400">
                                 <ClipboardList className="size-4" />
                             </div>
@@ -127,7 +126,9 @@ export default function SalesOrdersCreate({ initialCustomer, products, accounts 
                         <CardContent className="p-4">
                             <div className="grid gap-4 sm:grid-cols-3">
                                 <div className="grid min-w-0 content-start gap-2">
-                                    <Label htmlFor="customer_id" required>Customer</Label>
+                                    <Label htmlFor="customer_id" required>
+                                        Customer
+                                    </Label>
                                     <SearchableSelect
                                         id="customer_id"
                                         value={customer}
@@ -170,7 +171,7 @@ export default function SalesOrdersCreate({ initialCustomer, products, accounts 
 
                     {/* Product Selection & Items */}
                     <Card className="overflow-hidden shadow-xs">
-                        <CardHeader className="flex flex-row items-center gap-3 space-y-0 border-b bg-muted/30 px-4 py-3">
+                        <CardHeader className="bg-muted/30 flex flex-row items-center gap-3 space-y-0 border-b px-4 py-3">
                             <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-violet-500/10 text-violet-600 ring-1 ring-violet-500/20 dark:text-violet-400">
                                 <Package className="size-4" />
                             </div>
@@ -179,7 +180,7 @@ export default function SalesOrdersCreate({ initialCustomer, products, accounts 
                                 <p className="text-muted-foreground mt-0.5 text-xs">পণ্য সিলেক্ট করুন ও পরিমাণ নির্ধারণ করুন</p>
                             </div>
                         </CardHeader>
-                        <CardContent className="p-4 space-y-4">
+                        <CardContent className="space-y-4 p-4">
                             <div className="grid min-w-0 content-start gap-2">
                                 <Label>Products</Label>
                                 <ProductSearchInput products={products} onSelect={addProduct} />
@@ -202,7 +203,8 @@ export default function SalesOrdersCreate({ initialCustomer, products, accounts 
                                             {items.map((item, index) => (
                                                 <tr key={item.product_id} className="border-t">
                                                     <td className="px-4 py-2">
-                                                        <span className="font-medium">{item.name}</span> <span className="text-muted-foreground">({item.sku})</span>
+                                                        <span className="font-medium">{item.name}</span>{' '}
+                                                        <span className="text-muted-foreground">({item.sku})</span>
                                                     </td>
                                                     <td className="px-4 py-2 text-right">
                                                         <Input
@@ -221,7 +223,9 @@ export default function SalesOrdersCreate({ initialCustomer, products, accounts 
                                                             onChange={(e) => updateItem(index, { unit_price: Number(e.target.value) })}
                                                         />
                                                     </td>
-                                                    <td className="px-4 py-2 text-right font-semibold tabular-nums">{money(item.quantity * item.unit_price)}</td>
+                                                    <td className="px-4 py-2 text-right font-semibold tabular-nums">
+                                                        {money(item.quantity * item.unit_price)}
+                                                    </td>
                                                     <td className="px-4 py-2 text-right">
                                                         <Button type="button" variant="ghost" size="icon" onClick={() => removeItem(index)}>
                                                             <Trash2 className="size-4" />
@@ -231,7 +235,7 @@ export default function SalesOrdersCreate({ initialCustomer, products, accounts 
                                             ))}
                                         </tbody>
                                         <tfoot>
-                                            <tr className="border-t font-semibold text-base">
+                                            <tr className="border-t text-base font-semibold">
                                                 <td className="px-4 py-2" colSpan={3}>
                                                     Total
                                                 </td>
@@ -247,7 +251,7 @@ export default function SalesOrdersCreate({ initialCustomer, products, accounts 
 
                     {/* Advance Payment */}
                     <Card className="overflow-hidden shadow-xs">
-                        <CardHeader className="flex flex-row items-center gap-3 space-y-0 border-b bg-muted/30 px-4 py-3">
+                        <CardHeader className="bg-muted/30 flex flex-row items-center gap-3 space-y-0 border-b px-4 py-3">
                             <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600 ring-1 ring-emerald-500/20 dark:text-emerald-400">
                                 <Wallet className="size-4" />
                             </div>
@@ -256,7 +260,7 @@ export default function SalesOrdersCreate({ initialCustomer, products, accounts 
                                 <p className="text-muted-foreground mt-0.5 text-xs">অগ্রিম গ্রহণ (ঐচ্ছিক)</p>
                             </div>
                         </CardHeader>
-                        <CardContent className="p-4 space-y-3">
+                        <CardContent className="space-y-3 p-4">
                             <AccountPaymentRows
                                 accounts={accounts}
                                 rows={payments}

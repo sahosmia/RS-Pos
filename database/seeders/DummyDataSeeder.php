@@ -22,6 +22,7 @@ class DummyDataSeeder extends Seeder
             // Reference data
             AccountTypeSeeder::class,
             ChartOfAccountSeeder::class,
+            AccountingPeriodSeeder::class,
             OtherIncomeCategorySeeder::class,
             StaffTransactionTypeSeeder::class,
 
@@ -48,6 +49,12 @@ class DummyDataSeeder extends Seeder
             InvestorSeeder::class,
             OtherLiabilitySeeder::class,
             StaffSeeder::class,
+
+            // After-sale and housekeeping — these build on the sales and staff above
+            ServiceRequestSeeder::class,
+            WarrantyClaimSeeder::class,
+            CampaignSeeder::class,
+            NotificationSeeder::class,
         ]);
     }
 }

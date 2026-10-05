@@ -59,7 +59,7 @@ export default function ContactStatCards({ stats, totalLabel, activeLabel, recei
             {cards.map((card) => (
                 <div
                     key={card.label}
-                    className="group relative overflow-hidden rounded-lg border border-border bg-card/80 p-4 transition-all hover:shadow-2xs"
+                    className="group border-border bg-card/80 relative overflow-hidden rounded-lg border p-4 transition-all hover:shadow-2xs"
                 >
                     <div className="flex items-center gap-3">
                         <div className={cn('flex size-10 shrink-0 items-center justify-center rounded-lg', card.tone)}>

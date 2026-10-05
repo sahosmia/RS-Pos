@@ -1,35 +1,30 @@
-import { getExpenseActions } from '@/components/expenses/expense-actions';
+import ListTable from '@/components/data-table/list-table';
+import {
+    EXPENSE_EXPORT_COLUMN_MAP,
+    EXPENSE_EXPORT_COLUMNS,
+    EXPENSE_VISIBILITY_COLUMNS,
+    useExpenseColumns,
+} from '@/components/expenses/expense-columns';
+import { ExpenseGridCard } from '@/components/expenses/expense-grid-card';
 import ExpenseModal from '@/components/expenses/expense-modal';
+import { FormInput } from '@/components/form/form-input';
 import HeadingSmall from '@/components/heading-small';
 import LookupManagerModal from '@/components/products/lookup-manager-modal';
 import ConfirmDialog from '@/components/shared/confirm-dialog';
-import StatCards from '@/components/shared/stat-cards';
 import EmptyState from '@/components/shared/empty-state';
+import StatCards from '@/components/shared/stat-cards';
 import { Button } from '@/components/ui/button';
-import DataTable from '@/components/data-table/data-table';
-import DataTableCheckbox from '@/components/data-table/data-table-checkbox';
-import DataTableColumnHeader from '@/components/data-table/data-table-column-header';
-import DataTablePagination from '@/components/data-table/data-table-pagination';
-import DataTableRowActions from '@/components/data-table/data-table-row-actions';
-import DataTableToolbar from '@/components/data-table/data-table-toolbar';
-import { type DataTableColumnOption } from '@/components/data-table/types';
-import { FormInput } from '@/components/form/form-input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useTableExport } from '@/hooks/table/use-table-export';
+import { useListPage } from '@/hooks/table/use-list-page';
 import { type TableFilterBase } from '@/hooks/table/use-table-filters';
-import { useTableFilters } from '@/hooks/table/use-table-filters';
-import { useTableSelection } from '@/hooks/table/use-table-selection';
+import { useConfirmDelete } from '@/hooks/use-confirm-delete';
 import { useMoneyFormat } from '@/hooks/use-money-format';
-import { useTableViewMode } from '@/hooks/use-table-view-mode';
 import AppLayout from '@/layouts/app-layout';
-import { formatDateTime } from '@/lib/format-date';
-import { type BreadcrumbItem, type SharedData } from '@/types';
+import { type BreadcrumbItem } from '@/types';
 import { type Account, type ExpenseCategoryOption, type ExpenseListItem, type Paginated } from '@/types/models';
-import { Head, router, usePage } from '@inertiajs/react';
+import { Head } from '@inertiajs/react';
 import { DollarSign, Receipt } from 'lucide-react';
-import { type ColumnDef, type VisibilityState } from '@tanstack/react-table';
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { toast } from 'sonner';
+import { useEffect, useState } from 'react';
 
 const breadcrumbs: BreadcrumbItem[] = [{ title: 'Expenses', href: '/expenses' }];
 
@@ -53,47 +48,30 @@ interface ExpensesIndexProps {
     filters: ExpenseFilters;
 }
 
-const getVisibilityColumns = (): DataTableColumnOption[] => [
-    { id: 'date', label: 'Date' },
-    { id: 'category', label: 'Category' },
-    { id: 'account', label: 'Account' },
-    { id: 'note', label: 'Note' },
-    { id: 'total', label: 'Amount' },
-    { id: 'added_by', label: 'Added by' },
-];
-
-/** Matches `ExpenseExportController::COLUMN_LABELS` on the backend. */
-const getExportColumns = (): DataTableColumnOption[] => [
-    { id: 'expense_date', label: 'Date' },
-    { id: 'category', label: 'Category' },
-    { id: 'account', label: 'Account' },
-    { id: 'note', label: 'Note' },
-    { id: 'total_amount', label: 'Amount' },
-];
-
 export default function ExpensesIndex({ expenses, stats, categories, accounts, filters }: ExpensesIndexProps) {
-    const { shop } = usePage<SharedData>().props;
     const money = useMoneyFormat();
-    const [viewMode, setViewMode] = useTableViewMode();
-    const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
     const [addOpen, setAddOpen] = useState(false);
     const [categoriesOpen, setCategoriesOpen] = useState(false);
     const [editing, setEditing] = useState<ExpenseListItem | null>(null);
-    const [deleting, setDeleting] = useState<ExpenseListItem | null>(null);
 
-    const confirmDelete = () => {
-        if (!deleting) return;
-        router.delete(route('expenses.destroy', deleting.id), {
-            onSuccess: () => toast.success('Expense deleted.'),
-            onError: (errors) => toast.error(errors.expense ?? 'Could not delete expense.'),
-            onFinish: () => setDeleting(null),
-        });
-    };
-
-    const { isLoading, applyFilters, handleSort, activeFilterCount, canReset, resetFilters } = useTableFilters({
+    const list = useListPage({
         routeName: 'expenses.index',
         filters,
         emptyFilters: { from: null, to: null, expense_category_id: null },
+        rows: expenses.data,
+        getId: (expense) => expense.id,
+        export: {
+            routeName: 'expenses.export',
+            filterKeys: ['from', 'to', 'expense_category_id'],
+            columnMap: EXPENSE_EXPORT_COLUMN_MAP,
+        },
+    });
+
+    const deletion = useConfirmDelete<ExpenseListItem>({
+        routeName: 'expenses.destroy',
+        errorKey: 'expense',
+        fallbackError: 'Could not delete expense.',
+        successMessage: () => 'Expense deleted.',
     });
 
     // The header's global "Quick Create" menu links here with `?quick_create=1`
@@ -109,139 +87,15 @@ export default function ExpensesIndex({ expenses, stats, categories, accounts, f
         window.history.replaceState({}, '', window.location.pathname + (query ? `?${query}` : ''));
     }, []);
 
-    const selection = useTableSelection({
-        rows: expenses.data,
-        getId: (expense) => expense.id,
+    const columns = useExpenseColumns({
+        sort: filters.sort,
+        direction: filters.direction,
+        onSort: list.handleSort,
+        selection: list.selection,
+        money,
+        onEdit: setEditing,
+        onDelete: deletion.setTarget,
     });
-
-    const handleExport = useTableExport({
-        routeName: 'expenses.export',
-        filters,
-        filterKeys: ['from', 'to', 'expense_category_id'],
-        selectedIds: selection.selectedIds,
-    });
-
-    // Table-column visibility → which fine-grained export columns should start checked.
-    const defaultExportColumns = useMemo(() => {
-        const isVisible = (id: string) => columnVisibility[id] !== false;
-        const ids: string[] = [];
-
-        if (isVisible('date')) ids.push('expense_date');
-        if (isVisible('category')) ids.push('category');
-        if (isVisible('account')) ids.push('account');
-        if (isVisible('note')) ids.push('note');
-        if (isVisible('total')) ids.push('total_amount');
-
-        return ids;
-    }, [columnVisibility]);
-
-    const columns = useMemo<ColumnDef<ExpenseListItem>[]>(
-        () => [
-            {
-                id: 'select',
-                header: () => (
-                    <DataTableCheckbox
-                        checked={selection.isAllSelected ? true : selection.isSomeSelected ? 'indeterminate' : false}
-                        onCheckedChange={selection.toggleAll}
-                    />
-                ),
-                meta: { headerClassName: 'w-10', cellClassName: 'w-10', printHidden: true },
-                cell: ({ row }) => (
-                    <DataTableCheckbox
-                        checked={selection.isSelected(row.original.id)}
-                        onCheckedChange={(checked) => selection.toggle(row.original.id, checked)}
-                    />
-                ),
-            },
-            {
-                id: 'actions',
-                header: '',
-                meta: { headerClassName: 'w-10', cellClassName: 'w-10', printHidden: true },
-                cell: ({ row }) => (
-                    <DataTableRowActions
-                        actions={getExpenseActions(row.original, { onEdit: setEditing, onDelete: setDeleting })}
-                    />
-                ),
-            },
-            {
-                id: 'date',
-                header: () => (
-                    <DataTableColumnHeader
-                        title="Date"
-                        sortKey="expense_date"
-                        currentSort={filters.sort ?? ''}
-                        currentDirection={filters.direction ?? 'desc'}
-                        onSort={handleSort}
-                    />
-                ),
-                meta: { cellClassName: 'whitespace-nowrap', label: 'Date & Time' },
-                cell: ({ row }) => formatDateTime(row.original.created_at ?? row.original.expense_date),
-            },
-            { id: 'category', header: 'Category', cell: ({ row }) => row.original.category.name },
-            { id: 'account', header: 'Account', cell: ({ row }) => row.original.account?.name ?? '—' },
-            {
-                id: 'note',
-                header: 'Note',
-                meta: { cellClassName: 'max-w-xs' },
-                cell: ({ row }) =>
-                    row.original.note ? (
-                        <span className="text-muted-foreground line-clamp-2 break-words" title={row.original.note}>
-                            {row.original.note}
-                        </span>
-                    ) : (
-                        <span className="text-muted-foreground/60">—</span>
-                    ),
-            },
-            {
-                id: 'total',
-                header: () => (
-                    <DataTableColumnHeader
-                        title="Amount"
-                        sortKey="total_amount"
-                        currentSort={filters.sort ?? ''}
-                        currentDirection={filters.direction ?? 'desc'}
-                        onSort={handleSort}
-                        align="right"
-                    />
-                ),
-                meta: { headerClassName: 'text-right', cellClassName: 'text-right tabular-nums' },
-                cell: ({ row }) => money(row.original.total_amount),
-            },
-            { id: 'added_by', header: 'Added by', cell: ({ row }) => <span className="text-muted-foreground">{row.original.added_by ?? '—'}</span> },
-        ],
-        [money, selection, filters.sort, filters.direction, handleSort],
-    );
-
-    const renderGridCard = useCallback(
-        (expense: ExpenseListItem) => (
-            <div className="rounded-lg border p-3">
-                <div className="flex items-start justify-between gap-2">
-                    <div className="flex min-w-0 items-center gap-3">
-                        <DataTableCheckbox
-                            checked={selection.isSelected(expense.id)}
-                            onCheckedChange={(checked) => selection.toggle(expense.id, checked)}
-                        />
-                        <div className="min-w-0">
-                            <div className="font-medium">{expense.category.name}</div>
-                            {expense.note && <div className="text-muted-foreground line-clamp-2 text-xs break-words">{expense.note}</div>}
-                        </div>
-                    </div>
-                    <div className="flex shrink-0 items-center gap-1">
-                        <span className="font-medium tabular-nums">{money(expense.total_amount)}</span>
-                        <DataTableRowActions
-                            actions={getExpenseActions(expense, { onEdit: setEditing, onDelete: setDeleting })}
-                        />
-                    </div>
-                </div>
-
-                <div className="text-muted-foreground mt-2 flex justify-between gap-2 text-xs">
-                    <span className="whitespace-nowrap">{formatDateTime(expense.created_at ?? expense.expense_date)}</span>
-                    <span className="truncate">{expense.account?.name ?? '—'}</span>
-                </div>
-            </div>
-        ),
-        [money, selection],
-    );
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
@@ -249,7 +103,10 @@ export default function ExpensesIndex({ expenses, stats, categories, accounts, f
 
             <div className="space-y-6 px-4 py-6">
                 <div className="flex flex-wrap items-end justify-between gap-4">
-                    <HeadingSmall title="Expenses" description="Rent, Utility, Salary, Transport — যে account থেকে দেওয়া হয়েছে সেখান থেকে সরাসরি কাটা হয়" />
+                    <HeadingSmall
+                        title="Expenses"
+                        description="Rent, Utility, Salary, Transport — যে account থেকে দেওয়া হয়েছে সেখান থেকে সরাসরি কাটা হয়"
+                    />
                     <div className="flex gap-2">
                         <Button variant="outline" onClick={() => setCategoriesOpen(true)}>
                             Manage Categories
@@ -277,20 +134,24 @@ export default function ExpensesIndex({ expenses, stats, categories, accounts, f
                     />
                 )}
 
-                <DataTableToolbar
-                    activeFilterCount={activeFilterCount}
-                    canReset={canReset}
-                    onReset={resetFilters}
-                    viewMode={viewMode}
-                    onViewModeChange={setViewMode}
-                    visibilityColumns={getVisibilityColumns()}
-                    columnVisibility={columnVisibility}
-                    onVisibilityChange={(id, visible) => setColumnVisibility((current) => ({ ...current, [id]: visible }))}
-                    exportColumns={getExportColumns()}
-                    defaultExportColumns={defaultExportColumns}
-                    totalCount={expenses.total}
-                    selectedCount={selection.selectedIds.length}
-                    onExport={handleExport}
+                <ListTable
+                    list={list}
+                    data={expenses}
+                    filters={filters}
+                    columns={columns}
+                    getRowKey={(expense) => expense.id}
+                    renderGridCard={(expense) => (
+                        <ExpenseGridCard
+                            expense={expense}
+                            selected={list.selection.isSelected(expense.id)}
+                            onToggleSelected={(checked) => list.selection.toggle(expense.id, checked)}
+                            onEdit={setEditing}
+                            onDelete={deletion.setTarget}
+                        />
+                    )}
+                    itemLabel="expenses"
+                    visibilityColumns={EXPENSE_VISIBILITY_COLUMNS}
+                    exportColumns={EXPENSE_EXPORT_COLUMNS}
                     filterSlot={
                         <div className="flex flex-wrap items-end gap-3">
                             <FormInput
@@ -298,7 +159,7 @@ export default function ExpensesIndex({ expenses, stats, categories, accounts, f
                                 label="From"
                                 type="date"
                                 value={filters.from ?? ''}
-                                onChange={(e) => applyFilters({ from: e.target.value || null })}
+                                onChange={(e) => list.applyFilters({ from: e.target.value || null })}
                                 className="w-40"
                             />
                             <FormInput
@@ -306,13 +167,13 @@ export default function ExpensesIndex({ expenses, stats, categories, accounts, f
                                 label="To"
                                 type="date"
                                 value={filters.to ?? ''}
-                                onChange={(e) => applyFilters({ to: e.target.value || null })}
+                                onChange={(e) => list.applyFilters({ to: e.target.value || null })}
                                 className="w-40"
                             />
 
                             <Select
                                 value={filters.expense_category_id ? String(filters.expense_category_id) : 'all'}
-                                onValueChange={(value) => applyFilters({ expense_category_id: value === 'all' ? null : Number(value) })}
+                                onValueChange={(value) => list.applyFilters({ expense_category_id: value === 'all' ? null : Number(value) })}
                             >
                                 <SelectTrigger className="w-48">
                                     <SelectValue placeholder="Category" />
@@ -328,17 +189,6 @@ export default function ExpensesIndex({ expenses, stats, categories, accounts, f
                             </Select>
                         </div>
                     }
-                />
-
-                <DataTable
-                    columns={columns}
-                    data={expenses.data}
-                    getRowKey={(expense) => expense.id}
-                    renderGridCard={renderGridCard}
-                    viewMode={viewMode}
-                    columnVisibility={columnVisibility}
-                    loading={isLoading}
-                    canReset={canReset}
                     emptyState={
                         <EmptyState title="No expenses yet" description="প্রথম expense যোগ করুন">
                             <Button className="mt-2" onClick={() => setAddOpen(true)}>
@@ -348,21 +198,10 @@ export default function ExpensesIndex({ expenses, stats, categories, accounts, f
                     }
                     filteredEmptyState={
                         <EmptyState title="No expenses match your filters" description="অন্য filter/date range দিয়ে আবার চেষ্টা করুন">
-                            <Button className="mt-2" variant="outline" onClick={resetFilters}>
+                            <Button className="mt-2" variant="outline" onClick={list.resetFilters}>
                                 Clear filters
                             </Button>
                         </EmptyState>
-                    }
-                    footer={
-                        <DataTablePagination
-                            pagination={expenses}
-                            perPage={filters.per_page}
-                            perPageOptions={shop.pagination_options}
-                            allowAll={shop.pagination_allow_all}
-                            onPerPageChange={(value) => applyFilters({ per_page: value })}
-                            onPageChange={(page) => applyFilters({ page })}
-                            itemLabel="expenses"
-                        />
                     }
                 />
             </div>
@@ -391,12 +230,12 @@ export default function ExpensesIndex({ expenses, stats, categories, accounts, f
             />
 
             <ConfirmDialog
-                open={deleting !== null}
-                onOpenChange={(open) => !open && setDeleting(null)}
+                open={deletion.target !== null}
+                onOpenChange={(open) => !open && deletion.setTarget(null)}
                 title="Delete Expense?"
-                description={`Category "${deleting?.category.name}" and amount ${money(deleting?.total_amount ?? 0)} analysis entry will be permanently deleted.`}
+                description={`Category "${deletion.target?.category.name}" and amount ${money(deletion.target?.total_amount ?? 0)} analysis entry will be permanently deleted.`}
                 confirmLabel="Delete"
-                onConfirm={confirmDelete}
+                onConfirm={deletion.confirm}
             />
         </AppLayout>
     );

@@ -42,18 +42,20 @@ interface MetricCardProps {
     value: ReactNode;
     /** Optional — detail pages that just show a figure can omit it. */
     icon?: LucideIcon;
+    /** Small muted line under the figure, e.g. "Min: 5 pcs". */
+    caption?: ReactNode;
     accent?: MetricAccent;
     className?: string;
 }
 
 /** A single KPI tile: label + big figure, with an accent bar and optional icon. */
-export function MetricCard({ label, value, icon: Icon, accent = 'neutral', className }: MetricCardProps) {
+export function MetricCard({ label, value, icon: Icon, caption, accent = 'neutral', className }: MetricCardProps) {
     const styles = accentStyles[accent];
 
     return (
         <div
             className={cn(
-                'group border-border/70 bg-card dark:border-border/60 relative flex min-h-28 min-w-0 items-center justify-between gap-4 overflow-hidden rounded-xl border p-4 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-border hover:shadow-md',
+                'group border-border/70 bg-card dark:border-border/60 hover:border-border relative flex min-h-28 min-w-0 items-center justify-between gap-4 overflow-hidden rounded-xl border p-4 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md',
                 className,
             )}
         >
@@ -67,6 +69,7 @@ export function MetricCard({ label, value, icon: Icon, accent = 'neutral', class
                 >
                     {value}
                 </p>
+                {caption && <p className="text-muted-foreground mt-1 truncate text-xs">{caption}</p>}
             </div>
 
             {Icon && (

@@ -22,7 +22,7 @@ export default function FinancialPosition({ report: initialReport }: FinancialPo
     const money = useMoneyFormat();
     const [report, setReport] = useState(initialReport);
     const [endDate, setEndDate] = useState(initialReport.end_date);
-    const [loading, setLoading] = useState(false);
+    const [, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
     const handleEndDateChange = (newDate: string) => {

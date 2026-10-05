@@ -1,7 +1,7 @@
-import { MetricCard, MetricGrid } from '@/components/shared/metric-card';
 import HeadingSmall from '@/components/heading-small';
 import RefundPurchaseReturnModal from '@/components/purchases/purchase-returns/refund-purchase-return-modal';
 import ContactLink from '@/components/shared/contact-link';
+import { MetricCard, MetricGrid } from '@/components/shared/metric-card';
 import { Button } from '@/components/ui/button';
 import { useMoneyFormat } from '@/hooks/use-money-format';
 import AppLayout from '@/layouts/app-layout';
@@ -36,8 +36,7 @@ export default function PurchaseReturnShow({ return: purchaseReturn, accounts }:
                             title={`Return #${purchaseReturn.id}`}
                             description={
                                 <>
-                                    <ContactLink id={purchaseReturn.supplier.id} name={purchaseReturn.supplier.name} /> •{' '}
-                                    {purchaseReturn.return_date}
+                                    <ContactLink id={purchaseReturn.supplier.id} name={purchaseReturn.supplier.name} /> • {purchaseReturn.return_date}
                                 </>
                             }
                         />

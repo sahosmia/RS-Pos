@@ -2,12 +2,15 @@
 
 namespace App\Http\Requests\Purchases\Purchase;
 
+use App\Http\Requests\Purchases\Purchase\Concerns\HasReceiptRules;
 use App\Rules\ContactMustBeTypeRule;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
 class UpdatePurchaseRequest extends FormRequest
 {
+    use HasReceiptRules;
+
     public function authorize(): bool
     {
         return true;
@@ -19,9 +22,10 @@ class UpdatePurchaseRequest extends FormRequest
     public function rules(): array
     {
         return [
+            ...$this->receiptRules(),
             'supplier_id' => ['required', 'integer', 'exists:contacts,id', new ContactMustBeTypeRule('supplier')],
             'purchase_date' => ['required', 'date'],
-            'status' => ['required', 'in:draft,ordered'],
+            'status' => ['required', 'in:draft,ordered,received'],
             'discount_type' => ['nullable', 'in:flat,percentage'],
             'discount_value' => ['nullable', 'numeric', 'min:0'],
             'items' => ['required', 'array', 'min:1'],

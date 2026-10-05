@@ -2,9 +2,7 @@
 
 namespace Database\Seeders;
 
-use App\Models\Account;
 use App\Models\User;
-// use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
@@ -12,73 +10,40 @@ class DatabaseSeeder extends Seeder
     /**
      * Seed the application's database.
      *
-     * Only the essentials run by default. Every other seeder is independent —
-     * run whichever you need, whenever you need it, with
-     * `php artisan db:seed --class=<Name>` (each one seeds its own
-     * prerequisites, and is safe to run again):
+     * `php artisan db:seed` gives a complete, working demo shop: the login user, shop settings, roles and
+     * permissions, then the whole demo scenario (DummyDataSeeder). Every seeder below it is also independent —
+     * run whichever you need with `php artisan db:seed --class=<Name>`; each one seeds its own prerequisites
+     * and is safe to run again.
      *
-     *  Reference data   AccountTypeSeeder, ChartOfAccountSeeder, AccountingPeriodSeeder,
-     *                   OtherIncomeCategorySeeder, StaffTransactionTypeSeeder
-     *  Master data      CategorySeeder, UnitSeeder, BrandSeeder, CustomerGroupSeeder,
-     *                   ExpenseCategorySeeder, AccountSeeder, ProductSeeder,
-     *                   CustomerSeeder, SupplierSeeder, HomeApplianceProductSeeder (~300 products)
-     *  Demo transactions PurchaseSeeder, SaleSeeder, SalesOrderSeeder, ExpenseSeeder,
-     *                   FundTransferSeeder, OtherIncomeSeeder, AssetSeeder,
-     *                   CompanyLoanSeeder, InvestorSeeder, OtherLiabilitySeeder, StaffSeeder
-     *  Everything       DummyDataSeeder (all of the above, in order)
+     *  Reference data    AccountTypeSeeder, ChartOfAccountSeeder, AccountingPeriodSeeder,
+     *                    OtherIncomeCategorySeeder, StaffTransactionTypeSeeder
+     *  Master data       CategorySeeder, UnitSeeder, BrandSeeder, CustomerGroupSeeder,
+     *                    ExpenseCategorySeeder, AccountSeeder, ProductSeeder (with service plans),
+     *                    CustomerSeeder, SupplierSeeder
+     *  Demo transactions PurchaseSeeder (+ a return), SaleSeeder (returns, EMI, serials, installation),
+     *                    SalesOrderSeeder, ExpenseSeeder, FundTransferSeeder, OtherIncomeSeeder,
+     *                    AssetSeeder, CompanyLoanSeeder, InvestorSeeder, OtherLiabilitySeeder, StaffSeeder
+     *  After-sale        ServiceRequestSeeder, WarrantyClaimSeeder, CampaignSeeder, NotificationSeeder
+     *  Everything        DummyDataSeeder (all of the three groups above, in order)
+     *
+     * Not part of the default run: HomeApplianceProductSeeder, the ~300-product bulk catalog.
      */
     public function run(): void
     {
-        // User::factory(10)->create();
-
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-        ]);
+        // Safe to run again: the login user is created once.
+        if (! User::query()->where('email', 'test@example.com')->exists()) {
+            User::factory()->create([
+                'name' => 'Test User',
+                'email' => 'test@example.com',
+            ]);
+        }
 
         $this->call([
             SettingsSeeder::class,
+            // Gives every user that already exists (the one above) the Admin role.
             RolePermissionSeeder::class,
 
-            // Product
-            CategorySeeder::class,
-            UnitSeeder::class,
-            BrandSeeder::class,
-            ProductSeeder::class,
-
-            // Account
-            AccountTypeSeeder::class,
-            AccountSeeder::class,
-            // ChartOfAccountSeeder::class,
-            // AccountingPeriodSeeder::class,
-            // OtherIncomeCategorySeeder::class,
-            // FundTransferSeeder::class,
-            // OtherIncomeSeeder::class,
-
-            // // Customer/Supplier
-            // CustomerGroupSeeder::class,
-            // CustomerSeeder::class,
-            // SupplierSeeder::class,
-
-            // // Purchase/Sale/Return demo scenarios
-            // PurchaseSeeder::class,
-            // SaleSeeder::class,
-            // SalesOrderSeeder::class,
-
-            // staff
-            StaffTransactionTypeSeeder::class,
-            // StaffSeeder::class,
-
-            // // Expense
-            ExpenseCategorySeeder::class,
-            // ExpenseSeeder::class,
-
-            // // investor
-            // CompanyLoanSeeder::class,
-            // InvestorSeeder::class,
-
-            // AssetSeeder::class,
-            // OtherLiabilitySeeder::class,
+            DummyDataSeeder::class,
         ]);
     }
 }

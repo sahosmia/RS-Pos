@@ -11,12 +11,12 @@ use Illuminate\Http\RedirectResponse;
 class PurchaseCancelController extends Controller
 {
     /**
-     * "Undo" — reverses a Received purchase via compensating entries.
+     * "Undo" — reverses a Received purchase via compensating entries; a Draft/Ordered one just hands back any advance payment.
      */
     public function store(Purchase $purchase, CancelPurchaseAction $cancelPurchase): RedirectResponse
     {
-        if ($purchase->status !== PurchaseStatus::Received) {
-            return back()->withErrors(['purchase' => 'Only a received purchase can be cancelled.']);
+        if ($purchase->status === PurchaseStatus::Cancelled) {
+            return back()->withErrors(['purchase' => 'This purchase is already cancelled.']);
         }
 
         $cancelPurchase->execute($purchase);

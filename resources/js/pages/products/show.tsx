@@ -1,6 +1,7 @@
 import DataTablePagination from '@/components/data-table/data-table-pagination';
 import ProductStatusBadge from '@/components/products/product-status-badge';
 import StockAdjustmentModal from '@/components/products/stock-adjustment-modal';
+import { MetricCard } from '@/components/shared/metric-card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -64,41 +65,6 @@ interface ProductShowProps {
         image_url: string | null;
     };
     movements: Paginated<StockMovementItem>;
-}
-
-/** Small metric card with icon + label + value + optional caption. */
-function MetricCard({
-    icon: Icon,
-    label,
-    value,
-    caption,
-    accent = 'sky',
-}: {
-    icon: React.ComponentType<{ className?: string }>;
-    label: string;
-    value: string;
-    caption?: string;
-    accent?: 'sky' | 'emerald' | 'violet' | 'amber';
-}) {
-    const chip = {
-        sky: 'bg-sky-500/10 text-sky-600 ring-sky-500/20 dark:text-sky-400',
-        emerald: 'bg-emerald-500/10 text-emerald-600 ring-emerald-500/20 dark:text-emerald-400',
-        violet: 'bg-violet-500/10 text-violet-600 ring-violet-500/20 dark:text-violet-400',
-        amber: 'bg-amber-500/10 text-amber-600 ring-amber-500/20 dark:text-amber-400',
-    }[accent];
-
-    return (
-        <div className="bg-card rounded-xl border p-4 shadow-xs">
-            <div className="flex items-center justify-between gap-2">
-                <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">{label}</p>
-                <div className={cn('flex size-8 items-center justify-center rounded-lg ring-1', chip)}>
-                    <Icon className="size-4" />
-                </div>
-            </div>
-            <p className="mt-2 text-2xl leading-none font-bold tabular-nums">{value}</p>
-            {caption && <p className="text-muted-foreground mt-1.5 text-xs">{caption}</p>}
-        </div>
-    );
 }
 
 /** Small info row used in the product info list. */
@@ -268,11 +234,11 @@ export default function ProductShow({ product, movements }: ProductShowProps) {
                         label="Current Stock"
                         value={product.manage_stock ? `${product.current_stock} ${product.unit.name}` : 'Service'}
                         caption={product.manage_stock ? `Min: ${product.minimum_stock_level} ${product.unit.name}` : 'Not stock-tracked'}
-                        accent="sky"
+                        accent="info"
                     />
-                    <MetricCard icon={CircleDollarSign} label="Average Unit Cost" value={money(product.avg_cost)} accent="amber" />
-                    <MetricCard icon={Tag} label="Selling Price" value={money(product.selling_price)} accent="emerald" />
-                    <MetricCard icon={Percent} label="Profit Margin" value={`${product.profit_margin.toFixed(1)}%`} accent="violet" />
+                    <MetricCard icon={CircleDollarSign} label="Average Unit Cost" value={money(product.avg_cost)} accent="warning" />
+                    <MetricCard icon={Tag} label="Selling Price" value={money(product.selling_price)} accent="success" />
+                    <MetricCard icon={Percent} label="Profit Margin" value={`${product.profit_margin.toFixed(1)}%`} accent="financial" />
                 </div>
 
                 {/* ───────────── Two-column: info + movements ───────────── */}

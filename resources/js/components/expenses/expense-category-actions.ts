@@ -8,10 +8,7 @@ interface ExpenseCategoryActionHandlers {
 }
 
 /** Row actions for the Expense Categories list's action menu — mirrors products/category-actions.ts. */
-export function getExpenseCategoryActions(
-    category: ExpenseCategoryListItem,
-    { onEdit, onDelete }: ExpenseCategoryActionHandlers,
-): RowAction[] {
+export function getExpenseCategoryActions(category: ExpenseCategoryListItem, { onEdit, onDelete }: ExpenseCategoryActionHandlers): RowAction[] {
     return [
         { label: 'Edit', icon: Pencil, onClick: () => onEdit(category) },
         {

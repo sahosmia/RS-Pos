@@ -17,9 +17,10 @@ interface SalesCreateProps {
     initialCustomer: CustomerOption | null;
     products: ProductOption[];
     accounts: Account[];
+    initialProductId: number | null;
 }
 
-export default function SalesCreate({ initialCustomer, products, accounts }: SalesCreateProps) {
+export default function SalesCreate({ initialCustomer, products, accounts, initialProductId }: SalesCreateProps) {
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Add Sale" />
@@ -40,7 +41,7 @@ export default function SalesCreate({ initialCustomer, products, accounts }: Sal
                     }
                 />
 
-                <SaleForm mode="create" initialCustomer={initialCustomer} products={products} accounts={accounts} />
+                <SaleForm mode="create" initialCustomer={initialCustomer} products={products} accounts={accounts} initialProductId={initialProductId} />
             </div>
         </AppLayout>
     );

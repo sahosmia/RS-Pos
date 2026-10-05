@@ -1,9 +1,9 @@
 import PurchaseForm from '@/components/purchases/purchase-form';
 import PageHeader from '@/components/shared/page-header';
-import AppLayout from '@/layouts/app-layout';
 import { Button } from '@/components/ui/button';
+import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
-import { type PurchaseProductOption, type SupplierOption } from '@/types/models';
+import { type Account, type PurchaseProductOption, type SupplierOption } from '@/types/models';
 import { Head, Link } from '@inertiajs/react';
 import { ChevronLeft, ShoppingCart } from 'lucide-react';
 
@@ -15,9 +15,10 @@ const breadcrumbs: BreadcrumbItem[] = [
 interface PurchasesCreateProps {
     initialSupplier: SupplierOption | null;
     initialProducts: PurchaseProductOption[];
+    accounts: Account[];
 }
 
-export default function PurchasesCreate({ initialSupplier, initialProducts }: PurchasesCreateProps) {
+export default function PurchasesCreate({ initialSupplier, initialProducts, accounts }: PurchasesCreateProps) {
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Add Purchase" />
@@ -38,7 +39,7 @@ export default function PurchasesCreate({ initialSupplier, initialProducts }: Pu
                     }
                 />
 
-                <PurchaseForm mode="create" initialSupplier={initialSupplier} initialProducts={initialProducts} />
+                <PurchaseForm mode="create" initialSupplier={initialSupplier} initialProducts={initialProducts} accounts={accounts} />
             </div>
         </AppLayout>
     );

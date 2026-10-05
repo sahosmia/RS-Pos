@@ -1,10 +1,10 @@
 import ContactFormModal from '@/components/contacts/contact-form-modal';
 import ContactLedgerTable from '@/components/contacts/contact-ledger-table';
-import DataTablePagination from '@/components/data-table/data-table-pagination';
-import { type DataTablePaginationMeta } from '@/components/data-table/types';
 import PayDueModal from '@/components/contacts/pay-due-modal';
 import RefundCreditModal from '@/components/contacts/refund-credit-modal';
 import WaiveDueModal from '@/components/contacts/waive-due-modal';
+import DataTablePagination from '@/components/data-table/data-table-pagination';
+import { type DataTablePaginationMeta } from '@/components/data-table/types';
 import { FormInput } from '@/components/form/form-input';
 import HeadingSmall from '@/components/heading-small';
 import InputError from '@/components/input-error';
@@ -50,7 +50,18 @@ interface ContactShowProps {
 
 const humanize = (value: string) => value.replaceAll('_', ' ').replace(/\b\w/g, (character) => character.toUpperCase());
 
-export default function ContactShow({ contact, ledger, ledgerFilters, ledgerPagination, payments, documents, accounts, customerGroups, purchases, sales }: ContactShowProps) {
+export default function ContactShow({
+    contact,
+    ledger,
+    ledgerFilters,
+    ledgerPagination,
+    payments,
+    documents,
+    accounts,
+    customerGroups,
+    purchases,
+    sales,
+}: ContactShowProps) {
     const money = useMoneyFormat();
     const { t } = useTranslation();
     const [editModalOpen, setEditModalOpen] = useState(false);
@@ -216,17 +227,32 @@ export default function ContactShow({ contact, ledger, ledgerFilters, ledgerPagi
                                         </DropdownMenuTrigger>
                                         <DropdownMenuContent align="end">
                                             <DropdownMenuItem asChild>
-                                                <a href={route('contacts.ledger.export', [contact.id, { format: 'pdf', from: ledgerFrom, to: ledgerTo }])}>
+                                                <a
+                                                    href={route('contacts.ledger.export', [
+                                                        contact.id,
+                                                        { format: 'pdf', from: ledgerFrom, to: ledgerTo },
+                                                    ])}
+                                                >
                                                     PDF
                                                 </a>
                                             </DropdownMenuItem>
                                             <DropdownMenuItem asChild>
-                                                <a href={route('contacts.ledger.export', [contact.id, { format: 'xlsx', from: ledgerFrom, to: ledgerTo }])}>
+                                                <a
+                                                    href={route('contacts.ledger.export', [
+                                                        contact.id,
+                                                        { format: 'xlsx', from: ledgerFrom, to: ledgerTo },
+                                                    ])}
+                                                >
                                                     Excel
                                                 </a>
                                             </DropdownMenuItem>
                                             <DropdownMenuItem asChild>
-                                                <a href={route('contacts.ledger.export', [contact.id, { format: 'csv', from: ledgerFrom, to: ledgerTo }])}>
+                                                <a
+                                                    href={route('contacts.ledger.export', [
+                                                        contact.id,
+                                                        { format: 'csv', from: ledgerFrom, to: ledgerTo },
+                                                    ])}
+                                                >
                                                     CSV
                                                 </a>
                                             </DropdownMenuItem>

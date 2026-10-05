@@ -4,6 +4,8 @@ namespace App\Actions\Sales\SaleReturn;
 
 use App\Enums\ContactLedgerType;
 use App\Enums\SerialNumberStatus;
+use App\Enums\ServiceRequestStatus;
+use App\Enums\ServiceRequestType;
 use App\Enums\StockMovementType;
 use App\Exceptions\ReturnQuantityExceedsRemainingException;
 use App\Models\Sale;
@@ -65,7 +67,7 @@ class CreateSaleReturnAction
 
                 $rawSubtotal = round($quantity * $saleItem->unit_price, 2);
                 $discountPortion = round($rawSubtotal * $discountRatio, 2);
-                $subtotal = round($rawSubtotal - $discountPortion, 2);
+                $subtotal = round($rawSubtotal - $discountPortion + $this->refundableInstallation($saleItem, $quantity), 2);
                 $effectiveUnitPrice = $quantity > 0 ? round($subtotal / $quantity, 4) : $saleItem->unit_price;
 
                 $return->items()->create([
@@ -104,6 +106,24 @@ class CreateSaleReturnAction
 
             return $return->fresh(['items.product', 'customer']);
         });
+    }
+
+    /**
+     * The installation charge goes back with the goods only while the installation has not been carried out —
+     * once its service request is Completed the work was done and the charge stays, so only the goods' value is refunded.
+     */
+    private function refundableInstallation(SaleItem $saleItem, float $quantity): float
+    {
+        if (! $saleItem->installation_required || (float) $saleItem->installation_charge <= 0 || (float) $saleItem->quantity <= 0) {
+            return 0.0;
+        }
+
+        $installed = $saleItem->serviceRequests()
+            ->where('type', ServiceRequestType::Installation)
+            ->where('status', ServiceRequestStatus::Completed)
+            ->exists();
+
+        return $installed ? 0.0 : round((float) $saleItem->installation_charge * $quantity / (float) $saleItem->quantity, 2);
     }
 
     /**

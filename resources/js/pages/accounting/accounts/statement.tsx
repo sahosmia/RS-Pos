@@ -1,17 +1,16 @@
-import { MetricCard, MetricGrid } from '@/components/shared/metric-card';
 import DataTablePagination from '@/components/data-table/data-table-pagination';
 import { type DataTablePaginationMeta } from '@/components/data-table/types';
 import { FormInput } from '@/components/form/form-input';
 import HeadingSmall from '@/components/heading-small';
 import EmptyState from '@/components/shared/empty-state';
 import LedgerTable, { type LedgerRow } from '@/components/shared/ledger-table';
-import { Button } from '@/components/ui/button';
+import { MetricCard, MetricGrid } from '@/components/shared/metric-card';
 import { useMoneyFormat } from '@/hooks/use-money-format';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { type Account, type StatementRow } from '@/types/models';
 import { Head, router } from '@inertiajs/react';
-import { FormEventHandler, useState } from 'react';
+import { useState } from 'react';
 
 interface StatementProps {
     account: Account;
@@ -26,7 +25,15 @@ interface StatementProps {
 
 const humanize = (value: string) => value.replaceAll('_', ' ').replace(/\b\w/g, (character) => character.toUpperCase());
 
-export default function AccountStatement({ account, transactions, broughtForward, closingBalance, openingBalance, pagination, filters }: StatementProps) {
+export default function AccountStatement({
+    account,
+    transactions,
+    broughtForward,
+    closingBalance,
+    openingBalance,
+    pagination,
+    filters,
+}: StatementProps) {
     const money = useMoneyFormat();
     const [range, setRange] = useState(filters);
 
@@ -65,7 +72,10 @@ export default function AccountStatement({ account, transactions, broughtForward
             <Head title={`${account.name} — Statement`} />
 
             <div className="space-y-6 px-4 py-6">
-                <HeadingSmall title={`${account.name} — Statement`} description={`${account.account_type.name} • operation date অনুযায়ী সাজানো`} />
+                <HeadingSmall
+                    title={`${account.name} — Statement`}
+                    description={`${account.account_type?.name ?? 'Account'} • operation date অনুযায়ী সাজানো`}
+                />
 
                 <MetricGrid columns={3}>
                     <MetricCard label="Brought forward" value={money(broughtForward)} />

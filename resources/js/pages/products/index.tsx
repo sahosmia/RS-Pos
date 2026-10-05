@@ -1,6 +1,4 @@
-import DataTable from '@/components/data-table/data-table';
-import DataTablePagination from '@/components/data-table/data-table-pagination';
-import DataTableToolbar from '@/components/data-table/data-table-toolbar';
+import ListTable from '@/components/data-table/list-table';
 import { getProductActions } from '@/components/products/product-actions';
 import ProductFilters from '@/components/products/product-filters';
 import ProductGridCard from '@/components/products/product-grid-card';
@@ -10,93 +8,63 @@ import ConfirmDialog from '@/components/shared/confirm-dialog';
 import EmptyState from '@/components/shared/empty-state';
 import PageHeader from '@/components/shared/page-header';
 import { Button } from '@/components/ui/button';
-import { useTableExport } from '@/hooks/table/use-table-export';
-import { useTableFilters } from '@/hooks/table/use-table-filters';
-import { useTableSelection } from '@/hooks/table/use-table-selection';
+import { useListPage } from '@/hooks/table/use-list-page';
+import { useConfirmDelete } from '@/hooks/use-confirm-delete';
 import { useTranslation } from '@/hooks/use-translation';
-import { useTableViewMode } from '@/hooks/use-table-view-mode';
 import AppLayout from '@/layouts/app-layout';
-import { type BreadcrumbItem, type SharedData } from '@/types';
+import { type BreadcrumbItem } from '@/types';
 import { type ProductListItem } from '@/types/models';
-import { Head, Link, router, usePage } from '@inertiajs/react';
-import { type VisibilityState } from '@tanstack/react-table';
+import { Head, Link } from '@inertiajs/react';
 import { Package, Plus } from 'lucide-react';
-import { useMemo, useState } from 'react';
-import { toast } from 'sonner';
+import { useState } from 'react';
 import { getExportColumns, getVisibilityColumns, useProductColumns } from './table/columns';
 import { type ProductsIndexProps } from './types';
 
+/** Table column → export columns that start ticked while it's visible (the product column covers name + SKU, and so on). */
+const PRODUCT_EXPORT_COLUMN_MAP: Record<string, string[]> = {
+    product: ['name', 'sku'],
+    category: ['category', 'brand'],
+    stock: ['stock'],
+    pap: ['pap'],
+    tpp: ['tpp'],
+    price: ['price'],
+    margin: ['margin'],
+    status: ['status'],
+};
+
 export default function ProductsIndex({ products, stats, categories, brands, filters }: ProductsIndexProps) {
-    const { shop } = usePage<SharedData>().props;
     const { t } = useTranslation();
     const breadcrumbs: BreadcrumbItem[] = [{ title: t('productsPage', 'title'), href: '/products' }];
 
     const [adjusting, setAdjusting] = useState<ProductListItem | null>(null);
-    const [deleting, setDeleting] = useState<ProductListItem | null>(null);
-    const [viewMode, setViewMode] = useTableViewMode();
-    const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
 
-    const {
-        search,
-        setSearch,
-        isLoading,
-        isSearching,
-        applyFilters,
-        submitSearchNow,
-        handleSort,
-        activeFilterCount,
-        canReset,
-        resetFilters,
-    } = useTableFilters({
+    const list = useListPage({
         routeName: 'products.index',
         filters,
         emptyFilters: { category_id: null, brand_id: null, stock_status: null },
-    });
-
-    const selection = useTableSelection({
         rows: products.data,
         getId: (product) => product.id,
+        export: {
+            routeName: 'products.export',
+            filterKeys: ['category_id', 'brand_id', 'stock_status'],
+            columnMap: PRODUCT_EXPORT_COLUMN_MAP,
+        },
     });
 
-    const handleExport = useTableExport({
-        routeName: 'products.export',
-        filters,
-        filterKeys: ['category_id', 'brand_id', 'stock_status'],
-        selectedIds: selection.selectedIds,
+    const deletion = useConfirmDelete<ProductListItem>({
+        routeName: 'products.destroy',
+        errorKey: 'product',
+        fallbackError: t('productsPage', 'delete_error'),
+        successMessage: (product) => `"${product.name}" ${t('productsPage', 'deleted_toast')}`,
     });
-
-    const defaultExportColumns = useMemo(() => {
-        const isVisible = (id: string) => columnVisibility[id] !== false;
-        const ids: string[] = [];
-        if (isVisible('product')) ids.push('name', 'sku');
-        if (isVisible('category')) ids.push('category', 'brand');
-        if (isVisible('stock')) ids.push('stock');
-        if (isVisible('pap')) ids.push('pap');
-        if (isVisible('tpp')) ids.push('tpp');
-        if (isVisible('price')) ids.push('price');
-        if (isVisible('margin')) ids.push('margin');
-        if (isVisible('status')) ids.push('status');
-        return ids;
-    }, [columnVisibility]);
-
-    const confirmDelete = () => {
-        if (!deleting) return;
-        const name = deleting.name;
-        router.delete(route('products.destroy', deleting.id), {
-            preserveScroll: true,
-            onSuccess: () => toast.success(`"${name}" ${t('productsPage', 'deleted_toast')}`),
-            onError: (errors) => toast.error(errors.product ?? t('productsPage', 'delete_error')),
-            onFinish: () => setDeleting(null),
-        });
-    };
 
     const columns = useProductColumns({
         sort: filters.sort,
         direction: filters.direction,
-        onSort: handleSort,
-        selection,
+        onSort: list.handleSort,
+        selection: list.selection,
         onAdjustStock: setAdjusting,
-        onDelete: setDeleting,
+        onDelete: deletion.setTarget,
     });
 
     return (
@@ -121,27 +89,24 @@ export default function ProductsIndex({ products, stats, categories, brands, fil
 
                 {stats && <ProductStatCards stats={stats} />}
 
-                <DataTableToolbar
-                    search={search}
-                    onSearchChange={setSearch}
-                    onSearchSubmit={submitSearchNow}
-                    isSearching={isSearching}
+                <ListTable
+                    list={list}
+                    data={products}
+                    filters={filters}
+                    columns={columns}
+                    getRowKey={(product) => product.id}
+                    renderGridCard={(product) => (
+                        <ProductGridCard
+                            product={product}
+                            selected={list.selection.isSelected(product.id)}
+                            onToggleSelected={(checked) => list.selection.toggle(product.id, checked)}
+                            actions={getProductActions(product, { onAdjustStock: setAdjusting, onDelete: deletion.setTarget })}
+                        />
+                    )}
+                    itemLabel={t('productsPage', 'item_label')}
                     searchPlaceholder={t('productsPage', 'search_placeholder')}
-                    activeFilterCount={activeFilterCount}
-                    canReset={canReset}
-                    onReset={resetFilters}
                     visibilityColumns={getVisibilityColumns(t)}
-                    columnVisibility={columnVisibility}
-                    onVisibilityChange={(id, visible) =>
-                        setColumnVisibility((current) => ({ ...current, [id]: visible }))
-                    }
                     exportColumns={getExportColumns(t)}
-                    defaultExportColumns={defaultExportColumns}
-                    totalCount={products.total}
-                    selectedCount={selection.selectedIds.length}
-                    onExport={handleExport}
-                    viewMode={viewMode}
-                    onViewModeChange={setViewMode}
                     filterSlot={
                         <ProductFilters
                             categoryId={filters.category_id}
@@ -149,32 +114,11 @@ export default function ProductsIndex({ products, stats, categories, brands, fil
                             stockStatus={filters.stock_status}
                             categories={categories}
                             brands={brands}
-                            onChange={applyFilters}
+                            onChange={list.applyFilters}
                         />
                     }
-                />
-
-                <DataTable
-                    columns={columns}
-                    data={products.data}
-                    getRowKey={(product) => product.id}
-                    renderGridCard={(product) => (
-                        <ProductGridCard
-                            product={product}
-                            selected={selection.isSelected(product.id)}
-                            onToggleSelected={(checked) => selection.toggle(product.id, checked)}
-                            actions={getProductActions(product, { onAdjustStock: setAdjusting, onDelete: setDeleting })}
-                        />
-                    )}
-                    viewMode={viewMode}
-                    columnVisibility={columnVisibility}
-                    loading={isLoading}
-                    canReset={canReset}
                     emptyState={
-                        <EmptyState
-                            title={t('productsPage', 'empty_title')}
-                            description={t('productsPage', 'empty_description')}
-                        >
+                        <EmptyState title={t('productsPage', 'empty_title')} description={t('productsPage', 'empty_description')}>
                             <Button className="mt-2 gap-1.5" asChild>
                                 <Link href={route('products.create')}>
                                     <Plus className="size-4" />
@@ -184,25 +128,11 @@ export default function ProductsIndex({ products, stats, categories, brands, fil
                         </EmptyState>
                     }
                     filteredEmptyState={
-                        <EmptyState
-                            title={t('common', 'no_results_title')}
-                            description={t('common', 'no_results_description')}
-                        >
-                            <Button className="mt-2" variant="outline" onClick={resetFilters}>
+                        <EmptyState title={t('common', 'no_results_title')} description={t('common', 'no_results_description')}>
+                            <Button className="mt-2" variant="outline" onClick={list.resetFilters}>
                                 {t('common', 'clear_filters')}
                             </Button>
                         </EmptyState>
-                    }
-                    footer={
-                        <DataTablePagination
-                            pagination={products}
-                            perPage={filters.per_page}
-                            perPageOptions={shop.pagination_options}
-                            allowAll={shop.pagination_allow_all}
-                            onPerPageChange={(value) => applyFilters({ per_page: value })}
-                            onPageChange={(page) => applyFilters({ page })}
-                            itemLabel={t('productsPage', 'item_label')}
-                        />
                     }
                 />
             </div>
@@ -210,12 +140,12 @@ export default function ProductsIndex({ products, stats, categories, brands, fil
             <StockAdjustmentModal product={adjusting} onOpenChange={(open) => !open && setAdjusting(null)} />
 
             <ConfirmDialog
-                open={deleting !== null}
-                onOpenChange={(open) => !open && setDeleting(null)}
+                open={deletion.target !== null}
+                onOpenChange={(open) => !open && deletion.setTarget(null)}
                 title={t('productsPage', 'delete_title')}
-                description={`"${deleting?.name}" ${t('productsPage', 'delete_description')}`}
+                description={`"${deletion.target?.name}" ${t('productsPage', 'delete_description')}`}
                 confirmLabel={t('common', 'delete')}
-                onConfirm={confirmDelete}
+                onConfirm={deletion.confirm}
             />
         </AppLayout>
     );

@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Actions\Products\Product\CreateProductAction;
+use App\Actions\Products\Product\ServicePlanSync;
 use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Product;
@@ -36,6 +37,18 @@ class ProductSeeder extends Seeder
         'vision_fan' => ['name' => 'Vision Ceiling Fan 56"', 'sku' => 'VIS-FN-56', 'category' => 'Air Circulator Fan', 'brand' => 'Vision', 'selling_price' => 1800, 'warranty_period_months' => null, 'has_installation_service' => false, 'track_serial_number' => false, 'opening_stock' => 30, 'opening_stock_cost' => 1150],
     ];
 
+    /**
+     * Free-service plan of each installable product (by SPECS key): consecutive periods, each with a number of free
+     * visits. Sales snapshot this plan when they are confirmed, so the service-request demo has free visits to use.
+     *
+     * @var array<string, list<array{period_months: int, free_quota: int}>>
+     */
+    public const SERVICE_PLANS = [
+        'walton_ac' => [['period_months' => 12, 'free_quota' => 2], ['period_months' => 12, 'free_quota' => 1]],
+        'samsung_ac' => [['period_months' => 12, 'free_quota' => 2], ['period_months' => 12, 'free_quota' => 1]],
+        'vision_wm' => [['period_months' => 12, 'free_quota' => 1]],
+    ];
+
     public function run(): void
     {
         // Opening stock posts a journal entry, so the ledger accounts must exist too.
@@ -46,8 +59,15 @@ class ProductSeeder extends Seeder
         $brandIds = Brand::query()->pluck('id', 'name');
         $pieceId = Unit::query()->where('name', 'Piece')->value('id');
 
-        foreach (self::SPECS as $spec) {
-            if (Product::query()->where('sku', $spec['sku'])->exists()) {
+        foreach (self::SPECS as $key => $spec) {
+            $existing = Product::query()->where('sku', $spec['sku'])->first();
+
+            if ($existing !== null) {
+                // products seeded before service plans existed get theirs now
+                if (isset(self::SERVICE_PLANS[$key]) && $existing->servicePlanTemplates()->doesntExist()) {
+                    ServicePlanSync::sync($existing, self::SERVICE_PLANS[$key]);
+                }
+
                 continue;
             }
 
@@ -71,6 +91,7 @@ class ProductSeeder extends Seeder
                 'track_serial_number' => $spec['track_serial_number'],
                 'opening_stock' => $spec['opening_stock'],
                 'opening_stock_cost' => $spec['opening_stock_cost'],
+                'service_plan' => self::SERVICE_PLANS[$key] ?? [],
             ]);
         }
     }

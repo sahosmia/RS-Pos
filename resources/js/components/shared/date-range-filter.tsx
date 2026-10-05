@@ -50,7 +50,8 @@ interface DateRangeFilterProps {
  * automatically as soon as both dates are set (no separate Apply step).
  * `isCustom` (not `range.preset`) drives which UI shows, so the date
  * pickers appear immediately on selecting "Custom Range" instead of only
- * after a round-trip; it re-syncs from the server's `range` whenever that
+ * after a round-trip. Picking only the "from" date applies that single
+ * day (to = from), so one specific date needs just one pick; it re-syncs from the server's `range` whenever that
  * changes from elsewhere (e.g. browser back/forward).
  */
 export default function DateRangeFilter({ range, onChange, allowClear = false }: DateRangeFilterProps) {
@@ -83,10 +84,17 @@ export default function DateRangeFilter({ range, onChange, allowClear = false }:
     };
 
     const handleFromChange = (val: string) => {
-        setCustomFrom(val);
-        if (val && customTo) {
-            onChange({ preset: 'custom', from: val, to: customTo });
+        if (!val) {
+            setCustomFrom(val);
+
+            return;
         }
+
+        // Picking just a start date means "that one day" until an end date is chosen (or moved past it).
+        const to = customTo && customTo >= val ? customTo : val;
+        setCustomFrom(val);
+        setCustomTo(to);
+        onChange({ preset: 'custom', from: val, to });
     };
 
     const handleToChange = (val: string) => {

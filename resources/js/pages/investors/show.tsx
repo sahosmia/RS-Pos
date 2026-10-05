@@ -1,8 +1,8 @@
-import { MetricCard } from '@/components/shared/metric-card';
 import HeadingSmall from '@/components/heading-small';
 import EmptyState from '@/components/shared/empty-state';
 import LedgerTable, { type LedgerRow } from '@/components/shared/ledger-table';
 import LedgerTransactionModal, { type LedgerTransactionTypeOption } from '@/components/shared/ledger-transaction-modal';
+import { MetricCard } from '@/components/shared/metric-card';
 import { Button } from '@/components/ui/button';
 import { useMoneyFormat } from '@/hooks/use-money-format';
 import AppLayout from '@/layouts/app-layout';

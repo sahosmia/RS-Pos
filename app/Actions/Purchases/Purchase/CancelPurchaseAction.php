@@ -68,12 +68,33 @@ class CancelPurchaseAction
                 }
 
                 $this->reverseJournalEntry($purchase);
+            } elseif (abs($purchase->paid_amount) > 0.001) {
+                $this->reverseAdvancePayments($purchase);
             }
 
             $purchase->update(['status' => PurchaseStatus::Cancelled]);
 
             return $purchase->fresh(['items.product', 'supplier']);
         });
+    }
+
+    /**
+     * A Draft/Ordered purchase has no stock or bill yet, but it can carry an advance payment (and applied
+     * supplier credit): hand the money back to the accounts and undo the supplier-ledger and journal entries.
+     */
+    private function reverseAdvancePayments(Purchase $purchase): void
+    {
+        $ledgerNet = (float) DB::table('contact_ledger')
+            ->where('reference_type', 'purchase')
+            ->where('reference_id', $purchase->id)
+            ->sum('amount');
+
+        if (abs($ledgerNet) > 0.001) {
+            $this->ledger->recordContact($purchase->supplier, ContactLedgerType::Adjustment, -$ledgerNet, 'purchase', $purchase->id, 'Purchase cancelled');
+        }
+
+        $this->reverseAccountPayments($purchase);
+        $this->reverseJournalEntry($purchase);
     }
 
     private function reverseAccountPayments(Purchase $purchase): void

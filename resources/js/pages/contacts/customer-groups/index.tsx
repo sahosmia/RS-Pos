@@ -1,10 +1,10 @@
+import { getCustomerGroupActions } from '@/components/contacts/customer-group-actions';
+import DataTableRowActions from '@/components/data-table/data-table-row-actions';
 import { FormInput } from '@/components/form/form-input';
 import HeadingSmall from '@/components/heading-small';
 import ConfirmDialog from '@/components/shared/confirm-dialog';
 import EmptyState from '@/components/shared/empty-state';
 import FormModal from '@/components/shared/form-modal';
-import DataTableRowActions from '@/components/data-table/data-table-row-actions';
-import { getCustomerGroupActions } from '@/components/contacts/customer-group-actions';
 import { Button } from '@/components/ui/button';
 import { useTranslation } from '@/hooks/use-translation';
 import AppLayout from '@/layouts/app-layout';

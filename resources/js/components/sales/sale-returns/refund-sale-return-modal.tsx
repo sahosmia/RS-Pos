@@ -30,7 +30,8 @@ export default function RefundSaleReturnModal({ open, onOpenChange, saleReturn, 
                 onOpenChange(false);
                 setRows([]);
             },
-            onError: (errors) => toast.error(paymentRowsError(errors) ?? errors.payments ?? 'Could not record the refund — check the form for errors.'),
+            onError: (errors) =>
+                toast.error(paymentRowsError(errors) ?? errors.payments ?? 'Could not record the refund — check the form for errors.'),
         });
     };
 

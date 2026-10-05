@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Sales;
 
+use App\Enums\DateRangePreset;
 use App\Http\Controllers\Controller;
 use App\Models\Sale;
 use App\Models\Settings;
@@ -44,6 +45,7 @@ class SaleExportController extends Controller
             'ids' => ['required_if:scope,selected', 'array'],
             'ids.*' => ['integer'],
             'search' => ['nullable', 'string', 'max:255'],
+            'preset' => ['nullable', Rule::in(['all', ...array_column(DateRangePreset::cases(), 'value')])],
             'from' => ['nullable', 'date'],
             'to' => ['nullable', 'date', 'after_or_equal:from'],
             'customer_id' => ['nullable', 'integer', 'exists:contacts,id'],
@@ -53,7 +55,9 @@ class SaleExportController extends Controller
             'per_page' => ['nullable', 'string', 'max:10'],
         ]);
 
-        $query = SaleQuery::filtered($validated, $request->user());
+        $range = DateRangePreset::forList($validated['preset'] ?? null, $validated['from'] ?? null, $validated['to'] ?? null);
+
+        $query = SaleQuery::filtered([...$validated, 'from' => $range['start'], 'to' => $range['end']], $request->user());
 
         $sales = match ($validated['scope']) {
             'selected' => $query->whereIn('id', $validated['ids'])->get(),

@@ -15,10 +15,12 @@ interface ProductStatusBadgeProps {
         stock_status: StockStatus;
         is_active: boolean;
     };
+    /** The list shows stock status through the quantity's color (see StockQuantity), so it skips the In/Low/Out badge. */
+    hideStockStatus?: boolean;
 }
 
 /** Stock-status + Inactive badges — shown identically in the table's Status column and the mobile card. */
-export default function ProductStatusBadge({ product }: ProductStatusBadgeProps) {
+export default function ProductStatusBadge({ product, hideStockStatus = false }: ProductStatusBadgeProps) {
     const { t } = useTranslation();
 
     const stockStatusLabel: Record<StockStatus, string> = {
@@ -30,9 +32,11 @@ export default function ProductStatusBadge({ product }: ProductStatusBadgeProps)
     return (
         <span className="inline-flex items-center gap-1">
             {product.manage_stock ? (
-                <Badge variant="outline" className={stockStatusColor[product.stock_status]}>
-                    {stockStatusLabel[product.stock_status]}
-                </Badge>
+                !hideStockStatus && (
+                    <Badge variant="outline" className={stockStatusColor[product.stock_status]}>
+                        {stockStatusLabel[product.stock_status]}
+                    </Badge>
+                )
             ) : (
                 <Badge variant="outline">{t('productList', 'service_item')}</Badge>
             )}

@@ -2,7 +2,6 @@
 
 namespace App\Http\Requests\Purchases\Purchase;
 
-use App\Enums\PurchaseStatus;
 use App\Models\Purchase;
 use App\Rules\CreditAppliedWithinAvailableRule;
 use Illuminate\Contracts\Validation\ValidationRule;
@@ -56,7 +55,7 @@ class PurchasePaymentRequest extends FormRequest
             $creditApplied = (float) $this->input('credit_applied', 0);
             $totalPaid = $totalPayment + $creditApplied;
 
-            $maxAllowed = $purchase->status === PurchaseStatus::Received ? (float) $purchase->due_amount : (float) $purchase->total_amount;
+            $maxAllowed = (float) $purchase->due_amount;
 
             if ($totalPaid > $maxAllowed + 0.0001) {
                 $validator->errors()->add('payments', 'Payment amount cannot exceed the remaining due amount of ৳'.number_format($maxAllowed, 2).'.');

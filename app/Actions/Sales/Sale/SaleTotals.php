@@ -18,6 +18,8 @@ class SaleTotals
         public float $subtotal,
         public float $discountAmount,
         public float $totalAmount,
+        /** Installation charges of the lines that need installation — billed on top of the goods, outside any discount. */
+        public float $installationAmount = 0.0,
     ) {}
 
     /**
@@ -33,6 +35,7 @@ class SaleTotals
         $sale->items()->delete();
 
         $subtotal = 0.0;
+        $installation = 0.0;
 
         foreach ($items as $item) {
             $product = Product::findOrFail($item['product_id']);
@@ -77,13 +80,19 @@ class SaleTotals
             ]);
 
             $subtotal += $itemSubtotal;
+
+            if ($item['installation_required'] ?? false) {
+                $installation += (float) ($item['installation_charge'] ?? 0);
+            }
         }
 
         $subtotal = round($subtotal, 2);
 
         $discountAmount = self::applyDiscount($subtotal, $sale->discount_type, (float) $sale->discount_value);
 
-        return new self($subtotal, $discountAmount, round($subtotal - $discountAmount, 2));
+        $installation = round($installation, 2);
+
+        return new self($subtotal, $discountAmount, round($subtotal - $discountAmount + $installation, 2), $installation);
     }
 
     /**

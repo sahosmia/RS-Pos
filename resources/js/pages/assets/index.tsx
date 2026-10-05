@@ -1,36 +1,26 @@
-import { getAssetActions } from '@/components/assets/asset-actions';
-import { FormInput } from '@/components/form/form-input';
-import { FormSelect } from '@/components/form/form-select';
+import { ASSET_EXPORT_COLUMN_MAP, ASSET_EXPORT_COLUMNS, ASSET_VISIBILITY_COLUMNS, useAssetColumns } from '@/components/assets/asset-columns';
+import { AssetFormModal } from '@/components/assets/asset-form-modal';
+import { AssetGridCard } from '@/components/assets/asset-grid-card';
+import ListTable from '@/components/data-table/list-table';
 import HeadingSmall from '@/components/heading-small';
 import ConfirmDialog from '@/components/shared/confirm-dialog';
 import EmptyState from '@/components/shared/empty-state';
-import FormModal from '@/components/shared/form-modal';
-import MoneyInput from '@/components/shared/money-input';
 import { Button } from '@/components/ui/button';
-import DataTable from '@/components/data-table/data-table';
-import DataTableCheckbox from '@/components/data-table/data-table-checkbox';
-import DataTableColumnHeader from '@/components/data-table/data-table-column-header';
-import DataTablePagination from '@/components/data-table/data-table-pagination';
-import DataTableRowActions from '@/components/data-table/data-table-row-actions';
-import DataTableToolbar from '@/components/data-table/data-table-toolbar';
-import { type DataTableColumnOption } from '@/components/data-table/types';
-import { useTableExport } from '@/hooks/table/use-table-export';
-import { type TableFilterBase } from '@/hooks/table/use-table-filters';
-import { useTableFilters } from '@/hooks/table/use-table-filters';
-import { useTableSelection } from '@/hooks/table/use-table-selection';
-import { useMoneyFormat } from '@/hooks/use-money-format';
-import { useTableViewMode } from '@/hooks/use-table-view-mode';
-import AppLayout from '@/layouts/app-layout';
-import { today } from '@/lib/format-date';
-import { type BreadcrumbItem, type SharedData } from '@/types';
-import { type Account, type AssetListItem, type Paginated } from '@/types/models';
-import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
-import { type ColumnDef, type VisibilityState } from '@tanstack/react-table';
-import { FormEventHandler, useCallback, useEffect, useMemo, useState } from 'react';
-import { toast } from 'sonner';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useListPage } from '@/hooks/table/use-list-page';
+import { type TableFilterBase } from '@/hooks/table/use-table-filters';
+import { useConfirmDelete } from '@/hooks/use-confirm-delete';
+import { useMoneyFormat } from '@/hooks/use-money-format';
+import AppLayout from '@/layouts/app-layout';
+import { type BreadcrumbItem } from '@/types';
+import { type Account, type AssetListItem, type Paginated } from '@/types/models';
+import { Head, router } from '@inertiajs/react';
+import { useEffect, useState } from 'react';
 
-const breadcrumbs: BreadcrumbItem[] = [{ title: 'Assets & Liabilities', href: '/assets' }, { title: 'Assets', href: '/assets' }];
+const breadcrumbs: BreadcrumbItem[] = [
+    { title: 'Assets & Liabilities', href: '/assets' },
+    { title: 'Assets', href: '/assets' },
+];
 
 interface AssetFilters extends TableFilterBase {
     per_page: number | 'all';
@@ -43,64 +33,23 @@ interface AssetsIndexProps {
     filters: AssetFilters;
 }
 
-const getVisibilityColumns = (): DataTableColumnOption[] => [
-    { id: 'name', label: 'Name' },
-    { id: 'current_value', label: 'Current Value' },
-];
-
-/** Matches `AssetExportController::COLUMN_LABELS` on the backend. */
-const getExportColumns = (): DataTableColumnOption[] => [
-    { id: 'name', label: 'Name' },
-    { id: 'opening_value', label: 'Opening Value' },
-    { id: 'current_value', label: 'Current Value' },
-    { id: 'purchase_date', label: 'Purchase Date' },
-];
-
 export default function AssetsIndex({ assets, totalValue, accounts, filters }: AssetsIndexProps) {
-    const { shop } = usePage<SharedData>().props;
     const money = useMoneyFormat();
-    const [viewMode, setViewMode] = useTableViewMode();
-    const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
     const [modalOpen, setModalOpen] = useState(false);
     const [editing, setEditing] = useState<AssetListItem | null>(null);
-    const [deleting, setDeleting] = useState<AssetListItem | null>(null);
 
-    const form = useForm({
-        asset_type: 'new' as 'existing' | 'new',
-        name: '',
-        purchase_date: today(),
-        opening_value: 0,
-        purchase_amount: 0,
-        account_id: null as number | null,
-    });
-
-    const { isLoading, applyFilters, handleSort, activeFilterCount, canReset, resetFilters } = useTableFilters({
+    const list = useListPage({
         routeName: 'assets.index',
         filters,
-    });
-
-    const selection = useTableSelection({
         rows: assets.data,
         getId: (asset) => asset.id,
+        export: { routeName: 'assets.export', filterKeys: [], columnMap: ASSET_EXPORT_COLUMN_MAP },
     });
 
-    const handleExport = useTableExport({
-        routeName: 'assets.export',
-        filters,
-        selectedIds: selection.selectedIds,
-    });
+    const deletion = useConfirmDelete<AssetListItem>({ routeName: 'assets.destroy', errorKey: 'asset', fallbackError: 'Could not delete asset.' });
 
-    const openCreate = () => {
-        form.clearErrors();
-        form.setData({
-            asset_type: 'new',
-            name: '',
-            purchase_date: today(),
-            opening_value: 0,
-            purchase_amount: 0,
-            account_id: accounts.find((account) => account.is_default)?.id ?? accounts[0]?.id ?? null,
-        });
-        setEditing(null);
+    const openForm = (asset: AssetListItem | null) => {
+        setEditing(asset);
         setModalOpen(true);
     };
 
@@ -111,156 +60,21 @@ export default function AssetsIndex({ assets, totalValue, accounts, filters }: A
         const params = new URLSearchParams(window.location.search);
         if (params.get('quick_create') !== '1') return;
 
-        openCreate();
+        openForm(null);
         params.delete('quick_create');
         const query = params.toString();
         window.history.replaceState({}, '', window.location.pathname + (query ? `?${query}` : ''));
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    const openEdit = (asset: AssetListItem) => {
-        form.clearErrors();
-        form.setData({
-            asset_type: 'existing',
-            purchase_amount: 0,
-            account_id: null,
-            name: asset.name,
-            purchase_date: asset.purchase_date ?? '',
-            opening_value: asset.opening_value,
-        });
-        setEditing(asset);
-        setModalOpen(true);
-    };
-
-    const submit: FormEventHandler = (e) => {
-        e.preventDefault();
-
-        const isEditing = editing !== null;
-        const options = {
-            preserveScroll: true,
-            onSuccess: () => {
-                toast.success(isEditing ? 'Asset updated.' : 'Asset added.');
-                setModalOpen(false);
-            },
-        };
-
-        if (editing) {
-            form.patch(route('assets.update', editing.id), options);
-        } else {
-            form.post(route('assets.store'), options);
-        }
-    };
-
-    const confirmDelete = () => {
-        if (!deleting) {
-            return;
-        }
-
-        const name = deleting.name;
-
-        router.delete(route('assets.destroy', deleting.id), {
-            preserveScroll: true,
-            onSuccess: () => toast.success(`"${name}" deleted.`),
-            onError: (errors) => toast.error(errors.asset ?? 'Could not delete asset.'),
-            onFinish: () => setDeleting(null),
-        });
-    };
-
-    // Table-column visibility → which fine-grained export columns should start checked.
-    const defaultExportColumns = useMemo(() => {
-        const isVisible = (id: string) => columnVisibility[id] !== false;
-        const ids: string[] = [];
-
-        if (isVisible('name')) ids.push('name');
-        if (isVisible('current_value')) ids.push('current_value');
-
-        return ids;
-    }, [columnVisibility]);
-
-    const columns = useMemo<ColumnDef<AssetListItem>[]>(
-        () => [
-            {
-                id: 'select',
-                header: () => (
-                    <DataTableCheckbox
-                        checked={selection.isAllSelected ? true : selection.isSomeSelected ? 'indeterminate' : false}
-                        onCheckedChange={selection.toggleAll}
-                    />
-                ),
-                meta: { headerClassName: 'w-10', cellClassName: 'w-10', printHidden: true },
-                cell: ({ row }) => (
-                    <DataTableCheckbox
-                        checked={selection.isSelected(row.original.id)}
-                        onCheckedChange={(checked) => selection.toggle(row.original.id, checked)}
-                    />
-                ),
-            },
-            {
-                id: 'actions',
-                header: '',
-                meta: { headerClassName: 'w-10', cellClassName: 'w-10', printHidden: true },
-                cell: ({ row }) => <DataTableRowActions actions={getAssetActions(row.original, { onEdit: openEdit, onDelete: setDeleting })} />,
-            },
-            {
-                id: 'name',
-                header: () => (
-                    <DataTableColumnHeader
-                        title="Name"
-                        sortKey="name"
-                        currentSort={filters.sort ?? ''}
-                        currentDirection={filters.direction ?? 'asc'}
-                        onSort={handleSort}
-                    />
-                ),
-                cell: ({ row }) => (
-                    <Link href={route('assets.show', row.original.id)} className="font-medium underline-offset-2 hover:underline">
-                        {row.original.name}
-                    </Link>
-                ),
-            },
-            {
-                id: 'current_value',
-                header: () => (
-                    <DataTableColumnHeader
-                        title="Current Value"
-                        sortKey="current_value"
-                        currentSort={filters.sort ?? ''}
-                        currentDirection={filters.direction ?? 'asc'}
-                        onSort={handleSort}
-                        align="right"
-                    />
-                ),
-                meta: { headerClassName: 'text-right', cellClassName: 'text-right tabular-nums' },
-                cell: ({ row }) => money(row.original.current_value),
-            },
-        ],
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-        [money, selection, filters.sort, filters.direction, handleSort],
-    );
-
-    const renderGridCard = useCallback(
-        (asset: AssetListItem) => (
-            <div className="rounded-lg border p-3">
-                <div className="flex items-start justify-between gap-2">
-                    <div className="flex min-w-0 items-center gap-3">
-                        <DataTableCheckbox checked={selection.isSelected(asset.id)} onCheckedChange={(checked) => selection.toggle(asset.id, checked)} />
-                        <div className="min-w-0">
-                            <Link href={route('assets.show', asset.id)} className="truncate font-medium underline-offset-2 hover:underline">
-                                {asset.name}
-                            </Link>
-                            <div className="text-muted-foreground text-xs">{asset.purchase_date ?? '—'}</div>
-                        </div>
-                    </div>
-                    <div className="flex shrink-0 items-center gap-1">
-                        <span className="font-medium tabular-nums">{money(asset.current_value)}</span>
-                        <DataTableRowActions actions={getAssetActions(asset, { onEdit: openEdit, onDelete: setDeleting })} />
-                    </div>
-                </div>
-            </div>
-        ),
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-        [money, selection],
-    );
+    const columns = useAssetColumns({
+        sort: filters.sort,
+        direction: filters.direction,
+        onSort: list.handleSort,
+        selection: list.selection,
+        money,
+        onEdit: openForm,
+        onDelete: deletion.setTarget,
+    });
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
@@ -276,7 +90,7 @@ export default function AssetsIndex({ assets, totalValue, accounts, filters }: A
 
                 <div className="flex flex-wrap items-end justify-between gap-4">
                     <HeadingSmall title="Assets" description="দোকানের নিজস্ব সম্পদ — ফার্নিচার, গাড়ি, ইকুইপমেন্ট" />
-                    <Button onClick={openCreate}>Add Asset</Button>
+                    <Button onClick={() => openForm(null)}>Add Asset</Button>
                 </div>
 
                 <div className="rounded-lg border p-4">
@@ -284,136 +98,43 @@ export default function AssetsIndex({ assets, totalValue, accounts, filters }: A
                     <p className="text-2xl font-semibold tabular-nums">{money(totalValue)}</p>
                 </div>
 
-                <DataTableToolbar
-                    activeFilterCount={activeFilterCount}
-                    canReset={canReset}
-                    onReset={resetFilters}
-                    viewMode={viewMode}
-                    onViewModeChange={setViewMode}
-                    visibilityColumns={getVisibilityColumns()}
-                    columnVisibility={columnVisibility}
-                    onVisibilityChange={(id, visible) => setColumnVisibility((current) => ({ ...current, [id]: visible }))}
-                    exportColumns={getExportColumns()}
-                    defaultExportColumns={defaultExportColumns}
-                    totalCount={assets.total}
-                    selectedCount={selection.selectedIds.length}
-                    onExport={handleExport}
-                />
-
-                <DataTable
+                <ListTable
+                    list={list}
+                    data={assets}
+                    filters={filters}
                     columns={columns}
-                    data={assets.data}
                     getRowKey={(asset) => asset.id}
-                    renderGridCard={renderGridCard}
-                    viewMode={viewMode}
-                    columnVisibility={columnVisibility}
-                    loading={isLoading}
-                    canReset={canReset}
+                    renderGridCard={(asset) => (
+                        <AssetGridCard
+                            asset={asset}
+                            selected={list.selection.isSelected(asset.id)}
+                            onToggleSelected={(checked) => list.selection.toggle(asset.id, checked)}
+                            onEdit={openForm}
+                            onDelete={deletion.setTarget}
+                        />
+                    )}
+                    itemLabel="assets"
+                    visibilityColumns={ASSET_VISIBILITY_COLUMNS}
+                    exportColumns={ASSET_EXPORT_COLUMNS}
                     emptyState={
                         <EmptyState title="No assets yet" description="প্রথম asset যোগ করুন">
-                            <Button className="mt-2" onClick={openCreate}>
+                            <Button className="mt-2" onClick={() => openForm(null)}>
                                 Add Asset
                             </Button>
                         </EmptyState>
                     }
-                    footer={
-                        <DataTablePagination
-                            pagination={assets}
-                            perPage={filters.per_page}
-                            perPageOptions={shop.pagination_options}
-                            allowAll={shop.pagination_allow_all}
-                            onPerPageChange={(value) => applyFilters({ per_page: value })}
-                            onPageChange={(page) => applyFilters({ page })}
-                            itemLabel="assets"
-                        />
-                    }
                 />
             </div>
 
-            <FormModal open={modalOpen} onOpenChange={setModalOpen} title={editing ? 'Edit Asset' : 'Add Asset'} processing={form.processing} onSubmit={submit}>
-                {!editing && (
-                    <FormSelect
-                        id="asset_type"
-                        label="Asset Type"
-                        value={form.data.asset_type}
-                        onChange={(value) => form.setData('asset_type', value === 'new' ? 'new' : 'existing')}
-                        options={[
-                            { value: 'existing', label: 'Existing asset — আগে থেকেই আছে' },
-                            { value: 'new', label: 'New asset — এখন কিনলাম' },
-                        ]}
-                        required
-                    />
-                )}
-
-                <FormInput
-                    id="name"
-                    label="Name"
-                    value={form.data.name}
-                    onChange={(e) => form.setData('name', e.target.value)}
-                    error={form.errors.name}
-                    placeholder="e.g. Office Chair, Laptop, Delivery Van"
-                    required
-                />
-
-                <FormInput
-                    id="purchase_date"
-                    label="Purchase Date"
-                    type="date"
-                    value={form.data.purchase_date}
-                    onChange={(e) => form.setData('purchase_date', e.target.value)}
-                    error={form.errors.purchase_date}
-                />
-
-                {(editing !== null || form.data.asset_type === 'existing') && (
-                    <MoneyInput
-                        id="opening_value"
-                        label="Opening Value"
-                        value={form.data.opening_value}
-                        disabled={editing !== null && !editing.can_edit_opening_value}
-                        onChange={(e) => form.setData('opening_value', Number(e.target.value))}
-                        error={form.errors.opening_value}
-                        required={editing !== null}
-                        helperText={
-                            editing !== null && !editing.can_edit_opening_value
-                                ? 'এই asset-এ লেনদেন হয়ে গেছে — opening value আর বদলানো যাবে না।'
-                                : 'ঐচ্ছিক — খালি রাখলে ০ ধরা হবে। কোনো account-এ হিট করবে না।'
-                        }
-                    />
-                )}
-
-                {!editing && form.data.asset_type === 'new' && (
-                    <>
-                        <MoneyInput
-                            id="purchase_amount"
-                            label="Purchase Amount"
-                            value={form.data.purchase_amount}
-                            onChange={(e) => form.setData('purchase_amount', Number(e.target.value))}
-                            error={form.errors.purchase_amount}
-                            required
-                        />
-
-                        <FormSelect
-                            id="account_id"
-                            label="Paid From Account"
-                            value={form.data.account_id}
-                            onChange={(value) => form.setData('account_id', value ? Number(value) : null)}
-                            options={accounts.map((account) => ({ value: String(account.id), label: account.name }))}
-                            placeholder="Select account"
-                            error={form.errors.account_id}
-                            helperText="Purchase Amount এই account থেকে কাটা হবে।"
-                            required
-                        />
-                    </>
-                )}
-            </FormModal>
+            <AssetFormModal open={modalOpen} onOpenChange={setModalOpen} editing={editing} accounts={accounts} />
 
             <ConfirmDialog
-                open={deleting !== null}
-                onOpenChange={(open) => !open && setDeleting(null)}
+                open={deletion.target !== null}
+                onOpenChange={(open) => !open && deletion.setTarget(null)}
                 title="Delete asset?"
-                description={`"${deleting?.name}" মুছে ফেলা হবে। কোনো লেনদেন থাকলে এটা করা যাবে না।`}
+                description={`"${deletion.target?.name}" মুছে ফেলা হবে। কোনো লেনদেন থাকলে এটা করা যাবে না।`}
                 confirmLabel="Delete"
-                onConfirm={confirmDelete}
+                onConfirm={deletion.confirm}
             />
         </AppLayout>
     );

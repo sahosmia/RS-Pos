@@ -20,6 +20,7 @@ export interface Dictionary {
         export: string;
         print: string;
         clear_filters: string;
+        clear: string;
         no_results_title: string;
         no_results_description: string;
         of: string;
@@ -484,6 +485,7 @@ const en: Dictionary = {
         export: 'Export',
         print: 'Print',
         clear_filters: 'Clear filters',
+        clear: 'Clear',
         no_results_title: 'No results',
         no_results_description: 'Try a different search or filter',
         of: 'of',

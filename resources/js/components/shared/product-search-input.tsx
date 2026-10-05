@@ -1,6 +1,7 @@
 import { Input } from '@/components/ui/input';
 import { useMoneyFormat } from '@/hooks/use-money-format';
-import { forwardRef, useMemo, useState } from 'react';
+import { forwardRef, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 
 export interface ProductOption {
     id: number;
@@ -29,6 +30,10 @@ interface ProductSearchInputProps {
  * client-side against the already-loaded catalog. Enter adds the
  * highlighted match, Esc closes the dropdown. F2 (Task 6.9) focuses this
  * input from the parent page via the forwarded ref.
+ *
+ * The dropdown renders through a portal into document.body, positioned from the input's own
+ * on-screen rect (same approach as SearchableSelect) — a plain absolute panel got clipped by
+ * the overflow-hidden card and covered by the sections below it.
  */
 const ProductSearchInput = forwardRef<HTMLInputElement, ProductSearchInputProps>(function ProductSearchInput(
     { products, onSelect, placeholder = 'Search product name, SKU or scan barcode (F2)' },
@@ -37,6 +42,8 @@ const ProductSearchInput = forwardRef<HTMLInputElement, ProductSearchInputProps>
     const money = useMoneyFormat();
     const [query, setQuery] = useState('');
     const [highlighted, setHighlighted] = useState(0);
+    const containerRef = useRef<HTMLDivElement>(null);
+    const [position, setPosition] = useState<{ top: number; left: number; width: number } | null>(null);
 
     const matches = useMemo(() => {
         const q = query.trim().toLowerCase();
@@ -53,6 +60,33 @@ const ProductSearchInput = forwardRef<HTMLInputElement, ProductSearchInputProps>
             )
             .slice(0, 8);
     }, [products, query]);
+
+    const updatePosition = useCallback(() => {
+        const rect = containerRef.current?.getBoundingClientRect();
+
+        if (rect) {
+            setPosition({ top: rect.bottom + 4, left: rect.left, width: rect.width });
+        }
+    }, []);
+
+    const isOpen = matches.length > 0;
+
+    useEffect(() => {
+        if (!isOpen) {
+            return;
+        }
+
+        updatePosition();
+
+        // Capture phase so scrolling inside any ancestor scroll container repositions it too.
+        window.addEventListener('scroll', updatePosition, true);
+        window.addEventListener('resize', updatePosition);
+
+        return () => {
+            window.removeEventListener('scroll', updatePosition, true);
+            window.removeEventListener('resize', updatePosition);
+        };
+    }, [isOpen, updatePosition]);
 
     const select = (product: ProductOption) => {
         onSelect(product);
@@ -80,7 +114,7 @@ const ProductSearchInput = forwardRef<HTMLInputElement, ProductSearchInputProps>
     };
 
     return (
-        <div className="relative">
+        <div ref={containerRef} className="relative">
             <Input
                 ref={ref}
                 value={query}
@@ -93,28 +127,36 @@ const ProductSearchInput = forwardRef<HTMLInputElement, ProductSearchInputProps>
                 autoComplete="off"
             />
 
-            {matches.length > 0 && (
-                <div className="bg-popover absolute z-10 mt-1 w-full rounded-md border shadow-md">
-                    {matches.map((product, index) => (
-                        <button
-                            type="button"
-                            key={product.id}
-                            onClick={() => select(product)}
-                            onMouseEnter={() => setHighlighted(index)}
-                            className={`flex w-full items-center justify-between px-3 py-2 text-left text-sm ${
-                                index === highlighted ? 'bg-accent text-accent-foreground' : ''
-                            }`}
-                        >
-                            <span>
-                                {product.name} <span className="text-muted-foreground">({product.sku})</span>
-                            </span>
-                            <span className="text-muted-foreground text-xs tabular-nums">
-                                {money(product.selling_price)} · stock {product.current_stock}
-                            </span>
-                        </button>
-                    ))}
-                </div>
-            )}
+            {isOpen &&
+                position &&
+                createPortal(
+                    <div
+                        style={{ position: 'fixed', top: position.top, left: position.left, width: position.width }}
+                        className="bg-popover z-50 max-h-80 overflow-y-auto rounded-md border shadow-md"
+                    >
+                        {matches.map((product, index) => (
+                            <button
+                                type="button"
+                                key={product.id}
+                                // Keep focus in the search input so a click doesn't blur it before the pick lands.
+                                onMouseDown={(e) => e.preventDefault()}
+                                onClick={() => select(product)}
+                                onMouseEnter={() => setHighlighted(index)}
+                                className={`flex w-full items-center justify-between px-3 py-2 text-left text-sm ${
+                                    index === highlighted ? 'bg-accent text-accent-foreground' : ''
+                                }`}
+                            >
+                                <span>
+                                    {product.name} <span className="text-muted-foreground">({product.sku})</span>
+                                </span>
+                                <span className="text-muted-foreground text-xs tabular-nums">
+                                    {money(product.selling_price)} · stock {product.current_stock}
+                                </span>
+                            </button>
+                        ))}
+                    </div>,
+                    document.body,
+                )}
         </div>
     );
 });

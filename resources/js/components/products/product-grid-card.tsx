@@ -1,4 +1,5 @@
 import ProductStatusBadge from '@/components/products/product-status-badge';
+import StockQuantity from '@/components/products/stock-quantity';
 import DataTableCheckbox from '@/components/data-table/data-table-checkbox';
 import DataTableRowActions, { type RowAction } from '@/components/data-table/data-table-row-actions';
 import { useMoneyFormat } from '@/hooks/use-money-format';
@@ -66,13 +67,17 @@ export default function ProductGridCard({ product, selected, onToggleSelected, a
 
             <div className="mt-3 flex items-center justify-between gap-2 border-t pt-3">
                 <span className="text-muted-foreground text-xs font-medium">
-                    {product.manage_stock
-                        ? `${product.current_stock} ${product.unit.name} ${t('productList', 'in_stock_suffix')}`
-                        : t('productList', 'service_item')}
+                    {product.manage_stock ? (
+                        <>
+                            <StockQuantity product={product} /> {t('productList', 'in_stock_suffix')}
+                        </>
+                    ) : (
+                        t('productList', 'service_item')
+                    )}
                 </span>
                 <div className="flex items-center gap-2">
                     <span className="font-semibold tabular-nums text-foreground">{money(product.selling_price)}</span>
-                    <ProductStatusBadge product={product} />
+                    <ProductStatusBadge product={product} hideStockStatus />
                 </div>
             </div>
         </div>

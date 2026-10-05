@@ -1,4 +1,5 @@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Kbd } from '@/components/ui/kbd';
 import { Keyboard } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
@@ -41,14 +42,6 @@ const GROUPS: ShortcutGroup[] = [
         shortcuts: [{ keys: ['Enter'], description: "Search immediately, while typing in a list page's search box" }],
     },
 ];
-
-function Kbd({ children }: { children: string }) {
-    return (
-        <kbd className="bg-muted text-muted-foreground inline-flex min-w-6 items-center justify-center rounded border px-1.5 py-0.5 font-mono text-[11px] font-medium">
-            {children}
-        </kbd>
-    );
-}
 
 /**
  * A self-contained "what can I press?" reference — its own trigger button,

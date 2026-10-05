@@ -356,6 +356,8 @@ export interface PurchaseFormDetail {
     supplier_id: number;
     purchase_date: string;
     status: PurchaseStatusValue;
+    /** Already paid on earlier saves — what the form adds comes on top. */
+    paid_amount?: number;
     discount_type?: 'flat' | 'percentage' | null;
     discount_value?: number;
     items: PurchaseFormItem[];
@@ -452,6 +454,7 @@ export interface SaleFormItem {
 
 export interface SaleFormDetail {
     id: number;
+    invoice_no: string;
     customer_id: number;
     sale_date: string;
     status: SaleStatusValue;
@@ -499,6 +502,8 @@ export interface SaleDetail {
     creator?: { id: number; name: string } | null;
     sale_date: string;
     subtotal: number;
+    /** Installation charges billed on top of the goods (outside the discount). */
+    installation_amount: number;
     discount_type: 'flat' | 'percentage' | null;
     discount_value: number;
     discount_amount: number;
@@ -872,6 +877,8 @@ export type InvestorTransactionTypeValue = 'opening_balance' | 'investment' | 'p
 export interface InvestorListItem {
     id: number;
     name: string;
+    phone: string | null;
+    note: string | null;
     opening_amount: number;
     total_invested: number;
     can_delete: boolean;

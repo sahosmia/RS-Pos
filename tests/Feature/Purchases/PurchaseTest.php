@@ -1,0 +1,549 @@
+<?php
+
+use App\Enums\ContactLedgerType;
+use App\Enums\PurchaseStatus;
+use App\Enums\StockMovementType;
+use App\Models\Account;
+use App\Models\AccountType;
+use App\Models\Contact;
+use App\Models\ContactLedger;
+use App\Models\Product;
+use App\Models\Purchase;
+use App\Models\Settings;
+use App\Models\StockMovement;
+use App\Models\User;
+
+beforeEach(function () {
+    Settings::factory()->create();
+});
+
+test('guests are redirected to the login page', function () {
+    $this->get('/purchases')->assertRedirect('/login');
+});
+
+test('creating a draft purchase has no stock or ledger effect', function () {
+    $this->actingAs(User::factory()->create());
+    $supplier = Contact::factory()->supplier()->create();
+    $product = Product::factory()->create(['current_stock' => 0, 'avg_cost' => 0]);
+
+    $this->post('/purchases', [
+        'supplier_id' => $supplier->id,
+        'purchase_date' => '2026-03-01',
+        'status' => 'draft',
+        'items' => [
+            ['product_id' => $product->id, 'quantity' => 10, 'unit_price' => 100],
+        ],
+    ])->assertRedirect();
+
+    $purchase = Purchase::query()->firstOrFail();
+
+    expect($purchase->status)->toBe(PurchaseStatus::Draft)
+        ->and($purchase->total_amount)->toBe(1000.0)
+        ->and($product->fresh()->current_stock)->toBe(0.0)
+        ->and(StockMovement::query()->count())->toBe(0)
+        ->and(ContactLedger::query()->count())->toBe(0);
+});
+
+test('a draft purchase can be edited and deleted freely', function () {
+    $this->actingAs(User::factory()->create());
+    $supplier = Contact::factory()->supplier()->create();
+    $product = Product::factory()->create();
+    $purchase = Purchase::factory()->create(['supplier_id' => $supplier->id]);
+    $purchase->items()->create(['product_id' => $product->id, 'quantity' => 5, 'unit_price' => 50, 'subtotal' => 250]);
+    $purchase->forceFill(['total_amount' => 250, 'due_amount' => 250])->save();
+
+    $this->patch("/purchases/{$purchase->id}", [
+        'supplier_id' => $supplier->id,
+        'purchase_date' => '2026-03-02',
+        'status' => 'ordered',
+        'items' => [
+            ['product_id' => $product->id, 'quantity' => 8, 'unit_price' => 60],
+        ],
+    ])->assertRedirect();
+
+    expect($purchase->fresh()->status)->toBe(PurchaseStatus::Ordered)
+        ->and($purchase->fresh()->total_amount)->toBe(480.0);
+
+    $this->delete("/purchases/{$purchase->id}")->assertRedirect('/purchases');
+    expect(Purchase::query()->find($purchase->id))->toBeNull();
+});
+
+test('confirming a purchase increases stock and recalculates avg_cost correctly', function () {
+    $this->actingAs(User::factory()->create());
+    $supplier = Contact::factory()->supplier()->create();
+    $product = Product::factory()->create(['current_stock' => 10, 'avg_cost' => 80]);
+    $purchase = Purchase::factory()->create(['supplier_id' => $supplier->id]);
+    $purchase->items()->create(['product_id' => $product->id, 'quantity' => 10, 'unit_price' => 100, 'subtotal' => 1000]);
+    $purchase->forceFill(['total_amount' => 1000, 'due_amount' => 1000])->save();
+
+    $this->post("/purchases/{$purchase->id}/confirm", [])->assertRedirect();
+
+    // (10*80 + 10*100) / 20 = 90
+    expect($product->fresh()->avg_cost)->toBe(90.0)
+        ->and($product->fresh()->current_stock)->toBe(20.0)
+        ->and($purchase->fresh()->status)->toBe(PurchaseStatus::Received)
+        ->and($purchase->fresh()->due_amount)->toBe(1000.0)
+        ->and($purchase->fresh()->payment_status->value)->toBe('due')
+        ->and($supplier->fresh()->balance)->toBe(-1000.0)
+        ->and(StockMovement::query()->where('type', StockMovementType::Purchase)->count())->toBe(1)
+        ->and(ContactLedger::query()->where('type', ContactLedgerType::PurchaseBill)->count())->toBe(1);
+});
+
+test('avg_cost is set directly to the purchase price when stock starts at zero', function () {
+    $this->actingAs(User::factory()->create());
+    $supplier = Contact::factory()->supplier()->create();
+    $product = Product::factory()->create(['current_stock' => 0, 'avg_cost' => 0]);
+    $purchase = Purchase::factory()->create(['supplier_id' => $supplier->id]);
+    $purchase->items()->create(['product_id' => $product->id, 'quantity' => 5, 'unit_price' => 120, 'subtotal' => 600]);
+    $purchase->forceFill(['total_amount' => 600, 'due_amount' => 600])->save();
+
+    $this->post("/purchases/{$purchase->id}/confirm", []);
+
+    expect($product->fresh()->avg_cost)->toBe(120.0);
+});
+
+test('confirming a purchase with invoice discount adjusts product avg_cost based on effective net price', function () {
+    $this->actingAs(User::factory()->create());
+    $supplier = Contact::factory()->supplier()->create();
+    $product = Product::factory()->create(['current_stock' => 0, 'avg_cost' => 0]);
+
+    // Subtotal = 1000, discount = 100, total_amount = 900.
+    // Effective unit price for 10 units = 900 / 10 = 90.
+    $purchase = Purchase::factory()->create(['supplier_id' => $supplier->id, 'discount_type' => 'flat', 'discount_value' => 100]);
+    $purchase->items()->create(['product_id' => $product->id, 'quantity' => 10, 'unit_price' => 100, 'subtotal' => 1000]);
+    $purchase->forceFill(['subtotal' => 1000, 'discount_amount' => 100, 'total_amount' => 900, 'due_amount' => 900])->save();
+
+    $this->post("/purchases/{$purchase->id}/confirm", []);
+
+    expect($product->fresh()->avg_cost)->toBe(90.0)
+        ->and($product->fresh()->current_stock)->toBe(10.0);
+
+    $movement = StockMovement::query()->where('product_id', $product->id)->firstOrFail();
+    expect($movement->unit_cost)->toBe(90.0);
+});
+
+test('confirming with a split payment reduces due and moves account balances', function () {
+    $this->actingAs(User::factory()->create());
+    $supplier = Contact::factory()->supplier()->create();
+    $product = Product::factory()->create(['current_stock' => 0]);
+    $cash = Account::factory()->create(['account_type_id' => AccountType::factory(), 'current_balance' => 5000]);
+    $bank = Account::factory()->create(['account_type_id' => AccountType::factory(), 'current_balance' => 5000]);
+    $purchase = Purchase::factory()->create(['supplier_id' => $supplier->id]);
+    $purchase->items()->create(['product_id' => $product->id, 'quantity' => 10, 'unit_price' => 100, 'subtotal' => 1000]);
+    $purchase->forceFill(['total_amount' => 1000, 'due_amount' => 1000])->save();
+
+    $this->post("/purchases/{$purchase->id}/confirm", [
+        'payments' => [
+            ['account_id' => $cash->id, 'amount' => 300],
+            ['account_id' => $bank->id, 'amount' => 200],
+        ],
+    ])->assertRedirect();
+
+    expect($cash->fresh()->current_balance)->toBe(4700.0)
+        ->and($bank->fresh()->current_balance)->toBe(4800.0)
+        ->and($purchase->fresh()->paid_amount)->toBe(500.0)
+        ->and($purchase->fresh()->due_amount)->toBe(500.0)
+        ->and($purchase->fresh()->payment_status->value)->toBe('partial')
+        ->and($supplier->fresh()->balance)->toBe(-500.0);
+});
+
+test('confirming while applying supplier credit offsets the due without touching accounts', function () {
+    $this->actingAs(User::factory()->create());
+    $supplier = Contact::factory()->supplier()->create(['balance' => 500]);
+    $product = Product::factory()->create(['current_stock' => 0]);
+    $purchase = Purchase::factory()->create(['supplier_id' => $supplier->id]);
+    $purchase->items()->create(['product_id' => $product->id, 'quantity' => 10, 'unit_price' => 100, 'subtotal' => 1000]);
+    $purchase->forceFill(['total_amount' => 1000, 'due_amount' => 1000])->save();
+
+    $this->post("/purchases/{$purchase->id}/confirm", [
+        'credit_applied' => 500,
+    ])->assertRedirect();
+
+    expect($purchase->fresh()->paid_amount)->toBe(500.0)
+        ->and($purchase->fresh()->due_amount)->toBe(500.0)
+        ->and($supplier->fresh()->balance)->toBe(-500.0)
+        ->and(ContactLedger::query()->where('type', ContactLedgerType::CreditApplied)->count())->toBe(1);
+});
+
+test('a received purchase cannot be edited or deleted', function () {
+    $this->actingAs(User::factory()->create());
+    $purchase = Purchase::factory()->received()->create(['supplier_id' => Contact::factory()->supplier()]);
+
+    $this->delete("/purchases/{$purchase->id}")->assertSessionHasErrors('purchase');
+    expect(Purchase::query()->find($purchase->id))->not->toBeNull();
+});
+
+test('adding a payment to a received purchase further reduces the due', function () {
+    $this->actingAs(User::factory()->create());
+    $supplier = Contact::factory()->supplier()->create();
+    $product = Product::factory()->create(['current_stock' => 0]);
+    $account = Account::factory()->create(['account_type_id' => AccountType::factory(), 'current_balance' => 1000]);
+    $purchase = Purchase::factory()->create(['supplier_id' => $supplier->id]);
+    $purchase->items()->create(['product_id' => $product->id, 'quantity' => 10, 'unit_price' => 100, 'subtotal' => 1000]);
+    $purchase->forceFill(['total_amount' => 1000, 'due_amount' => 1000])->save();
+
+    // Confirm with an initial 500 payment, leaving 500 due.
+    $this->post("/purchases/{$purchase->id}/confirm", [
+        'payments' => [['account_id' => $account->id, 'amount' => 500]],
+    ]);
+
+    // Then settle the rest.
+    $this->post("/purchases/{$purchase->id}/payments", [
+        'payments' => [['account_id' => $account->id, 'amount' => 500]],
+    ])->assertRedirect();
+
+    expect($purchase->fresh()->paid_amount)->toBe(1000.0)
+        ->and($purchase->fresh()->due_amount)->toBe(0.0)
+        ->and($purchase->fresh()->payment_status->value)->toBe('paid')
+        ->and($account->fresh()->current_balance)->toBe(0.0)
+        ->and($supplier->fresh()->balance)->toBe(0.0);
+});
+
+test('confirming rejects credit_applied greater than the supplier available credit', function () {
+    $this->actingAs(User::factory()->create());
+    $supplier = Contact::factory()->supplier()->create(['balance' => 100]);
+    $product = Product::factory()->create(['current_stock' => 0]);
+    $purchase = Purchase::factory()->create(['supplier_id' => $supplier->id]);
+    $purchase->items()->create(['product_id' => $product->id, 'quantity' => 10, 'unit_price' => 100, 'subtotal' => 1000]);
+    $purchase->forceFill(['total_amount' => 1000, 'due_amount' => 1000])->save();
+
+    $this->post("/purchases/{$purchase->id}/confirm", [
+        'credit_applied' => 500,
+    ])->assertSessionHasErrors('credit_applied');
+
+    expect($purchase->fresh()->status)->toBe(PurchaseStatus::Draft)
+        ->and($purchase->fresh()->due_amount)->toBe(1000.0)
+        ->and($supplier->fresh()->balance)->toBe(100.0)
+        ->and(ContactLedger::query()->count())->toBe(0)
+        ->and(StockMovement::query()->count())->toBe(0);
+});
+
+test('adding a payment rejects credit_applied greater than the supplier available credit', function () {
+    $this->actingAs(User::factory()->create());
+    $supplier = Contact::factory()->supplier()->create(['balance' => 100]);
+    $product = Product::factory()->create(['current_stock' => 0]);
+    $purchase = Purchase::factory()->received()->create(['supplier_id' => $supplier->id]);
+    $purchase->items()->create(['product_id' => $product->id, 'quantity' => 10, 'unit_price' => 100, 'subtotal' => 1000]);
+    $purchase->forceFill(['total_amount' => 1000, 'due_amount' => 1000])->save();
+
+    $this->post("/purchases/{$purchase->id}/payments", [
+        'credit_applied' => 500,
+    ])->assertSessionHasErrors('credit_applied');
+
+    expect($purchase->fresh()->due_amount)->toBe(1000.0)
+        ->and($supplier->fresh()->balance)->toBe(100.0)
+        ->and(ContactLedger::query()->count())->toBe(0);
+});
+
+test('confirming rejects credit_applied greater than the due amount even when within the supplier credit', function () {
+    $this->actingAs(User::factory()->create());
+    $supplier = Contact::factory()->supplier()->create(['balance' => 5000]);
+    $product = Product::factory()->create(['current_stock' => 0]);
+    $purchase = Purchase::factory()->create(['supplier_id' => $supplier->id]);
+    $purchase->items()->create(['product_id' => $product->id, 'quantity' => 10, 'unit_price' => 100, 'subtotal' => 1000]);
+    $purchase->forceFill(['total_amount' => 1000, 'due_amount' => 1000])->save();
+
+    $this->post("/purchases/{$purchase->id}/confirm", [
+        'credit_applied' => 1500,
+    ])->assertSessionHasErrors('credit_applied');
+
+    expect($purchase->fresh()->status)->toBe(PurchaseStatus::Draft)
+        ->and($supplier->fresh()->balance)->toBe(5000.0)
+        ->and(ContactLedger::query()->count())->toBe(0);
+});
+
+test('the supplier field rejects a customer-only contact', function () {
+    $this->actingAs(User::factory()->create());
+    $customer = Contact::factory()->create(); // type: customer
+    $product = Product::factory()->create();
+
+    $this->post('/purchases', [
+        'supplier_id' => $customer->id,
+        'purchase_date' => '2026-03-01',
+        'status' => 'draft',
+        'items' => [['product_id' => $product->id, 'quantity' => 1, 'unit_price' => 10]],
+    ])->assertSessionHasErrors('supplier_id');
+});
+
+test('creating a purchase with item-level and invoice-level discounts computes totals correctly', function () {
+    $this->actingAs(User::factory()->create());
+    $supplier = Contact::factory()->supplier()->create();
+    $product = Product::factory()->create(['current_stock' => 0, 'avg_cost' => 100]);
+
+    // Item: original_price 100, 10% discount -> unit_price 90. Quantity 10 -> subtotal 900.
+    // Invoice level: 100 flat discount -> total_amount 800.
+    $this->post('/purchases', [
+        'supplier_id' => $supplier->id,
+        'purchase_date' => '2026-03-01',
+        'status' => 'draft',
+        'discount_type' => 'flat',
+        'discount_value' => 100,
+        'items' => [
+            [
+                'product_id' => $product->id,
+                'quantity' => 10,
+                'original_price' => 100,
+                'unit_price' => 90,
+                'discount_type' => 'percentage',
+                'discount_value' => 10,
+            ],
+        ],
+    ])->assertRedirect();
+
+    $purchase = Purchase::query()->firstOrFail();
+
+    expect($purchase->status)->toBe(PurchaseStatus::Draft)
+        ->and($purchase->subtotal)->toBe(900.0)
+        ->and($purchase->discount_amount)->toBe(100.0)
+        ->and($purchase->total_amount)->toBe(800.0)
+        ->and($purchase->due_amount)->toBe(800.0);
+
+    $item = $purchase->items()->firstOrFail();
+    expect($item->original_price)->toBe(100.0)
+        ->and($item->unit_price)->toBe(90.0)
+        ->and($item->discount_amount)->toBe(10.0)
+        ->and($item->subtotal)->toBe(900.0);
+});
+
+test('saving a new purchase as received receives it at once: stock, ledger and payment', function () {
+    $this->actingAs(User::factory()->create());
+    $supplier = Contact::factory()->supplier()->create();
+    $product = Product::factory()->create(['current_stock' => 0, 'avg_cost' => 0]);
+    $cash = Account::factory()->create(['account_type_id' => AccountType::factory(), 'current_balance' => 5000]);
+
+    $this->post('/purchases', [
+        'supplier_id' => $supplier->id,
+        'purchase_date' => '2026-03-01',
+        'status' => 'received',
+        'items' => [['product_id' => $product->id, 'quantity' => 10, 'unit_price' => 100]],
+        'payments' => [['account_id' => $cash->id, 'amount' => 400]],
+    ])->assertRedirect();
+
+    $purchase = Purchase::query()->firstOrFail();
+
+    expect($purchase->status)->toBe(PurchaseStatus::Received)
+        ->and($product->fresh()->current_stock)->toBe(10.0)
+        ->and($product->fresh()->avg_cost)->toBe(100.0)
+        ->and($purchase->paid_amount)->toBe(400.0)
+        ->and($purchase->due_amount)->toBe(600.0)
+        ->and($cash->fresh()->current_balance)->toBe(4600.0)
+        ->and($supplier->fresh()->balance)->toBe(-600.0);
+});
+
+test('saving as received takes serial numbers by line position', function () {
+    $this->actingAs(User::factory()->create());
+    $supplier = Contact::factory()->supplier()->create();
+    $product = Product::factory()->create(['current_stock' => 0, 'track_serial_number' => true]);
+
+    $this->post('/purchases', [
+        'supplier_id' => $supplier->id,
+        'purchase_date' => '2026-03-01',
+        'status' => 'received',
+        'items' => [['product_id' => $product->id, 'quantity' => 2, 'unit_price' => 100]],
+        'serial_numbers' => [0 => ['SN-A', 'SN-B']],
+    ])->assertRedirect();
+
+    expect($product->serialNumbers()->pluck('serial_number')->sort()->values()->all())->toBe(['SN-A', 'SN-B'])
+        ->and($product->fresh()->current_stock)->toBe(2.0);
+});
+
+test('a failed receipt on save leaves no purchase behind', function () {
+    $this->actingAs(User::factory()->create());
+    $supplier = Contact::factory()->supplier()->create();
+    $product = Product::factory()->create(['current_stock' => 0, 'track_serial_number' => true]);
+
+    $this->post('/purchases', [
+        'supplier_id' => $supplier->id,
+        'purchase_date' => '2026-03-01',
+        'status' => 'received',
+        'items' => [['product_id' => $product->id, 'quantity' => 2, 'unit_price' => 100]],
+        'serial_numbers' => [0 => ['ONLY-ONE']],
+    ]);
+
+    expect(Purchase::query()->count())->toBe(0)
+        ->and($product->fresh()->current_stock)->toBe(0.0);
+});
+
+test('saving as received rejects a payment larger than the purchase total', function () {
+    $this->actingAs(User::factory()->create());
+    $supplier = Contact::factory()->supplier()->create();
+    $product = Product::factory()->create(['current_stock' => 0]);
+    $cash = Account::factory()->create(['account_type_id' => AccountType::factory(), 'current_balance' => 5000]);
+
+    $this->post('/purchases', [
+        'supplier_id' => $supplier->id,
+        'purchase_date' => '2026-03-01',
+        'status' => 'received',
+        'items' => [['product_id' => $product->id, 'quantity' => 1, 'unit_price' => 100]],
+        'payments' => [['account_id' => $cash->id, 'amount' => 150]],
+    ])->assertSessionHasErrors('payments');
+
+    expect(Purchase::query()->count())->toBe(0);
+});
+
+test('editing a draft and saving it as received receives it', function () {
+    $this->actingAs(User::factory()->create());
+    $supplier = Contact::factory()->supplier()->create();
+    $product = Product::factory()->create(['current_stock' => 0, 'avg_cost' => 0]);
+    $purchase = Purchase::factory()->create(['supplier_id' => $supplier->id, 'status' => 'draft']);
+
+    $this->patch("/purchases/{$purchase->id}", [
+        'supplier_id' => $supplier->id,
+        'purchase_date' => '2026-03-01',
+        'status' => 'received',
+        'items' => [['product_id' => $product->id, 'quantity' => 5, 'unit_price' => 20]],
+    ])->assertRedirect();
+
+    expect($purchase->fresh()->status)->toBe(PurchaseStatus::Received)
+        ->and($product->fresh()->current_stock)->toBe(5.0);
+});
+
+test('an ordered purchase can take a payment on save, and the payment survives receiving it later', function () {
+    $this->actingAs(User::factory()->create());
+    $supplier = Contact::factory()->supplier()->create();
+    $product = Product::factory()->create(['current_stock' => 0, 'avg_cost' => 0]);
+    $cash = Account::factory()->create(['account_type_id' => AccountType::factory(), 'current_balance' => 5000]);
+
+    $this->post('/purchases', [
+        'supplier_id' => $supplier->id,
+        'purchase_date' => '2026-03-01',
+        'status' => 'ordered',
+        'items' => [['product_id' => $product->id, 'quantity' => 10, 'unit_price' => 100]],
+        'payments' => [['account_id' => $cash->id, 'amount' => 300]],
+    ])->assertRedirect();
+
+    $purchase = Purchase::query()->firstOrFail();
+
+    expect($purchase->status)->toBe(PurchaseStatus::Ordered)
+        ->and($purchase->paid_amount)->toBe(300.0)
+        ->and($purchase->due_amount)->toBe(700.0)
+        ->and($cash->fresh()->current_balance)->toBe(4700.0)
+        ->and($product->fresh()->current_stock)->toBe(0.0);
+
+    // Receiving it afterwards keeps the advance: only the rest is owed to the supplier.
+    $this->post("/purchases/{$purchase->id}/confirm")->assertRedirect();
+
+    expect($purchase->fresh()->status)->toBe(PurchaseStatus::Received)
+        ->and($purchase->fresh()->paid_amount)->toBe(300.0)
+        ->and($purchase->fresh()->due_amount)->toBe(700.0)
+        ->and($supplier->fresh()->balance)->toBe(-700.0)
+        ->and($product->fresh()->current_stock)->toBe(10.0);
+});
+
+test('editing a purchase that already has a payment keeps the payment and refuses a lower total', function () {
+    $this->actingAs(User::factory()->create());
+    $supplier = Contact::factory()->supplier()->create();
+    $product = Product::factory()->create();
+    $cash = Account::factory()->create(['account_type_id' => AccountType::factory(), 'current_balance' => 5000]);
+
+    $this->post('/purchases', [
+        'supplier_id' => $supplier->id,
+        'purchase_date' => '2026-03-01',
+        'status' => 'ordered',
+        'items' => [['product_id' => $product->id, 'quantity' => 10, 'unit_price' => 100]],
+        'payments' => [['account_id' => $cash->id, 'amount' => 600]],
+    ]);
+    $purchase = Purchase::query()->firstOrFail();
+
+    $payload = fn (int $quantity) => [
+        'supplier_id' => $supplier->id,
+        'purchase_date' => '2026-03-01',
+        'status' => 'ordered',
+        'items' => [['product_id' => $product->id, 'quantity' => $quantity, 'unit_price' => 100]],
+    ];
+
+    $this->patch("/purchases/{$purchase->id}", $payload(8))->assertRedirect();
+    expect($purchase->fresh()->paid_amount)->toBe(600.0)->and($purchase->fresh()->due_amount)->toBe(200.0);
+
+    $this->patch("/purchases/{$purchase->id}", $payload(5))->assertSessionHasErrors('items');
+    expect($purchase->fresh()->total_amount)->toBe(800.0);
+});
+
+test('a purchase with a payment cannot be deleted, but cancelling it hands the money back', function () {
+    $this->actingAs(User::factory()->create());
+    $supplier = Contact::factory()->supplier()->create();
+    $product = Product::factory()->create();
+    $cash = Account::factory()->create(['account_type_id' => AccountType::factory(), 'current_balance' => 5000]);
+
+    $this->post('/purchases', [
+        'supplier_id' => $supplier->id,
+        'purchase_date' => '2026-03-01',
+        'status' => 'ordered',
+        'items' => [['product_id' => $product->id, 'quantity' => 10, 'unit_price' => 100]],
+        'payments' => [['account_id' => $cash->id, 'amount' => 400]],
+    ]);
+    $purchase = Purchase::query()->firstOrFail();
+
+    $this->delete("/purchases/{$purchase->id}")->assertSessionHasErrors('purchase');
+    expect(Purchase::query()->count())->toBe(1);
+
+    $this->post("/purchases/{$purchase->id}/cancel")->assertRedirect();
+
+    expect($purchase->fresh()->status)->toBe(PurchaseStatus::Cancelled)
+        ->and($cash->fresh()->current_balance)->toBe(5000.0)
+        ->and($supplier->fresh()->balance)->toBe(0.0);
+});
+
+test('a payment can be added to an ordered purchase from its page', function () {
+    $this->actingAs(User::factory()->create());
+    $supplier = Contact::factory()->supplier()->create();
+    $product = Product::factory()->create();
+    $cash = Account::factory()->create(['account_type_id' => AccountType::factory(), 'current_balance' => 5000]);
+
+    $this->post('/purchases', [
+        'supplier_id' => $supplier->id,
+        'purchase_date' => '2026-03-01',
+        'status' => 'ordered',
+        'items' => [['product_id' => $product->id, 'quantity' => 10, 'unit_price' => 100]],
+    ]);
+    $purchase = Purchase::query()->firstOrFail();
+
+    $this->post("/purchases/{$purchase->id}/payments", ['payments' => [['account_id' => $cash->id, 'amount' => 250]]])->assertRedirect();
+
+    expect($purchase->fresh()->paid_amount)->toBe(250.0)->and($cash->fresh()->current_balance)->toBe(4750.0);
+});
+
+test('a purchase paid in full still appears in the supplier ledger', function () {
+    $this->actingAs(User::factory()->create());
+    $supplier = Contact::factory()->supplier()->create();
+    $product = Product::factory()->create(['current_stock' => 0]);
+    $cash = Account::factory()->create(['account_type_id' => AccountType::factory(), 'current_balance' => 5000]);
+
+    $this->post('/purchases', [
+        'supplier_id' => $supplier->id,
+        'purchase_date' => '2026-03-01',
+        'status' => 'received',
+        'items' => [['product_id' => $product->id, 'quantity' => 10, 'unit_price' => 100]],
+        'payments' => [['account_id' => $cash->id, 'amount' => 1000]],
+    ])->assertRedirect();
+
+    $purchase = Purchase::query()->firstOrFail();
+    $entry = $supplier->ledgerEntries()->where('type', ContactLedgerType::PurchaseBill)->sole();
+
+    expect($entry->reference_id)->toBe($purchase->id)
+        ->and((float) $entry->amount)->toBe(0.0)
+        ->and($supplier->fresh()->balance)->toBe(0.0);
+});
+
+test('a duplicate serial when saving as received is reported on that line', function () {
+    $this->actingAs(User::factory()->create());
+    $supplier = Contact::factory()->supplier()->create();
+    $product = Product::factory()->create(['current_stock' => 0, 'track_serial_number' => true]);
+    $other = Product::factory()->create(['current_stock' => 0]);
+
+    $payload = fn (array $serials) => [
+        'supplier_id' => $supplier->id,
+        'purchase_date' => '2026-03-01',
+        'status' => 'received',
+        'items' => [
+            ['product_id' => $other->id, 'quantity' => 1, 'unit_price' => 10],
+            ['product_id' => $product->id, 'quantity' => 1, 'unit_price' => 100],
+        ],
+        'serial_numbers' => [1 => $serials],
+    ];
+
+    $this->post('/purchases', $payload(['SN-1']))->assertRedirect();
+    $this->post('/purchases', $payload(['SN-1']))->assertSessionHasErrors(['serial_numbers.1']);
+
+    expect(Purchase::query()->count())->toBe(1);
+});

@@ -15,7 +15,7 @@ import { today } from '@/lib/format-date';
 import { type BreadcrumbItem } from '@/types';
 import { type Account, type ServiceableSaleItem } from '@/types/models';
 import { Head, Link, router, useForm } from '@inertiajs/react';
-import { Calendar, ChevronLeft, Wrench, Search, Save, X } from 'lucide-react';
+import { Calendar, ChevronLeft, Save, Search, Wrench, X } from 'lucide-react';
 import { FormEventHandler, useState } from 'react';
 
 interface ServiceRequestsCreateProps {
@@ -151,7 +151,7 @@ export default function ServiceRequestsCreate({ query, items, staff, accounts }:
 
                 {selected && (
                     <Card className="max-w-xl overflow-hidden shadow-xs">
-                        <CardHeader className="flex flex-row items-center justify-between border-b bg-muted/30 px-4 py-3">
+                        <CardHeader className="bg-muted/30 flex flex-row items-center justify-between border-b px-4 py-3">
                             <div>
                                 <CardTitle className="text-base font-semibold">{selected.product.name}</CardTitle>
                                 <p className="text-muted-foreground text-xs">
@@ -207,7 +207,9 @@ export default function ServiceRequestsCreate({ query, items, staff, accounts }:
                                 {!selected.is_next_free && (
                                     <div className="grid gap-4 sm:grid-cols-2">
                                         <div className="grid min-w-0 content-start gap-2">
-                                            <Label htmlFor="charge_amount" required>{t('serviceRequests', 'charge_amount')}</Label>
+                                            <Label htmlFor="charge_amount" required>
+                                                {t('serviceRequests', 'charge_amount')}
+                                            </Label>
                                             <MoneyInput
                                                 id="charge_amount"
                                                 value={form.data.charge_amount}
@@ -232,7 +234,13 @@ export default function ServiceRequestsCreate({ query, items, staff, accounts }:
 
                                 <div className="grid min-w-0 content-start gap-2">
                                     <Label htmlFor="note">{t('serviceRequests', 'note')}</Label>
-                                    <Textarea id="note" placeholder="Add a note (optional)" value={form.data.note} onChange={(e) => form.setData('note', e.target.value)} rows={2} />
+                                    <Textarea
+                                        id="note"
+                                        placeholder="Add a note (optional)"
+                                        value={form.data.note}
+                                        onChange={(e) => form.setData('note', e.target.value)}
+                                        rows={2}
+                                    />
                                     <InputError message={form.errors.note} />
                                 </div>
 

@@ -21,7 +21,7 @@ export default function ConfirmPurchaseModal({ open, onOpenChange, purchase, acc
     const [rows, setRows] = useState<PaymentRow[]>([]);
 
     const supplierCredit = Math.max(purchase.supplier.balance, 0);
-    const suggestedCredit = Math.min(supplierCredit, purchase.total_amount);
+    const suggestedCredit = Math.min(supplierCredit, purchase.due_amount);
 
     const serialTrackedItems = purchase.items.filter((item) => item.product.track_serial_number);
 
@@ -112,7 +112,7 @@ export default function ConfirmPurchaseModal({ open, onOpenChange, purchase, acc
                 accounts={accounts}
                 rows={rows}
                 onChange={setRows}
-                total={purchase.total_amount - form.data.credit_applied}
+                total={purchase.due_amount - form.data.credit_applied}
                 error={paymentRowsError(form.errors)}
             />
         </FormModal>

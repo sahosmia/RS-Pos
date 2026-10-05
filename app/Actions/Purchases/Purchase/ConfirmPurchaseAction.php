@@ -82,9 +82,9 @@ class ConfirmPurchaseAction
 
             $dueAmount = round($purchase->total_amount - $paidViaAccounts - $creditApplied, 2);
 
-            if ($dueAmount !== 0.0) {
-                $this->ledger->recordContact($purchase->supplier, ContactLedgerType::PurchaseBill, -$dueAmount, 'purchase', $purchase->id);
-            }
+            // Always written — even at 0 for a purchase paid in full — so every received purchase shows up in the
+            // supplier's ledger (with its items); the amount is only what is still owed, like the other ledger rows.
+            $this->ledger->recordContact($purchase->supplier, ContactLedgerType::PurchaseBill, -$dueAmount, 'purchase', $purchase->id);
 
             $purchase->update(['status' => PurchaseStatus::Received]);
             $purchase->recalculatePaymentTotals();
@@ -175,12 +175,13 @@ class ConfirmPurchaseAction
         if (count($serialNumbers) !== (int) $item->quantity) {
             throw new InvalidSerialSelectionException(
                 "\"{$product->name}\" tracks serial numbers — expected {$item->quantity} unique serial(s), got ".count($serialNumbers).'.',
+                $item->id,
             );
         }
 
         foreach ($serialNumbers as $serialNumber) {
             if (SerialNumber::query()->where('product_id', $product->id)->where('serial_number', $serialNumber)->exists()) {
-                throw new InvalidSerialSelectionException("Serial \"{$serialNumber}\" already exists for \"{$product->name}\".");
+                throw new InvalidSerialSelectionException("Serial \"{$serialNumber}\" already exists for \"{$product->name}\".", $item->id);
             }
 
             $item->serialNumbers()->create([

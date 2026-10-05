@@ -5,18 +5,25 @@ namespace App\Http\Controllers\Sales;
 use App\Actions\Sales\Sale\ConfirmSaleAction;
 use App\Actions\Sales\Sale\CreateSaleAction;
 use App\Actions\Sales\Sale\UpdateSaleAction;
+use App\Enums\DateRangePreset;
+use App\Exceptions\InvalidSerialSelectionException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Sales\Sale\StoreSaleRequest;
 use App\Http\Requests\Sales\Sale\UpdateSaleRequest;
 use App\Models\Contact;
 use App\Models\Sale;
+use App\Models\SaleItem;
 use App\Models\Settings;
 use App\Queries\Sale\SaleQuery;
 use App\Queries\Sale\SalesFormOptions;
 use App\Support\SalePaymentHistory;
 use App\Support\SerialSelections;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -29,6 +36,7 @@ class SaleController extends Controller
     {
         $validated = $request->validate([
             'search' => ['nullable', 'string', 'max:255'],
+            'preset' => ['nullable', Rule::in(['all', ...array_column(DateRangePreset::cases(), 'value')])],
             'from' => ['nullable', 'date'],
             'to' => ['nullable', 'date', 'after_or_equal:from'],
             'customer_id' => ['nullable', 'integer', 'exists:contacts,id'],
@@ -40,6 +48,9 @@ class SaleController extends Controller
         ]);
 
         $resolvedPerPage = Settings::resolveRequestedPerPage($validated['per_page'] ?? null);
+
+        $range = DateRangePreset::forList($validated['preset'] ?? null, $validated['from'] ?? null, $validated['to'] ?? null);
+        $validated = [...$validated, 'from' => $range['start'], 'to' => $range['end']];
 
         $sales = SaleQuery::filtered($validated, $request->user())
             ->paginate($resolvedPerPage ?? Settings::MAX_UNPAGINATED_ROWS)
@@ -79,8 +90,9 @@ class SaleController extends Controller
                 : null,
             'filters' => [
                 'search' => $validated['search'] ?? null,
-                'from' => $validated['from'] ?? null,
-                'to' => $validated['to'] ?? null,
+                'preset' => $range['preset'],
+                'from' => $range['from'],
+                'to' => $range['to'],
                 'customer_id' => $validated['customer_id'] ?? null,
                 'status' => $validated['status'] ?? null,
                 'payment_status' => $validated['payment_status'] ?? null,
@@ -102,6 +114,8 @@ class SaleController extends Controller
             'initialCustomer' => $initialCustomer,
             'products' => SalesFormOptions::productsForSale(),
             'accounts' => SalesFormOptions::activeAccounts(),
+            // "Add Sale" from a product's row menu arrives with that product pre-picked
+            'initialProductId' => $request->integer('product_id') ?: null,
         ]);
     }
 
@@ -118,12 +132,12 @@ class SaleController extends Controller
         $wantsConfirm = $data['status'] === 'confirmed';
         $data['status'] = $wantsConfirm ? 'draft' : $data['status'];
 
-        $sale = $createSale->execute($data);
+        // One transaction: a confirm that fails (bad serials, ...) must not leave a half-made Draft behind.
+        $sale = DB::transaction(function () use ($data, $wantsConfirm, $createSale, $confirmSale) {
+            $sale = $createSale->execute($data);
 
-        if ($wantsConfirm) {
-            $serialSelections = SerialSelections::extract($sale->items()->orderBy('id')->get(), $data['items']);
-            $sale = $confirmSale->execute($sale, $data['payments'] ?? [], $serialSelections);
-        }
+            return $wantsConfirm ? $this->confirmFromForm($sale, $data, $confirmSale) : $sale;
+        });
 
         return to_route('sales.show', $sale)->with('justConfirmed', $wantsConfirm);
     }
@@ -203,14 +217,44 @@ class SaleController extends Controller
         $wantsConfirm = $data['status'] === 'confirmed';
         $data['status'] = $wantsConfirm ? 'draft' : $data['status'];
 
-        $sale = $updateSale->execute($sale, $data);
+        $sale = DB::transaction(function () use ($sale, $data, $wantsConfirm, $updateSale, $confirmSale) {
+            $sale = $updateSale->execute($sale, $data);
 
-        if ($wantsConfirm) {
-            $serialSelections = SerialSelections::extract($sale->items()->orderBy('id')->get(), $data['items']);
-            $sale = $confirmSale->execute($sale, $data['payments'] ?? [], $serialSelections);
-        }
+            return $wantsConfirm ? $this->confirmFromForm($sale, $data, $confirmSale) : $sale;
+        });
 
         return to_route('sales.show', $sale)->with('justConfirmed', $wantsConfirm);
+    }
+
+    /**
+     * Confirms the sale the form just saved. Bad serial numbers come back as a validation error on the
+     * \`items.N.serial_numbers\` field of the line they were typed on, so the form shows the message under that input.
+     *
+     * @param  array<string, mixed>  $data
+     *
+     * @throws ValidationException
+     */
+    private function confirmFromForm(Sale $sale, array $data, ConfirmSaleAction $confirmSale): Sale
+    {
+        $lineItems = $sale->items()->orderBy('id')->get();
+
+        try {
+            return $confirmSale->execute($sale, $data['payments'] ?? [], SerialSelections::extract($lineItems, $data['items']));
+        } catch (InvalidSerialSelectionException $e) {
+            throw $this->serialValidationError($e, $lineItems);
+        }
+    }
+
+    /**
+     * @param  Collection<int, SaleItem>  $lineItems
+     */
+    private function serialValidationError(InvalidSerialSelectionException $e, Collection $lineItems): ValidationException
+    {
+        $index = $e->itemId === null ? false : $lineItems->search(fn (SaleItem $item) => $item->id === $e->itemId);
+
+        return ValidationException::withMessages([
+            $index === false ? 'error' : "items.{$index}.serial_numbers" => $e->getMessage(),
+        ]);
     }
 
     /**
@@ -239,6 +283,7 @@ class SaleController extends Controller
             'creator' => $sale->creator?->only(['id', 'name']),
             'sale_date' => $sale->sale_date->toDateString(),
             'subtotal' => $sale->subtotal,
+            'installation_amount' => $sale->installation_amount,
             'discount_type' => $sale->discount_type,
             'discount_value' => $sale->discount_value,
             'discount_amount' => $sale->discount_amount,

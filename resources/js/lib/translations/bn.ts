@@ -21,6 +21,7 @@ const bn: Dictionary = {
         export: 'এক্সপোর্ট',
         print: 'প্রিন্ট',
         clear_filters: 'ফিল্টার মুছুন',
+        clear: 'মুছুন',
         no_results_title: 'কিছু পাওয়া যায়নি',
         no_results_description: 'অন্য search বা filter দিয়ে আবার চেষ্টা করুন',
         of: '/',

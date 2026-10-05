@@ -75,28 +75,32 @@ export function useContactColumns({ sort, direction, onSort, selection, contactA
             },
             {
                 id: 'contact_id',
-                header: onSort ? () => (
-                    <DataTableColumnHeader
-                        title={t('contactColumns', 'contact_id')}
-                        sortKey="contact_code"
-                        currentSort={sort ?? ''}
-                        currentDirection={direction ?? 'asc'}
-                        onSort={onSort}
-                    />
-                ) : t('contactColumns', 'contact_id'),
+                header: onSort
+                    ? () => (
+                          <DataTableColumnHeader
+                              title={t('contactColumns', 'contact_id')}
+                              sortKey="contact_code"
+                              currentSort={sort ?? ''}
+                              currentDirection={direction ?? 'asc'}
+                              onSort={onSort}
+                          />
+                      )
+                    : t('contactColumns', 'contact_id'),
                 cell: ({ row }) => row.original.contact_code ?? '—',
             },
             {
                 id: 'name',
-                header: onSort ? () => (
-                    <DataTableColumnHeader
-                        title={t('common', 'name')}
-                        sortKey="name"
-                        currentSort={sort ?? ''}
-                        currentDirection={direction ?? 'asc'}
-                        onSort={onSort}
-                    />
-                ) : t('common', 'name'),
+                header: onSort
+                    ? () => (
+                          <DataTableColumnHeader
+                              title={t('common', 'name')}
+                              sortKey="name"
+                              currentSort={sort ?? ''}
+                              currentDirection={direction ?? 'asc'}
+                              onSort={onSort}
+                          />
+                      )
+                    : t('common', 'name'),
                 cell: ({ row }) => (
                     <>
                         <Link href={route('contacts.show', row.original.id)} className="font-medium underline-offset-2 hover:underline">
@@ -123,15 +127,17 @@ export function useContactColumns({ sort, direction, onSort, selection, contactA
             },
             {
                 id: 'type',
-                header: onSort ? () => (
-                    <DataTableColumnHeader
-                        title={t('contactsPage', 'type')}
-                        sortKey="type"
-                        currentSort={sort ?? ''}
-                        currentDirection={direction ?? 'asc'}
-                        onSort={onSort}
-                    />
-                ) : t('contactsPage', 'type'),
+                header: onSort
+                    ? () => (
+                          <DataTableColumnHeader
+                              title={t('contactsPage', 'type')}
+                              sortKey="type"
+                              currentSort={sort ?? ''}
+                              currentDirection={direction ?? 'asc'}
+                              onSort={onSort}
+                          />
+                      )
+                    : t('contactsPage', 'type'),
                 cell: ({ row }) => (
                     <>
                         <Badge variant="outline" className={typeColor[row.original.type]}>
@@ -143,16 +149,18 @@ export function useContactColumns({ sort, direction, onSort, selection, contactA
             },
             {
                 id: 'balance',
-                header: onSort ? () => (
-                    <DataTableColumnHeader
-                        title={t('contactColumns', 'balance')}
-                        sortKey="balance"
-                        currentSort={sort ?? ''}
-                        currentDirection={direction ?? 'asc'}
-                        onSort={onSort}
-                        align="right"
-                    />
-                ) : t('contactColumns', 'balance'),
+                header: onSort
+                    ? () => (
+                          <DataTableColumnHeader
+                              title={t('contactColumns', 'balance')}
+                              sortKey="balance"
+                              currentSort={sort ?? ''}
+                              currentDirection={direction ?? 'asc'}
+                              onSort={onSort}
+                              align="right"
+                          />
+                      )
+                    : t('contactColumns', 'balance'),
                 meta: { headerClassName: 'text-right', cellClassName: 'text-right tabular-nums' },
                 // Payable shows negative, receivable positive, settled 0 — `balance` is already
                 // signed that way (see LedgerService), so no word label is needed here.

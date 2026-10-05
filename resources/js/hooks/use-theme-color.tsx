@@ -19,11 +19,7 @@ export function useThemeColor() {
     const updateThemeColor = (color: ThemeColorValue | null) => {
         applyThemeColor(color ?? (shop.theme_color as ThemeColorValue));
 
-        router.patch(
-            route('theme-color.update'),
-            { theme_color: color },
-            { preserveScroll: true, preserveState: true },
-        );
+        router.patch(route('theme-color.update'), { theme_color: color }, { preserveScroll: true, preserveState: true });
     };
 
     return { themeColor, isPersonalOverride, updateThemeColor };

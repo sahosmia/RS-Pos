@@ -4,6 +4,7 @@ namespace App\Actions\Purchases\Purchase;
 
 use App\Models\Purchase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 /**
  * Only reachable while the purchase is still Draft/Ordered — guarded by
@@ -27,6 +28,15 @@ class UpdatePurchaseAction
             ]);
 
             PurchaseTotals::sync($purchase, $data['items'])->applyTo($purchase);
+
+            // applyTo() resets due to the full total; an advance already paid has to be counted again.
+            $purchase->recalculatePaymentTotals();
+
+            if ($purchase->due_amount < 0) {
+                throw ValidationException::withMessages([
+                    'items' => 'The total cannot go below the ৳'.number_format($purchase->paid_amount, 2).' already paid on this purchase.',
+                ]);
+            }
 
             return $purchase;
         });

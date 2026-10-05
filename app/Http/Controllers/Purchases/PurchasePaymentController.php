@@ -12,13 +12,13 @@ use Illuminate\Http\RedirectResponse;
 class PurchasePaymentController extends Controller
 {
     /**
-     * Settles more of an already-Received purchase's due — separate from
-     * confirming receipt.
+     * Settles more of a purchase's due in any status but Cancelled (an Ordered
+     * purchase can take an advance) — separate from confirming receipt.
      */
     public function store(PurchasePaymentRequest $request, Purchase $purchase, AddPurchasePaymentAction $addPayment): RedirectResponse
     {
-        if ($purchase->status !== PurchaseStatus::Received) {
-            return back()->withErrors(['purchase' => 'Only a received purchase can take a payment.']);
+        if ($purchase->status === PurchaseStatus::Cancelled) {
+            return back()->withErrors(['purchase' => 'A cancelled purchase cannot take a payment.']);
         }
 
         $data = $request->validated();

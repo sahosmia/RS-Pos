@@ -68,4 +68,37 @@ enum DateRangePreset: string
             self::Custom => ['start' => $today->copy(), 'end' => $today->copy()],
         };
     }
+
+    /**
+     * A list page's own date filter: defaults to Today, "all" means no date limit, and a bare
+     * `from`/`to` is a custom range. Only `custom` echoes its dates back, so a preset never counts
+     * as an "active" from/to filter — callers that need real dates read `start`/`end`.
+     *
+     * @return array{preset: string, from: ?string, to: ?string, start: ?string, end: ?string}
+     */
+    public static function forList(?string $preset, ?string $from, ?string $to): array
+    {
+        if ($preset === 'all') {
+            return ['preset' => 'all', 'from' => null, 'to' => null, 'start' => null, 'end' => null];
+        }
+
+        $resolved = self::tryFrom((string) $preset) ?? (($from || $to) ? self::Custom : self::Today);
+
+        if ($resolved === self::Custom) {
+            $start = $from ?? $to;
+            $end = $to ?? $from;
+
+            return ['preset' => self::Custom->value, 'from' => $start, 'to' => $end, 'start' => $start, 'end' => $end];
+        }
+
+        ['start' => $start, 'end' => $end] = $resolved->resolve();
+
+        return [
+            'preset' => $resolved->value,
+            'from' => null,
+            'to' => null,
+            'start' => $start->toDateString(),
+            'end' => $end->toDateString(),
+        ];
+    }
 }

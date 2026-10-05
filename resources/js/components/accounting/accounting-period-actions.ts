@@ -7,9 +7,6 @@ interface AccountingPeriodActionHandlers {
 }
 
 /** Row actions for the Accounting Periods list's action menu. */
-export function getAccountingPeriodActions(
-    period: AccountingPeriodListItem,
-    { onClose }: AccountingPeriodActionHandlers,
-): RowAction[] {
+export function getAccountingPeriodActions(period: AccountingPeriodListItem, { onClose }: AccountingPeriodActionHandlers): RowAction[] {
     return [{ label: 'Close Period', icon: Lock, onClick: () => onClose(period), hidden: period.status !== 'open' }];
 }

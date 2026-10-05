@@ -8,10 +8,7 @@ interface CustomerGroupActionHandlers {
 }
 
 /** Row actions for the Customer Groups list's action menu. */
-export function getCustomerGroupActions(
-    group: CustomerGroupListItem,
-    { onEdit, onDelete }: CustomerGroupActionHandlers,
-): RowAction[] {
+export function getCustomerGroupActions(group: CustomerGroupListItem, { onEdit, onDelete }: CustomerGroupActionHandlers): RowAction[] {
     return [
         { label: 'Edit', icon: Pencil, onClick: () => onEdit(group) },
         {

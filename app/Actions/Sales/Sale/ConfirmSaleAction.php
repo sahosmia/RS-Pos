@@ -235,6 +235,7 @@ class ConfirmSaleAction
         if (count($serialNumbers) !== (int) $item->quantity) {
             throw new InvalidSerialSelectionException(
                 "\"{$product->name}\" tracks serial numbers — expected {$item->quantity} unique serial(s), got ".count($serialNumbers).'.',
+                $item->id,
             );
         }
 
@@ -249,6 +250,7 @@ class ConfirmSaleAction
             if ($serial === null) {
                 throw new InvalidSerialSelectionException(
                     "Serial \"{$serialNumber}\" is not an in-stock unit of \"{$product->name}\".",
+                    $item->id,
                 );
             }
 
