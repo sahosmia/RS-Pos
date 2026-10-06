@@ -2,6 +2,7 @@ import { FormInput } from '@/components/form/form-input';
 import { FormSelect } from '@/components/form/form-select';
 import HeadingSmall from '@/components/heading-small';
 import InputError from '@/components/input-error';
+import { AddButton } from '@/components/shared/action-buttons';
 import ConfirmDialog from '@/components/shared/confirm-dialog';
 import EmptyState from '@/components/shared/empty-state';
 import FormModal from '@/components/shared/form-modal';
@@ -112,14 +113,12 @@ export default function StaffIndex({ staff, investors }: StaffIndexProps) {
             <div className="space-y-6 px-4 py-6">
                 <div className="flex flex-wrap items-end justify-between gap-4">
                     <HeadingSmall title="Staff" description="দোকানের কর্মচারী — বেতন, অগ্রিম, লোনের হিসাব" />
-                    <Button onClick={openCreate}>Add Staff</Button>
+                    <AddButton onClick={openCreate} title="Add Staff" />
                 </div>
 
                 {staff.length === 0 ? (
                     <EmptyState title="No staff yet" description="প্রথম staff যোগ করুন">
-                        <Button className="mt-2" onClick={openCreate}>
-                            Add Staff
-                        </Button>
+                        <AddButton onClick={openCreate} title="Add Staff" className="mt-2" />
                     </EmptyState>
                 ) : (
                     <div className="overflow-x-auto rounded-lg border">

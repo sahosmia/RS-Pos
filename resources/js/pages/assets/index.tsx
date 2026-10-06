@@ -3,6 +3,7 @@ import { AssetFormModal } from '@/components/assets/asset-form-modal';
 import { AssetGridCard } from '@/components/assets/asset-grid-card';
 import ListTable from '@/components/data-table/list-table';
 import HeadingSmall from '@/components/heading-small';
+import { AddButton } from '@/components/shared/action-buttons';
 import ConfirmDialog from '@/components/shared/confirm-dialog';
 import EmptyState from '@/components/shared/empty-state';
 import { Button } from '@/components/ui/button';
@@ -90,7 +91,7 @@ export default function AssetsIndex({ assets, totalValue, accounts, filters }: A
 
                 <div className="flex flex-wrap items-end justify-between gap-4">
                     <HeadingSmall title="Assets" description="দোকানের নিজস্ব সম্পদ — ফার্নিচার, গাড়ি, ইকুইপমেন্ট" />
-                    <Button onClick={() => openForm(null)}>Add Asset</Button>
+                    <AddButton onClick={() => openForm(null)} title="Add Asset" />
                 </div>
 
                 <div className="rounded-lg border p-4">
@@ -118,9 +119,7 @@ export default function AssetsIndex({ assets, totalValue, accounts, filters }: A
                     exportColumns={ASSET_EXPORT_COLUMNS}
                     emptyState={
                         <EmptyState title="No assets yet" description="প্রথম asset যোগ করুন">
-                            <Button className="mt-2" onClick={() => openForm(null)}>
-                                Add Asset
-                            </Button>
+                            <AddButton onClick={() => openForm(null)} title="Add Asset" className="mt-2" />
                         </EmptyState>
                     }
                 />

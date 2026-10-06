@@ -5,6 +5,7 @@ import ProductGridCard from '@/components/products/product-grid-card';
 import ProductStatCards from '@/components/products/product-stat-cards';
 import StockAdjustmentModal from '@/components/products/stock-adjustment-modal';
 import ConfirmDialog from '@/components/shared/confirm-dialog';
+import { AddButton } from '@/components/shared/action-buttons';
 import EmptyState from '@/components/shared/empty-state';
 import PageHeader from '@/components/shared/page-header';
 import { Button } from '@/components/ui/button';
@@ -14,8 +15,8 @@ import { useTranslation } from '@/hooks/use-translation';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { type ProductListItem } from '@/types/models';
-import { Head, Link } from '@inertiajs/react';
-import { Package, Plus } from 'lucide-react';
+import { Head } from '@inertiajs/react';
+import { Package } from 'lucide-react';
 import { useState } from 'react';
 import { getExportColumns, getVisibilityColumns, useProductColumns } from './table/columns';
 import { type ProductsIndexProps } from './types';
@@ -78,12 +79,7 @@ export default function ProductsIndex({ products, stats, categories, brands, fil
                     title={t('productsPage', 'title')}
                     description={t('productsPage', 'description')}
                     actions={
-                        <Button asChild className="gap-1.5">
-                            <Link href={route('products.create')}>
-                                <Plus className="size-4" />
-                                {t('productsPage', 'add_product')}
-                            </Link>
-                        </Button>
+                        <AddButton href={route('products.create')} title={t('productsPage', 'add_product')} />
                     }
                 />
 
@@ -119,12 +115,7 @@ export default function ProductsIndex({ products, stats, categories, brands, fil
                     }
                     emptyState={
                         <EmptyState title={t('productsPage', 'empty_title')} description={t('productsPage', 'empty_description')}>
-                            <Button className="mt-2 gap-1.5" asChild>
-                                <Link href={route('products.create')}>
-                                    <Plus className="size-4" />
-                                    {t('productsPage', 'add_product')}
-                                </Link>
-                            </Button>
+                            <AddButton href={route('products.create')} title={t('productsPage', 'add_product')} className="mt-2" />
                         </EmptyState>
                     }
                     filteredEmptyState={

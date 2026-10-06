@@ -3,6 +3,7 @@ import { LoanFormModal } from '@/components/company-loans/loan-form-modal';
 import { LoanGridCard } from '@/components/company-loans/loan-grid-card';
 import ListTable from '@/components/data-table/list-table';
 import HeadingSmall from '@/components/heading-small';
+import { AddButton } from '@/components/shared/action-buttons';
 import ConfirmDialog from '@/components/shared/confirm-dialog';
 import EmptyState from '@/components/shared/empty-state';
 import { Button } from '@/components/ui/button';
@@ -82,7 +83,7 @@ export default function CompanyLoansIndex({ loans, totalOutstanding, accounts, f
 
                 <div className="flex flex-wrap items-end justify-between gap-4">
                     <HeadingSmall title="Company Loans" description="ব্যাংক বা ব্যক্তির কাছ থেকে নেওয়া ঋণ" />
-                    <Button onClick={() => openForm(null)}>Add Loan</Button>
+                    <AddButton onClick={() => openForm(null)} title="Add Loan" />
                 </div>
 
                 <div className="rounded-lg border p-4">
@@ -110,9 +111,7 @@ export default function CompanyLoansIndex({ loans, totalOutstanding, accounts, f
                     exportColumns={LOAN_EXPORT_COLUMNS}
                     emptyState={
                         <EmptyState title="No loans yet" description="প্রথম loan যোগ করুন">
-                            <Button className="mt-2" onClick={() => openForm(null)}>
-                                Add Loan
-                            </Button>
+                            <AddButton onClick={() => openForm(null)} title="Add Loan" className="mt-2" />
                         </EmptyState>
                     }
                     filteredEmptyState={

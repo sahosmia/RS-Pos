@@ -8,6 +8,7 @@ import {
 } from '@/components/purchases/purchase-columns';
 import { PurchaseFilters } from '@/components/purchases/purchase-filters';
 import { PurchaseGridCard } from '@/components/purchases/purchase-grid-card';
+import { AddButton } from '@/components/shared/action-buttons';
 import ConfirmDialog from '@/components/shared/confirm-dialog';
 import { DocumentStatCards } from '@/components/shared/document-stat-cards';
 import EmptyState from '@/components/shared/empty-state';
@@ -19,7 +20,7 @@ import { useMoneyFormat } from '@/hooks/use-money-format';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { type Paginated, type PaymentStatusValue, type PurchaseListItem, type PurchaseStatusValue, type SupplierOption } from '@/types/models';
-import { Head, Link } from '@inertiajs/react';
+import { Head } from '@inertiajs/react';
 import { ShoppingBag } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
@@ -97,9 +98,7 @@ export default function PurchasesIndex({ purchases, stats, initialSupplier, filt
             <div className="space-y-6 px-4 py-6">
                 <div className="flex flex-wrap items-end justify-between gap-4">
                     <HeadingSmall title="Purchases" description="Supplier থেকে কেনা পণ্যের তালিকা" />
-                    <Button asChild>
-                        <Link href={addPurchaseHref}>Add Purchase</Link>
-                    </Button>
+                    <AddButton href={addPurchaseHref} title="Add Purchase" />
                 </div>
 
                 {stats && (
@@ -134,9 +133,7 @@ export default function PurchasesIndex({ purchases, stats, initialSupplier, filt
                     filterSlot={<PurchaseFilters filters={filters} supplier={supplier} onSupplierChange={setSupplier} onChange={list.applyFilters} />}
                     emptyState={
                         <EmptyState title="No purchases yet" description="প্রথম purchase যোগ করুন">
-                            <Button className="mt-2" asChild>
-                                <Link href={addPurchaseHref}>Add Purchase</Link>
-                            </Button>
+                            <AddButton href={addPurchaseHref} title="Add Purchase" className="mt-2" />
                         </EmptyState>
                     }
                     filteredEmptyState={
