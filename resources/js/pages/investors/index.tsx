@@ -8,6 +8,7 @@ import {
 } from '@/components/investors/investor-columns';
 import { InvestorFormModal } from '@/components/investors/investor-form-modal';
 import { InvestorGridCard } from '@/components/investors/investor-grid-card';
+import { AddButton } from '@/components/shared/action-buttons';
 import ConfirmDialog from '@/components/shared/confirm-dialog';
 import EmptyState from '@/components/shared/empty-state';
 import { Button } from '@/components/ui/button';
@@ -86,7 +87,7 @@ export default function InvestorsIndex({ investors, totalInvested, filters }: In
 
                 <div className="flex flex-wrap items-end justify-between gap-4">
                     <HeadingSmall title="Investors" description="দোকানে যারা মূলধন বিনিয়োগ করেছেন" />
-                    <Button onClick={() => openForm(null)}>Add Investor</Button>
+                    <AddButton onClick={() => openForm(null)} title="Add Investor" />
                 </div>
 
                 <div className="rounded-lg border p-4">
@@ -114,9 +115,7 @@ export default function InvestorsIndex({ investors, totalInvested, filters }: In
                     exportColumns={INVESTOR_EXPORT_COLUMNS}
                     emptyState={
                         <EmptyState title="No investors yet" description="প্রথম investor যোগ করুন">
-                            <Button className="mt-2" onClick={() => openForm(null)}>
-                                Add Investor
-                            </Button>
+                            <AddButton onClick={() => openForm(null)} title="Add Investor" className="mt-2" />
                         </EmptyState>
                     }
                     filteredEmptyState={

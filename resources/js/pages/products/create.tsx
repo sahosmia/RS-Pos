@@ -1,11 +1,11 @@
 import ProductForm from '@/components/products/product-form';
+import { BackButton } from '@/components/shared/action-buttons';
 import PageHeader from '@/components/shared/page-header';
 import AppLayout from '@/layouts/app-layout';
-import { Button } from '@/components/ui/button';
 import { type BreadcrumbItem } from '@/types';
 import { type Brand, type Category, type Unit } from '@/types/models';
-import { Head, Link } from '@inertiajs/react';
-import { ChevronLeft, PackagePlus } from 'lucide-react';
+import { Head } from '@inertiajs/react';
+import { PackagePlus } from 'lucide-react';
 
 const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Products', href: '/products' },
@@ -30,12 +30,7 @@ export default function ProductsCreate({ categories, brands, units }: ProductsCr
                     title="Add Product"
                     description="নতুন পণ্য যোগ করুন — নাম, দাম, স্টক ও সার্ভিস তথ্য পূরণ করুন"
                     actions={
-                        <Button variant="outline" asChild className="gap-1.5">
-                            <Link href={route('products.index')}>
-                                <ChevronLeft className="size-4" />
-                                Back to products
-                            </Link>
-                        </Button>
+                        <BackButton href={route('products.index')}>Back to products</BackButton>
                     }
                 />
 

@@ -1,8 +1,7 @@
-import { Button } from '@/components/ui/button';
+import { CancelButton, SaveButton } from '@/components/shared/action-buttons';
 import { Kbd } from '@/components/ui/kbd';
 import { useTranslation } from '@/hooks/use-translation';
 import { router } from '@inertiajs/react';
-import { Save, X } from 'lucide-react';
 import { type MouseEventHandler } from 'react';
 
 interface ActionBarProps {
@@ -18,19 +17,9 @@ function useSaveLabel({ mode, processing }: ActionBarProps): string {
     return mode === 'create' ? t('productForm', 'create_product') : t('productForm', 'save_changes');
 }
 
-function CancelButton() {
-    const { t } = useTranslation();
-
-    return (
-        <Button type="button" variant="ghost" onClick={() => router.get(route('products.index'))} className="gap-1.5">
-            <X className="size-4" />
-            {t('common', 'cancel')}
-        </Button>
-    );
-}
-
 /** Cancel / Save row under the form (sm screens and up). Lives inside the `<form>`, so Save is a plain submit. */
 export function DesktopActionBar(props: ActionBarProps) {
+    const { t } = useTranslation();
     const label = useSaveLabel(props);
 
     return (
@@ -41,11 +30,8 @@ export function DesktopActionBar(props: ActionBarProps) {
                 to save
             </p>
             <div className="flex items-center gap-2">
-                <CancelButton />
-                <Button type="submit" disabled={props.processing} className="gap-1.5">
-                    <Save className="size-4" />
-                    {label}
-                </Button>
+                <CancelButton onClick={() => router.get(route('products.index'))} title={t('common', 'cancel')} />
+                <SaveButton processing={props.processing} title={label} />
             </div>
         </div>
     );
@@ -53,15 +39,13 @@ export function DesktopActionBar(props: ActionBarProps) {
 
 /** Sticky Cancel / Save bar pinned to the bottom of small screens. Rendered outside the `<form>`, so Save calls `onSave`. */
 export function MobileActionBar({ onSave, ...props }: ActionBarProps & { onSave: MouseEventHandler<HTMLButtonElement> }) {
+    const { t } = useTranslation();
     const label = useSaveLabel(props);
 
     return (
         <div className="bg-background/95 supports-[backdrop-filter]:bg-background/80 fixed inset-x-0 bottom-0 z-40 flex items-center justify-between gap-3 border-t p-3 shadow-lg backdrop-blur sm:hidden">
-            <CancelButton />
-            <Button type="submit" disabled={props.processing} onClick={onSave} className="flex-1 gap-1.5">
-                <Save className="size-4" />
-                {label}
-            </Button>
+            <CancelButton onClick={() => router.get(route('products.index'))} title={t('common', 'cancel')} />
+            <SaveButton processing={props.processing} onClick={onSave} title={label} className="flex-1" />
         </div>
     );
 }

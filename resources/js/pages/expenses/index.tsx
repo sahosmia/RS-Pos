@@ -10,6 +10,7 @@ import ExpenseModal from '@/components/expenses/expense-modal';
 import { FormInput } from '@/components/form/form-input';
 import HeadingSmall from '@/components/heading-small';
 import LookupManagerModal from '@/components/products/lookup-manager-modal';
+import { AddButton } from '@/components/shared/action-buttons';
 import ConfirmDialog from '@/components/shared/confirm-dialog';
 import EmptyState from '@/components/shared/empty-state';
 import StatCards from '@/components/shared/stat-cards';
@@ -111,7 +112,7 @@ export default function ExpensesIndex({ expenses, stats, categories, accounts, f
                         <Button variant="outline" onClick={() => setCategoriesOpen(true)}>
                             Manage Categories
                         </Button>
-                        <Button onClick={() => setAddOpen(true)}>Add Expense</Button>
+                        <AddButton onClick={() => setAddOpen(true)} title="Add Expense" />
                     </div>
                 </div>
 
@@ -191,9 +192,7 @@ export default function ExpensesIndex({ expenses, stats, categories, accounts, f
                     }
                     emptyState={
                         <EmptyState title="No expenses yet" description="প্রথম expense যোগ করুন">
-                            <Button className="mt-2" onClick={() => setAddOpen(true)}>
-                                Add Expense
-                            </Button>
+                            <AddButton onClick={() => setAddOpen(true)} title="Add Expense" className="mt-2" />
                         </EmptyState>
                     }
                     filteredEmptyState={

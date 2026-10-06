@@ -8,6 +8,7 @@ import PayDueModal from '@/components/contacts/pay-due-modal';
 import SendNotificationModal from '@/components/contacts/send-notification-modal';
 import { type RowAction } from '@/components/data-table/data-table-row-actions';
 import ListTable from '@/components/data-table/list-table';
+import { AddButton } from '@/components/shared/action-buttons';
 import ConfirmDialog from '@/components/shared/confirm-dialog';
 import EmptyState from '@/components/shared/empty-state';
 import PageHeader from '@/components/shared/page-header';
@@ -20,7 +21,7 @@ import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { type Account, type ContactListItem, type ContactType, type CustomerGroup, type Paginated } from '@/types/models';
 import { Head, router } from '@inertiajs/react';
-import { BookOpen, Pencil, Plus, Power, PowerOff, Receipt, ShoppingBag, Trash2, UsersRound, Wallet } from 'lucide-react';
+import { BookOpen, Pencil, Power, PowerOff, Receipt, ShoppingBag, Trash2, UsersRound, Wallet } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { useContactColumns } from './table/columns';
@@ -174,10 +175,7 @@ export default function ContactsIndex({ contacts, stats, customerGroups, account
                     title={pageTitle}
                     description={t('contactsPage', 'description')}
                     actions={
-                        <Button onClick={() => openForm(null)} className="gap-1.5">
-                            <Plus className="size-4" />
-                            {t('contactsPage', 'add_contact')}
-                        </Button>
+                        <AddButton onClick={() => openForm(null)} title={t('contactsPage', 'add_contact')} />
                     }
                 />
 
@@ -218,10 +216,7 @@ export default function ContactsIndex({ contacts, stats, customerGroups, account
                     filterSlot={<ContactFilters filters={filters} customerGroups={customerGroups} onChange={list.applyFilters} />}
                     emptyState={
                         <EmptyState title={t('contactsPage', 'empty_title')} description={t('contactsPage', 'empty_description')}>
-                            <Button className="mt-2 gap-1.5" onClick={() => openForm(null)}>
-                                <Plus className="size-4" />
-                                {t('contactsPage', 'add_contact')}
-                            </Button>
+                            <AddButton onClick={() => openForm(null)} title={t('contactsPage', 'add_contact')} className="mt-2" />
                         </EmptyState>
                     }
                     filteredEmptyState={

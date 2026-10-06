@@ -4,6 +4,7 @@ import AddSalePaymentModal from '@/components/sales/add-sale-payment-modal';
 import { SaleFilters, type SaleFilterValues } from '@/components/sales/sale-filters';
 import { SaleGridCard } from '@/components/sales/sale-grid-card';
 import ViewSalePaymentsModal from '@/components/sales/view-sale-payments-modal';
+import { AddButton } from '@/components/shared/action-buttons';
 import ConfirmDialog from '@/components/shared/confirm-dialog';
 import { DocumentStatCards } from '@/components/shared/document-stat-cards';
 import EmptyState from '@/components/shared/empty-state';
@@ -15,7 +16,7 @@ import { useMoneyFormat } from '@/hooks/use-money-format';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { type Account, type CustomerOption, type Paginated, type PaymentStatusValue, type SaleListItem, type SaleStatusValue } from '@/types/models';
-import { Head, Link } from '@inertiajs/react';
+import { Head } from '@inertiajs/react';
 import { ShoppingCart } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { getExportColumns, getVisibilityColumns, useSaleColumns } from './table/columns';
@@ -109,9 +110,7 @@ export default function SalesIndex({ sales, stats, accounts, initialCustomer, fi
             <div className="space-y-6 px-4 py-6">
                 <div className="flex flex-wrap items-end justify-between gap-4">
                     <HeadingSmall title="Sales" description="Draft, Quotation ও Confirmed — একই তালিকা, filter করে দেখুন" />
-                    <Button asChild>
-                        <Link href={addSaleHref}>Add Sale</Link>
-                    </Button>
+                    <AddButton href={addSaleHref} title="Add Sale" />
                 </div>
 
                 {stats && (
@@ -146,9 +145,7 @@ export default function SalesIndex({ sales, stats, accounts, initialCustomer, fi
                     filterSlot={<SaleFilters filters={filters} customer={customer} onCustomerChange={setCustomer} onChange={list.applyFilters} />}
                     emptyState={
                         <EmptyState title="No sales yet" description="প্রথম sale যোগ করুন">
-                            <Button className="mt-2" asChild>
-                                <Link href={addSaleHref}>Add Sale</Link>
-                            </Button>
+                            <AddButton href={addSaleHref} title="Add Sale" className="mt-2" />
                         </EmptyState>
                     }
                     filteredEmptyState={
