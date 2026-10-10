@@ -1,5 +1,12 @@
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import {
     SidebarGroup,
     SidebarGroupLabel,
@@ -109,11 +116,17 @@ export function NavMain({ items = [] }: { items: NavItem[] }) {
                                         </SidebarMenuButton>
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent side="right" align="start" sideOffset={8} className="min-w-48">
-                                        <DropdownMenuLabel className="text-muted-foreground text-xs font-medium">{item.title}</DropdownMenuLabel>
+                                        <DropdownMenuLabel>{item.title}</DropdownMenuLabel>
                                         <DropdownMenuSeparator />
                                         {item.items.map((subItem) => (
                                             <DropdownMenuItem key={subItem.title} asChild>
-                                                <Link href={subItem.url} className={cn('cursor-pointer', subItem === activeSubItem && 'bg-accent font-medium')}>
+                                                <Link
+                                                    href={subItem.url}
+                                                    className={cn(
+                                                        'cursor-pointer',
+                                                        subItem === activeSubItem && 'bg-brand-primary/10 text-brand-primary-text font-medium',
+                                                    )}
+                                                >
                                                     {subItem.title}
                                                 </Link>
                                             </DropdownMenuItem>
@@ -132,7 +145,9 @@ export function NavMain({ items = [] }: { items: NavItem[] }) {
                             onOpenChange={(open) => update({ groups: open ? [item.key] : [] })}
                             className="group/collapsible"
                         >
-                            <SidebarMenuItem>
+                            {/* While the group is open, one soft panel wraps the parent and all its children; the current
+                                parent/child keep their own (stronger) active background on top of it. */}
+                            <SidebarMenuItem className="motion-colors data-[state=open]:bg-brand-primary/5 data-[state=open]:rounded-xl data-[state=open]:pb-1.5">
                                 <CollapsibleTrigger asChild>
                                     <SidebarMenuButton isActive={!!activeSubItem} tooltip={item.title}>
                                         {item.icon && <item.icon />}
@@ -140,7 +155,7 @@ export function NavMain({ items = [] }: { items: NavItem[] }) {
                                         <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
                                     </SidebarMenuButton>
                                 </CollapsibleTrigger>
-                                <CollapsibleContent className="overflow-hidden data-[state=closed]:animate-[collapsible-up_200ms_ease-out] data-[state=open]:animate-[collapsible-down_200ms_ease-out]">
+                                <CollapsibleContent className="overflow-hidden">
                                     <SidebarMenuSub>
                                         {item.items.map((subItem) => (
                                             <SidebarMenuSubItem key={subItem.title}>

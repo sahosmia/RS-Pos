@@ -102,6 +102,8 @@ const bn: Dictionary = {
         stock_report: 'স্টক রিপোর্ট',
         due_report: 'বকেয়া রিপোর্ট',
         trending_products: 'জনপ্রিয় পণ্য',
+        system_tools: 'সিস্টেম টুলস',
+        system_guide: 'সিস্টেম গাইড',
         import_tools: 'ইমপোর্ট টুলস',
         backups: 'ব্যাকআপ',
         activity_log: 'অ্যাক্টিভিটি লগ',

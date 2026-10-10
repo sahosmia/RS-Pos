@@ -47,18 +47,18 @@ export default function TrendingProducts({ from, to, rows }: TrendingProductsPro
                     <FormInput id="to" label="To" type="date" value={range.to} onChange={(e) => handleToChange(e.target.value)} />
                 </div>
 
-                <div className="overflow-x-auto rounded-lg border">
+                <div className="overflow-x-auto rounded-brand-card bg-card shadow-[var(--brand-card-shadow-elevated)]">
                     <table className="w-full text-sm">
-                        <thead className="bg-muted/50 text-muted-foreground">
+                        <thead className="bg-brand-table-header text-muted-foreground text-xs font-semibold">
                             <tr>
-                                <th className="px-4 py-2 text-left font-medium">Product</th>
-                                <th className="px-4 py-2 text-right font-medium">Quantity Sold</th>
-                                <th className="px-4 py-2 text-right font-medium">Revenue</th>
+                                <th className="px-4 py-2.5 text-left font-medium">Product</th>
+                                <th className="px-4 py-2.5 text-right font-medium">Quantity Sold</th>
+                                <th className="px-4 py-2.5 text-right font-medium">Revenue</th>
                             </tr>
                         </thead>
                         <tbody>
                             {rows.map((row, index) => (
-                                <tr key={row.id} className="border-t">
+                                <tr key={row.id} className="border-brand-table-divider hover:bg-brand-table-row-hover motion-colors border-t">
                                     <td className="px-4 py-2">
                                         #{index + 1} {row.name} <span className="text-muted-foreground">({row.sku})</span>
                                     </td>

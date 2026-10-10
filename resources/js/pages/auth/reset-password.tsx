@@ -48,8 +48,8 @@ export default function ResetPassword({ token, email }: ResetPasswordProps) {
                 heroTitle="Set a new password for your account."
                 heroDescription="Ensure your new password is strong and secure to protect your store transaction data and terminal access."
                 features={[
-                    { icon: ShieldCheck, label: 'Secure Encryption', iconClassName: 'h-4 w-4 text-emerald-400' },
-                    { icon: Zap, label: 'Instant Update', iconClassName: 'h-4 w-4 text-amber-400' },
+                    { icon: ShieldCheck, label: 'Secure Encryption' },
+                    { icon: Zap, label: 'Instant Update' },
                 ]}
             >
                 <form className="flex flex-col gap-5" onSubmit={submit}>
@@ -94,7 +94,11 @@ export default function ResetPassword({ token, email }: ResetPasswordProps) {
                             <InputError message={errors.password_confirmation} />
                         </div>
 
-                        <Button type="submit" className="mt-2 h-11 w-full bg-indigo-600 hover:bg-indigo-700" disabled={processing}>
+                        <Button
+                            type="submit"
+                            className="hover:shadow-brand-primary/35 mt-2 h-11 w-full transition-all hover:-translate-y-px hover:shadow-lg"
+                            disabled={processing}
+                        >
                             {processing && <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />}
                             Reset password
                         </Button>
@@ -102,7 +106,10 @@ export default function ResetPassword({ token, email }: ResetPasswordProps) {
                 </form>
 
                 <div className="text-muted-foreground text-center text-sm">
-                    <TextLink href={route('login')} className="inline-flex items-center gap-1">
+                    <TextLink
+                        href={route('login')}
+                        className="text-brand-primary-text decoration-brand-primary/40 hover:decoration-brand-primary! inline-flex items-center gap-1 font-medium"
+                    >
                         <ArrowLeft className="h-3.5 w-3.5" /> Return to log in
                     </TextLink>
                 </div>

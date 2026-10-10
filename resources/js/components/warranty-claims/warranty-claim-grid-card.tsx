@@ -2,8 +2,8 @@ import DataTableCheckbox from '@/components/data-table/data-table-checkbox';
 import DataTableRowActions from '@/components/data-table/data-table-row-actions';
 import { getWarrantyClaimActions } from '@/components/products/warranty-claim-actions';
 import ContactLink from '@/components/shared/contact-link';
-import { Badge } from '@/components/ui/badge';
-import { useWarrantyStatusLabels, warrantyStatusVariant } from '@/components/warranty-claims/warranty-claim-columns';
+import { StatusBadge } from '@/components/shared/status-badge';
+import { useWarrantyStatusLabels } from '@/components/warranty-claims/warranty-claim-columns';
 import { formatDate } from '@/lib/format-date';
 import { type WarrantyClaimListItem } from '@/types/models';
 
@@ -19,7 +19,7 @@ export function WarrantyClaimGridCard({ claim, selected, onToggleSelected, onUpd
     const { labels } = useWarrantyStatusLabels();
 
     return (
-        <div className="rounded-lg border p-3">
+        <div className="rounded-brand-card bg-card p-3 shadow-[var(--brand-card-shadow-elevated)]">
             <div className="flex items-start justify-between gap-2">
                 <div className="flex min-w-0 items-center gap-3">
                     <DataTableCheckbox checked={selected} onCheckedChange={onToggleSelected} />
@@ -33,7 +33,7 @@ export function WarrantyClaimGridCard({ claim, selected, onToggleSelected, onUpd
                     </div>
                 </div>
                 <div className="flex shrink-0 items-center gap-1">
-                    <Badge variant={warrantyStatusVariant[claim.status]}>{labels[claim.status]}</Badge>
+                    <StatusBadge status={claim.status} label={labels[claim.status]} />
                     <DataTableRowActions actions={getWarrantyClaimActions(claim, { onUpdate })} />
                 </div>
             </div>

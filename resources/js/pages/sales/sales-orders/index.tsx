@@ -1,21 +1,21 @@
 import ListTable from '@/components/data-table/list-table';
-import HeadingSmall from '@/components/heading-small';
 import {
     SALES_ORDER_EXPORT_COLUMN_MAP,
     SALES_ORDER_EXPORT_COLUMNS,
     SALES_ORDER_VISIBILITY_COLUMNS,
     useSalesOrderColumns,
 } from '@/components/sales/sales-order-columns';
-import { SalesOrderFilters } from '@/components/sales/sales-order-filters';
+import { SalesOrderFilters, type SalesOrderStatusFilter } from '@/components/sales/sales-order-filters';
 import { SalesOrderGridCard } from '@/components/sales/sales-order-grid-card';
 import EmptyState from '@/components/shared/empty-state';
+import PageHeader from '@/components/shared/page-header';
 import { Button } from '@/components/ui/button';
 import { useListPage } from '@/hooks/table/use-list-page';
 import { type TableFilterBase } from '@/hooks/table/use-table-filters';
 import { useMoneyFormat } from '@/hooks/use-money-format';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
-import { type CustomerOption, type Paginated, type SalesOrderListItem, type SalesOrderStatusValue } from '@/types/models';
+import { type CustomerOption, type Paginated, type SalesOrderListItem } from '@/types/models';
 import { Head, Link } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
 
@@ -25,7 +25,7 @@ interface SalesOrderFilterState extends TableFilterBase {
     from: string | null;
     to: string | null;
     customer_id: number | null;
-    status: SalesOrderStatusValue | null;
+    status: SalesOrderStatusFilter | null;
     per_page: number | 'all';
 }
 
@@ -72,12 +72,17 @@ export default function SalesOrdersIndex({ orders, initialCustomer, filters }: S
             <Head title="Sales Order" />
 
             <div className="space-y-6 px-4 py-6">
-                <div className="flex flex-wrap items-end justify-between gap-4">
-                    <HeadingSmall title="Sales Order" description="অগ্রিম বুকিং — নির্দিষ্ট সময়ে ডেলিভারির জন্য" />
-                    <Button asChild>
-                        <Link href={route('sales-orders.create')}>Add Sales Order</Link>
-                    </Button>
-                </div>
+                <PageHeader
+                    title="Sales Order"
+                    description="অগ্রিম বুকিং — নির্দিষ্ট সময়ে ডেলিভারির জন্য"
+                    actions={
+                        <>
+                            <Button asChild>
+                                <Link href={route('sales-orders.create')}>Add Sales Order</Link>
+                            </Button>
+                        </>
+                    }
+                />
 
                 <ListTable
                     list={list}

@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use App\Enums\ThemeColor;
 use App\Models\Settings;
+use App\Services\SmsGateway;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
@@ -50,6 +51,8 @@ class HandleInertiaRequests extends Middleware
             ],
             'exportLimits' => config('exports.limits'),
             'freshLogin' => (bool) $request->session()->get('freshLogin'),
+            // Figures of the sale just saved (one request only) — used by "Save & WhatsApp".
+            'savedSale' => $request->session()->get('savedSale'),
             'shop' => function () {
                 $settings = Settings::currentOrNull();
                 $branding = $settings?->brandingUrls() ?? [];
@@ -62,10 +65,12 @@ class HandleInertiaRequests extends Middleware
                     'currency_symbol' => $settings?->currency_symbol ?? '৳',
                     'emi_module_enabled' => (bool) $settings?->emi_module_enabled,
                     'serial_number_module_enabled' => (bool) $settings?->serial_number_module_enabled,
+                    // Is an SMS company set up and switched on? (Decides what the bulk-message dialog promises.)
+                    'sms_ready' => app(SmsGateway::class)->isConfigured($settings),
                     'pagination_options' => $settings?->paginationOptions() ?? Settings::DEFAULT_PAGINATION_OPTIONS,
                     'pagination_default' => $settings?->pagination_default_per_page ?? 20,
                     'pagination_allow_all' => $settings === null || (bool) $settings->pagination_allow_all,
-                    'theme_color' => $settings?->theme_color?->value ?? ThemeColor::Neutral->value,
+                    'theme_color' => $settings?->theme_color?->value ?? ThemeColor::Blue->value,
                     'menu_order' => $settings?->menu_order,
                     'quick_actions' => $settings?->quick_actions,
                 ];

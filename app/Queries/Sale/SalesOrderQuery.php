@@ -2,6 +2,7 @@
 
 namespace App\Queries\Sale;
 
+use App\Enums\SalesOrderStatus;
 use App\Models\SalesOrder;
 use Illuminate\Database\Eloquent\Builder;
 
@@ -32,7 +33,11 @@ class SalesOrderQuery
             ->when($filters['from'] ?? null, fn (Builder $q, string $from) => $q->where('order_date', '>=', $from))
             ->when($filters['to'] ?? null, fn (Builder $q, string $to) => $q->where('order_date', '<=', $to))
             ->when($filters['customer_id'] ?? null, fn (Builder $q, int $id) => $q->where('customer_id', $id))
-            ->when($filters['status'] ?? null, fn (Builder $q, string $status) => $q->where('status', $status))
+            ->when($filters['status'] ?? null, fn (Builder $q, string $status) => match ($status) {
+                'all' => $q,
+                'open' => $q->whereIn('status', [SalesOrderStatus::Pending, SalesOrderStatus::Partial]),
+                default => $q->where('status', $status),
+            })
             ->orderBy($sort, $direction)
             ->orderByDesc('id');
     }

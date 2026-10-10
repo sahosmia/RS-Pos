@@ -13,8 +13,11 @@ Route::middleware(['auth', 'module:service'])->group(function () {
     Route::get('service-requests/export', ServiceRequestExportController::class)->name('service-requests.export');
     Route::get('warranty-claims/export', WarrantyClaimExportController::class)->name('warranty-claims.export');
 
+    // Before the resource, so "lookup" is never taken for a request id.
+    Route::get('service-requests/lookup', [ServiceRequestController::class, 'lookup'])->name('service-requests.lookup');
+
     Route::resource('service-requests', ServiceRequestController::class)
-        ->only(['index', 'create', 'store']);
+        ->only(['index', 'create', 'store', 'update']);
 
     Route::resource('warranty-claims', WarrantyClaimController::class)
         ->only(['index', 'store', 'update']);

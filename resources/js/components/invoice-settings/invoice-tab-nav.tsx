@@ -15,15 +15,12 @@ const TABS = [
 /** The row of tab buttons above the settings cards (scrolls sideways on small screens). */
 export function InvoiceTabNav() {
     return (
-        <div className="bg-card mb-5 overflow-x-auto rounded-xl border p-1.5 shadow-sm">
-            <TabsList className="flex h-auto w-max min-w-full flex-nowrap justify-start gap-1 bg-transparent">
-                {TABS.map(({ value, label, icon: Icon }) => (
-                    <TabsTrigger key={value} value={value} className="gap-2 rounded-lg px-3 py-2">
-                        <Icon className="size-4" />
-                        {label}
-                    </TabsTrigger>
-                ))}
-            </TabsList>
-        </div>
+        <TabsList variant="underline" className="mb-5">
+            {TABS.map(({ value, label, icon: Icon }) => (
+                <TabsTrigger key={value} value={value} icon={<Icon />}>
+                    {label}
+                </TabsTrigger>
+            ))}
+        </TabsList>
     );
 }

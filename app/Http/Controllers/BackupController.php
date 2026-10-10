@@ -11,6 +11,7 @@ use Inertia\Inertia;
 use Inertia\Response;
 use Spatie\Backup\BackupDestination\Backup;
 use Spatie\Backup\BackupDestination\BackupDestination;
+use Symfony\Component\HttpFoundation\Response as SymfonyResponse;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
@@ -53,15 +54,17 @@ class BackupController extends Controller
     }
 
     /**
-     * "Backup Now" — runs synchronously (a DB-only dump is fast); the
-     * scheduled daily backup (routes/console.php) is what production relies
-     * on day to day.
+     * "Backup Now" — runs synchronously (a DB-only dump is fast), then sends the browser straight to the download of
+     * the backup that was just made (Inertia::location turns the POST into a plain browser navigation).
+     * The scheduled daily backup (routes/console.php) is what production relies on day to day.
      */
-    public function store(): RedirectResponse
+    public function store(): SymfonyResponse|RedirectResponse
     {
         Artisan::call('backup:run');
 
-        return back();
+        $latest = $this->destination()->newestBackup();
+
+        return $latest === null ? back() : Inertia::location(route('backups.download', basename($latest->path())));
     }
 
     public function download(string $filename): StreamedResponse
@@ -94,29 +97,6 @@ class BackupController extends Controller
         Artisan::call('backup:run', ['--only-db' => true]);
 
         RestoreDatabaseJob::dispatch($this->diskName(), $backup->path());
-
-        return back()->with('status', 'Restore queued — a safety backup of the current database was taken first.');
-    }
-
-    /**
-     * Upload a backup zip from elsewhere (e.g. migrating to new hosting)
-     * and restore from it, via the same guarded flow as restore().
-     */
-    public function uploadRestore(Request $request): RedirectResponse
-    {
-        $validated = $request->validate([
-            'confirmation' => ['required', 'in:RESTORE'],
-            'file' => ['required', 'file', 'mimes:zip'],
-        ]);
-
-        $filename = now()->format('Y-m-d-H-i-s').'-uploaded.zip';
-        $path = $this->backupName().'/'.$filename;
-
-        Storage::disk($this->diskName())->putFileAs($this->backupName(), $validated['file'], $filename);
-
-        Artisan::call('backup:run', ['--only-db' => true]);
-
-        RestoreDatabaseJob::dispatch($this->diskName(), $path);
 
         return back()->with('status', 'Restore queued — a safety backup of the current database was taken first.');
     }

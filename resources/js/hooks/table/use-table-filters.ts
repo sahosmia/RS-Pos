@@ -44,6 +44,9 @@ export function useTableFilters<TFilters extends TableFilterBase>({
     const [isLoading, setIsLoading] = useState(false);
     const [isSearching, setIsSearching] = useState(false);
     const pendingSearchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+    // The newest filters, readable from a timer that was scheduled with older ones.
+    const latestFilters = useRef(filters);
+    latestFilters.current = filters;
 
     const applyFilters = useCallback(
         (next: Partial<TFilters> & { page?: number }, options?: { isSearch?: boolean }) => {
@@ -73,6 +76,11 @@ export function useTableFilters<TFilters extends TableFilterBase>({
 
         const timeout = setTimeout(() => {
             pendingSearchTimeout.current = null;
+            // Reset (or a finished request) may already have brought the page to this search: don't ask for it twice.
+            if ((latestFilters.current.search ?? '') === search) {
+                return;
+            }
+
             applyFilters({ search: search || null } as Partial<TFilters>, { isSearch: true });
         }, searchDebounceMs);
         pendingSearchTimeout.current = timeout;
@@ -113,6 +121,10 @@ export function useTableFilters<TFilters extends TableFilterBase>({
     const canReset = activeFilterCount > 0 || search !== '';
 
     const resetFilters = useCallback(() => {
+        if (pendingSearchTimeout.current !== null) {
+            clearTimeout(pendingSearchTimeout.current);
+            pendingSearchTimeout.current = null;
+        }
         setSearch('');
         applyFilters({ search: null, ...emptyFilters } as Partial<TFilters>);
     }, [applyFilters, emptyFilters]);

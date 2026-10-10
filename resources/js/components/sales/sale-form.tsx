@@ -6,12 +6,15 @@ import { CustomerSection } from '@/components/sales/form/customer-section';
 import { MobileTotalBar } from '@/components/sales/form/mobile-total-bar';
 import { PaymentSection } from '@/components/sales/form/payment-section';
 import { ProductLinesSection } from '@/components/sales/form/product-lines-section';
-import { round2, type SaleFormData, saleTotals, startingItems } from '@/components/sales/form/sale-form-utils';
+import { financedGoodsFor, round2, type SaleFormData, saleTotals, startingItems } from '@/components/sales/form/sale-form-utils';
 import { useSaleCart } from '@/components/sales/form/use-sale-cart';
 import { useSaleShortcuts } from '@/components/sales/form/use-sale-shortcuts';
 import { useSaleSubmit } from '@/components/sales/form/use-sale-submit';
 import { type PaymentRow } from '@/components/shared/account-payment-rows';
+import { DraftBanner } from '@/components/shared/draft-banner';
 import { type ProductOption } from '@/components/shared/product-search-input';
+import { useEmiPreview } from '@/hooks/use-emi-preview';
+import { useFormDraft } from '@/hooks/use-form-draft';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useMoneyFormat } from '@/hooks/use-money-format';
 import { useUnsavedChangesWarning } from '@/hooks/use-unsaved-changes-warning';
@@ -24,6 +27,8 @@ import { useRef, useState } from 'react';
 
 interface SaleFormProps {
     mode: 'create' | 'edit';
+    /** Confirming a Sales Order: the order opens in this form, anything can be changed, and Confirm makes the real sale from it. */
+    fulfilOrder?: { id: number; order_no: string; advance_paid: number };
     sale?: SaleFormDetail;
     initialCustomer: CustomerOption | null;
     products: ProductOption[];
@@ -37,7 +42,7 @@ interface SaleFormProps {
  * `useSaleCart`, saving in `useSaleSubmit`, keyboard shortcuts in `useSaleShortcuts`, and each card of the page
  * (customer, product lines, payment) plus the mobile sheet is its own component under `./form/`.
  */
-export default function SaleForm({ mode, sale, initialCustomer, products, accounts, initialProductId }: SaleFormProps) {
+export default function SaleForm({ mode, fulfilOrder, sale, initialCustomer, products, accounts, initialProductId }: SaleFormProps) {
     const { shop } = usePage<SharedData>().props;
     const money = useMoneyFormat();
     const isMobile = useIsMobile();
@@ -46,7 +51,8 @@ export default function SaleForm({ mode, sale, initialCustomer, products, accoun
 
     const [customer, setCustomer] = useState<CustomerOption | null>(initialCustomer);
     const [quickAddOpen, setQuickAddOpen] = useState(false);
-    const [payments, setPayments] = useState<PaymentRow[]>([]);
+    const amending = sale?.amending === true;
+    const [payments, setPayments] = useState<PaymentRow[]>(sale?.payments ?? []);
     const [historical, setHistorical] = useState(false);
     const [invoiceDiscountOpen, setInvoiceDiscountOpen] = useState(false);
     const [financingModalOpen, setFinancingModalOpen] = useState(false);
@@ -57,8 +63,16 @@ export default function SaleForm({ mode, sale, initialCustomer, products, accoun
         discount_type: sale?.discount_type ?? null,
         discount_value: sale?.discount_value ?? 0,
         valid_until: sale?.valid_until ?? '',
+        expected_delivery_date: '',
         financing_type: sale?.financing_type ?? 'one_time',
         installment_count: sale?.installment_count ?? null,
+        emi_interest_method: sale?.emi_interest_method ?? 'none',
+        emi_annual_rate: sale?.emi_annual_rate ?? 0,
+        emi_tenure_value: sale?.emi_tenure_value ?? null,
+        emi_tenure_unit: sale?.emi_tenure_unit ?? 'months',
+        emi_frequency: sale?.emi_frequency ?? 'monthly',
+        emi_installation_upfront: sale?.emi_installation_upfront ?? false,
+        amend_reason: '',
         items: sale?.items ?? startingItems(products, initialProductId),
     });
 
@@ -67,9 +81,67 @@ export default function SaleForm({ mode, sale, initialCustomer, products, accoun
 
     const cart = useSaleCart({ form, products });
     const totals = saleTotals(form.data.items, form.data.discount_type, form.data.discount_value);
-    const { submit, submitAs, submitWithWhatsapp } = useSaleSubmit({
+
+    // The down payment is whatever the cashier has entered in the payment rows; the rest is financed.
+    const receivedNow = round2(payments.reduce((sum, row) => sum + (row.amount > 0 && row.account_id ? row.amount : 0), 0));
+    /**
+     * Puts the down payment chosen in the Financing dialog into the sale's payment rows: the first row (using the
+     * default account if there is none yet) becomes the down payment, so the cashier doesn't type it twice.
+     * A split payment across several accounts is collapsed to that first row, since the dialog sets one total.
+     */
+    const applyDownPayment = (down: number) => {
+        const account = accounts.find((row) => row.is_default) ?? accounts[0];
+
+        setPayments((rows) => {
+            if (rows.length === 0) {
+                return account && down > 0 ? [{ account_id: account.id, amount: down }] : [];
+            }
+
+            return [{ ...rows[0], amount: down }];
+        });
+    };
+
+    // Whatever is paid at the sale is a down payment on the goods. Installation is never financed: it stays a separate
+    // due, unless the cashier chose to collect it up front, in which case the payment covers it first.
+    const financedGoods = financedGoodsFor(form.data.items, totals.discountAmount, (item) => item.emi_financed !== false);
+    const cashGoods = round2(totals.subtotal - totals.discountAmount - financedGoods);
+    // Products not on EMI are paid now, so the payment covers them first (then the installation, if collected up front);
+    // only what is left over is a down payment on the EMI products.
+    const coveredFirst = cashGoods + (form.data.emi_installation_upfront ? totals.installation : 0);
+    const downPayment = Math.max(0, round2(receivedNow - coveredFirst));
+    const emiOn = shop.emi_module_enabled && form.data.financing_type === 'emi';
+    // Live quote for the summary beside the cart (the dialog runs its own while it is open).
+    const { preview: emiPreview, error: emiError } = useEmiPreview(
+        emiOn && form.data.emi_tenure_value
+            ? {
+                  saleTotal: totals.total,
+                  installation: totals.installation,
+                  financedGoods,
+                  downPayment,
+                  method: form.data.emi_interest_method,
+                  annualRate: form.data.emi_annual_rate,
+                  tenureValue: form.data.emi_tenure_value,
+                  tenureUnit: form.data.emi_tenure_unit,
+                  frequency: form.data.emi_frequency,
+                  saleDate: form.data.sale_date,
+              }
+            : null,
+    );
+    // A new sale is backed up in the browser as it is built, and offered back if the page is lost.
+    const draft = useFormDraft({
+        name: 'sale-create',
+        enabled: mode === 'create' && !fulfilOrder,
+        hasContent: form.data.items.length > 0,
+        state: { data: form.data, customer },
+        onRestore: ({ data, customer: savedCustomer }) => {
+            form.setData(data);
+            setCustomer(savedCustomer);
+        },
+    });
+    const { submit, submitAs, submitAsOrder, submitWithWhatsapp } = useSaleSubmit({
         form,
         mode,
+        fulfilOrderId: fulfilOrder?.id,
         sale,
         customer,
         payments,
@@ -77,6 +149,7 @@ export default function SaleForm({ mode, sale, initialCustomer, products, accoun
         productById: cart.productById,
         totals,
         money,
+        onSaved: draft.clear,
     });
 
     useSaleShortcuts({ searchRef, paymentRef: paymentSectionRef, onConfirm: () => submitAs('confirmed') });
@@ -88,7 +161,9 @@ export default function SaleForm({ mode, sale, initialCustomer, products, accoun
             onSubmit={submit}
             className={cn('grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_22rem]', isMobile && form.data.items.length > 0 && 'pb-24')}
         >
-            <div className="bg-card space-y-4 rounded-xl border p-4">
+            {draft.offered && <DraftBanner savedAt={draft.offered.savedAt} what="sale" onRestore={draft.restore} onDiscard={draft.discard} />}
+
+            <div className="bg-card rounded-brand-card space-y-5 p-4 shadow-[var(--brand-card-shadow-elevated)] sm:p-5">
                 <CustomerSection
                     form={form}
                     customer={customer}
@@ -113,6 +188,7 @@ export default function SaleForm({ mode, sale, initialCustomer, products, accoun
 
             <PaymentSection
                 form={form}
+                fulfilOrder={fulfilOrder}
                 accounts={accounts}
                 payments={payments}
                 onPaymentsChange={setPayments}
@@ -120,10 +196,14 @@ export default function SaleForm({ mode, sale, initialCustomer, products, accoun
                 historical={historical}
                 onHistoricalChange={setHistorical}
                 hasCustomer={customer !== null}
+                emiPreview={emiOn ? emiPreview : null}
+                emiError={emiOn ? emiError : null}
+                amending={amending}
                 sectionRef={paymentSectionRef}
                 onEditFinancing={() => setFinancingModalOpen(true)}
                 onEditInvoiceDiscount={() => setInvoiceDiscountOpen(true)}
                 onSave={submitAs}
+                onSaveAsOrder={submitAsOrder}
                 onSaveAndWhatsapp={submitWithWhatsapp}
             />
 
@@ -177,12 +257,37 @@ export default function SaleForm({ mode, sale, initialCustomer, products, accoun
                 <FinancingModal
                     open={financingModalOpen}
                     onOpenChange={setFinancingModalOpen}
-                    initialFinancingType={form.data.financing_type}
-                    initialInstallmentCount={form.data.installment_count}
-                    installmentCountError={form.errors.installment_count}
-                    onApply={(financingType, installmentCount) => {
-                        form.setData('financing_type', financingType);
-                        form.setData('installment_count', installmentCount);
+                    initial={{
+                        financing_type: form.data.financing_type,
+                        emi_interest_method: form.data.emi_interest_method,
+                        emi_annual_rate: form.data.emi_annual_rate,
+                        emi_tenure_value: form.data.emi_tenure_value,
+                        emi_tenure_unit: form.data.emi_tenure_unit,
+                        emi_frequency: form.data.emi_frequency,
+                        emi_installation_upfront: form.data.emi_installation_upfront,
+                    }}
+                    saleTotal={totals.total}
+                    installation={totals.installation}
+                    items={form.data.items}
+                    productName={(id) => cart.productById(id)?.name ?? `Product #${id}`}
+                    discountAmount={totals.discountAmount}
+                    downPayment={downPayment}
+                    saleDate={form.data.sale_date}
+                    error={form.errors.installment_count ?? form.errors.emi_tenure_value ?? form.errors.emi_annual_rate}
+                    onApply={(terms, installmentCount, payNow, financedLines) => {
+                        form.setData((data) => ({
+                            ...data,
+                            ...terms,
+                            installment_count: installmentCount,
+                            items:
+                                terms.financing_type === 'emi'
+                                    ? data.items.map((item, index) => ({ ...item, emi_financed: financedLines[index] ?? true }))
+                                    : data.items,
+                        }));
+
+                        if (terms.financing_type === 'emi') {
+                            applyDownPayment(payNow);
+                        }
                     }}
                 />
             )}

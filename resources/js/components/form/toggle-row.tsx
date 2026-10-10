@@ -17,7 +17,7 @@ export function ToggleRow({ id, label, description, checked, onCheckedChange, ic
         <label
             htmlFor={id}
             className={cn(
-                'bg-card flex cursor-pointer items-center justify-between gap-4 rounded-lg border p-3 transition-colors',
+                'bg-card motion-colors flex cursor-pointer items-center justify-between gap-4 rounded-lg border p-3',
                 checked ? 'border-primary/30 bg-primary/5' : 'hover:bg-muted/40',
             )}
         >
@@ -25,7 +25,7 @@ export function ToggleRow({ id, label, description, checked, onCheckedChange, ic
                 {Icon && (
                     <div
                         className={cn(
-                            'mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-md transition-colors',
+                            'motion-colors mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-md',
                             checked ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground',
                         )}
                     >

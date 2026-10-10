@@ -12,5 +12,6 @@ Route::middleware(['auth', 'module:sale'])->group(function () {
 
     Route::resource('sales-orders', SalesOrderController::class)->only(['index', 'create', 'store', 'show']);
 
+    Route::get('sales-orders/{salesOrder}/confirm', [SalesOrderController::class, 'confirm'])->name('sales-orders.confirm');
     Route::post('sales-orders/{salesOrder}/convert', [SalesOrderConvertController::class, 'store'])->name('sales-orders.convert');
 });

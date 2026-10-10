@@ -80,3 +80,28 @@ export function buildSaleWhatsappMessage(input: SaleWhatsappInput, money: (amoun
 
     return lines.join('\n');
 }
+
+export interface InstallmentReminderInput {
+    customerName: string;
+    invoiceNo: string;
+    installmentNumber: number;
+    /** `YYYY-MM-DD`, shown as written. */
+    dueDate: string;
+    /** What is still owed on this installment. */
+    remaining: number;
+    overdue: boolean;
+}
+
+/** A polite reminder for one installment — worded differently once it is past due. */
+export function buildInstallmentReminderMessage(input: InstallmentReminderInput, money: (amount: number) => string): string {
+    return [
+        `আসসালামু আলাইকুম, ${input.customerName}`,
+        '',
+        input.overdue
+            ? `আপনার Invoice #${input.invoiceNo}-এর ${input.installmentNumber} নম্বর কিস্তির তারিখ (${input.dueDate}) পার হয়ে গেছে।`
+            : `আপনার Invoice #${input.invoiceNo}-এর ${input.installmentNumber} নম্বর কিস্তি ${input.dueDate} তারিখে দেয়।`,
+        `বাকি: ${money(input.remaining)}`,
+        '',
+        'অনুগ্রহ করে সুবিধামতো পরিশোধ করুন। ধন্যবাদ।',
+    ].join('\n');
+}

@@ -1380,7 +1380,7 @@ All enum/status fields used across the schema, gathered in one place for quick l
 stock_movements.type        opening_stock, purchase, sale, sale_return, purchase_return, adjustment_increase, adjustment_decrease
 
 contacts.type                customer, supplier, both
-contact_ledger.type          opening_balance, sale_invoice, purchase_bill, payment_received, payment_made, adjustment, sale_return, purchase_return, discount_waived, expense_due, sales_order_advance, credit_applied
+contact_ledger.type          opening_balance, sale_invoice, purchase_bill, payment_received, payment_made, adjustment, sale_return, purchase_return, discount_waived, discount_received, expense_due, sales_order_advance, credit_applied
 
 purchases.status              draft, ordered, received, cancelled
 sales.status                  draft, quotation, confirmed, cancelled
@@ -1406,7 +1406,7 @@ chart_of_accounts.type              asset, liability, equity, income, expense
 chart_of_accounts.normal_balance     debit, credit
 journal_entries.status               posted, reversed
 accounting_periods.status            open, closed
-serial_numbers.status                 in_stock, sold, returned, under_warranty_service, disposed
+serial_numbers.status                 in_stock, sold, returned, under_warranty_service, disposed, written_off
 account_transactions.type     opening_balance, sale_payment, purchase_payment, sale_return_refund, purchase_return_refund, expense, adjustment, transfer_in, transfer_out, loan_received, loan_repayment, asset_purchase, asset_sale, investment_received, profit_distribution, investor_withdrawal, sales_order_advance, service_charge, staff_salary_payment, staff_advance, staff_loan, emi_payment
 
 asset_transactions.type       opening_asset, purchase, addition, sold, disposal
@@ -3170,7 +3170,7 @@ serial_numbers
 - id
 - product_id
 - serial_number         (unique per product)
-- status                 enum('in_stock', 'sold', 'returned', 'under_warranty_service', 'disposed')
+- status                 enum('in_stock', 'sold', 'returned', 'under_warranty_service', 'disposed', 'written_off')
 - purchase_item_id         (nullable, FK — which purchase brought this unit in)
 - sale_item_id               (nullable, FK — set once sold)
 - created_at

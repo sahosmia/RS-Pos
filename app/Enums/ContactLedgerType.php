@@ -21,6 +21,7 @@ enum ContactLedgerType: string
     case SaleReturn = 'sale_return';
     case PurchaseReturn = 'purchase_return';
     case DiscountWaived = 'discount_waived';
+    case DiscountReceived = 'discount_received';
     case ExpenseDue = 'expense_due';
     case SalesOrderAdvance = 'sales_order_advance';
     case CreditApplied = 'credit_applied';

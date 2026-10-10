@@ -31,10 +31,14 @@ export default function DataTableColumnHeader({ title, sortKey, currentSort, cur
             type="button"
             onClick={() => onSort(sortKey)}
             aria-label={ariaLabel}
-            className={cn('hover:text-foreground inline-flex items-center gap-1 transition-colors', align === 'right' && 'flex-row-reverse')}
+            className={cn(
+                'hover:text-foreground focus-visible:ring-brand-focus-ring motion-colors -mx-1 inline-flex items-center gap-1 rounded-sm px-1 font-semibold tracking-wide outline-hidden focus-visible:ring-2',
+                isActive && 'text-foreground',
+                align === 'right' && 'flex-row-reverse',
+            )}
         >
             {title}
-            <Icon aria-hidden="true" className={cn('size-3.5', isActive ? 'text-primary' : 'text-muted-foreground/50')} />
+            <Icon aria-hidden="true" className={cn('size-3.5', isActive ? 'text-brand-primary' : 'text-muted-foreground/40')} />
         </button>
     );
 }

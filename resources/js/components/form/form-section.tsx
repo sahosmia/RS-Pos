@@ -28,8 +28,8 @@ interface FormSectionProps {
 /** A titled card that groups one block of a long form or settings page. */
 export function FormSection({ title, description, icon: Icon, accent = 'sky', action, contentClassName, children }: FormSectionProps) {
     return (
-        <Card className="overflow-hidden shadow-xs">
-            <CardHeader className="bg-muted/30 flex flex-row items-center justify-between gap-3 space-y-0 border-b px-4 py-3">
+        <Card variant="bordered" className="overflow-hidden shadow-xs">
+            <CardHeader divided className="bg-muted/30 flex flex-row items-center justify-between gap-3 space-y-0 border-b px-4 py-3">
                 <div className="flex min-w-0 items-center gap-3">
                     {Icon && (
                         <div className={cn('flex size-9 shrink-0 items-center justify-center rounded-lg ring-1', ACCENTS[accent])}>

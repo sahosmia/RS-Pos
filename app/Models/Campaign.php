@@ -21,10 +21,11 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  */
 class Campaign extends Model
 {
+    use HasCreator;
+
     /** @use HasFactory<CampaignFactory> */
     use HasFactory;
 
-    use HasCreator;
     use LogsActivityDefaults;
 
     /**

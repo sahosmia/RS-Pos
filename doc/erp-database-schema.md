@@ -79,7 +79,7 @@ contacts
 contact_ledger
 - id
 - contact_id
-- type                 enum('opening_balance','sale_invoice','purchase_bill','payment_received','payment_made','adjustment','sale_return','purchase_return','discount_waived','expense_due','sales_order_advance','credit_applied')
+- type                 enum('opening_balance','sale_invoice','purchase_bill','payment_received','payment_made','adjustment','sale_return','purchase_return','discount_waived','discount_received','expense_due','sales_order_advance','credit_applied')
 - amount
 - reference_id
 - note
@@ -330,7 +330,7 @@ stock_movements
 
 serial_numbers    -- supersedes sale_item_serials
 - id, product_id, serial_number
-- status                enum('in_stock','sold','returned','under_warranty_service','disposed')
+- status                enum('in_stock','sold','returned','under_warranty_service','disposed','written_off')
 - purchase_item_id        (nullable, FK)
 - sale_item_id              (nullable, FK)
 - created_at

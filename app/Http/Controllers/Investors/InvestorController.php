@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Investors;
 use App\Actions\Investor\CreateInvestorAction;
 use App\Actions\Investor\UpdateInvestorAction;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Common\BulkDestroyRequest;
 use App\Http\Requests\Investor\StoreInvestorRequest;
 use App\Http\Requests\Investor\UpdateInvestorRequest;
 use App\Models\Account;
@@ -12,6 +13,7 @@ use App\Models\Investor;
 use App\Models\InvestorTransaction;
 use App\Models\Settings;
 use App\Queries\Investor\InvestorQuery;
+use App\Support\BulkDelete;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -115,14 +117,25 @@ class InvestorController extends Controller
      */
     public function destroy(Investor $investor): RedirectResponse
     {
-        if ($investor->transactions()->exists()) {
-            return back()->withErrors([
-                'investor' => 'This investor has recorded transactions and cannot be deleted.',
-            ]);
+        if ($reason = $investor->deletionBlockReason()) {
+            return back()->withErrors(['investor' => $reason]);
         }
 
         $investor->delete();
 
         return to_route('investors.index');
+    }
+
+    /**
+     * "Delete selected" — each record is checked by the same rule as the single delete.
+     */
+    public function bulkDestroy(BulkDestroyRequest $request): RedirectResponse
+    {
+        return BulkDelete::respond(BulkDelete::run(
+            $request->validated('ids'),
+            Investor::query()->whereIn('id', $request->validated('ids'))->get(),
+            fn (Investor $investor) => $investor->deletionBlockReason(),
+            fn (Investor $investor) => $investor->delete(),
+        ));
     }
 }

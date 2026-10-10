@@ -8,6 +8,7 @@ import PayDueModal from '@/components/contacts/pay-due-modal';
 import SendNotificationModal from '@/components/contacts/send-notification-modal';
 import { type RowAction } from '@/components/data-table/data-table-row-actions';
 import ListTable from '@/components/data-table/list-table';
+import { AddButton } from '@/components/shared/action-buttons';
 import ConfirmDialog from '@/components/shared/confirm-dialog';
 import EmptyState from '@/components/shared/empty-state';
 import PageHeader from '@/components/shared/page-header';
@@ -17,10 +18,11 @@ import { type TableFilterBase } from '@/hooks/table/use-table-filters';
 import { useConfirmDelete } from '@/hooks/use-confirm-delete';
 import { useTranslation } from '@/hooks/use-translation';
 import AppLayout from '@/layouts/app-layout';
+import { canPayDue } from '@/lib/contact-actions';
 import { type BreadcrumbItem } from '@/types';
 import { type Account, type ContactListItem, type ContactType, type CustomerGroup, type Paginated } from '@/types/models';
 import { Head, router } from '@inertiajs/react';
-import { BookOpen, Pencil, Plus, Power, PowerOff, Receipt, ShoppingBag, Trash2, UsersRound, Wallet } from 'lucide-react';
+import { BookOpen, Pencil, Power, PowerOff, Receipt, ShoppingBag, Trash2, UsersRound, Wallet } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { useContactColumns } from './table/columns';
@@ -108,8 +110,6 @@ export default function ContactsIndex({ contacts, stats, customerGroups, account
         );
     };
 
-    const exportSelected = () => list.handleExport({ format: 'csv', scope: 'selected', columns: list.defaultExportColumns });
-
     const confirmBulkDelete = () => {
         router.post(
             route('contacts.bulk-delete'),
@@ -141,7 +141,7 @@ export default function ContactsIndex({ contacts, stats, customerGroups, account
                 href: route('sales.index', { customer_id: contact.id }),
                 hidden: contact.type === 'supplier',
             },
-            { label: t('contactShow', 'pay_due'), icon: Wallet, onClick: () => setPaying(contact) },
+            { label: t('contactShow', 'pay_due'), icon: Wallet, onClick: () => setPaying(contact), hidden: !canPayDue(contact) },
             { label: t('common', 'edit'), icon: Pencil, onClick: () => openForm(contact) },
             {
                 label: contact.is_active ? t('common', 'deactivate') : t('common', 'activate'),
@@ -173,12 +173,7 @@ export default function ContactsIndex({ contacts, stats, customerGroups, account
                     iconClassName="bg-sky-500/10 text-sky-600 ring-1 ring-sky-500/20 dark:text-sky-400"
                     title={pageTitle}
                     description={t('contactsPage', 'description')}
-                    actions={
-                        <Button onClick={() => openForm(null)} className="gap-1.5">
-                            <Plus className="size-4" />
-                            {t('contactsPage', 'add_contact')}
-                        </Button>
-                    }
+                    actions={<AddButton onClick={() => openForm(null)} title={t('contactsPage', 'add_contact')} />}
                 />
 
                 <ContactStatCards
@@ -189,15 +184,15 @@ export default function ContactsIndex({ contacts, stats, customerGroups, account
                     payableLabel={t('contactsPage', 'stats_payable')}
                 />
 
-                <ContactBulkBar
-                    count={selection.selectedIds.length}
-                    onClear={selection.clear}
-                    onNotify={() => setSendNotificationOpen(true)}
-                    onExport={exportSelected}
-                    onDelete={() => setBulkDeleteOpen(true)}
-                />
-
                 <ListTable
+                    selectionSlot={
+                        <ContactBulkBar
+                            count={selection.selectedIds.length}
+                            onClear={selection.clear}
+                            onNotify={() => setSendNotificationOpen(true)}
+                            onDelete={() => setBulkDeleteOpen(true)}
+                        />
+                    }
                     list={list}
                     data={contacts}
                     filters={filters}
@@ -218,10 +213,7 @@ export default function ContactsIndex({ contacts, stats, customerGroups, account
                     filterSlot={<ContactFilters filters={filters} customerGroups={customerGroups} onChange={list.applyFilters} />}
                     emptyState={
                         <EmptyState title={t('contactsPage', 'empty_title')} description={t('contactsPage', 'empty_description')}>
-                            <Button className="mt-2 gap-1.5" onClick={() => openForm(null)}>
-                                <Plus className="size-4" />
-                                {t('contactsPage', 'add_contact')}
-                            </Button>
+                            <AddButton onClick={() => openForm(null)} title={t('contactsPage', 'add_contact')} className="mt-2" />
                         </EmptyState>
                     }
                     filteredEmptyState={

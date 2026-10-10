@@ -101,6 +101,8 @@ export interface Dictionary {
         stock_report: string;
         due_report: string;
         trending_products: string;
+        system_tools: string;
+        system_guide: string;
         import_tools: string;
         backups: string;
         activity_log: string;
@@ -566,6 +568,8 @@ const en: Dictionary = {
         stock_report: 'Stock Report',
         due_report: 'Due Report',
         trending_products: 'Trending Products',
+        system_tools: 'System Tools',
+        system_guide: 'System Guide',
         import_tools: 'Import Tools',
         backups: 'Backups',
         activity_log: 'Activity Log',
@@ -880,8 +884,7 @@ const en: Dictionary = {
         manage_stock_description: "When off, this is a service item (Installation Charge) — stock won't be tracked",
         opening_stock: 'Opening Stock',
         opening_stock_cost: 'Opening Stock Unit Cost',
-        opening_stock_locked:
-            'This product already has stock movement — opening stock can no longer be changed, use Stock Adjustment.',
+        opening_stock_locked: 'This product already has stock movement — opening stock can no longer be changed, use Stock Adjustment.',
         warranty_months: 'Warranty (months)',
         installation_service: 'Installation Service',
         emi_available: 'EMI Available',
@@ -909,7 +912,7 @@ const en: Dictionary = {
     },
     lookup: {
         brands_title: 'Brands',
-        brands_description: "Product brand list",
+        brands_description: 'Product brand list',
         brands_add: 'Add Brand',
         brands_empty_title: 'No brands yet',
         brands_empty_description: 'Add your first brand',

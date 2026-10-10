@@ -28,10 +28,10 @@ export function SaveFooter({ processing, recentlySuccessful }: SaveFooterProps) 
             <div className="flex items-center gap-3">
                 <Transition
                     show={recentlySuccessful}
-                    enter="transition ease-in-out duration-300"
+                    enter="transition ease-standard duration-normal"
                     enterFrom="opacity-0"
                     enterTo="opacity-100"
-                    leave="transition ease-in-out duration-300"
+                    leave="transition ease-exit duration-fast"
                     leaveFrom="opacity-100"
                     leaveTo="opacity-0"
                 >

@@ -83,7 +83,7 @@ export default function AccountsIndex({ accounts, accountTypes, totalBalance }: 
                 <HeadingSmall title="Payment Accounts" description="Cash, bank, mobile banking ও cheque — প্রতিটার নিজস্ব ব্যালেন্স" />
 
                 <Tabs value={tab} onValueChange={changeTab} className="w-full">
-                    <TabsList>
+                    <TabsList variant="underline">
                         <TabsTrigger value="accounts">Accounts</TabsTrigger>
                         <TabsTrigger value="types">Account Types</TabsTrigger>
                     </TabsList>

@@ -28,6 +28,8 @@ return new class extends Migration
             $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
             $table->foreignId('updated_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();
+            // Never hard-deleted: a removed record keeps its row (its money and journal are reversed first).
+            $table->softDeletes();
 
             $table->index('supplier_id');
             $table->index(['purchase_date', 'status']);

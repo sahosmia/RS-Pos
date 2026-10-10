@@ -23,6 +23,15 @@ export function AdvancedOptions({ form, historical, onHistoricalChange }: Advanc
                     error={form.errors.valid_until}
                     helperText="শুধু Quotation সেভ করার সময় লাগে"
                 />
+                <FormInput
+                    id="expected_delivery_date"
+                    label="Expected delivery"
+                    type="date"
+                    value={form.data.expected_delivery_date}
+                    onChange={(e) => form.setData('expected_delivery_date', e.target.value)}
+                    error={form.errors.expected_delivery_date}
+                    helperText="শুধু Sales Order সেভ করার সময় কাজে লাগে"
+                />
                 <label className="flex items-center gap-2 text-xs">
                     <Checkbox checked={historical} onCheckedChange={(c) => onHistoricalChange(c === true)} />
                     Historical record (stock বা balance বদলাবে না)

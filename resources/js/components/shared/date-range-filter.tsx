@@ -1,4 +1,4 @@
-import { FormInput } from '@/components/form/form-input';
+import { DateRangePicker } from '@/components/ui/date-picker';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { type DateRangePresetValue } from '@/types/models';
 import { useEffect, useState } from 'react';
@@ -83,24 +83,13 @@ export default function DateRangeFilter({ range, onChange, allowClear = false }:
         onChange({ preset: value as DateRangePresetValue });
     };
 
-    const handleFromChange = (val: string) => {
-        if (!val) {
-            setCustomFrom(val);
-
-            return;
-        }
-
-        // Picking just a start date means "that one day" until an end date is chosen (or moved past it).
-        const to = customTo && customTo >= val ? customTo : val;
-        setCustomFrom(val);
+    // The picker only reports a complete range; clicking the same day twice means "that one day".
+    const handleRangeChange = ({ from, to }: { from: string; to: string }) => {
+        setCustomFrom(from);
         setCustomTo(to);
-        onChange({ preset: 'custom', from: val, to });
-    };
 
-    const handleToChange = (val: string) => {
-        setCustomTo(val);
-        if (customFrom && val) {
-            onChange({ preset: 'custom', from: customFrom, to: val });
+        if (from && to) {
+            onChange({ preset: 'custom', from, to });
         }
     };
 
@@ -123,23 +112,15 @@ export default function DateRangeFilter({ range, onChange, allowClear = false }:
             </div>
 
             {isCustom && (
-                <div className="flex flex-col gap-2 sm:flex-row">
-                    <FormInput
-                        id="date-range-from"
-                        type="date"
-                        value={customFrom}
-                        onChange={(e) => handleFromChange(e.target.value)}
-                        className="w-full sm:w-auto"
-                    />
-                    <FormInput
-                        id="date-range-to"
-                        type="date"
-                        value={customTo}
-                        min={customFrom}
-                        onChange={(e) => handleToChange(e.target.value)}
-                        className="w-full sm:w-auto"
-                    />
-                </div>
+                <DateRangePicker
+                    id="date-range-custom"
+                    aria-label="Custom date range"
+                    value={{ from: customFrom, to: customTo }}
+                    presets={false}
+                    clearable={false}
+                    className="w-full sm:w-72"
+                    onChange={handleRangeChange}
+                />
             )}
         </div>
     );

@@ -73,20 +73,20 @@ export default function GeneralLedger({ account, lines, openingBalance, paginati
                 {lines.length === 0 ? (
                     <EmptyState title="No journal lines" description={hasRange ? 'এই তারিখের সীমায় কোনো entry নেই' : 'এই account-এ এখনো কোনো entry পোস্ট হয়নি'} />
                 ) : (
-                    <div className="overflow-x-auto rounded-lg border">
+                    <div className="overflow-x-auto rounded-brand-card bg-card shadow-[var(--brand-card-shadow-elevated)]">
                         <table className="w-full text-sm">
-                            <thead className="bg-muted/50 text-muted-foreground">
+                            <thead className="bg-brand-table-header text-muted-foreground text-xs font-semibold">
                                 <tr>
-                                    <th className="px-4 py-2 text-left font-medium">Date</th>
-                                    <th className="px-4 py-2 text-left font-medium">Description</th>
-                                    <th className="px-4 py-2 text-right font-medium">Debit</th>
-                                    <th className="px-4 py-2 text-right font-medium">Credit</th>
-                                    <th className="px-4 py-2 text-right font-medium">Balance</th>
+                                    <th className="px-4 py-2.5 text-left font-medium">Date</th>
+                                    <th className="px-4 py-2.5 text-left font-medium">Description</th>
+                                    <th className="px-4 py-2.5 text-right font-medium">Debit</th>
+                                    <th className="px-4 py-2.5 text-right font-medium">Credit</th>
+                                    <th className="px-4 py-2.5 text-right font-medium">Balance</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {pagination.current_page > 1 && (
-                                    <tr className="text-muted-foreground border-t">
+                                    <tr className="border-brand-table-divider text-muted-foreground border-t">
                                         <td className="px-4 py-2" colSpan={4}>
                                             Balance brought forward from previous page
                                         </td>
@@ -94,7 +94,7 @@ export default function GeneralLedger({ account, lines, openingBalance, paginati
                                     </tr>
                                 )}
                                 {lines.map((line) => (
-                                    <tr key={line.id} className="border-t">
+                                    <tr key={line.id} className="border-brand-table-divider hover:bg-brand-table-row-hover motion-colors border-t">
                                         <td className="px-4 py-2 whitespace-nowrap">{line.entry_date}</td>
                                         <td className="px-4 py-2">
                                             <Link

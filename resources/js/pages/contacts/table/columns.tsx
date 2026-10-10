@@ -1,10 +1,10 @@
 import DataTableColumnHeader from '@/components/data-table/data-table-column-header';
 import DataTableRowActions, { type RowAction } from '@/components/data-table/data-table-row-actions';
-import { Badge } from '@/components/ui/badge';
+import { StatusBadge } from '@/components/shared/status-badge';
+import { Badge, type BadgeVariant } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useMoneyFormat } from '@/hooks/use-money-format';
 import { useTranslation } from '@/hooks/use-translation';
-import { statusTone } from '@/lib/status-tones';
 import { type ContactListItem, type ContactType } from '@/types/models';
 import { Link } from '@inertiajs/react';
 import { type ColumnDef } from '@tanstack/react-table';
@@ -20,14 +20,12 @@ export const useContactTypeLabel = (): Record<ContactType, string> => {
     };
 };
 
-export const typeColor: Record<ContactType, string> = {
-    customer: statusTone.info,
-    supplier: 'border-transparent bg-purple-100 text-purple-700 dark:bg-purple-500/15 dark:text-purple-400',
-    both: 'border-transparent bg-teal-100 text-teal-700 dark:bg-teal-500/15 dark:text-teal-400',
+/** Contact type is a tag, not a status — it only distinguishes kinds, so it uses plain badge variants. */
+export const typeVariant: Record<ContactType, BadgeVariant> = {
+    customer: 'info',
+    supplier: 'primary',
+    both: 'secondary',
 };
-
-export const activeColor = (isActive: boolean) =>
-    isActive ? statusTone.success : 'border-transparent bg-slate-100 text-slate-600 dark:bg-slate-500/15 dark:text-slate-400';
 
 interface UseContactColumnsOptions {
     sort?: string;
@@ -140,9 +138,7 @@ export function useContactColumns({ sort, direction, onSort, selection, contactA
                     : t('contactsPage', 'type'),
                 cell: ({ row }) => (
                     <>
-                        <Badge variant="outline" className={typeColor[row.original.type]}>
-                            {typeLabel[row.original.type]}
-                        </Badge>
+                        <Badge variant={typeVariant[row.original.type]}>{typeLabel[row.original.type]}</Badge>
                         {row.original.customer_group && <div className="text-muted-foreground mt-1 text-xs">{row.original.customer_group.name}</div>}
                     </>
                 ),
@@ -170,9 +166,10 @@ export function useContactColumns({ sort, direction, onSort, selection, contactA
                 id: 'status',
                 header: t('common', 'status'),
                 cell: ({ row }) => (
-                    <Badge variant="outline" className={activeColor(row.original.is_active)}>
-                        {row.original.is_active ? t('common', 'active') : t('common', 'inactive')}
-                    </Badge>
+                    <StatusBadge
+                        status={row.original.is_active ? 'active' : 'inactive'}
+                        label={row.original.is_active ? t('common', 'active') : t('common', 'inactive')}
+                    />
                 ),
             },
         ],

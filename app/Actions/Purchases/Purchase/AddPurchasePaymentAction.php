@@ -12,6 +12,7 @@ use App\Services\JournalService;
 use App\Services\LedgerService;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 /**
  * Settles more of an already-Received purchase's due — separate from
@@ -33,6 +34,16 @@ class AddPurchasePaymentAction
     public function execute(Purchase $purchase, array $payments = [], float $creditApplied = 0.0): Purchase
     {
         return DB::transaction(function () use ($purchase, $payments, $creditApplied) {
+            // Two payments submitted together must not both pass the "within the due" check made before the lock.
+            Purchase::query()->whereKey($purchase->id)->lockForUpdate()->first();
+            $purchase->refresh();
+
+            $requested = round(array_sum(array_map(fn (array $payment) => (float) $payment['amount'], $payments)) + $creditApplied, 2);
+
+            if ($requested > round((float) $purchase->due_amount, 2) + 0.0001) {
+                throw ValidationException::withMessages(['payments' => ['Payment amount cannot exceed the remaining due amount of ৳'.number_format((float) $purchase->due_amount, 2).'.']]);
+            }
+
             $purchase->loadMissing('supplier');
 
             if ($payments !== []) {

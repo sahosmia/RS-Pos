@@ -1,54 +1,232 @@
-
-import { FormInput } from '@/components/form/form-input';
 import HeadingSmall from '@/components/heading-small';
+import { FileDropzone } from '@/components/shared/file-dropzone';
+import { MetricCard, MetricGrid } from '@/components/shared/metric-card';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import AppLayout from '@/layouts/app-layout';
+import { cn } from '@/lib/utils';
 import { type BreadcrumbItem } from '@/types';
-import { Head, useForm } from '@inertiajs/react';
-import { type FormEventHandler } from 'react';
+import { Head, router, useForm } from '@inertiajs/react';
 import {
-    AlertCircle,
+    Boxes,
     CheckCircle2,
+    CircleAlert,
+    Download,
     FileSpreadsheet,
     Info,
     Package,
-    Users,
-    Boxes,
+    ScanSearch,
     ShoppingCart,
-    Upload,
+    Users,
+    type LucideIcon,
 } from 'lucide-react';
+import { useState, type FormEventHandler } from 'react';
 
-const breadcrumbs: BreadcrumbItem[] = [
-    { title: 'Import Tools', href: '/imports' },
-];
+const breadcrumbs: BreadcrumbItem[] = [{ title: 'Import Tools', href: '/imports' }];
+
+type ImportType = 'products' | 'contacts' | 'opening-stock' | 'sales';
+type Requirement = 'required' | 'optional' | 'conditional';
+
+interface ImportColumn {
+    name: string;
+    requirement: Requirement;
+    description: string;
+    example: string;
+}
+
+interface ImportSchema {
+    label: string;
+    columns: ImportColumn[];
+    any_of: string[][];
+}
+
+/** One row (or invoice) of the file: what value went into which field, and whether it is / would be imported. */
+interface ImportRow {
+    where: string;
+    status: 'created' | 'skipped';
+    values: Record<string, string>;
+    reason: string | null;
+}
 
 interface ImportResultProps {
+    type: ImportType;
     label: string;
     created: number;
     skipped: number;
     messages: string[];
+    rows: ImportRow[];
+    rows_truncated: boolean;
+}
+
+/** A file that has been read but not imported yet. */
+interface ImportPreviewProps extends ImportResultProps {
+    type: ImportType;
+    token: string;
+    filename: string;
 }
 
 interface ImportsIndexProps {
     result: ImportResultProps | null;
+    preview: ImportPreviewProps | null;
+    schemas: Record<ImportType, ImportSchema>;
 }
 
-interface UploadFormProps {
+interface TabConfig {
+    type: ImportType;
     routeName: string;
-    columns: string;
-    note?: string;
+    icon: LucideIcon;
+    tabLabel: string;
+    title: string;
+    description: string;
+    note: string;
 }
 
-function UploadForm({ routeName, columns, note }: UploadFormProps) {
+const TABS: TabConfig[] = [
+    {
+        type: 'products',
+        routeName: 'imports.products',
+        icon: Package,
+        tabLabel: 'Products',
+        title: 'Import Products',
+        description: 'Add multiple products using an Excel or CSV file.',
+        note: 'SKU আগে থেকে থাকলে সেই row skip হবে। category/unit/brand নাম দিয়ে না থাকলে নতুন তৈরি হয়ে যাবে।',
+    },
+    {
+        type: 'contacts',
+        routeName: 'imports.contacts',
+        icon: Users,
+        tabLabel: 'Contacts',
+        title: 'Import Contacts',
+        description: 'Import customers, suppliers, or both in bulk.',
+        note: 'একই phone + type-এর contact আগে থেকে থাকলে সেই row skip হবে।',
+    },
+    {
+        type: 'opening-stock',
+        routeName: 'imports.opening-stock',
+        icon: Boxes,
+        tabLabel: 'Opening Stock',
+        title: 'Import Opening Stock',
+        description: 'Set initial stock quantities and unit costs for existing products.',
+        note: 'Product আগে থেকে থাকতে হবে (sku দিয়ে match), এবং তার কোনো stock movement এখনো না থাকতে হবে।',
+    },
+    {
+        type: 'sales',
+        routeName: 'imports.sales',
+        icon: ShoppingCart,
+        tabLabel: 'Sales',
+        title: 'Import Sales',
+        description: 'Import past sales as records, or live sales that take stock and record the payment.',
+        note: 'একই invoice_no-এর একাধিক row একটা Sale-এ গ্রুপ হবে। ডিফল্টে (historical = yes) sale-গুলো শুধু record হিসেবে যায় — stock/ledger/account-এ কোনো প্রভাব পড়ে না। historical = no দিলে live sale হয়: stock কমে, paid_amount ও payment_account অনুযায়ী টাকা account-এ ঢোকে, বাকিটা customer-এর বকেয়া হয়। Discount, installation ও warranty প্রতিটা column-এ দেওয়া যায়।',
+    },
+];
+
+const REQUIREMENT_BADGE: Record<Requirement, { label: string; variant: 'primary' | 'neutral' | 'warning' }> = {
+    required: { label: 'Required', variant: 'primary' },
+    optional: { label: 'Optional', variant: 'neutral' },
+    conditional: { label: 'One of', variant: 'warning' },
+};
+
+/** Which columns the file needs, and which it may leave out — the table people check before uploading. */
+function ColumnsTable({ schema }: { schema: ImportSchema }) {
+    const required = schema.columns.filter((column) => column.requirement === 'required').length;
+    const optional = schema.columns.filter((column) => column.requirement === 'optional').length;
+    const conditional = schema.columns.filter((column) => column.requirement === 'conditional').length;
+
+    return (
+        <section aria-labelledby={`columns-${schema.label}`} className="space-y-3">
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+                <h4 id={`columns-${schema.label}`} className="text-sm font-semibold">
+                    File columns
+                </h4>
+                <div className="flex flex-wrap items-center gap-1.5">
+                    <Badge variant="primary">{required} required</Badge>
+                    {conditional > 0 && <Badge variant="warning">{conditional} one of</Badge>}
+                    <Badge variant="neutral">{optional} optional</Badge>
+                </div>
+            </div>
+
+            <p className="text-muted-foreground text-[0.8125rem] leading-5">
+                The first row of your file must contain these column names exactly as written. The order of columns doesn&apos;t matter, and optional
+                columns can be left out.
+                {schema.any_of.map((group) => (
+                    <span key={group.join('-')} className="text-foreground font-medium">
+                        {' '}
+                        At least one of {group.join(' / ')} is needed.
+                    </span>
+                ))}
+            </p>
+
+            <div className="rounded-brand-control border-brand-control-border overflow-x-auto border">
+                <table className="w-full min-w-[40rem] border-separate border-spacing-0 text-sm">
+                    <thead>
+                        <tr className="bg-brand-table-header text-muted-foreground text-xs font-semibold tracking-wide">
+                            <th scope="col" className="border-brand-table-divider w-10 border-b px-3.5 py-2.5 text-left">
+                                #
+                            </th>
+                            <th scope="col" className="border-brand-table-divider border-b px-3.5 py-2.5 text-left">
+                                Column
+                            </th>
+                            <th scope="col" className="border-brand-table-divider border-b px-3.5 py-2.5 text-left">
+                                Required?
+                            </th>
+                            <th scope="col" className="border-brand-table-divider border-b px-3.5 py-2.5 text-left">
+                                What to enter
+                            </th>
+                            <th scope="col" className="border-brand-table-divider border-b px-3.5 py-2.5 text-left">
+                                Example
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody className="[&>tr:last-child>td]:border-b-0">
+                        {schema.columns.map((column, index) => {
+                            const badge = REQUIREMENT_BADGE[column.requirement];
+
+                            return (
+                                <tr
+                                    key={column.name}
+                                    className={cn(
+                                        'hover:bg-brand-table-row-hover motion-colors',
+                                        column.requirement === 'required' && 'bg-brand-primary/[0.03]',
+                                    )}
+                                >
+                                    <td className="border-brand-table-divider text-muted-foreground border-b px-3.5 py-2.5 tabular-nums">
+                                        {index + 1}
+                                    </td>
+                                    <td className="border-brand-table-divider border-b px-3.5 py-2.5 font-mono text-[0.8125rem] font-medium whitespace-nowrap">
+                                        {column.name}
+                                    </td>
+                                    <td className="border-brand-table-divider border-b px-3.5 py-2.5">
+                                        <Badge variant={badge.variant} size="sm">
+                                            {badge.label}
+                                        </Badge>
+                                    </td>
+                                    <td className="border-brand-table-divider text-muted-foreground border-b px-3.5 py-2.5">{column.description}</td>
+                                    <td className="border-brand-table-divider border-b px-3.5 py-2.5 font-mono text-xs whitespace-nowrap">
+                                        {column.example || <span className="text-muted-foreground">—</span>}
+                                    </td>
+                                </tr>
+                            );
+                        })}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    );
+}
+
+function UploadForm({ tab }: { tab: TabConfig }) {
     const form = useForm<{ file: File | null }>({ file: null });
 
     const submit: FormEventHandler<HTMLFormElement> = (e) => {
         e.preventDefault();
 
-        if (!form.data.file || form.processing) return;
+        if (!form.data.file || form.processing) {
+            return;
+        }
 
-        form.post(route(routeName), {
+        form.post(route('imports.preview', tab.type), {
             forceFormData: true,
             preserveScroll: true,
             onSuccess: () => form.reset(),
@@ -56,259 +234,288 @@ function UploadForm({ routeName, columns, note }: UploadFormProps) {
     };
 
     return (
-        <form onSubmit={submit} className="space-y-6">
-            <div className="rounded-xl border bg-muted/30 p-4 sm:p-5">
-                <div className="mb-3 flex items-center gap-2">
-                    <Info className="size-4 text-primary" />
-                    <h3 className="text-sm font-semibold">
-                        Expected Columns
-                    </h3>
-                </div>
+        <form onSubmit={submit} className="space-y-4">
+            <FileDropzone
+                id={`${tab.type}-file`}
+                label="Excel / CSV file"
+                accept=".xlsx,.xls,.csv"
+                maxSizeMb={10}
+                file={form.data.file}
+                onFileChange={(file) => {
+                    form.clearErrors('file');
+                    form.setData('file', file);
+                }}
+                error={form.errors.file}
+                disabled={form.processing}
+                required
+            />
 
-                <p className="break-words rounded-lg bg-background p-3 font-mono text-xs leading-6 text-muted-foreground">
-                    {columns}
+            <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <p className="text-muted-foreground text-xs">
+                    You will see every row and what would go into each field first. Nothing is saved until you confirm.
                 </p>
-
-                {note && (
-                    <p className="mt-3 flex items-start gap-2 text-sm leading-6 text-muted-foreground">
-                        <AlertCircle className="mt-1 size-4 shrink-0" />
-                        <span>{note}</span>
-                    </p>
-                )}
-            </div>
-
-            <div className="space-y-2">
-                <FormInput
-                    id={`${routeName}-file`}
-                    label="Excel / CSV File"
-                    type="file"
-                    accept=".xlsx,.xls,.csv"
-                    onChange={(e) =>
-                        form.setData('file', e.target.files?.[0] ?? null)
-                    }
-                    error={form.errors.file}
-                />
-
-                <p className="text-xs text-muted-foreground">
-                    Supported formats: XLSX, XLS, CSV
-                </p>
-
-                {form.data.file && (
-                    <div className="flex items-center gap-3 rounded-lg border bg-background p-3">
-                        <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10">
-                            <FileSpreadsheet className="size-5 text-primary" />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                            <p className="truncate text-sm font-medium">
-                                {form.data.file.name}
-                            </p>
-                            <p className="text-xs text-muted-foreground">
-                                {(form.data.file.size / 1024).toFixed(1)} KB
-                            </p>
-                        </div>
-                        <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => form.setData('file', null)}
-                            disabled={form.processing}
-                        >
-                            Remove
-                        </Button>
-                    </div>
-                )}
-            </div>
-
-            <div className="flex flex-col-reverse gap-3 border-t pt-5 sm:flex-row sm:items-center sm:justify-between">
-                <p className="text-xs text-muted-foreground">
-                    Please verify your file columns before importing.
-                </p>
-
-                <Button
-                    type="submit"
-                    disabled={form.processing || !form.data.file}
-                    className="w-full sm:w-auto"
-                >
-                    {form.processing ? (
-                        <>
-                            <span className="size-4 animate-spin rounded-full border-2 border-current border-r-transparent" />
-                            Importing...
-                        </>
-                    ) : (
-                        <>
-                            <Upload className="size-4" />
-                            Import Data
-                        </>
-                    )}
+                <Button type="submit" variant="primary" disabled={!form.data.file} loading={form.processing} className="w-full sm:w-auto">
+                    <ScanSearch />
+                    Check file
                 </Button>
             </div>
         </form>
     );
 }
 
-function ImportResult({ result }: { result: ImportResultProps }) {
+/** "Row 5: SKU already exists" → { where: "Row 5", reason: "SKU already exists" }. Unmatched text is shown as-is. */
+function splitMessage(message: string): { where: string; reason: string } {
+    const match = message.match(/^(Row \d+|Invoice "[^"]*"):\s*(.*)$/);
+
+    return match ? { where: match[1], reason: match[2] } : { where: '—', reason: message };
+}
+
+/** "unit_cost" → keep the file's own column names, shown in the order the template lists them. */
+function orderedFields(rows: ImportRow[], schema: ImportSchema | undefined): string[] {
+    const present = new Set(rows.flatMap((row) => Object.keys(row.values)));
+    const known = (schema?.columns ?? []).map((column) => column.name).filter((name) => present.has(name));
+    const extra = [...present].filter((name) => !known.includes(name));
+
+    return [...known, ...extra];
+}
+
+/** Every row of the file as a table: its number, whether it is imported or skipped, then one column per field. */
+function RowsTable({ rows, schema, truncated, total }: { rows: ImportRow[]; schema: ImportSchema | undefined; truncated: boolean; total: number }) {
+    const fields = orderedFields(rows, schema);
+
     return (
-        <section className="space-y-4 rounded-xl border border-green-200 bg-green-50/60 p-4 dark:border-green-900 dark:bg-green-950/20 sm:p-5">
-            <div className="flex items-start gap-3">
-                <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/40">
-                    <CheckCircle2 className="size-5 text-green-700 dark:text-green-400" />
-                </div>
+        <div className="space-y-2">
+            <div className="rounded-brand-control border-brand-control-border max-h-[28rem] overflow-auto border">
+                <table className="w-full border-separate border-spacing-0 text-sm">
+                    <thead>
+                        <tr className="bg-brand-table-header text-muted-foreground sticky top-0 z-10 text-xs font-semibold tracking-wide">
+                            <th scope="col" className="border-brand-table-divider border-b px-3 py-2.5 text-left whitespace-nowrap">
+                                Row
+                            </th>
+                            <th scope="col" className="border-brand-table-divider border-b px-3 py-2.5 text-left">
+                                Result
+                            </th>
+                            {fields.map((field) => (
+                                <th
+                                    key={field}
+                                    scope="col"
+                                    className="border-brand-table-divider border-b px-3 py-2.5 text-left font-mono whitespace-nowrap"
+                                >
+                                    {field}
+                                </th>
+                            ))}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {rows.map((row, index) => {
+                            const skipped = row.status === 'skipped';
 
-                <div className="min-w-0 flex-1">
-                    <h3 className="font-semibold">
-                        {result.label} Import Completed
-                    </h3>
-                    <p className="mt-1 text-sm text-muted-foreground">
-                        The import process has finished. Review the summary below.
-                    </p>
-                </div>
+                            return (
+                                <tr key={`${row.where}-${index}`} className={cn('align-top', skipped && 'bg-brand-danger/[0.05]')}>
+                                    <td className="border-brand-table-divider border-b px-3 py-2 font-mono text-[0.8125rem] whitespace-nowrap">
+                                        {row.where}
+                                    </td>
+                                    <td className="border-brand-table-divider min-w-44 border-b px-3 py-2">
+                                        {skipped ? (
+                                            <div className="space-y-1">
+                                                <Badge variant="destructive" size="sm">
+                                                    Skipped
+                                                </Badge>
+                                                <p className="text-brand-danger-text text-xs break-words">
+                                                    {row.reason?.replace(/^(Row \d+|Invoice "[^"]*"):\s*/, '')}
+                                                </p>
+                                            </div>
+                                        ) : (
+                                            <Badge variant="success" size="sm">
+                                                OK
+                                            </Badge>
+                                        )}
+                                    </td>
+                                    {fields.map((field) => (
+                                        <td key={field} className="border-brand-table-divider border-b px-3 py-2 break-words">
+                                            {row.values[field] ?? <span className="text-muted-foreground">—</span>}
+                                        </td>
+                                    ))}
+                                </tr>
+                            );
+                        })}
+                    </tbody>
+                </table>
             </div>
+            {truncated && (
+                <p className="text-muted-foreground text-xs">
+                    Showing the first {rows.length} of {total} rows. The counts above cover the whole file.
+                </p>
+            )}
+        </div>
+    );
+}
 
-            <div className="grid grid-cols-2 gap-3">
-                <div className="rounded-lg border border-green-200/80 bg-background p-3 dark:border-green-900">
-                    <p className="text-xs text-muted-foreground">Created</p>
-                    <p className="mt-1 text-2xl font-semibold tabular-nums text-green-700 dark:text-green-400">
-                        {result.created}
-                    </p>
-                </div>
-                <div className="rounded-lg border bg-background p-3">
-                    <p className="text-xs text-muted-foreground">Skipped</p>
-                    <p className="mt-1 text-2xl font-semibold tabular-nums">
-                        {result.skipped}
-                    </p>
-                </div>
+/** Step 2: what the file would do, row by row. Nothing is saved until "Import" is pressed. */
+function ImportPreview({ preview, schema }: { preview: ImportPreviewProps; schema: ImportSchema | undefined }) {
+    const [working, setWorking] = useState(false);
+    const hasProblems = preview.skipped > 0;
+
+    const confirm = () => {
+        setWorking(true);
+        router.post(route('imports.confirm', preview.type), { token: preview.token }, { preserveScroll: true, onFinish: () => setWorking(false) });
+    };
+
+    const cancel = () => {
+        setWorking(true);
+        router.delete(route('imports.preview.discard', preview.token), { preserveScroll: true, onFinish: () => setWorking(false) });
+    };
+
+    return (
+        <section aria-label={`${preview.label} import preview`} className="space-y-4">
+            <Alert variant="info" icon={<ScanSearch />} title={`Check before importing: ${preview.filename}`}>
+                <AlertDescription>
+                    Nothing has been saved yet.{' '}
+                    {hasProblems
+                        ? 'Rows marked Skipped will not be imported (the reason is shown). You can import the rest now, or cancel, fix the file and upload it again.'
+                        : 'Every row looks fine. Check the values under each field, then import.'}
+                </AlertDescription>
+            </Alert>
+
+            <MetricGrid columns={2}>
+                <MetricCard label="Will be imported" value={preview.created} icon={CheckCircle2} accent="success" />
+                <MetricCard label="Will be skipped" value={preview.skipped} icon={CircleAlert} accent={hasProblems ? 'warning' : 'neutral'} />
+            </MetricGrid>
+
+            <RowsTable rows={preview.rows} schema={schema} truncated={preview.rows_truncated} total={preview.created + preview.skipped} />
+
+            <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+                <Button type="button" variant="outline" onClick={cancel} disabled={working}>
+                    Cancel
+                </Button>
+                <Button type="button" variant="primary" onClick={confirm} disabled={preview.created === 0} loading={working}>
+                    Import {preview.created} {preview.created === 1 ? 'row' : 'rows'}
+                </Button>
             </div>
+        </section>
+    );
+}
+function ImportResult({ result, schema }: { result: ImportResultProps; schema: ImportSchema | undefined }) {
+    const hasProblems = result.skipped > 0;
+
+    return (
+        <section aria-label={`${result.label} import result`} className="space-y-4">
+            <Alert
+                variant={hasProblems ? 'warning' : 'success'}
+                icon={hasProblems ? <CircleAlert /> : <CheckCircle2 />}
+                title={hasProblems ? `${result.label} import finished with ${result.skipped} skipped` : `${result.label} import completed`}
+            >
+                <AlertDescription>
+                    {hasProblems
+                        ? 'Fix the rows listed below in your file and import it again. Rows that were created will be skipped as duplicates.'
+                        : 'Every row was imported.'}
+                </AlertDescription>
+            </Alert>
+
+            <MetricGrid columns={2}>
+                <MetricCard label="Created" value={result.created} icon={CheckCircle2} accent="success" />
+                <MetricCard label="Skipped" value={result.skipped} icon={CircleAlert} accent={hasProblems ? 'warning' : 'neutral'} />
+            </MetricGrid>
+
+            {result.rows.length > 0 && (
+                <div className="space-y-2">
+                    <h4 className="text-sm font-semibold">What was imported, field by field</h4>
+                    <RowsTable rows={result.rows} schema={schema} truncated={result.rows_truncated} total={result.created + result.skipped} />
+                </div>
+            )}
 
             {result.messages.length > 0 && (
                 <div className="space-y-2">
-                    <h4 className="text-sm font-medium">Import Details</h4>
-                    <ul className="max-h-48 list-disc space-y-1 overflow-y-auto rounded-lg border bg-background p-3 pl-8 text-sm text-muted-foreground">
-                        {result.messages.map((message, index) => (
-                            <li key={`${index}-${message}`}>{message}</li>
-                        ))}
-                    </ul>
+                    <h4 className="text-sm font-semibold">{hasProblems ? 'What needs attention' : 'Notes'}</h4>
+                    <div className="rounded-brand-control border-brand-control-border max-h-80 overflow-auto border">
+                        <table className="w-full min-w-[28rem] border-separate border-spacing-0 text-sm">
+                            <thead>
+                                <tr className="bg-brand-table-header text-muted-foreground sticky top-0 text-xs font-semibold tracking-wide">
+                                    <th scope="col" className="border-brand-table-divider w-36 border-b px-3.5 py-2.5 text-left">
+                                        Where
+                                    </th>
+                                    <th scope="col" className="border-brand-table-divider border-b px-3.5 py-2.5 text-left">
+                                        Problem
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody className="[&>tr:last-child>td]:border-b-0">
+                                {result.messages.map((message, index) => {
+                                    const { where, reason } = splitMessage(message);
+
+                                    return (
+                                        <tr key={`${index}-${message}`} className="hover:bg-brand-table-row-hover motion-colors">
+                                            <td className="border-brand-table-divider border-b px-3.5 py-2.5 font-mono text-[0.8125rem] whitespace-nowrap">
+                                                {where}
+                                            </td>
+                                            <td className="border-brand-table-divider border-b px-3.5 py-2.5 break-words">{reason}</td>
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             )}
         </section>
     );
 }
 
-export default function ImportsIndex({ result }: ImportsIndexProps) {
+export default function ImportsIndex({ result, preview, schemas }: ImportsIndexProps) {
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Import Tools" />
 
             <div className="mx-auto w-full max-w-6xl space-y-6 px-4 py-6 sm:px-6 lg:py-8">
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                    <HeadingSmall
-                        title="Import Tools"
-                        description="পুরনো ডেটা Excel বা CSV ফাইল থেকে বাল্ক ইম্পোর্ট করুন।"
-                    />
-                    <div className="flex items-center gap-2 self-start rounded-lg border bg-background px-3 py-2 text-xs text-muted-foreground sm:self-auto">
-                        <FileSpreadsheet className="size-4 text-primary" />
-                        Excel & CSV Supported
-                    </div>
+                    <HeadingSmall title="Import Tools" description="পুরনো ডেটা Excel বা CSV ফাইল থেকে বাল্ক ইম্পোর্ট করুন।" />
+                    <Badge variant="neutral" size="lg" icon={<FileSpreadsheet />} className="self-start sm:self-auto">
+                        Excel &amp; CSV supported
+                    </Badge>
                 </div>
 
-                {result && <ImportResult result={result} />}
+                {preview && <ImportPreview preview={preview} schema={schemas[preview.type]} />}
+                {result && !preview && <ImportResult result={result} schema={schemas[result.type]} />}
 
-                <div className="overflow-hidden rounded-xl border bg-card shadow-sm">
-                    <div className="border-b p-4 sm:p-5">
-                        <h2 className="font-semibold">Choose Import Type</h2>
-                        <p className="mt-1 text-sm text-muted-foreground">
-                            Select a category, upload your file, and import your data.
-                        </p>
-                    </div>
-
-                    <Tabs defaultValue="products" className="w-full">
-                        <div className="border-b px-4 pt-4 sm:px-5">
-                            <TabsList className="grid h-auto w-full grid-cols-2 gap-1 bg-muted p-1 sm:grid-cols-4">
-                                <TabsTrigger value="products" className="gap-2 py-2.5 text-xs sm:text-sm">
-                                    <Package className="size-4" />
-                                    Products
-                                </TabsTrigger>
-                                <TabsTrigger value="contacts" className="gap-2 py-2.5 text-xs sm:text-sm">
-                                    <Users className="size-4" />
-                                    Contacts
-                                </TabsTrigger>
-                                <TabsTrigger value="opening-stock" className="gap-2 py-2.5 text-xs sm:text-sm">
-                                    <Boxes className="size-4" />
-                                    <span className="hidden sm:inline">Opening Stock</span>
-                                    <span className="sm:hidden">Stock</span>
-                                </TabsTrigger>
-                                <TabsTrigger value="sales" className="gap-2 py-2.5 text-xs sm:text-sm">
-                                    <ShoppingCart className="size-4" />
-                                    Sales
-                                </TabsTrigger>
+                <div className="rounded-brand-card border-brand-card-border bg-card overflow-hidden border shadow-[var(--brand-card-shadow)]">
+                    <Tabs defaultValue={preview?.type ?? 'products'} className="w-full">
+                        <div className="border-brand-card-border border-b px-4 pt-2 sm:px-5">
+                            <TabsList variant="underline" className="border-b-0">
+                                {TABS.map((tab) => (
+                                    <TabsTrigger key={tab.type} value={tab.type} icon={<tab.icon />}>
+                                        {tab.tabLabel}
+                                    </TabsTrigger>
+                                ))}
                             </TabsList>
                         </div>
 
-                        <div className="p-4 sm:p-5 lg:p-6">
-                            <TabsContent value="products" className="mt-0">
-                                <div className="mb-5">
-                                    <h3 className="text-lg font-semibold">Import Products</h3>
-                                    <p className="mt-1 text-sm text-muted-foreground">
-                                        Add multiple products using an Excel or CSV file.
-                                    </p>
+                        {TABS.map((tab) => (
+                            <TabsContent key={tab.type} value={tab.type} className="mt-0 space-y-6 p-4 sm:p-5 lg:p-6">
+                                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                                    <div>
+                                        <h3 className="text-lg leading-snug font-semibold">{tab.title}</h3>
+                                        <p className="text-muted-foreground mt-1 text-sm">{tab.description}</p>
+                                    </div>
+                                    <Button asChild variant="outline" className="shrink-0 self-start">
+                                        <a href={route('imports.template', tab.type)} download>
+                                            <Download />
+                                            Download template
+                                        </a>
+                                    </Button>
                                 </div>
-                                <UploadForm
-                                    routeName="imports.products"
-                                    columns="name, sku, barcode, category, brand, unit, selling_price, opening_stock, opening_stock_cost, minimum_stock_level, warranty_period_months"
-                                    note="SKU আগে থেকে থাকলে সেই row skip হবে। category/unit/brand নাম দিয়ে না থাকলে নতুন তৈরি হয়ে যাবে।"
-                                />
-                            </TabsContent>
 
-                            <TabsContent value="contacts" className="mt-0">
-                                <div className="mb-5">
-                                    <h3 className="text-lg font-semibold">Import Contacts</h3>
-                                    <p className="mt-1 text-sm text-muted-foreground">
-                                        Import customers, suppliers, or both in bulk.
-                                    </p>
-                                </div>
-                                <UploadForm
-                                    routeName="imports.contacts"
-                                    columns="name, phone, email, address, type (customer/supplier/both), business_name, opening_balance"
-                                    note="একই phone + type-এর contact আগে থেকে থাকলে সেই row skip হবে।"
-                                />
-                            </TabsContent>
+                                <UploadForm tab={tab} />
 
-                            <TabsContent value="opening-stock" className="mt-0">
-                                <div className="mb-5">
-                                    <h3 className="text-lg font-semibold">Import Opening Stock</h3>
-                                    <p className="mt-1 text-sm text-muted-foreground">
-                                        Set initial stock quantities and unit costs for existing products.
-                                    </p>
-                                </div>
-                                <UploadForm
-                                    routeName="imports.opening-stock"
-                                    columns="sku, quantity, unit_cost"
-                                    note="Product আগে থেকে থাকতে হবে (sku দিয়ে match), এবং তার কোনো stock movement এখনো না থাকতে হবে।"
-                                />
-                            </TabsContent>
+                                <div className="border-brand-card-border space-y-6 border-t pt-6">
+                                    <ColumnsTable schema={schemas[tab.type]} />
 
-                            <TabsContent value="sales" className="mt-0">
-                                <div className="mb-5">
-                                    <h3 className="text-lg font-semibold">Import Historical Sales</h3>
-                                    <p className="mt-1 text-sm text-muted-foreground">
-                                        Import past sales records for historical reference.
-                                    </p>
+                                    <Alert variant="info" icon={<Info />}>
+                                        <AlertDescription>{tab.note}</AlertDescription>
+                                    </Alert>
                                 </div>
-                                <UploadForm
-                                    routeName="imports.sales"
-                                    columns="invoice_no, customer_name, customer_phone, customer_email, sale_date, product_name, sku, quantity, unit_price, item_description, order_total"
-                                    note="একই invoice_no-এর একাধিক row একটা Sale-এ গ্রুপ হবে। এই sale-গুলো historical record হিসেবে import হয় — stock/ledger/account-এ কোনো প্রভাব পড়ে না।"
-                                />
                             </TabsContent>
-                        </div>
+                        ))}
                     </Tabs>
-                </div>
-
-                <div className="flex items-start gap-2 rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
-                    <Info className="mt-0.5 size-4 shrink-0" />
-                    <p>
-                        Ensure your file matches the expected column names and format.
-                        Import results will show how many records were created or skipped.
-                    </p>
                 </div>
             </div>
         </AppLayout>

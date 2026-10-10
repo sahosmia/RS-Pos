@@ -144,17 +144,8 @@ test('cash flow report sums account transactions by type within the date range',
             ->where('byType.0.type', 'sale_payment'));
 });
 
-test('stock report computes stock value and flags low/out-of-stock products', function () {
-    Product::factory()->create(['name' => 'Healthy Stock', 'current_stock' => 20, 'avg_cost' => 100, 'minimum_stock_level' => 5]);
-    Product::factory()->create(['name' => 'Low Stock', 'current_stock' => 2, 'avg_cost' => 50, 'minimum_stock_level' => 5]);
-    Product::factory()->create(['name' => 'Out Of Stock', 'current_stock' => 0, 'avg_cost' => 10, 'minimum_stock_level' => 5]);
-
-    $this->get('/reports/stock')
-        ->assertOk()
-        ->assertInertia(fn ($page) => $page
-            ->component('reports/stock-report')
-            ->where('totalValue', 2100)
-            ->where('lowStockCount', 2));
+test('the old stock report address redirects to the Products page', function () {
+    $this->get('/reports/stock')->assertRedirect('/products');
 });
 
 test('due report lists customer receivable, supplier payable, and staff balances with correct signs', function () {

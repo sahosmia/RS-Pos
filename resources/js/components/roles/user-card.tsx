@@ -41,7 +41,7 @@ export function UserCard({ user, roleNames, onEdit, onDelete }: UserCardProps) {
     };
 
     return (
-        <div className="group bg-background hover:border-primary/30 rounded-xl border p-3 transition-all hover:shadow-sm sm:p-4">
+        <div className="group bg-background hover:border-primary/30 motion-surface rounded-xl border p-3 hover:shadow-[var(--brand-card-shadow)] sm:p-4">
             <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center">
                 <div className="flex min-w-0 flex-1 items-start gap-3">
                     <div className="bg-primary/10 text-primary flex size-11 shrink-0 items-center justify-center rounded-xl">

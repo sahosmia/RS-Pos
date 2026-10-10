@@ -29,12 +29,12 @@ class EmiInstallmentQuery
         }
 
         return EmiInstallment::query()
-            ->with(['sale:id,invoice_no,customer_id', 'sale.customer:id,name'])
+            ->with(['sale:id,invoice_no,customer_id', 'sale.customer:id,name,phone'])
             ->when($filters['status'] ?? null, fn (Builder $query, string $status) => $query->where('status', $status))
             ->when($search !== '', function (Builder $query) use ($search) {
                 $query->whereHas('sale', function (Builder $query) use ($search) {
                     $query->where('invoice_no', 'like', "%{$search}%")
-                        ->orWhereHas('customer', fn (Builder $query) => $query->where('name', 'like', "%{$search}%"));
+                        ->orWhereHas('customer', fn (Builder $query) => $query->where('name', 'like', "%{$search}%")->orWhere('phone', 'like', "%{$search}%"));
                 });
             })
             ->orderBy($sort, $direction)

@@ -11,10 +11,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class LoanTransaction extends Model
 {
+    use HasCreator;
+
     /** @use HasFactory<LoanTransactionFactory> */
     use HasFactory;
-
-    use HasCreator;
 
     /**
      * @var list<string>

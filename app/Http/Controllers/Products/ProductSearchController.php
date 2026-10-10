@@ -34,9 +34,10 @@ class ProductSearchController extends Controller
                     ->orWhere('sku', 'like', "%{$search}%")
                     ->orWhere('barcode', 'like', "%{$search}%");
             })
+            ->withCount('servicePlanTemplates')
             ->orderBy('name')
             ->limit(20)
-            ->get(['id', 'name', 'sku', 'barcode', 'selling_price', 'avg_cost', 'current_stock', 'track_serial_number', 'has_installation_service']);
+            ->get(['id', 'name', 'sku', 'barcode', 'selling_price', 'avg_cost', 'current_stock', 'track_serial_number', 'has_installation_service', 'warranty_period_months']);
 
         return response()->json([
             'data' => $products->map(fn (Product $product) => [
@@ -49,6 +50,8 @@ class ProductSearchController extends Controller
                 'current_stock' => (float) $product->current_stock,
                 'track_serial_number' => $product->track_serial_number,
                 'has_installation_service' => $product->has_installation_service,
+                'warranty_period_months' => $product->warranty_period_months,
+                'service_plan_templates_count' => $product->service_plan_templates_count,
             ]),
         ]);
     }

@@ -15,3 +15,8 @@ Route::middleware(['auth', 'module:expense'])->group(function () {
     Route::resource('expenses', ExpenseController::class)
         ->only(['index', 'store', 'update', 'destroy']);
 });
+
+// Its own group: inside the module's group a POST would also demand the "create" permission.
+Route::middleware(['auth', 'module:expense,delete'])
+    ->post('expenses/bulk-delete', [ExpenseController::class, 'bulkDestroy'])
+    ->name('expenses.bulk-delete');

@@ -1,5 +1,6 @@
 import { FormInput } from '@/components/form/form-input';
 import DiscountModal, { discountAmountFor } from '@/components/sales/discount-modal';
+import { LineWarranty } from '@/components/sales/form/line-warranty';
 import { type CartSheetDraft, round2, unitLabel } from '@/components/sales/form/sale-form-utils';
 import MoneyInput from '@/components/shared/money-input';
 import { Button } from '@/components/ui/button';
@@ -104,6 +105,20 @@ export function CartSheet({ draft, onChange, onClose, onConfirm }: CartSheetProp
                                     )}
                                 </div>
                             )}
+
+                            <LineWarranty
+                                product={draft.product}
+                                months={draft.warrantyMonths}
+                                serviceIncluded={draft.servicePlanIncluded}
+                                onChange={(changes) =>
+                                    onChange({
+                                        ...draft,
+                                        warrantyMonths: changes.warranty_months ?? draft.warrantyMonths,
+                                        servicePlanIncluded: changes.service_plan_included ?? draft.servicePlanIncluded,
+                                    })
+                                }
+                                idPrefix="cart-sheet"
+                            />
 
                             {shop.serial_number_module_enabled && draft.product.track_serial_number && (
                                 <FormInput

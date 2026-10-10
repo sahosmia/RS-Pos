@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useMoneyFormat } from '@/hooks/use-money-format';
 import { type Account } from '@/types/models';
 import { Plus, Trash2 } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useLayoutEffect, useRef, useState } from 'react';
 
 /** Index signature needed so this array satisfies Inertia's FormDataConvertible constraint in useForm(). */
 export interface PaymentRow {
@@ -92,7 +92,9 @@ export default function AccountPaymentRows({
     // "the person typed their own number in, stop touching this row".
     const autoSyncedAmountRef = useRef<number | null>(null);
 
-    useEffect(() => {
+    // A layout effect, so the row has caught up with `total` before the browser paints: everything that reads the
+    // rows ("Due after saving", the paid amount, Add Account) moves together instead of showing one stale frame.
+    useLayoutEffect(() => {
         if (userClearedRef.current || !total || total <= 0) {
             return;
         }
@@ -119,7 +121,19 @@ export default function AccountPaymentRows({
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [total, rows]);
 
-    const sumOfRows = rows.reduce((sum, row) => sum + (row.amount || 0), 0);
+    // While the single auto-filled row is still following `total`, it is *about* to equal it: the layout effect above only
+    // catches up after this render. Treating it as already equal keeps "Add Account" (and the old amount) from
+    // flashing for a frame every time a quantity or price changes.
+    const followingTotal =
+        total !== undefined &&
+        total > 0 &&
+        rows.length === 1 &&
+        autoFilledIndexRef.current === 0 &&
+        !userClearedRef.current &&
+        rows[0].amount === autoSyncedAmountRef.current;
+    const shownRows = followingTotal ? [{ ...rows[0], amount: total }] : rows;
+
+    const sumOfRows = shownRows.reduce((sum, row) => sum + (row.amount || 0), 0);
     const remaining = total !== undefined ? Math.max(total - sumOfRows, 0) : 0;
     const canAddMore = total === undefined || remaining > 0;
 
@@ -179,7 +193,7 @@ export default function AccountPaymentRows({
 
             {rows.length === 0 && <p className="text-muted-foreground text-xs">{emptyHint}</p>}
 
-            {rows.map((row, index) => (
+            {shownRows.map((row, index) => (
                 <div key={index} className="flex items-center gap-2">
                     <Select value={row.account_id ? String(row.account_id) : ''} onValueChange={(value) => changeAccount(index, Number(value))}>
                         <SelectTrigger className="flex-1">

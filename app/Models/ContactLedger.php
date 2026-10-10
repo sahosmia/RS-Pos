@@ -16,10 +16,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  */
 class ContactLedger extends Model
 {
+    use HasCreator;
+
     /** @use HasFactory<ContactLedgerFactory> */
     use HasFactory;
-
-    use HasCreator;
 
     protected $table = 'contact_ledger';
 

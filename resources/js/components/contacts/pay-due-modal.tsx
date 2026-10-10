@@ -49,6 +49,7 @@ export default function PayDueModal({ open, onOpenChange, contact, accounts, sal
     const form = useForm({
         account_id: accounts[0]?.id ?? 0,
         amount: 0,
+        discount_amount: 0,
         direction: availableDirections[0] as Direction,
         note: '',
         sale_id: null as number | null,
@@ -61,6 +62,7 @@ export default function PayDueModal({ open, onOpenChange, contact, accounts, sal
             form.setData({
                 account_id: accounts[0]?.id ?? 0,
                 amount: 0,
+                discount_amount: 0,
                 direction: availableDirections[0],
                 note: '',
                 sale_id: null,
@@ -115,9 +117,23 @@ export default function PayDueModal({ open, onOpenChange, contact, accounts, sal
         }
     };
 
+    // What a discount may take off: the targeted invoice's due, or the whole balance owed in this direction.
+    // A discount never invents a due, and payment + discount together never pass an invoice's due.
+    const owedInDirection = Math.max(form.data.direction === 'received' ? contact.balance : -contact.balance, 0);
+    const discountLimit = targetedDue ?? owedInDirection;
+    const isCustomerSide = form.data.direction === 'received';
+
     const onAmountChange = (value: number) => {
-        form.setData('amount', targetedDue !== null ? Math.min(value, targetedDue) : value);
+        form.setData('amount', targetedDue !== null ? Math.min(value, Math.max(targetedDue - form.data.discount_amount, 0)) : value);
     };
+
+    const onDiscountChange = (value: number) => {
+        const cap = targetedDue !== null ? Math.max(targetedDue - form.data.amount, 0) : discountLimit;
+
+        form.setData('discount_amount', Math.min(value, cap));
+    };
+
+    const settledTotal = form.data.amount + form.data.discount_amount;
 
     const submit: FormEventHandler = (e) => {
         e.preventDefault();
@@ -193,12 +209,36 @@ export default function PayDueModal({ open, onOpenChange, contact, accounts, sal
                 <Label htmlFor="amount" required>
                     {t('common', 'amount')}
                 </Label>
-                <MoneyInput id="amount" value={form.data.amount} onChange={(e) => onAmountChange(Number(e.target.value))} required />
+                <MoneyInput
+                    id="amount"
+                    value={form.data.amount}
+                    onChange={(e) => onAmountChange(Number(e.target.value))}
+                    required={form.data.discount_amount <= 0}
+                />
                 {targetedDue !== null && (
                     <p className="text-muted-foreground text-xs">Capped at the invoice&apos;s remaining due, {money(targetedDue)}</p>
                 )}
                 <InputError message={form.errors.amount} />
             </div>
+
+            {discountLimit > 0 && (
+                <div className="grid min-w-0 content-start gap-2">
+                    <Label htmlFor="discount_amount">Discount (optional)</Label>
+                    <MoneyInput id="discount_amount" value={form.data.discount_amount} onChange={(e) => onDiscountChange(Number(e.target.value))} />
+                    <p className="text-muted-foreground text-xs">
+                        {isCustomerSide
+                            ? 'You forgive this part of what they owe. No cash moves.'
+                            : 'The supplier takes this much off what you owe. No cash moves.'}{' '}
+                        {settledTotal > 0 && (
+                            <>
+                                This settles {money(settledTotal)} in total ({money(form.data.amount)} paid + {money(form.data.discount_amount)}{' '}
+                                discount).
+                            </>
+                        )}
+                    </p>
+                    <InputError message={form.errors.discount_amount} />
+                </div>
+            )}
 
             <div className="grid min-w-0 content-start gap-2">
                 <Label htmlFor="note">{t('common', 'note')}</Label>

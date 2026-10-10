@@ -16,3 +16,8 @@ Route::middleware(['auth', 'module:finance'])->group(function () {
     Route::post('company-loans/{company_loan}/transactions', [LoanTransactionController::class, 'store'])
         ->name('company-loans.transactions.store');
 });
+
+// Its own group: inside the module's group a POST would also demand the "create" permission.
+Route::middleware(['auth', 'module:finance,delete'])
+    ->post('company-loans/bulk-delete', [CompanyLoanController::class, 'bulkDestroy'])
+    ->name('company-loans.bulk-delete');

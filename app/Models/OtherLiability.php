@@ -19,10 +19,11 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  */
 class OtherLiability extends Model
 {
+    use HasCreator;
+
     /** @use HasFactory<OtherLiabilityFactory> */
     use HasFactory;
 
-    use HasCreator;
     use HasLedger;
     use LogsActivityDefaults;
 
@@ -75,5 +76,13 @@ class OtherLiability extends Model
         return $this->transactions()
             ->where('type', OtherLiabilityTransactionType::OpeningLiability)
             ->first();
+    }
+
+    /**
+     * Why this record can't be deleted, or null when it can — one rule for the single and the bulk delete.
+     */
+    public function deletionBlockReason(): ?string
+    {
+        return $this->transactions()->exists() ? 'This liability has recorded transactions and cannot be deleted.' : null;
     }
 }

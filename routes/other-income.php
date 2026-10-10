@@ -17,3 +17,8 @@ Route::middleware(['auth', 'module:expense'])->group(function () {
         ->parameters(['other-income-categories' => 'category'])
         ->only(['store', 'update', 'destroy']);
 });
+
+// Its own group: inside the module's group a POST would also demand the "create" permission.
+Route::middleware(['auth', 'module:expense,delete'])
+    ->post('other-income/bulk-delete', [OtherIncomeController::class, 'bulkDestroy'])
+    ->name('other-income.bulk-delete');

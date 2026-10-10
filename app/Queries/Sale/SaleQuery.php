@@ -37,10 +37,10 @@ class SaleQuery
         }
 
         return $query
-            ->with(['customer:id,name', 'creator:id,name'])
+            ->with(['customer:id,name,phone', 'creator:id,name'])
             ->when($filters['search'] ?? null, fn (Builder $q, string $search) => $q->where(function (Builder $q) use ($search) {
                 $q->where('invoice_no', 'like', "%{$search}%")
-                    ->orWhereHas('customer', fn (Builder $q) => $q->where('name', 'like', "%{$search}%"));
+                    ->orWhereHas('customer', fn (Builder $q) => $q->where('name', 'like', "%{$search}%")->orWhere('phone', 'like', "%{$search}%"));
             }))
             ->when($filters['from'] ?? null, fn (Builder $q, string $from) => $q->whereDate('sale_date', '>=', $from))
             ->when($filters['to'] ?? null, fn (Builder $q, string $to) => $q->whereDate('sale_date', '<=', $to))

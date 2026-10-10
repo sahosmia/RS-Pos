@@ -1,5 +1,4 @@
 import ListTable from '@/components/data-table/list-table';
-import HeadingSmall from '@/components/heading-small';
 import {
     PURCHASE_EXPORT_COLUMN_MAP,
     PURCHASE_EXPORT_COLUMNS,
@@ -8,9 +7,12 @@ import {
 } from '@/components/purchases/purchase-columns';
 import { PurchaseFilters } from '@/components/purchases/purchase-filters';
 import { PurchaseGridCard } from '@/components/purchases/purchase-grid-card';
+import { AddButton } from '@/components/shared/action-buttons';
+import BulkDeleteBar from '@/components/shared/bulk-delete-bar';
 import ConfirmDialog from '@/components/shared/confirm-dialog';
 import { DocumentStatCards } from '@/components/shared/document-stat-cards';
 import EmptyState from '@/components/shared/empty-state';
+import PageHeader from '@/components/shared/page-header';
 import { Button } from '@/components/ui/button';
 import { useListPage } from '@/hooks/table/use-list-page';
 import { type TableFilterBase } from '@/hooks/table/use-table-filters';
@@ -19,7 +21,7 @@ import { useMoneyFormat } from '@/hooks/use-money-format';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { type Paginated, type PaymentStatusValue, type PurchaseListItem, type PurchaseStatusValue, type SupplierOption } from '@/types/models';
-import { Head, Link } from '@inertiajs/react';
+import { Head } from '@inertiajs/react';
 import { ShoppingBag } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
@@ -95,12 +97,15 @@ export default function PurchasesIndex({ purchases, stats, initialSupplier, filt
             <Head title="Purchases" />
 
             <div className="space-y-6 px-4 py-6">
-                <div className="flex flex-wrap items-end justify-between gap-4">
-                    <HeadingSmall title="Purchases" description="Supplier থেকে কেনা পণ্যের তালিকা" />
-                    <Button asChild>
-                        <Link href={addPurchaseHref}>Add Purchase</Link>
-                    </Button>
-                </div>
+                <PageHeader
+                    title="Purchases"
+                    description="Supplier থেকে কেনা পণ্যের তালিকা"
+                    actions={
+                        <>
+                            <AddButton href={addPurchaseHref} title="Add Purchase" />
+                        </>
+                    }
+                />
 
                 {stats && (
                     <DocumentStatCards
@@ -114,6 +119,9 @@ export default function PurchasesIndex({ purchases, stats, initialSupplier, filt
                 )}
 
                 <ListTable
+                    selectionSlot={
+                        <BulkDeleteBar selection={list.selection} routeName="purchases.bulk-delete" noun="purchases" permission="purchase.delete" />
+                    }
                     list={list}
                     data={purchases}
                     filters={filters}
@@ -134,9 +142,7 @@ export default function PurchasesIndex({ purchases, stats, initialSupplier, filt
                     filterSlot={<PurchaseFilters filters={filters} supplier={supplier} onSupplierChange={setSupplier} onChange={list.applyFilters} />}
                     emptyState={
                         <EmptyState title="No purchases yet" description="প্রথম purchase যোগ করুন">
-                            <Button className="mt-2" asChild>
-                                <Link href={addPurchaseHref}>Add Purchase</Link>
-                            </Button>
+                            <AddButton href={addPurchaseHref} title="Add Purchase" className="mt-2" />
                         </EmptyState>
                     }
                     filteredEmptyState={

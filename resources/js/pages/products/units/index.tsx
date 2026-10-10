@@ -1,13 +1,14 @@
+import DataTableRowActions from '@/components/data-table/data-table-row-actions';
 import { FormInput } from '@/components/form/form-input';
-import HeadingSmall from '@/components/heading-small';
+import { getUnitActions } from '@/components/products/unit-actions';
 import ConfirmDialog from '@/components/shared/confirm-dialog';
 import EmptyState from '@/components/shared/empty-state';
 import FormModal from '@/components/shared/form-modal';
-import DataTableRowActions from '@/components/data-table/data-table-row-actions';
-import { getUnitActions } from '@/components/products/unit-actions';
+import PageHeader from '@/components/shared/page-header';
 import { Button } from '@/components/ui/button';
 import { useTranslation } from '@/hooks/use-translation';
 import AppLayout from '@/layouts/app-layout';
+import { pageContainer } from '@/lib/page-container';
 import { type BreadcrumbItem } from '@/types';
 import { type UnitListItem } from '@/types/models';
 import { Head, router, useForm } from '@inertiajs/react';
@@ -90,11 +91,16 @@ export default function UnitsIndex({ units }: UnitsIndexProps) {
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={t('lookup', 'units_title')} />
 
-            <div className="space-y-6 px-4 py-6">
-                <div className="flex flex-wrap items-end justify-between gap-4">
-                    <HeadingSmall title={t('lookup', 'units_title')} description={t('lookup', 'units_description')} />
-                    <Button onClick={openCreate}>{t('lookup', 'units_add')}</Button>
-                </div>
+            <div className={pageContainer.medium}>
+                <PageHeader
+                    title={t('lookup', 'units_title')}
+                    description={t('lookup', 'units_description')}
+                    actions={
+                        <>
+                            <Button onClick={openCreate}>{t('lookup', 'units_add')}</Button>
+                        </>
+                    }
+                />
 
                 {units.length === 0 ? (
                     <EmptyState title={t('lookup', 'units_empty_title')} description={t('lookup', 'units_empty_description')}>
@@ -103,27 +109,25 @@ export default function UnitsIndex({ units }: UnitsIndexProps) {
                         </Button>
                     </EmptyState>
                 ) : (
-                    <div className="overflow-x-auto rounded-lg border">
+                    <div className="overflow-x-auto rounded-brand-card bg-card shadow-[var(--brand-card-shadow-elevated)]">
                         <table className="w-full text-sm">
-                            <thead className="bg-muted/50 text-muted-foreground">
+                            <thead className="bg-brand-table-header text-muted-foreground text-xs font-semibold">
                                 <tr>
-                                    <th className="px-4 py-2 text-left font-medium">{t('common', 'name')}</th>
-                                    <th className="px-4 py-2 text-left font-medium">Short Unit</th>
-                                    <th className="px-4 py-2 text-left font-medium">Description</th>
-                                    <th className="px-4 py-2 text-right font-medium">{t('common', 'actions')}</th>
+                                    <th className="px-4 py-2.5 text-left font-medium">{t('common', 'name')}</th>
+                                    <th className="px-4 py-2.5 text-left font-medium">Short Unit</th>
+                                    <th className="px-4 py-2.5 text-left font-medium">Description</th>
+                                    <th className="px-4 py-2.5 text-right font-medium">{t('common', 'actions')}</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {units.map((unit) => (
-                                    <tr key={unit.id} className="border-t">
+                                    <tr key={unit.id} className="border-brand-table-divider hover:bg-brand-table-row-hover motion-colors border-t">
                                         <td className="px-4 py-2 font-medium">{unit.name}</td>
-                                        <td className="px-4 py-2 font-medium text-muted-foreground">{unit.short_name || '—'}</td>
-                                        <td className="px-4 py-2 text-muted-foreground max-w-xs truncate">{unit.description || '—'}</td>
+                                        <td className="text-muted-foreground px-4 py-2 font-medium">{unit.short_name || '—'}</td>
+                                        <td className="text-muted-foreground max-w-xs truncate px-4 py-2">{unit.description || '—'}</td>
                                         <td className="px-4 py-2">
                                             <div className="flex justify-end">
-                                                <DataTableRowActions
-                                                    actions={getUnitActions(unit, { onEdit: openEdit, onDelete: setDeleting })}
-                                                />
+                                                <DataTableRowActions actions={getUnitActions(unit, { onEdit: openEdit, onDelete: setDeleting })} />
                                             </div>
                                         </td>
                                     </tr>
@@ -159,10 +163,12 @@ export default function UnitsIndex({ units }: UnitsIndexProps) {
                     error={form.errors.short_name}
                 />
                 <div className="grid min-w-0 content-start gap-2">
-                    <label htmlFor="description" className="text-sm font-medium leading-none">Description</label>
+                    <label htmlFor="description" className="text-sm leading-none font-medium">
+                        Description
+                    </label>
                     <textarea
                         id="description"
-                        className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                        className="border-input bg-background ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring flex min-h-[80px] w-full rounded-md border px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-hidden disabled:cursor-not-allowed disabled:opacity-50"
                         value={form.data.description}
                         onChange={(e) => form.setData('description', e.target.value)}
                         placeholder="Optional description"

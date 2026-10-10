@@ -36,29 +36,39 @@ interface FormFieldProps {
     label?: React.ReactNode;
     tooltip?: React.ReactNode;
     required?: boolean;
+    /** Shows a muted "(optional)" next to the label (ignored when `required`). */
+    optional?: boolean;
     error?: string;
     helperText?: React.ReactNode;
     className?: string;
     children: React.ReactNode;
 }
 
-export function FormField({ id, label, tooltip, required, error, helperText, className, children }: FormFieldProps) {
+/** Secondary hint under a control. Give it the id from `fieldMessageIds()` so `aria-describedby` resolves. */
+export function FormDescription({ className, ...props }: React.HTMLAttributes<HTMLParagraphElement>) {
+    return <p className={cn('text-muted-foreground text-xs leading-4 wrap-break-word', className)} {...props} />;
+}
+
+/** Validation message under a control (same component `FormField` renders for its `error` prop). */
+export const FormError = InputError;
+
+/**
+ * Vertical rhythm: label → 8px → control → 6px → description/error. The label gap is the grid
+ * gap plus `pb-0.5`, so message rows sit closer to the control than the label does.
+ */
+export function FormField({ id, label, tooltip, required, optional, error, helperText, className, children }: FormFieldProps) {
     const { errorId, helperId } = fieldMessageIds(id, error, helperText);
 
     return (
-        <div className={cn('grid min-w-0 content-start gap-2', className)}>
+        <div className={cn('grid min-w-0 content-start gap-1.5', className)}>
             {label && (
-                <Label htmlFor={id} required={required}>
+                <Label htmlFor={id} required={required} optional={optional} className="pb-0.5">
                     <LabelTooltip label={label} tooltip={tooltip} />
                 </Label>
             )}
             {children}
-            {helperText && (
-                <p id={helperId} className="text-muted-foreground text-xs leading-4 wrap-break-word">
-                    {helperText}
-                </p>
-            )}
-            <InputError id={errorId} message={error} />
+            {helperText && <FormDescription id={helperId}>{helperText}</FormDescription>}
+            <FormError id={errorId} message={error} />
         </div>
     );
 }

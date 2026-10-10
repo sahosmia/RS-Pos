@@ -1,9 +1,12 @@
 import HeadingSmall from '@/components/heading-small';
 import AddSalePaymentModal from '@/components/sales/add-sale-payment-modal';
+import { SaleEmiPlan } from '@/components/sales/sale-emi-plan';
 import SalePaymentHistoryTable from '@/components/sales/sale-payment-history-table';
-import UndoToast from '@/components/sales/undo-toast';
+import { SaleSerialList } from '@/components/sales/sale-serial-list';
 import ConfirmDialog from '@/components/shared/confirm-dialog';
 import ContactLink from '@/components/shared/contact-link';
+import { MetricCard } from '@/components/shared/metric-card';
+import { StatusBadge } from '@/components/shared/status-badge';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useMoneyFormat } from '@/hooks/use-money-format';
@@ -21,17 +24,15 @@ interface SaleShowProps {
     justConfirmed: boolean;
     invoiceSettings: InvoiceSettingsConfig;
     invoiceLogoUrl: string | null;
-    shop: InvoiceShopInfo;
+    invoiceShop: InvoiceShopInfo;
 }
 
-const humanize = (value: string) => value.replaceAll('_', ' ').replace(/\b\w/g, (character) => character.toUpperCase());
-
-export default function SaleShow({ sale, accounts, justConfirmed, invoiceSettings, invoiceLogoUrl, shop }: SaleShowProps) {
+export default function SaleShow({ sale, accounts, invoiceSettings, invoiceLogoUrl, invoiceShop: shop }: SaleShowProps) {
     const money = useMoneyFormat();
     const [paymentOpen, setPaymentOpen] = useState(false);
     const [deleting, setDeleting] = useState(false);
-    const [undoing, setUndoing] = useState(false);
-    const [showUndo, setShowUndo] = useState(justConfirmed);
+    const [cancelling, setCancelling] = useState(false);
+    const [cancelProcessing, setCancelProcessing] = useState(false);
 
     const breadcrumbs: BreadcrumbItem[] = [
         { title: 'Sales', href: '/sales' },
@@ -44,16 +45,19 @@ export default function SaleShow({ sale, accounts, justConfirmed, invoiceSetting
         });
     };
 
-    const undo = () => {
-        setUndoing(true);
+    // Cancelling reverses the whole sale (stock, due, payments, the books) and keeps it on file as Cancelled.
+    const confirmCancel = () => {
+        setCancelProcessing(true);
         router.post(
             route('sales.cancel', sale.id),
             {},
             {
+                preserveScroll: true,
+                onSuccess: () => toast.success('Sale cancelled.'),
                 onError: (errors) => toast.error(errors.sale ?? 'Could not cancel the sale — check for errors.'),
                 onFinish: () => {
-                    setUndoing(false);
-                    setShowUndo(false);
+                    setCancelProcessing(false);
+                    setCancelling(false);
                 },
             },
         );
@@ -141,18 +145,24 @@ export default function SaleShow({ sale, accounts, justConfirmed, invoiceSetting
                             (invoiceSettings.customer.show_email && sale.customer.email) ||
                             (invoiceSettings.customer.show_address && sale.customer.address)) && (
                             <div className="space-y-0.5">
-                                <p className="mb-1 text-xs font-semibold tracking-wider text-muted-foreground uppercase">Customer Details</p>
+                                <p className="text-muted-foreground mb-1 text-xs font-semibold tracking-wider uppercase">Customer Details</p>
                                 {invoiceSettings.customer.show_name && <p className="font-medium">{sale.customer.name}</p>}
-                                {invoiceSettings.customer.show_phone && sale.customer.phone && <p className="text-muted-foreground">{sale.customer.phone}</p>}
-                                {invoiceSettings.customer.show_email && sale.customer.email && <p className="text-muted-foreground">{sale.customer.email}</p>}
-                                {invoiceSettings.customer.show_address && sale.customer.address && <p className="text-muted-foreground">{sale.customer.address}</p>}
+                                {invoiceSettings.customer.show_phone && sale.customer.phone && (
+                                    <p className="text-muted-foreground">{sale.customer.phone}</p>
+                                )}
+                                {invoiceSettings.customer.show_email && sale.customer.email && (
+                                    <p className="text-muted-foreground">{sale.customer.email}</p>
+                                )}
+                                {invoiceSettings.customer.show_address && sale.customer.address && (
+                                    <p className="text-muted-foreground">{sale.customer.address}</p>
+                                )}
                             </div>
                         )}
                     </div>
                     <div>
                         {(invoiceSettings.general.show_number || invoiceSettings.general.show_date) && (
                             <div className="space-y-0.5 sm:text-right">
-                                <p className="mb-1 text-xs font-semibold tracking-wider text-muted-foreground uppercase">Order Details</p>
+                                <p className="text-muted-foreground mb-1 text-xs font-semibold tracking-wider uppercase">Order Details</p>
                                 {invoiceSettings.general.show_number && (
                                     <p>
                                         <span className="text-muted-foreground">Invoice No: </span>
@@ -182,9 +192,9 @@ export default function SaleShow({ sale, accounts, justConfirmed, invoiceSetting
                     />
 
                     <div className="flex flex-wrap items-center gap-2">
-                        <Badge variant="outline">{humanize(sale.status)}</Badge>
-                        <Badge variant="outline">{humanize(sale.payment_status)}</Badge>
-                        {sale.source === 'imported' && <Badge variant="outline">Historical</Badge>}
+                        <StatusBadge status={sale.status} />
+                        <StatusBadge status={sale.payment_status} />
+                        {sale.source === 'imported' && <Badge variant="neutral">Historical</Badge>}
 
                         <Button
                             variant="outline"
@@ -193,20 +203,26 @@ export default function SaleShow({ sale, accounts, justConfirmed, invoiceSetting
                             Print
                         </Button>
 
+                        {(sale.can_edit || sale.can_amend) && (
+                            <Button variant="outline" asChild>
+                                <Link href={route('sales.edit', sale.id)}>Edit</Link>
+                            </Button>
+                        )}
                         {sale.can_edit && (
-                            <>
-                                <Button variant="outline" asChild>
-                                    <Link href={route('sales.edit', sale.id)}>Edit</Link>
-                                </Button>
-                                <Button variant="outline" onClick={() => setDeleting(true)}>
-                                    Delete
-                                </Button>
-                            </>
+                            <Button variant="outline" onClick={() => setDeleting(true)}>
+                                Delete
+                            </Button>
                         )}
 
                         {sale.status === 'confirmed' && (
                             <Button variant="outline" asChild>
                                 <Link href={`/sale-returns/create?sale_id=${sale.id}`}>Return</Link>
+                            </Button>
+                        )}
+
+                        {sale.status === 'confirmed' && sale.can_amend && (
+                            <Button variant="outline" onClick={() => setCancelling(true)}>
+                                Cancel Sale
                             </Button>
                         )}
 
@@ -216,51 +232,58 @@ export default function SaleShow({ sale, accounts, justConfirmed, invoiceSetting
 
                 {/* On-screen quick-glance only — the invoice's own printable totals live in the item table's tfoot below. */}
                 <div className="grid gap-4 sm:grid-cols-4 print:hidden">
-                    <div className="rounded-lg border p-4">
-                        <p className="text-muted-foreground text-sm">Total</p>
-                        <p className="text-xl font-semibold tabular-nums">{money(sale.total_amount)}</p>
-                    </div>
-                    <div className="rounded-lg border p-4">
-                        <p className="text-muted-foreground text-sm">Paid</p>
-                        <p className="text-xl font-semibold tabular-nums">{money(sale.paid_amount)}</p>
-                    </div>
-                    <div className="rounded-lg border p-4">
-                        <p className="text-muted-foreground text-sm">Due</p>
-                        <p className="text-xl font-semibold tabular-nums">{money(sale.due_amount)}</p>
-                    </div>
-                    <div className="rounded-lg border p-4">
-                        <p className="text-muted-foreground text-sm">Customer Balance</p>
-                        <p className="text-xl font-semibold tabular-nums">{money(sale.customer.balance)}</p>
-                    </div>
+                    <MetricCard label="Total" value={money(sale.total_amount)} />
+                    <MetricCard label="Paid" value={money(sale.paid_amount)} />
+                    <MetricCard label="Due" value={money(sale.due_amount)} />
+                    <MetricCard label="Customer Balance" value={money(sale.customer.balance)} />
                 </div>
 
-                <div className="overflow-x-auto rounded-lg border">
+                {sale.emi && (
+                    <SaleEmiPlan
+                        emi={sale.emi}
+                        accounts={accounts}
+                        invoiceNo={sale.invoice_no}
+                        customerName={sale.customer.name}
+                        customerPhone={sale.customer.phone}
+                    />
+                )}
+
+                <div className="rounded-brand-card bg-card overflow-x-auto shadow-[var(--brand-card-shadow-elevated)]">
                     <table className="w-full text-sm">
-                        <thead className="bg-muted/50 text-muted-foreground">
+                        <thead className="bg-brand-table-header text-muted-foreground text-xs font-semibold">
                             <tr>
-                                <th className="px-4 py-2 text-left font-medium">Product</th>
-                                <th className="px-4 py-2 text-right font-medium">Quantity</th>
-                                <th className="px-4 py-2 text-right font-medium">Price</th>
-                                <th className="px-4 py-2 text-right font-medium">Subtotal</th>
+                                <th className="px-4 py-2.5 text-left font-medium">Product</th>
+                                <th className="px-4 py-2.5 text-right font-medium">Quantity</th>
+                                <th className="px-4 py-2.5 text-right font-medium">Price</th>
+                                <th className="px-4 py-2.5 text-right font-medium">Subtotal</th>
                             </tr>
                         </thead>
                         <tbody>
                             {sale.items.map((item) => (
-                                <tr key={item.id} className="border-t align-top">
+                                <tr
+                                    key={item.id}
+                                    className="border-brand-table-divider hover:bg-brand-table-row-hover motion-colors border-t align-top"
+                                >
                                     <td className="px-4 py-2">
                                         <div>
                                             {item.product.name}
                                             {invoiceSettings.items.show_sku && <span className="text-muted-foreground"> ({item.product.sku})</span>}
                                         </div>
+                                        {sale.emi && <div className="text-muted-foreground text-xs">{item.emi_financed ? 'On EMI' : 'Paid now'}</div>}
                                         {item.installation_required && (
                                             <div className="text-muted-foreground text-xs">Installation: {money(item.installation_charge ?? 0)}</div>
                                         )}
                                         {item.warranty_expires_at && (
-                                            <div className="text-muted-foreground text-xs">Warranty until {item.warranty_expires_at}</div>
+                                            <div className="text-muted-foreground text-xs">
+                                                Warranty {item.warranty_months ? ` months, ` : ''}until {item.warranty_expires_at}
+                                            </div>
                                         )}
-                                        {item.serial_numbers.length > 0 && (
-                                            <div className="text-muted-foreground text-xs">SN: {item.serial_numbers.join(', ')}</div>
-                                        )}
+                                        <SaleSerialList
+                                            saleId={sale.id}
+                                            itemId={item.id}
+                                            serials={item.serials}
+                                            confirmed={sale.status === 'confirmed'}
+                                        />
                                     </td>
                                     <td className="px-4 py-2 text-right tabular-nums">
                                         {item.quantity}
@@ -282,7 +305,7 @@ export default function SaleShow({ sale, accounts, justConfirmed, invoiceSetting
                             ))}
                         </tbody>
                         <tfoot>
-                            <tr className="border-t">
+                            <tr className="border-brand-table-divider border-t">
                                 <td colSpan={3} className="text-muted-foreground px-4 py-2 text-right">
                                     Subtotal
                                 </td>
@@ -304,7 +327,15 @@ export default function SaleShow({ sale, accounts, justConfirmed, invoiceSetting
                                     <td className="px-4 py-2 text-right tabular-nums">-{money(sale.discount_amount)}</td>
                                 </tr>
                             )}
-                            <tr className="border-t font-medium">
+                            {sale.emi && sale.emi.interest_total > 0 && (
+                                <tr>
+                                    <td colSpan={3} className="text-muted-foreground px-4 py-2 text-right">
+                                        EMI interest
+                                    </td>
+                                    <td className="px-4 py-2 text-right tabular-nums">+{money(sale.emi.interest_total)}</td>
+                                </tr>
+                            )}
+                            <tr className="border-brand-table-divider border-t font-medium">
                                 <td colSpan={3} className="px-4 py-2 text-right">
                                     Total
                                 </td>
@@ -372,7 +403,15 @@ export default function SaleShow({ sale, accounts, justConfirmed, invoiceSetting
                 onConfirm={confirmDelete}
             />
 
-            {showUndo && sale.status === 'confirmed' && <UndoToast onUndo={undo} processing={undoing} />}
+            <ConfirmDialog
+                open={cancelling}
+                onOpenChange={setCancelling}
+                processing={cancelProcessing}
+                title="Cancel this sale?"
+                description={`"${sale.invoice_no}" বাতিল হবে: stock ফিরে আসবে, customer-এর due ও নেওয়া payment উল্টে যাবে, হিসাবের খাতাও উল্টানো হবে। Sale-টা Cancelled হিসেবে থেকে যাবে। ভুল ঠিক করতে চাইলে বাতিল না করে Edit ব্যবহার করুন।`}
+                confirmLabel="Cancel sale"
+                onConfirm={confirmCancel}
+            />
         </AppLayout>
     );
 }

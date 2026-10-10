@@ -31,7 +31,7 @@ class ProductFormResource extends JsonResource
             'track_serial_number' => $product->track_serial_number,
             'current_stock' => $product->current_stock,
             'can_set_opening_stock' => $product->canSetOpeningStock(),
-            'image_url' => $product->getFirstMediaUrl('images') ?: null,
+            'image_url' => $product->imageUrl(),
             'service_plan' => $product->servicePlanTemplates->map(fn ($template) => [
                 'period_months' => $template->period_months,
                 'free_quota' => $template->free_quota,

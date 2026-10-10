@@ -9,6 +9,7 @@ use App\Enums\StockMovementType;
 use App\Models\AccountTransaction;
 use App\Models\JournalEntry;
 use App\Models\Purchase;
+use App\Models\PurchaseItem;
 use App\Services\AccountService;
 use App\Services\JournalService;
 use App\Services\LedgerService;
@@ -33,7 +34,7 @@ class CancelPurchaseAction
      * @throws ValidationException When a PurchaseReturn already exists against
      *                             this purchase — see the guard below.
      */
-    public function execute(Purchase $purchase): Purchase
+    public function execute(Purchase $purchase, bool $forAmendment = false): Purchase
     {
         if ($purchase->returns()->exists()) {
             throw ValidationException::withMessages([
@@ -41,12 +42,22 @@ class CancelPurchaseAction
             ]);
         }
 
-        return DB::transaction(function () use ($purchase) {
+        return DB::transaction(function () use ($purchase, $forAmendment) {
+            // Lock first: a second Undo arriving together with the first must not reverse the purchase twice.
+            if (Purchase::query()->whereKey($purchase->id)->lockForUpdate()->value('status') === PurchaseStatus::Cancelled) {
+                return $purchase->fresh(['items.product', 'supplier']);
+            }
+
             $purchase->load('items.product', 'supplier');
 
             if ($purchase->status === PurchaseStatus::Received) {
                 foreach ($purchase->items as $item) {
-                    $this->stock->decrease($item->product, $item->quantity, StockMovementType::AdjustmentDecrease, 'purchase', $purchase->id, 'Purchase cancelled', unitCost: $item->unit_price);
+                    $stockBefore = (float) $item->product->current_stock;
+                    $averageBefore = (float) $item->product->avg_cost;
+
+                    $this->stock->decrease($item->product, $item->quantity, StockMovementType::AdjustmentDecrease, 'purchase', $purchase->id, 'Purchase cancelled', unitCost: $item->unit_price, allowShortfall: $forAmendment);
+
+                    $this->restoreAverageCost($purchase, $item, $stockBefore, $averageBefore);
 
                     if ($item->product->track_serial_number) {
                         $soldSerials = $item->serialNumbers()->where('status', '!=', SerialNumberStatus::InStock)->exists();
@@ -76,6 +87,31 @@ class CancelPurchaseAction
 
             return $purchase->fresh(['items.product', 'supplier']);
         });
+    }
+
+    /**
+     * Receiving a purchase blended its price into the product's weighted average cost; taking the receipt out has to take
+     * that price out of the blend again, or a cancelled (or amended) purchase would keep pulling the average. The units
+     * still held are valued at the average, so removing this batch at its own price leaves the average of what remains.
+     * Sales never change the average, so the stock held now is the base. Nothing remains to value when the batch was
+     * all sold: the next receipt then starts the average from its own price, exactly as for an empty shelf.
+     */
+    private function restoreAverageCost(Purchase $purchase, PurchaseItem $item, float $stockBefore, float $averageBefore): void
+    {
+        $remaining = $stockBefore - (float) $item->quantity;
+
+        if ($remaining <= 0) {
+            return;
+        }
+
+        // The price this batch entered the average at (its share of any invoice discount), as ConfirmPurchaseAction used.
+        $batchPrice = $purchase->subtotal > 0
+            ? (float) $item->unit_price * ((float) $purchase->total_amount / (float) $purchase->subtotal)
+            : (float) $item->unit_price;
+
+        $restored = (($stockBefore * $averageBefore) - ((float) $item->quantity * $batchPrice)) / $remaining;
+
+        $item->product->forceFill(['avg_cost' => round(max($restored, 0.0), 2)])->save();
     }
 
     /**

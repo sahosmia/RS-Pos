@@ -22,19 +22,19 @@ export default function SalePaymentHistoryTable({ rows }: SalePaymentHistoryTabl
     }
 
     return (
-        <div className="overflow-x-auto rounded-lg border">
+        <div className="rounded-brand-card bg-card overflow-x-auto shadow-[var(--brand-card-shadow-elevated)]">
             <table className="w-full text-sm">
-                <thead className="bg-muted/50 text-muted-foreground">
+                <thead className="bg-brand-table-header text-muted-foreground text-xs font-semibold">
                     <tr>
-                        <th className="px-4 py-2 text-left font-medium">Date</th>
-                        <th className="px-4 py-2 text-left font-medium">Type</th>
-                        <th className="px-4 py-2 text-left font-medium">Account</th>
-                        <th className="px-4 py-2 text-right font-medium">Amount</th>
+                        <th className="px-4 py-2.5 text-left font-medium">Date</th>
+                        <th className="px-4 py-2.5 text-left font-medium">Type</th>
+                        <th className="px-4 py-2.5 text-left font-medium">Account</th>
+                        <th className="px-4 py-2.5 text-right font-medium">Amount</th>
                     </tr>
                 </thead>
                 <tbody>
                     {rows.map((row) => (
-                        <tr key={row.id} className="border-t">
+                        <tr key={row.id} className="border-brand-table-divider hover:bg-brand-table-row-hover motion-colors border-t">
                             <td className="px-4 py-2 whitespace-nowrap">{formatDate(row.date)}</td>
                             <td className={cn('px-4 py-2', row.kind === 'refund' && 'text-red-600 dark:text-red-400')}>
                                 {row.kind === 'refund' ? 'Refund' : 'Payment'}

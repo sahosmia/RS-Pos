@@ -1,11 +1,10 @@
 import { Head, useForm } from '@inertiajs/react';
-import { BarChart3, LoaderCircle, ShieldCheck, Zap } from 'lucide-react';
+import { BarChart3, Boxes, CalendarClock, DatabaseBackup, FileBarChart, LoaderCircle, ShieldCheck, Wallet, Wrench, Zap } from 'lucide-react';
 import { FormEventHandler } from 'react';
 
 import AuthSplitShell from '@/components/auth/auth-split-shell';
 import { FormInput } from '@/components/form/form-input';
 import InputError from '@/components/input-error';
-import TextLink from '@/components/text-link';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
@@ -19,10 +18,9 @@ interface LoginForm {
 
 interface LoginProps {
     status?: string;
-    canResetPassword: boolean;
 }
 
-export default function Login({ status, canResetPassword }: LoginProps) {
+export default function Login({ status }: LoginProps) {
     const { data, setData, post, processing, errors, reset } = useForm<LoginForm>({
         email: '',
         password: '',
@@ -47,8 +45,14 @@ export default function Login({ status, canResetPassword }: LoginProps) {
                 heroTitle="Powering fast & seamless retail checkout."
                 heroDescription="Manage inventory, process sales, and access real-time financial insights in one unified workspace."
                 features={[
-                    { icon: Zap, label: 'Fast Terminal Speed', iconClassName: 'h-4 w-4 text-amber-400' },
-                    { icon: BarChart3, label: 'Live Sales Tracking', iconClassName: 'h-4 w-4 text-emerald-400' },
+                    { icon: Zap, label: 'Fast Terminal Speed', tone: 'amber' },
+                    { icon: BarChart3, label: 'Live Sales Tracking', tone: 'emerald' },
+                    { icon: Boxes, label: 'Smart Stock Control', tone: 'sky' },
+                    { icon: Wallet, label: 'Dues & Ledger', tone: 'violet' },
+                    { icon: CalendarClock, label: 'EMI & Installments', tone: 'rose' },
+                    { icon: Wrench, label: 'Warranty & Service', tone: 'orange' },
+                    { icon: FileBarChart, label: 'Accounts & Reports', tone: 'teal' },
+                    { icon: DatabaseBackup, label: 'Daily Auto Backup', tone: 'cyan' },
                 ]}
             >
                 {status && (
@@ -73,12 +77,9 @@ export default function Login({ status, canResetPassword }: LoginProps) {
 
                         <div className="grid min-w-0 content-start gap-2">
                             <div className="flex items-center justify-between">
-                                <Label htmlFor="password" required>Password</Label>
-                                {canResetPassword && (
-                                    <TextLink href={route('password.request')} className="text-xs" tabIndex={5}>
-                                        Forgot password?
-                                    </TextLink>
-                                )}
+                                <Label htmlFor="password" required>
+                                    Password
+                                </Label>
                             </div>
                             <PasswordInput
                                 id="password"
@@ -105,7 +106,12 @@ export default function Login({ status, canResetPassword }: LoginProps) {
                             </Label>
                         </div>
 
-                        <Button type="submit" className="mt-2 h-11 w-full bg-indigo-600 hover:bg-indigo-700" tabIndex={4} disabled={processing}>
+                        <Button
+                            type="submit"
+                            className="hover:shadow-brand-primary/35 mt-2 h-11 w-full transition-all hover:-translate-y-px hover:shadow-lg"
+                            tabIndex={4}
+                            disabled={processing}
+                        >
                             {processing && <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />}
                             Log in
                         </Button>

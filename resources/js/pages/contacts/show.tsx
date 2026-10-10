@@ -9,7 +9,9 @@ import { FormInput } from '@/components/form/form-input';
 import HeadingSmall from '@/components/heading-small';
 import InputError from '@/components/input-error';
 import EmptyState from '@/components/shared/empty-state';
+import { MetricCard } from '@/components/shared/metric-card';
 import SearchableSelect from '@/components/shared/searchable-select';
+import { StatusBadge } from '@/components/shared/status-badge';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -18,6 +20,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useMoneyFormat } from '@/hooks/use-money-format';
 import { useTranslation } from '@/hooks/use-translation';
 import AppLayout from '@/layouts/app-layout';
+import { canGiveDiscount, canPayDue } from '@/lib/contact-actions';
 import { formatDate } from '@/lib/format-date';
 import { type BreadcrumbItem } from '@/types';
 import {
@@ -144,16 +147,21 @@ export default function ContactShow({
                     />
 
                     <div className="flex flex-wrap items-center gap-2">
-                        <Badge variant={contact.is_active ? 'secondary' : 'outline'}>
-                            {contact.is_active ? t('common', 'active') : t('common', 'inactive')}
-                        </Badge>
-                        <Badge variant="outline">{humanize(contact.type)}</Badge>
-                        <Button variant="outline" onClick={() => setPayModalOpen(true)} disabled={accounts.length === 0}>
-                            {t('contactShow', 'pay_due')}
-                        </Button>
-                        <Button variant="outline" onClick={() => setWaiveModalOpen(true)}>
-                            {t('contactShow', 'add_discount')}
-                        </Button>
+                        <StatusBadge
+                            status={contact.is_active ? 'active' : 'inactive'}
+                            label={contact.is_active ? t('common', 'active') : t('common', 'inactive')}
+                        />
+                        <Badge variant="secondary">{humanize(contact.type)}</Badge>
+                        {canPayDue(contact) && (
+                            <Button variant="outline" onClick={() => setPayModalOpen(true)} disabled={accounts.length === 0}>
+                                {t('contactShow', 'pay_due')}
+                            </Button>
+                        )}
+                        {canGiveDiscount(contact) && (
+                            <Button variant="outline" onClick={() => setWaiveModalOpen(true)}>
+                                {t('contactShow', 'add_discount')}
+                            </Button>
+                        )}
                         {canRefund && (
                             <Button variant="outline" onClick={() => setRefundModalOpen(true)} disabled={accounts.length === 0}>
                                 {t('contactShow', 'refund')}
@@ -165,13 +173,10 @@ export default function ContactShow({
                     </div>
                 </div>
 
-                <div className="rounded-lg border p-4">
-                    <p className="text-muted-foreground text-sm">{t('contactShow', 'balance')}</p>
-                    <p className="text-2xl font-semibold tabular-nums">{contact.balance_label}</p>
-                </div>
+                <MetricCard label={t('contactShow', 'balance')} value={contact.balance_label} />
 
                 <Tabs defaultValue="ledger">
-                    <TabsList className="print:hidden">
+                    <TabsList variant="underline" className="print:hidden">
                         <TabsTrigger value="ledger">{t('contactShow', 'ledger')}</TabsTrigger>
                         <TabsTrigger value="purchases">{t('contactShow', 'purchases')}</TabsTrigger>
                         <TabsTrigger value="sales">{t('contactShow', 'sales')}</TabsTrigger>
@@ -288,20 +293,23 @@ export default function ContactShow({
                                 description={t('contactShow', 'empty_purchases_description')}
                             />
                         ) : (
-                            <div className="overflow-x-auto rounded-lg border">
+                            <div className="rounded-brand-card bg-card overflow-x-auto shadow-[var(--brand-card-shadow-elevated)]">
                                 <table className="w-full text-sm">
-                                    <thead className="bg-muted/50 text-muted-foreground">
+                                    <thead className="bg-brand-table-header text-muted-foreground text-xs font-semibold">
                                         <tr>
-                                            <th className="px-4 py-2 text-left font-medium">{t('common', 'invoice')}</th>
-                                            <th className="px-4 py-2 text-left font-medium">{t('common', 'date')}</th>
-                                            <th className="px-4 py-2 text-right font-medium">{t('common', 'total')}</th>
-                                            <th className="px-4 py-2 text-right font-medium">{t('common', 'due')}</th>
-                                            <th className="px-4 py-2 text-left font-medium">{t('common', 'status')}</th>
+                                            <th className="px-4 py-2.5 text-left font-medium">{t('common', 'invoice')}</th>
+                                            <th className="px-4 py-2.5 text-left font-medium">{t('common', 'date')}</th>
+                                            <th className="px-4 py-2.5 text-right font-medium">{t('common', 'total')}</th>
+                                            <th className="px-4 py-2.5 text-right font-medium">{t('common', 'due')}</th>
+                                            <th className="px-4 py-2.5 text-left font-medium">{t('common', 'status')}</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         {purchases.map((purchase) => (
-                                            <tr key={purchase.id} className="border-t">
+                                            <tr
+                                                key={purchase.id}
+                                                className="border-brand-table-divider hover:bg-brand-table-row-hover motion-colors border-t"
+                                            >
                                                 <td className="px-4 py-2">
                                                     <Link href={route('purchases.show', purchase.id)} className="underline-offset-2 hover:underline">
                                                         {purchase.invoice_no}
@@ -311,7 +319,7 @@ export default function ContactShow({
                                                 <td className="px-4 py-2 text-right tabular-nums">{money(purchase.total_amount)}</td>
                                                 <td className="px-4 py-2 text-right tabular-nums">{money(purchase.due_amount)}</td>
                                                 <td className="px-4 py-2">
-                                                    <Badge variant="outline">{humanize(purchase.status)}</Badge>
+                                                    <StatusBadge status={purchase.status} />
                                                 </td>
                                             </tr>
                                         ))}
@@ -325,20 +333,23 @@ export default function ContactShow({
                         {sales.length === 0 ? (
                             <EmptyState title={t('contactShow', 'empty_sales_title')} description={t('contactShow', 'empty_sales_description')} />
                         ) : (
-                            <div className="overflow-x-auto rounded-lg border">
+                            <div className="rounded-brand-card bg-card overflow-x-auto shadow-[var(--brand-card-shadow-elevated)]">
                                 <table className="w-full text-sm">
-                                    <thead className="bg-muted/50 text-muted-foreground">
+                                    <thead className="bg-brand-table-header text-muted-foreground text-xs font-semibold">
                                         <tr>
-                                            <th className="px-4 py-2 text-left font-medium">{t('common', 'invoice')}</th>
-                                            <th className="px-4 py-2 text-left font-medium">{t('common', 'date')}</th>
-                                            <th className="px-4 py-2 text-right font-medium">{t('common', 'total')}</th>
-                                            <th className="px-4 py-2 text-right font-medium">{t('common', 'due')}</th>
-                                            <th className="px-4 py-2 text-left font-medium">{t('common', 'status')}</th>
+                                            <th className="px-4 py-2.5 text-left font-medium">{t('common', 'invoice')}</th>
+                                            <th className="px-4 py-2.5 text-left font-medium">{t('common', 'date')}</th>
+                                            <th className="px-4 py-2.5 text-right font-medium">{t('common', 'total')}</th>
+                                            <th className="px-4 py-2.5 text-right font-medium">{t('common', 'due')}</th>
+                                            <th className="px-4 py-2.5 text-left font-medium">{t('common', 'status')}</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         {sales.map((sale) => (
-                                            <tr key={sale.id} className="border-t">
+                                            <tr
+                                                key={sale.id}
+                                                className="border-brand-table-divider hover:bg-brand-table-row-hover motion-colors border-t"
+                                            >
                                                 <td className="px-4 py-2">
                                                     <Link href={route('sales.show', sale.id)} className="underline-offset-2 hover:underline">
                                                         {sale.invoice_no}
@@ -348,7 +359,7 @@ export default function ContactShow({
                                                 <td className="px-4 py-2 text-right tabular-nums">{money(sale.total_amount)}</td>
                                                 <td className="px-4 py-2 text-right tabular-nums">{money(sale.due_amount)}</td>
                                                 <td className="px-4 py-2">
-                                                    <Badge variant="outline">{humanize(sale.status)}</Badge>
+                                                    <StatusBadge status={sale.status} />
                                                 </td>
                                             </tr>
                                         ))}

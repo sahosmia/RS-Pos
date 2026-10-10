@@ -9,7 +9,7 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { router } from '@inertiajs/react';
-import { Boxes, ClipboardList, type LucideIcon, Package, Plus, Receipt, ShoppingBag, UserPlus, Wallet } from 'lucide-react';
+import { Boxes, ClipboardList, type LucideIcon, Package, Plus, Receipt, RotateCcw, ShoppingBag, Undo2, UserPlus, Wallet, Wrench } from 'lucide-react';
 
 interface QuickCreateItem {
     label: string;
@@ -40,6 +40,14 @@ function buildGroups(): QuickCreateGroup[] {
                 { label: 'New Sale', icon: Receipt, href: route('sales.create') },
                 { label: 'New Purchase', icon: ShoppingBag, href: route('purchases.create') },
                 { label: 'New Sales Order', icon: ClipboardList, href: route('sales-orders.create') },
+            ],
+        },
+        {
+            heading: 'Returns & Service',
+            items: [
+                { label: 'New Sale Return', icon: RotateCcw, href: route('sale-returns.create') },
+                { label: 'New Purchase Return', icon: Undo2, href: route('purchase-returns.create') },
+                { label: 'New Service', icon: Wrench, href: route('service-requests.create') },
             ],
         },
         {
@@ -75,7 +83,7 @@ export default function QuickCreateMenu() {
                 {groups.map((group, index) => (
                     <DropdownMenuGroup key={group.heading}>
                         {index > 0 && <DropdownMenuSeparator />}
-                        <DropdownMenuLabel className="text-muted-foreground text-xs font-medium">{group.heading}</DropdownMenuLabel>
+                        <DropdownMenuLabel>{group.heading}</DropdownMenuLabel>
                         {group.items.map((item) => (
                             <DropdownMenuItem key={item.label} onSelect={() => router.visit(item.href)}>
                                 <item.icon />

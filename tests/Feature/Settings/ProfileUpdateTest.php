@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Product;
 use App\Models\User;
 
 test('profile page is displayed', function () {
@@ -54,7 +55,8 @@ test('email verification status is unchanged when the email address is unchanged
 });
 
 test('user can delete their account', function () {
-    $user = User::factory()->create();
+    // An ordinary account with nothing recorded; one that manages users or has activity is protected below.
+    $user = userWithPermissions(['product.view']);
 
     $response = $this
         ->actingAs($user)
@@ -83,6 +85,29 @@ test('correct password must be provided to delete account', function () {
     $response
         ->assertSessionHasErrors('password')
         ->assertRedirect('/settings/profile');
+
+    expect($user->fresh())->not->toBeNull();
+});
+
+test('an administrator cannot delete their own account', function () {
+    $admin = userWithPermissions(['role.manage']);
+
+    $this->actingAs($admin)
+        ->from('/settings/profile')
+        ->delete('/settings/profile', ['password' => 'password'])
+        ->assertSessionHasErrors('password');
+
+    expect($admin->fresh())->not->toBeNull();
+});
+
+test('a user who has recorded activity cannot delete their own account', function () {
+    $user = userWithPermissions(['product.create']);
+    Product::factory()->create(['created_by' => $user->id]);
+
+    $this->actingAs($user)
+        ->from('/settings/profile')
+        ->delete('/settings/profile', ['password' => 'password'])
+        ->assertSessionHasErrors('password');
 
     expect($user->fresh())->not->toBeNull();
 });

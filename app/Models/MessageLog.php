@@ -17,10 +17,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  */
 class MessageLog extends Model
 {
+    use HasCreator;
+
     /** @use HasFactory<MessageLogFactory> */
     use HasFactory;
-
-    use HasCreator;
 
     /**
      * @var list<string>
@@ -31,6 +31,7 @@ class MessageLog extends Model
         'subject',
         'message',
         'status',
+        'error',
         'reference_type',
         'reference_id',
         'attachment_type',

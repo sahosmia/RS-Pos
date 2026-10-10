@@ -5,6 +5,7 @@ namespace App\Http\Controllers\OtherLiabilities;
 use App\Actions\OtherLiability\CreateOtherLiabilityAction;
 use App\Actions\OtherLiability\UpdateOtherLiabilityAction;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Common\BulkDestroyRequest;
 use App\Http\Requests\OtherLiability\StoreOtherLiabilityRequest;
 use App\Http\Requests\OtherLiability\UpdateOtherLiabilityRequest;
 use App\Models\Account;
@@ -12,6 +13,7 @@ use App\Models\OtherLiability;
 use App\Models\OtherLiabilityTransaction;
 use App\Models\Settings;
 use App\Queries\OtherLiability\OtherLiabilityQuery;
+use App\Support\BulkDelete;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -108,14 +110,25 @@ class OtherLiabilityController extends Controller
      */
     public function destroy(OtherLiability $otherLiability): RedirectResponse
     {
-        if ($otherLiability->transactions()->exists()) {
-            return back()->withErrors([
-                'other_liability' => 'This liability has recorded transactions and cannot be deleted.',
-            ]);
+        if ($reason = $otherLiability->deletionBlockReason()) {
+            return back()->withErrors(['other_liability' => $reason]);
         }
 
         $otherLiability->delete();
 
         return to_route('other-liabilities.index');
+    }
+
+    /**
+     * "Delete selected" — each record is checked by the same rule as the single delete.
+     */
+    public function bulkDestroy(BulkDestroyRequest $request): RedirectResponse
+    {
+        return BulkDelete::respond(BulkDelete::run(
+            $request->validated('ids'),
+            OtherLiability::query()->whereIn('id', $request->validated('ids'))->get(),
+            fn (OtherLiability $otherLiability) => $otherLiability->deletionBlockReason(),
+            fn (OtherLiability $otherLiability) => $otherLiability->delete(),
+        ));
     }
 }

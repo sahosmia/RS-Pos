@@ -78,6 +78,8 @@ export function useSaleCart({ form, products }: Options) {
             discountValue: 0,
             installationRequired: false,
             installationCharge: null,
+            warrantyMonths: product.warranty_period_months ?? 0,
+            servicePlanIncluded: true,
             serialNumbers: [],
         });
     };
@@ -97,6 +99,8 @@ export function useSaleCart({ form, products }: Options) {
             discountValue: item.discount_value,
             installationRequired: item.installation_required,
             installationCharge: item.installation_charge,
+            warrantyMonths: item.warranty_months,
+            servicePlanIncluded: item.service_plan_included,
             serialNumbers: item.serial_numbers,
         });
     };
@@ -114,6 +118,8 @@ export function useSaleCart({ form, products }: Options) {
             discountValue,
             installationRequired,
             installationCharge,
+            warrantyMonths,
+            servicePlanIncluded,
             serialNumbers,
         } = cartSheet;
 
@@ -126,6 +132,8 @@ export function useSaleCart({ form, products }: Options) {
                 discount_value: discountValue,
                 installation_required: installationRequired,
                 installation_charge: installationCharge,
+                warranty_months: warrantyMonths,
+                service_plan_included: servicePlanIncluded,
                 serial_numbers: serialNumbers,
             });
         } else {
@@ -145,6 +153,9 @@ export function useSaleCart({ form, products }: Options) {
                         discount_value: discountValue,
                         installation_required: installationRequired,
                         installation_charge: installationCharge,
+                        emi_financed: true,
+                        warranty_months: warrantyMonths,
+                        service_plan_included: servicePlanIncluded,
                         note: null,
                         serial_numbers: serialNumbers,
                     },

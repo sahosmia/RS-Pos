@@ -2,12 +2,14 @@
 
 namespace App\Models;
 
+use App\Enums\AccountTransactionType;
 use App\Enums\DeliveryStatus;
 use App\Enums\DiscountType;
 use App\Enums\PaymentStatus;
 use App\Enums\SalePaymentType;
 use App\Enums\SaleSource;
 use App\Enums\SaleStatus;
+use App\Enums\ServiceRequestType;
 use App\Models\Concerns\HasCreator;
 use App\Models\Concerns\LogsActivityDefaults;
 use App\Traits\HasAccountTransactions;
@@ -51,6 +53,13 @@ class Sale extends Model
         'valid_until',
         'financing_type',
         'installment_count',
+        'emi_interest_method',
+        'emi_annual_rate',
+        'emi_frequency',
+        'emi_tenure_value',
+        'emi_tenure_unit',
+        'emi_installation_upfront',
+        'emi_interest_total',
         'created_by',
     ];
 
@@ -76,6 +85,10 @@ class Sale extends Model
             'valid_until' => 'date',
             'financing_type' => SalePaymentType::class,
             'installment_count' => 'integer',
+            'emi_annual_rate' => 'float',
+            'emi_tenure_value' => 'integer',
+            'emi_installation_upfront' => 'boolean',
+            'emi_interest_total' => 'float',
         ];
     }
 
@@ -155,11 +168,31 @@ class Sale extends Model
      */
     /**
      * Installation charge billed on this sale — whatever the total carries beyond the goods after discount.
-     * Derived (not stored) so sales made before installation was billed keep reading 0.
+     * Derived (not stored) so sales made before installation was billed keep reading 0. EMI interest is also
+     * added to the total on confirm, so it is taken out first: it is not installation.
      */
     public function getInstallationAmountAttribute(): float
     {
-        return max(round($this->total_amount - ($this->subtotal - $this->discount_amount), 2), 0.0);
+        return max(round($this->total_amount - (float) $this->emi_interest_total - ($this->subtotal - $this->discount_amount), 2), 0.0);
+    }
+
+    /**
+     * The goods, after discounts, on the lines chosen for EMI (`emi_financed`). The invoice-level discount is
+     * shared across lines in proportion to their subtotals, so the EMI part and the pay-now part always add up to
+     * the sale's discounted goods. Everything beyond this on the invoice (other products, installation) is not financed.
+     */
+    public function emiFinancedGoods(): float
+    {
+        $this->loadMissing('items');
+
+        $financedSubtotal = round((float) $this->items->where('emi_financed', true)->sum('subtotal'), 2);
+        $subtotal = (float) $this->subtotal;
+
+        if ($subtotal <= 0.0) {
+            return $financedSubtotal;
+        }
+
+        return round($financedSubtotal - round((float) $this->discount_amount * $financedSubtotal / $subtotal, 2), 2);
     }
 
     public function recalculatePaymentTotals(): void
@@ -212,5 +245,77 @@ class Sale extends Model
             ->where(fn (Builder $q) => $q->whereNull('financing_type')->orWhere('financing_type', '!=', SalePaymentType::Emi))
             ->orderBy('sale_date')
             ->orderBy('id');
+    }
+
+    /**
+     * Why this record can't be deleted, or null when it can — one rule for the single and the bulk delete.
+     */
+    public function deletionBlockReason(): ?string
+    {
+        return $this->canEdit() ? null : 'This sale has already been confirmed and cannot be deleted.';
+    }
+
+    /**
+     * Narrows to what the user may see: everything with `sale.view_all`, otherwise only the records they created.
+     *
+     * @param  Builder<Sale>  $query
+     */
+    public function scopeVisibleTo(Builder $query, ?User $user): void
+    {
+        if ($user === null || ! $user->can('sale.view_all')) {
+            $query->where('created_by', $user?->id);
+        }
+    }
+
+    /**
+     * Why a Confirmed sale cannot be amended (edited after confirmation), or null when it can. An amendment
+     * reverses the sale and records it again, so anything that has since been built on top of it must not exist.
+     */
+    public function amendBlockReason(): ?string
+    {
+        if ($this->status !== SaleStatus::Confirmed) {
+            return 'Only a confirmed sale can be amended.';
+        }
+
+        if ($this->source === SaleSource::Imported) {
+            return 'A historical record has no stock or money behind it and cannot be amended.';
+        }
+
+        $itemIds = $this->items()->select('id');
+
+        return match (true) {
+            $this->returns()->exists() => 'This sale has a return recorded against it — it can no longer be amended.',
+            $this->waivedAmount() > 0 => 'A discount was waived against this sale — it can no longer be amended.',
+            $this->emiInstallments()->where('paid_amount', '>', 0)->exists() => 'An installment of this sale has already been paid — it can no longer be amended.',
+            WarrantyClaim::query()->whereIn('sale_item_id', $itemIds)->exists() => 'A warranty claim is recorded on this sale — it can no longer be amended.',
+            // The installation request made automatically at confirm time has no money of its own and is made again; any
+            // other service visit (or one with a charge posted) is real history.
+            ServiceRequest::query()
+                ->whereIn('sale_item_id', $itemIds)
+                ->where(fn ($query) => $query->where('type', '!=', ServiceRequestType::Installation)->orWhereNotNull('account_id'))
+                ->exists() => 'A service visit is recorded on this sale — it can no longer be amended.',
+            default => null,
+        };
+    }
+
+    /**
+     * What was actually received on this sale, per account — the payment rows an amendment starts from.
+     * Payments later added to the sale count too; refunds and EMI collections do not appear here.
+     *
+     * @return list<array{account_id: int, amount: float}>
+     */
+    public function receivedPerAccount(): array
+    {
+        return AccountTransaction::query()
+            ->where('reference_type', 'sale')
+            ->where('reference_id', $this->id)
+            ->where('type', AccountTransactionType::SalePayment)
+            ->selectRaw('account_id, SUM(amount) as amount')
+            ->groupBy('account_id')
+            ->get()
+            ->filter(fn ($row) => (float) $row->amount > 0)
+            ->map(fn ($row) => ['account_id' => (int) $row->account_id, 'amount' => round((float) $row->amount, 2)])
+            ->values()
+            ->all();
     }
 }

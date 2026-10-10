@@ -1,8 +1,8 @@
 import SaleForm from '@/components/sales/sale-form';
 import PageHeader from '@/components/shared/page-header';
 import { type ProductOption } from '@/components/shared/product-search-input';
-import AppLayout from '@/layouts/app-layout';
 import { Button } from '@/components/ui/button';
+import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { type Account, type CustomerOption, type SaleFormDetail } from '@/types/models';
 import { Head, Link } from '@inertiajs/react';
@@ -34,7 +34,11 @@ export default function SalesEdit({ sale, initialCustomer, products, accounts }:
                     description={
                         <>
                             {sale.invoice_no}
-                            <span className="ml-2 font-medium">· Draft/Quotation অবস্থায় স্বাধীনভাবে সম্পাদনা করা যায়</span>
+                            <span className="ml-2 font-medium">
+                                {sale.amending
+                                    ? '· Confirmed sale: সেভ করলে আগেরটা উল্টে একই invoice-এ নতুনটা confirm হবে (stock, due, payment, হিসাব সব মিলে যাবে)'
+                                    : '· Draft/Quotation অবস্থায় স্বাধীনভাবে সম্পাদনা করা যায়'}
+                            </span>
                         </>
                     }
                     actions={

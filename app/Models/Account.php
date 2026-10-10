@@ -14,10 +14,11 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Account extends Model
 {
+    use HasCreator;
+
     /** @use HasFactory<AccountFactory> */
     use HasFactory;
 
-    use HasCreator;
     use LogsActivityDefaults;
 
     /**

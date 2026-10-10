@@ -1,6 +1,7 @@
 import HeadingSmall from '@/components/heading-small';
 import EmptyState from '@/components/shared/empty-state';
 import LedgerTable, { type LedgerRow } from '@/components/shared/ledger-table';
+import { MetricCard } from '@/components/shared/metric-card';
 import AddStaffTransactionModal from '@/components/staff/add-staff-transaction-modal';
 import { Button } from '@/components/ui/button';
 import { useMoneyFormat } from '@/hooks/use-money-format';
@@ -56,9 +57,7 @@ export default function StaffShow({ staffMember, transactions, transactionTypes,
             `বর্তমান ব্যালেন্স: ${money(staffMember.balance)} (${staffMember.balance_label})`,
             '',
             'সাম্প্রতিক লেনদেন:',
-            ...recentEntries.map(
-                (entry) => `${entry.created_at} — ${entry.type.name}: ${money(entry.amount)} (ব্যালেন্স: ${money(entry.balance)})`,
-            ),
+            ...recentEntries.map((entry) => `${entry.created_at} — ${entry.type.name}: ${money(entry.amount)} (ব্যালেন্স: ${money(entry.balance)})`),
         ];
 
         openWhatsapp(staffMember.phone, lines.join('\n'));
@@ -85,18 +84,9 @@ export default function StaffShow({ staffMember, transactions, transactionTypes,
                 </div>
 
                 <div className="grid gap-4 sm:grid-cols-3">
-                    <div className="rounded-lg border p-4">
-                        <p className="text-muted-foreground text-sm">Monthly Salary</p>
-                        <p className="text-xl font-semibold tabular-nums">{money(staffMember.salary_amount)}</p>
-                    </div>
-                    <div className="rounded-lg border p-4">
-                        <p className="text-muted-foreground text-sm">Balance</p>
-                        <p className="text-xl font-semibold tabular-nums">{money(staffMember.balance)}</p>
-                    </div>
-                    <div className="rounded-lg border p-4">
-                        <p className="text-muted-foreground text-sm">Status</p>
-                        <p className="text-xl font-semibold">{staffMember.balance_label}</p>
-                    </div>
+                    <MetricCard label="Monthly Salary" value={money(staffMember.salary_amount)} />
+                    <MetricCard label="Balance" value={money(staffMember.balance)} />
+                    <MetricCard label="Status" value={staffMember.balance_label} />
                 </div>
 
                 {rows.length === 0 ? (

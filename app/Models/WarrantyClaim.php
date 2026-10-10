@@ -12,10 +12,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class WarrantyClaim extends Model
 {
+    use HasCreator;
+
     /** @use HasFactory<WarrantyClaimFactory> */
     use HasFactory;
 
-    use HasCreator;
     use LogsActivityDefaults;
 
     /**

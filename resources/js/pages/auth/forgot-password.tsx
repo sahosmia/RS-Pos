@@ -28,8 +28,8 @@ export default function ForgotPassword({ status }: { status?: string }) {
                 heroTitle="Forgot your password? No worries."
                 heroDescription="Enter your registered cashier or staff email address, and we will send you a password reset link to regain access."
                 features={[
-                    { icon: Zap, label: 'Instant Reset Link', iconClassName: 'h-4 w-4 text-amber-400' },
-                    { icon: BarChart3, label: 'Protected Terminal', iconClassName: 'h-4 w-4 text-emerald-400' },
+                    { icon: Zap, label: 'Instant Reset Link' },
+                    { icon: BarChart3, label: 'Protected Terminal' },
                 ]}
             >
                 {status && (
@@ -51,7 +51,11 @@ export default function ForgotPassword({ status }: { status?: string }) {
                             error={errors.email}
                         />
 
-                        <Button type="submit" className="h-11 w-full bg-indigo-600 hover:bg-indigo-700" disabled={processing}>
+                        <Button
+                            type="submit"
+                            className="hover:shadow-brand-primary/35 h-11 w-full transition-all hover:-translate-y-px hover:shadow-lg"
+                            disabled={processing}
+                        >
                             {processing && <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />}
                             Email password reset link
                         </Button>
@@ -59,7 +63,10 @@ export default function ForgotPassword({ status }: { status?: string }) {
                 </form>
 
                 <div className="text-muted-foreground text-center text-sm">
-                    <TextLink href={route('login')} className="inline-flex items-center gap-1">
+                    <TextLink
+                        href={route('login')}
+                        className="text-brand-primary-text decoration-brand-primary/40 hover:decoration-brand-primary! inline-flex items-center gap-1 font-medium"
+                    >
                         <ArrowLeft className="h-3.5 w-3.5" /> Return to log in
                     </TextLink>
                 </div>

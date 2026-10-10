@@ -19,10 +19,11 @@ use Spatie\MediaLibrary\InteractsWithMedia;
 
 class Contact extends Model implements HasMedia
 {
+    use HasCreator;
+
     /** @use HasFactory<ContactFactory> */
     use HasFactory;
 
-    use HasCreator;
     use InteractsWithMedia;
     use LogsActivityDefaults;
 

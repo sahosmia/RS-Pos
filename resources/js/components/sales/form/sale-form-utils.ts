@@ -1,5 +1,6 @@
 import { discountAmountFor, type DiscountTypeValue } from '@/components/sales/discount-modal';
 import { type ProductOption } from '@/components/shared/product-search-input';
+import { type EmiFrequencyValue, type EmiInterestMethodValue, type EmiTenureUnitValue } from '@/hooks/use-emi-preview';
 import { type SaleFormItem } from '@/types/models';
 import { type InertiaFormProps } from '@inertiajs/react';
 
@@ -10,8 +11,19 @@ export type SaleFormData = {
     discount_type: DiscountTypeValue;
     discount_value: number;
     valid_until: string;
+    /** Sales Order only: when the goods are promised. */
+    expected_delivery_date: string;
     financing_type: 'one_time' | 'emi';
+    /** Derived from the duration by the server; kept so the older count-only flow still works. */
     installment_count: number | null;
+    emi_interest_method: EmiInterestMethodValue;
+    emi_annual_rate: number;
+    emi_tenure_value: number | null;
+    emi_tenure_unit: EmiTenureUnitValue;
+    emi_frequency: EmiFrequencyValue;
+    emi_installation_upfront: boolean;
+    /** Required when amending a confirmed sale; kept in the Activity Log. */
+    amend_reason: string;
     items: SaleFormItem[];
 };
 
@@ -31,6 +43,8 @@ export interface CartSheetDraft {
     discountValue: number;
     installationRequired: boolean;
     installationCharge: number | null;
+    warrantyMonths: number;
+    servicePlanIncluded: boolean;
     serialNumbers: string[];
 }
 
@@ -48,6 +62,9 @@ export const emptyItem = (product: ProductOption): SaleFormItem => ({
     discount_value: 0,
     installation_required: false,
     installation_charge: null,
+    emi_financed: true,
+    warranty_months: product.warranty_period_months ?? 0,
+    service_plan_included: true,
     note: null,
     serial_numbers: [],
 });
@@ -58,6 +75,21 @@ export const startingItems = (products: ProductOption[], productId?: number | nu
 
     return product ? [emptyItem(product)] : [];
 };
+
+/**
+ * The goods (after the invoice discount) on the lines chosen for EMI. The invoice discount is shared across the lines
+ * by price — same as the backend's Sale::emiFinancedGoods() — so the EMI part and the pay-now part add up to the goods.
+ */
+export function financedGoodsFor(items: SaleFormItem[], discountAmount: number, isFinanced: (item: SaleFormItem, index: number) => boolean): number {
+    const subtotal = items.reduce((sum, item) => sum + item.quantity * item.unit_price, 0);
+    const financedSubtotal = items.reduce((sum, item, index) => sum + (isFinanced(item, index) ? item.quantity * item.unit_price : 0), 0);
+
+    if (subtotal <= 0) {
+        return 0;
+    }
+
+    return round2(financedSubtotal - round2((discountAmount * financedSubtotal) / subtotal));
+}
 
 /**
  * The cart's money figures: line subtotal, invoice-level discount, installation charges and what's left to pay.

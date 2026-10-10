@@ -11,10 +11,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class AssetTransaction extends Model
 {
+    use HasCreator;
+
     /** @use HasFactory<AssetTransactionFactory> */
     use HasFactory;
-
-    use HasCreator;
 
     /**
      * @var list<string>

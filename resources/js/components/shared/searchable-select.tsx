@@ -1,4 +1,5 @@
 import { Input } from '@/components/ui/input';
+import { controlSize, controlSurface } from '@/lib/form-control';
 import { cn } from '@/lib/utils';
 import { ChevronDown, Loader2, X } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -34,6 +35,9 @@ interface SearchableSelectProps<T extends SearchableSelectOption> {
     clearable?: boolean;
     id?: string;
     className?: string;
+    /** Pass `fieldAriaProps(id, error, helperText)` so the trigger shows the error state and links to its message. */
+    'aria-invalid'?: boolean;
+    'aria-describedby'?: string;
 }
 
 /**
@@ -67,6 +71,8 @@ export default function SearchableSelect<T extends SearchableSelectOption>({
     clearable = false,
     id,
     className,
+    'aria-invalid': ariaInvalid,
+    'aria-describedby': ariaDescribedBy,
 }: SearchableSelectProps<T>) {
     const isAsync = searchUrl !== undefined;
     const [open, setOpen] = useState(false);
@@ -214,7 +220,8 @@ export default function SearchableSelect<T extends SearchableSelectOption>({
         }
     };
 
-    const showHint = isAsync && trimmed.length > 0 && trimmed.length < minChars;
+    // An async picker has nothing to list until something is typed, so say so instead of opening an empty panel.
+    const showHint = isAsync && trimmed.length < minChars;
     const showEmpty = !loading && !showHint && trimmed.length >= (isAsync ? minChars : 0) && matches.length === 0;
 
     return (
@@ -232,11 +239,15 @@ export default function SearchableSelect<T extends SearchableSelectOption>({
                         onKeyDown={onKeyDown}
                         placeholder={placeholder}
                         autoComplete="off"
+                        role="combobox"
+                        aria-expanded
+                        aria-invalid={ariaInvalid}
+                        aria-describedby={ariaDescribedBy}
                         className="pr-8"
                     />
                     <Loader2
                         className={cn(
-                            'text-muted-foreground pointer-events-none absolute top-1/2 right-2 size-4 -translate-y-1/2 animate-spin transition-opacity duration-200',
+                            'text-muted-foreground motion-opacity pointer-events-none absolute top-1/2 right-2 size-4 -translate-y-1/2 animate-spin',
                             loading ? 'opacity-100' : 'opacity-0',
                         )}
                     />
@@ -247,7 +258,12 @@ export default function SearchableSelect<T extends SearchableSelectOption>({
                     id={id}
                     disabled={disabled}
                     onClick={openDropdown}
-                    className="border-input bg-card placeholder:text-muted-foreground flex h-10 w-full items-center justify-between rounded-md border px-3 py-2 text-left text-sm transition-colors duration-200 focus-visible:border-primary focus-visible:outline-hidden disabled:cursor-not-allowed disabled:opacity-50"
+                    role="combobox"
+                    aria-expanded={false}
+                    aria-haspopup="listbox"
+                    aria-invalid={ariaInvalid}
+                    aria-describedby={ariaDescribedBy}
+                    className={cn('flex w-full items-center justify-between text-left', controlSurface, controlSize())}
                 >
                     <span className={cn('truncate', !value && 'text-muted-foreground')}>{value ? getLabel(value) : placeholder}</span>
                     <span className="ml-2 flex shrink-0 items-center gap-1">
@@ -260,7 +276,7 @@ export default function SearchableSelect<T extends SearchableSelectOption>({
                                 }}
                             />
                         )}
-                        <ChevronDown className="text-muted-foreground size-4 opacity-50" />
+                        <ChevronDown className="text-muted-foreground size-4" />
                     </span>
                 </button>
             )}
@@ -271,20 +287,28 @@ export default function SearchableSelect<T extends SearchableSelectOption>({
                     <div
                         ref={panelRef}
                         style={{ position: 'fixed', top: position.top, left: position.left, width: position.width }}
-                        className="bg-popover z-50 max-h-72 overflow-y-auto rounded-md border shadow-md"
+                        role="listbox"
+                        className="bg-popover border-brand-popover-border rounded-brand-control z-50 max-h-72 overflow-y-auto border p-1 shadow-[var(--brand-popover-shadow)]"
                     >
-                        {showHint && <p className="text-muted-foreground px-3 py-2 text-sm">Type at least {minChars} characters to search</p>}
-                        {!showHint && loading && matches.length === 0 && <p className="text-muted-foreground px-3 py-2 text-sm">Searching...</p>}
-                        {showEmpty && <p className="text-muted-foreground px-3 py-2 text-sm">No results found</p>}
+                        {showHint && (
+                            <p className="text-muted-foreground px-2.5 py-2 text-sm">
+                                {trimmed.length === 0 ? 'Type to search…' : `Type at least ${minChars} characters to search`}
+                            </p>
+                        )}
+                        {!showHint && loading && matches.length === 0 && <p className="text-muted-foreground px-2.5 py-2 text-sm">Searching...</p>}
+                        {showEmpty && <p className="text-muted-foreground px-2.5 py-2 text-sm">No results found</p>}
                         {matches.map((option, index) => (
                             <button
                                 type="button"
                                 key={option.id}
+                                role="option"
+                                aria-selected={value?.id === option.id}
                                 onClick={() => select(option)}
                                 onMouseEnter={() => setHighlighted(index)}
                                 className={cn(
-                                    'flex w-full items-center justify-between px-3 py-2 text-left text-sm',
-                                    index === highlighted && 'bg-accent text-accent-foreground',
+                                    'flex w-full items-center justify-between rounded-[calc(var(--brand-control-radius)-3px)] px-2.5 py-1.5 text-left text-sm',
+                                    index === highlighted && 'bg-brand-secondary',
+                                    value?.id === option.id && 'font-medium',
                                 )}
                             >
                                 <span className="truncate">{getLabel(option)}</span>

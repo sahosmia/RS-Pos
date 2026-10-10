@@ -34,6 +34,8 @@ export interface SharedData {
     auth: Auth;
     /** True for exactly the one page render right after logging in (flashed, not persisted) — see `useSidebarState`. */
     freshLogin: boolean;
+    /** Figures of the sale that was just saved, present only on the page right after saving. */
+    savedSale: { invoice_no: string; total_amount: number; due_amount: number; customer_balance: number } | null;
     shop: {
         /** Editable at `business-settings`; falls back to `null` before it's ever been set — see `app.tsx`'s page-title fallback. */
         shop_name: string | null;
@@ -46,6 +48,8 @@ export interface SharedData {
         currency_symbol: string;
         emi_module_enabled: boolean;
         serial_number_module_enabled: boolean;
+        /** An SMS company is set up and switched on (Business Settings → SMS). */
+        sms_ready: boolean;
         pagination_options: number[];
         pagination_default: number;
         pagination_allow_all: boolean;
@@ -65,6 +69,7 @@ export interface User {
     id: number;
     name: string;
     email: string;
+    username?: string | null;
     avatar?: string;
     /** UI language preference (Phase 33 §4) — 'en' or 'bn', default 'en'. */
     locale: string;

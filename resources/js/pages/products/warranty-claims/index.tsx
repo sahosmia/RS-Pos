@@ -1,6 +1,6 @@
 import ListTable from '@/components/data-table/list-table';
-import HeadingSmall from '@/components/heading-small';
 import EmptyState from '@/components/shared/empty-state';
+import PageHeader from '@/components/shared/page-header';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -63,10 +63,15 @@ export default function WarrantyClaimsIndex({ claims, searchQuery, searchResults
             <Head title={t('warrantyClaims', 'title')} />
 
             <div className="space-y-6 px-4 py-6">
-                <div className="flex flex-wrap items-end justify-between gap-4">
-                    <HeadingSmall title={t('warrantyClaims', 'title')} description={t('warrantyClaims', 'description')} />
-                    <Button onClick={() => setAddOpen(true)}>{t('warrantyClaims', 'add')}</Button>
-                </div>
+                <PageHeader
+                    title={t('warrantyClaims', 'title')}
+                    description={t('warrantyClaims', 'description')}
+                    actions={
+                        <>
+                            <Button onClick={() => setAddOpen(true)}>{t('warrantyClaims', 'add')}</Button>
+                        </>
+                    }
+                />
 
                 <ListTable
                     list={list}

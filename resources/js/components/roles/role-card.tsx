@@ -13,7 +13,7 @@ interface RoleCardProps {
 /** One role: its name, user and permission counts, the edit / delete menu, and every permission it grants. */
 export function RoleCard({ role, onEdit, onDelete }: RoleCardProps) {
     return (
-        <div className="bg-background hover:border-primary/30 rounded-xl border p-3 transition-all hover:shadow-sm sm:p-4">
+        <div className="bg-background hover:border-primary/30 motion-surface rounded-xl border p-3 hover:shadow-[var(--brand-card-shadow)] sm:p-4">
             <div className="flex min-w-0 items-start justify-between gap-3">
                 <div className="flex min-w-0 flex-1 items-start gap-3">
                     <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-violet-500/10 text-violet-600 dark:text-violet-400">

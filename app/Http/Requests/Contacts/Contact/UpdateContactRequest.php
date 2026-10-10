@@ -62,7 +62,7 @@ class UpdateContactRequest extends FormRequest
                 $validator->errors()->add('type', 'This contact has customer transaction history and must retain customer status.');
             }
 
-            if ($newType === 'customer' && $contact->purchases()->exists()) {
+            if ($newType === 'customer' && $contact->purchases()->withTrashed()->exists()) {
                 $validator->errors()->add('type', 'This contact has supplier transaction history and must retain supplier status.');
             }
         });

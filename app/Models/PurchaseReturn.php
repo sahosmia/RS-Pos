@@ -16,10 +16,11 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  */
 class PurchaseReturn extends Model
 {
+    use HasCreator;
+
     /** @use HasFactory<PurchaseReturnFactory> */
     use HasFactory;
 
-    use HasCreator;
     use LogsActivityDefaults;
 
     /**

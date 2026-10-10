@@ -15,10 +15,9 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Always a `service`-nature request (installation is auto-created at Sale
- * confirm time instead, see ConfirmSaleAction) — free/paid is decided here,
- * server-side, from the sold unit's current service period; never trusts a
- * client-submitted is_free flag.
+ * A `service` visit (free or paid, decided here server-side from the sold unit's current service period) or an
+ * `installation` done later (never free). Installation is also auto-created at Sale confirm time, see
+ * ConfirmSaleAction. Never trusts a client-submitted is_free flag.
  */
 class CreateServiceRequestAction
 {
@@ -29,19 +28,22 @@ class CreateServiceRequestAction
     ) {}
 
     /**
-     * @param  array{sale_item_id: int, request_date: string, service_date?: string|null, staff_id?: int|null, account_id?: int|string|null, charge_amount?: float|string|null, status?: string, note?: string|null}  $data
+     * @param  array{sale_item_id: int, type?: string, request_date: string, service_date?: string|null, staff_id?: int|null, account_id?: int|string|null, charge_amount?: float|string|null, status?: string, note?: string|null}  $data
      */
     public function execute(array $data): ServiceRequest
     {
         return DB::transaction(function () use ($data) {
             $saleItem = SaleItem::with('product')->findOrFail($data['sale_item_id']);
-            $isFree = $saleItem->isNextServiceFree();
+            $type = ServiceRequestType::tryFrom((string) ($data['type'] ?? '')) ?? ServiceRequestType::Service;
+
+            // Only a service visit uses the free quota; an installation is never free (its charge, if any, is billed here).
+            $isFree = $type === ServiceRequestType::Service && $saleItem->isNextServiceFree();
             $chargeAmount = $isFree ? 0.0 : round((float) ($data['charge_amount'] ?? 0), 2);
 
             $serviceRequest = $saleItem->serviceRequests()->create([
                 'request_date' => $data['request_date'],
                 'service_date' => $data['service_date'] ?? $data['request_date'],
-                'type' => ServiceRequestType::Service,
+                'type' => $type,
                 'is_free' => $isFree,
                 'charge_amount' => $chargeAmount,
                 'account_id' => $isFree ? null : ($data['account_id'] ?? null),

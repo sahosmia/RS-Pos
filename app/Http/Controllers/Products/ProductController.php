@@ -6,6 +6,7 @@ use App\Actions\Products\Product\CreateProductAction;
 use App\Actions\Products\Product\DeleteProductAction;
 use App\Actions\Products\Product\UpdateProductAction;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Common\BulkDestroyRequest;
 use App\Http\Requests\Products\Product\ProductIndexRequest;
 use App\Http\Requests\Products\Product\StoreProductRequest;
 use App\Http\Requests\Products\Product\UpdateProductRequest;
@@ -15,6 +16,7 @@ use App\Models\Product;
 use App\Models\Settings;
 use App\Queries\Product\ProductFormOptions;
 use App\Queries\Product\ProductQuery;
+use App\Support\BulkDelete;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
@@ -129,7 +131,7 @@ class ProductController extends Controller
                 'track_serial_number' => $product->track_serial_number,
                 'is_for_sale' => $product->is_for_sale,
                 'is_active' => $product->is_active,
-                'image_url' => $product->getFirstMediaUrl('images') ?: null,
+                'image_url' => $product->imageUrl(),
             ],
             'movements' => $movements,
         ]);
@@ -159,5 +161,18 @@ class ProductController extends Controller
         $deleteProduct->execute($product);
 
         return to_route('products.index');
+    }
+
+    /**
+     * "Delete selected" — each record is checked by the same rule as the single delete.
+     */
+    public function bulkDestroy(BulkDestroyRequest $request, DeleteProductAction $deleteProduct): RedirectResponse
+    {
+        return BulkDelete::respond(BulkDelete::run(
+            $request->validated('ids'),
+            Product::query()->whereIn('id', $request->validated('ids'))->get(),
+            fn (Product $product) => $deleteProduct->blockingReason($product),
+            fn (Product $product) => $deleteProduct->execute($product),
+        ));
     }
 }

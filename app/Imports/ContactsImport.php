@@ -5,10 +5,13 @@ namespace App\Imports;
 use App\Actions\Contact\CreateContactAction;
 use App\Imports\Concerns\BindsCellsAsStrings;
 use App\Models\Contact;
+use App\Support\ImportCell;
 use App\Support\ImportResult;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use InvalidArgumentException;
 use Maatwebsite\Excel\Concerns\ToCollection;
 use Maatwebsite\Excel\Concerns\WithCustomValueBinder;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
@@ -23,6 +26,9 @@ class ContactsImport implements ToCollection, WithCustomValueBinder, WithHeading
 {
     use BindsCellsAsStrings;
 
+    /** The fields shown next to each row in the preview and the result. */
+    private const SHOWN = ['name', 'phone', 'email', 'type', 'address', 'business_name', 'opening_balance'];
+
     public ImportResult $result;
 
     public function __construct(private CreateContactAction $createContact)
@@ -35,6 +41,16 @@ class ContactsImport implements ToCollection, WithCustomValueBinder, WithHeading
         foreach ($rows as $index => $row) {
             $rowNumber = $index + 2;
             $data = $row->toArray();
+            $this->result->row($rowNumber, Arr::only($data, self::SHOWN));
+
+            try {
+                $data = ImportCell::normalise($data, [], ['phone']);
+                $this->result->row($rowNumber, Arr::only($data, self::SHOWN));
+            } catch (InvalidArgumentException $e) {
+                $this->result->addSkipped("Row {$rowNumber}: ".$e->getMessage());
+
+                continue;
+            }
 
             $validator = Validator::make($data, [
                 'name' => ['required', 'string', 'max:255'],

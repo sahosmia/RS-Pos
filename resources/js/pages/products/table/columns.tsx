@@ -1,10 +1,11 @@
-import { getProductActions } from '@/components/products/product-actions';
-import ProductStatusBadge from '@/components/products/product-status-badge';
-import StockQuantity from '@/components/products/stock-quantity';
 import DataTableCheckbox from '@/components/data-table/data-table-checkbox';
 import DataTableColumnHeader from '@/components/data-table/data-table-column-header';
 import DataTableRowActions from '@/components/data-table/data-table-row-actions';
 import { type DataTableColumnOption } from '@/components/data-table/types';
+import { getProductActions } from '@/components/products/product-actions';
+import { ProductImage } from '@/components/products/product-image';
+import ProductStatusBadge from '@/components/products/product-status-badge';
+import StockQuantity from '@/components/products/stock-quantity';
 import { useMoneyFormat } from '@/hooks/use-money-format';
 import { useTranslation } from '@/hooks/use-translation';
 import { type Dictionary } from '@/lib/translations/en';
@@ -100,11 +101,7 @@ export function useProductColumns({ sort, direction, onSort, selection, onAdjust
                     const product = row.original;
                     return (
                         <div className="flex items-center gap-3">
-                            {product.image_url ? (
-                                <img src={product.image_url} alt={product.name} className="size-10 rounded-md border object-cover" />
-                            ) : (
-                                <div className="bg-muted size-10 rounded-md border" />
-                            )}
+                            <ProductImage src={product.image_url} alt={product.name} className="size-10 rounded-md border object-cover" />
                             <div>
                                 <div className="font-medium">{product.name}</div>
                                 <div className="text-muted-foreground text-xs">{product.sku}</div>

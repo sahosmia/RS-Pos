@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Schema;
 
 /**
  * Tables that are knowingly empty after seeding: framework plumbing, and data only a person creates
- * (uploaded files, per-user permission overrides). Everything else in the schema must get demo rows from some
+ * (uploaded files, per-user permission overrides). Everything else in the schema must get seeded rows from some
  * seeder — so a migration that adds a table fails here until a seeder covers it (or it is listed on purpose).
  *
  * @var list<string>
@@ -15,6 +15,16 @@ use Illuminate\Support\Facades\Schema;
 const KNOWINGLY_EMPTY_TABLES = [
     'migrations', 'cache', 'cache_locks', 'sessions', 'jobs', 'job_batches', 'failed_jobs', 'password_reset_tokens',
     'media', 'model_has_permissions',
+
+    // Demo transactions: DummyDataSeeder keeps those seeders switched off so a fresh install starts with the
+    // shop's setup (accounts, products, contacts) and no invented sales, purchases or money movements.
+    // Switch a seeder back on there and its tables simply start having rows; nothing here needs to change.
+    'asset_transactions', 'assets', 'campaign_recipients', 'campaigns', 'company_loans', 'emi_installments', 'expenses',
+    'fund_transfers', 'investor_transactions', 'investors', 'loan_transactions', 'message_logs', 'notifications',
+    'other_incomes', 'other_liabilities', 'other_liability_transactions', 'purchase_items', 'purchase_return_items',
+    'purchase_returns', 'purchases', 'sale_item_service_periods', 'sale_items', 'sale_return_items', 'sale_returns',
+    'sales', 'sales_order_items', 'sales_orders', 'serial_numbers', 'service_requests', 'staff', 'staff_ledger',
+    'warranty_claims',
 ];
 
 /** @return array<string, int> */

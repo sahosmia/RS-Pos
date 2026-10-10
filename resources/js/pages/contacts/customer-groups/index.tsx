@@ -1,13 +1,14 @@
 import { getCustomerGroupActions } from '@/components/contacts/customer-group-actions';
 import DataTableRowActions from '@/components/data-table/data-table-row-actions';
 import { FormInput } from '@/components/form/form-input';
-import HeadingSmall from '@/components/heading-small';
 import ConfirmDialog from '@/components/shared/confirm-dialog';
 import EmptyState from '@/components/shared/empty-state';
 import FormModal from '@/components/shared/form-modal';
+import PageHeader from '@/components/shared/page-header';
 import { Button } from '@/components/ui/button';
 import { useTranslation } from '@/hooks/use-translation';
 import AppLayout from '@/layouts/app-layout';
+import { pageContainer } from '@/lib/page-container';
 import { type BreadcrumbItem } from '@/types';
 import { type CustomerGroupListItem } from '@/types/models';
 import { Head, router, useForm } from '@inertiajs/react';
@@ -80,11 +81,16 @@ export default function CustomerGroupsIndex({ customerGroups }: CustomerGroupsIn
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={t('customerGroups', 'title')} />
 
-            <div className="space-y-6 px-4 py-6">
-                <div className="flex flex-wrap items-end justify-between gap-4">
-                    <HeadingSmall title={t('customerGroups', 'title')} description={t('customerGroups', 'description')} />
-                    <Button onClick={openCreate}>{t('customerGroups', 'add')}</Button>
-                </div>
+            <div className={pageContainer.medium}>
+                <PageHeader
+                    title={t('customerGroups', 'title')}
+                    description={t('customerGroups', 'description')}
+                    actions={
+                        <>
+                            <Button onClick={openCreate}>{t('customerGroups', 'add')}</Button>
+                        </>
+                    }
+                />
 
                 {customerGroups.length === 0 ? (
                     <EmptyState title={t('customerGroups', 'empty_title')} description={t('customerGroups', 'empty_description')}>
@@ -93,18 +99,18 @@ export default function CustomerGroupsIndex({ customerGroups }: CustomerGroupsIn
                         </Button>
                     </EmptyState>
                 ) : (
-                    <div className="overflow-x-auto rounded-lg border">
+                    <div className="overflow-x-auto rounded-brand-card bg-card shadow-[var(--brand-card-shadow-elevated)]">
                         <table className="w-full text-sm">
-                            <thead className="bg-muted/50 text-muted-foreground">
+                            <thead className="bg-brand-table-header text-muted-foreground text-xs font-semibold">
                                 <tr>
-                                    <th className="px-4 py-2 text-left font-medium">{t('common', 'name')}</th>
-                                    <th className="px-4 py-2 text-right font-medium">{t('customerGroups', 'contacts_count')}</th>
-                                    <th className="px-4 py-2 text-right font-medium">{t('common', 'actions')}</th>
+                                    <th className="px-4 py-2.5 text-left font-medium">{t('common', 'name')}</th>
+                                    <th className="px-4 py-2.5 text-right font-medium">{t('customerGroups', 'contacts_count')}</th>
+                                    <th className="px-4 py-2.5 text-right font-medium">{t('common', 'actions')}</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {customerGroups.map((group) => (
-                                    <tr key={group.id} className="border-t">
+                                    <tr key={group.id} className="border-brand-table-divider hover:bg-brand-table-row-hover motion-colors border-t">
                                         <td className="px-4 py-2 font-medium">{group.name}</td>
                                         <td className="px-4 py-2 text-right tabular-nums">{group.contacts_count}</td>
                                         <td className="px-4 py-2">

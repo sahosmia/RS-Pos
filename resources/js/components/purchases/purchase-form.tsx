@@ -4,15 +4,18 @@ import { LabelTooltip } from '@/components/form/label-tooltip';
 import InputError from '@/components/input-error';
 import SerialNumbersModal from '@/components/purchases/serial-numbers-modal';
 import DiscountModal, { discountAmountFor, type DiscountTypeValue } from '@/components/sales/discount-modal';
+import { ItemDiscountDetail } from '@/components/sales/item-discount-detail';
 import AccountPaymentRows, { paymentRowsError, type PaymentRow } from '@/components/shared/account-payment-rows';
 import MoneyInput from '@/components/shared/money-input';
 import SearchableSelect from '@/components/shared/searchable-select';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useMoneyFormat } from '@/hooks/use-money-format';
 import { useUnsavedChangesWarning } from '@/hooks/use-unsaved-changes-warning';
+import { firstErrorMessage } from '@/lib/form-errors';
 import { today } from '@/lib/format-date';
 import { cn } from '@/lib/utils';
 import {
@@ -42,14 +45,18 @@ interface PurchaseFormProps {
 export default function PurchaseForm({ mode, purchase, initialSupplier, initialProducts, accounts }: PurchaseFormProps) {
     const money = useMoneyFormat();
 
+    const amending = purchase?.amending === true;
+
     const form = useForm({
         supplier_id: purchase?.supplier_id ?? 0,
         purchase_date: purchase?.purchase_date ?? today(),
         // A new purchase starts as Received — the usual case is goods already in hand.
         status: (purchase?.status ?? 'received') as PurchaseStatusValue,
         credit_applied: 0,
-        // Keyed by line position — the lines have no ids until they are saved.
-        serial_numbers: {} as Record<number, string[]>,
+        // Keyed by line position — the lines have no ids until they are saved. An amendment starts from the units received.
+        serial_numbers: (purchase?.serial_numbers ?? {}) as Record<number, string[]>,
+        // Required when amending a received purchase; kept in the Activity Log.
+        amend_reason: '',
         discount_type: (purchase?.discount_type ?? null) as DiscountTypeValue,
         discount_value: purchase?.discount_value ?? 0,
         // On create, `initialProducts` holds the product picked from the product list (if any) — start with it as one line.
@@ -68,7 +75,7 @@ export default function PurchaseForm({ mode, purchase, initialSupplier, initialP
     const { UnsavedChangesModal } = useUnsavedChangesWarning(form.isDirty, form.processing);
 
     const [supplier, setSupplier] = useState<SupplierOption | null>(initialSupplier);
-    const [paymentRows, setPaymentRows] = useState<PaymentRow[]>([]);
+    const [paymentRows, setPaymentRows] = useState<PaymentRow[]>(purchase?.payments ?? []);
     const [serialLineIndex, setSerialLineIndex] = useState<number | null>(null);
     const [quickAddSupplierOpen, setQuickAddSupplierOpen] = useState(false);
     const [itemDiscountIndex, setItemDiscountIndex] = useState<number | null>(null);
@@ -131,6 +138,8 @@ export default function PurchaseForm({ mode, purchase, initialSupplier, initialP
     };
 
     const subtotal = form.data.items.reduce((sum, item) => sum + item.quantity * item.unit_price, 0);
+    // The Discount column only appears once a line has a discount (the pencil beside the product name adds one).
+    const hasDiscount = form.data.items.some((item) => item.discount_type);
     const invoiceDiscountAmount = discountAmountFor(subtotal, form.data.discount_type, form.data.discount_value);
     const grandTotal = subtotal - invoiceDiscountAmount;
 
@@ -168,10 +177,14 @@ export default function PurchaseForm({ mode, purchase, initialSupplier, initialP
             toast.success(message);
         };
 
+        // Say what the server refused (it may be about a field that is not on screen), not just that something failed.
+        const failed = (errors: Record<string, string>) =>
+            toast.error(firstErrorMessage(errors, 'Could not save the purchase — check the form for errors.'));
+
         if (mode === 'edit' && purchase) {
-            form.patch(route('purchases.update', purchase.id), { onSuccess: saved('Purchase updated.') });
+            form.patch(route('purchases.update', purchase.id), { onSuccess: saved('Purchase updated.'), onError: failed });
         } else {
-            form.post(route('purchases.store'), { onSuccess: saved('Purchase created.') });
+            form.post(route('purchases.store'), { onSuccess: saved('Purchase created.'), onError: failed });
         }
     };
 
@@ -237,16 +250,20 @@ export default function PurchaseForm({ mode, purchase, initialSupplier, initialP
                                 tooltip="Draft/Ordered অবস্থায় stock ও ledger বদলায় না। Received বেছে সেভ করলে মাল হাতে পাওয়া ধরে stock, avg cost ও supplier ledger তখনই আপডেট হয় — আর ফেরানো যায় না (শুধু Cancel/Return)। Payment যেকোনো status-এই দেওয়া যায়।"
                             />
                         </Label>
-                        <Select value={form.data.status} onValueChange={(value) => form.setData('status', value as PurchaseStatusValue)}>
-                            <SelectTrigger id="status">
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="draft">Draft</SelectItem>
-                                <SelectItem value="ordered">Ordered</SelectItem>
-                                <SelectItem value="received">Received</SelectItem>
-                            </SelectContent>
-                        </Select>
+                        {amending ? (
+                            <p className="bg-brand-secondary/60 rounded-brand-control flex h-9 items-center px-3 text-sm font-medium">Received</p>
+                        ) : (
+                            <Select value={form.data.status} onValueChange={(value) => form.setData('status', value as PurchaseStatusValue)}>
+                                <SelectTrigger id="status">
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="draft">Draft</SelectItem>
+                                    <SelectItem value="ordered">Ordered</SelectItem>
+                                    <SelectItem value="received">Received</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        )}
                         <InputError message={form.errors.status} />
                     </div>
                 </div>
@@ -266,13 +283,14 @@ export default function PurchaseForm({ mode, purchase, initialSupplier, initialP
                     {form.data.items.length === 0 ? (
                         <p className="text-muted-foreground py-8 text-center text-sm">পণ্য খুঁজে যোগ করুন</p>
                     ) : (
-                        <div className="overflow-x-auto rounded-lg border">
+                        <div className="rounded-brand-card bg-card overflow-x-auto shadow-[var(--brand-card-shadow-elevated)]">
                             <table className="w-full text-sm">
-                                <thead className="bg-muted/40 text-muted-foreground">
+                                <thead className="bg-brand-table-header text-muted-foreground text-xs font-semibold">
                                     <tr className="text-xs font-medium tracking-wide uppercase">
                                         <th className="py-2.5 pl-3 text-left">Product</th>
                                         <th className="w-24 py-2.5 pr-2 text-right">Qty</th>
                                         <th className="w-40 py-2.5 pr-2 text-right">Unit Cost</th>
+                                        {hasDiscount && <th className="w-44 py-2.5 pr-2 text-right">Discount</th>}
                                         <th className="w-32 py-2.5 pr-3 text-right">Subtotal</th>
                                         <th className="w-10 py-2.5"></th>
                                     </tr>
@@ -281,7 +299,10 @@ export default function PurchaseForm({ mode, purchase, initialSupplier, initialP
                                     {form.data.items.map((item, index) => {
                                         const product = selectedProducts[item.product_id];
                                         return (
-                                            <tr key={index} className="hover:bg-muted/30 border-t align-middle transition-colors">
+                                            <tr
+                                                key={index}
+                                                className="border-brand-table-divider hover:bg-brand-table-row-hover motion-colors hover:bg-muted/30 border-t align-middle transition-colors"
+                                            >
                                                 <td className="py-2.5 pr-2 pl-3">
                                                     <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
                                                         <Link
@@ -293,13 +314,6 @@ export default function PurchaseForm({ mode, purchase, initialSupplier, initialP
                                                         >
                                                             {product?.name ?? `Product #${item.product_id}`}
                                                         </Link>
-                                                        {item.discount_type && (
-                                                            <span className="text-xs font-medium text-emerald-600 dark:text-emerald-400">
-                                                                {item.discount_type === 'percentage'
-                                                                    ? `-${item.discount_value}%`
-                                                                    : `-${money(item.discount_value ?? 0)}`}
-                                                            </span>
-                                                        )}
                                                         <Button
                                                             type="button"
                                                             variant="ghost"
@@ -362,6 +376,17 @@ export default function PurchaseForm({ mode, purchase, initialSupplier, initialP
                                                         className="w-full text-right tabular-nums"
                                                     />
                                                 </td>
+                                                {hasDiscount && (
+                                                    <td className="py-2.5 pr-2">
+                                                        <ItemDiscountDetail
+                                                            type={item.discount_type as DiscountTypeValue}
+                                                            value={item.discount_value}
+                                                            originalPrice={item.original_price}
+                                                            unitPrice={item.unit_price}
+                                                            quantity={item.quantity}
+                                                        />
+                                                    </td>
+                                                )}
                                                 <td className="py-2.5 pr-3 text-right align-middle font-semibold tabular-nums">
                                                     {money(item.quantity * item.unit_price)}
                                                 </td>
@@ -463,9 +488,37 @@ export default function PurchaseForm({ mode, purchase, initialSupplier, initialP
                     </p>
                 )}
 
+                {amending && (
+                    <div className="space-y-1.5">
+                        <Label htmlFor="amend_reason" required>
+                            Reason for the change
+                        </Label>
+                        <Input
+                            id="amend_reason"
+                            value={form.data.amend_reason}
+                            onChange={(event) => form.setData('amend_reason', event.target.value)}
+                            placeholder="e.g. wrong price typed"
+                            maxLength={255}
+                            aria-invalid={form.errors.amend_reason ? true : undefined}
+                        />
+                        <InputError message={form.errors.amend_reason} />
+                        <p className="text-muted-foreground text-xs leading-5">
+                            Saving takes this receipt out and receives the corrected one on the same invoice. The reason is kept in the Activity Log.
+                        </p>
+                    </div>
+                )}
+
                 <div className="space-y-2">
                     <Button type="submit" size="lg" className="w-full" disabled={form.processing}>
-                        {form.processing ? 'Saving...' : isReceived ? 'Save & Receive' : mode === 'create' ? 'Create Purchase' : 'Save Changes'}
+                        {form.processing
+                            ? 'Saving...'
+                            : amending
+                              ? 'Save changes'
+                              : isReceived
+                                ? 'Save & Receive'
+                                : mode === 'create'
+                                  ? 'Create Purchase'
+                                  : 'Save Changes'}
                     </Button>
                     <Button
                         type="button"

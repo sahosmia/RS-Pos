@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\DiscountType;
 use App\Enums\SalesOrderStatus;
 use App\Models\Concerns\HasCreator;
 use App\Models\Concerns\LogsActivityDefaults;
@@ -20,10 +21,11 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  */
 class SalesOrder extends Model
 {
+    use HasCreator;
+
     /** @use HasFactory<SalesOrderFactory> */
     use HasFactory;
 
-    use HasCreator;
     use LogsActivityDefaults;
 
     /**
@@ -37,6 +39,19 @@ class SalesOrder extends Model
         'status',
         'total_amount',
         'advance_paid',
+        'subtotal',
+        'discount_type',
+        'discount_value',
+        'discount_amount',
+        'installation_amount',
+        'financing_type',
+        'installment_count',
+        'emi_interest_method',
+        'emi_annual_rate',
+        'emi_frequency',
+        'emi_tenure_value',
+        'emi_tenure_unit',
+        'emi_installation_upfront',
         'created_by',
     ];
 
@@ -51,6 +66,13 @@ class SalesOrder extends Model
             'status' => SalesOrderStatus::class,
             'total_amount' => 'float',
             'advance_paid' => 'float',
+            'subtotal' => 'float',
+            'discount_type' => DiscountType::class,
+            'discount_value' => 'float',
+            'discount_amount' => 'float',
+            'installation_amount' => 'float',
+            'emi_annual_rate' => 'float',
+            'emi_installation_upfront' => 'boolean',
         ];
     }
 

@@ -1,8 +1,9 @@
 import { FormInput } from '@/components/form/form-input';
 import FinancialPositionSectionRow from '@/components/reports/financial-position-section';
-import HeadingSmall from '@/components/heading-small';
+import PageHeader from '@/components/shared/page-header';
 import { useMoneyFormat } from '@/hooks/use-money-format';
 import AppLayout from '@/layouts/app-layout';
+import { pageContainer } from '@/lib/page-container';
 import { type BreadcrumbItem } from '@/types';
 import { type FinancialPositionReportData } from '@/types/models';
 import { Head } from '@inertiajs/react';
@@ -54,28 +55,32 @@ export default function FinancialPosition({ report: initialReport }: FinancialPo
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Financial Position" />
 
-            <div className="space-y-6 px-4 py-6">
-                <div className="flex flex-wrap items-end justify-between gap-4">
-                    <HeadingSmall
-                        title="Financial Position"
-                        description="যেকোনো তারিখ পর্যন্ত হিসাব — প্রতিটা module-এর নিজস্ব ledger থেকে সরাসরি"
-                    />
-                    <FormInput
-                        id="end_date"
-                        label="As of"
-                        type="date"
-                        value={endDate}
-                        onChange={(e) => handleEndDateChange(e.target.value)}
-                        className="w-44"
-                    />
-                </div>
+            <div className={pageContainer.medium}>
+                <PageHeader
+                    title="Financial Position"
+                    description="যেকোনো তারিখ পর্যন্ত হিসাব — প্রতিটা module-এর নিজস্ব ledger থেকে সরাসরি"
+                    actions={
+                        <>
+                            <FormInput
+                                id="end_date"
+                                label="As of"
+                                type="date"
+                                value={endDate}
+                                onChange={(e) => handleEndDateChange(e.target.value)}
+                                className="w-44"
+                            />
+                        </>
+                    }
+                />
 
                 {error && (
-                    <div className="border-destructive/50 bg-destructive/10 text-destructive rounded-lg border p-3 text-sm">{error}</div>
+                    <div className="border-destructive/50 bg-destructive/10 text-destructive rounded-brand-card bg-card p-3 text-sm shadow-[var(--brand-card-shadow-elevated)]">
+                        {error}
+                    </div>
                 )}
 
                 <div className="grid items-start gap-4 lg:grid-cols-2">
-                    <div className="flex min-w-0 flex-col gap-2 rounded-lg border p-4">
+                    <div className="rounded-brand-card bg-card flex min-w-0 flex-col gap-2 p-4 shadow-[var(--brand-card-shadow-elevated)]">
                         <h3 className="font-medium">Liabilities / DR</h3>
                         <FinancialPositionSectionRow label="Capital" section={report.liabilities.investor_capital} />
                         <FinancialPositionSectionRow label="Company Loan" section={report.liabilities.company_loans} />
@@ -97,7 +102,7 @@ export default function FinancialPosition({ report: initialReport }: FinancialPo
                         </div>
                     </div>
 
-                    <div className="flex min-w-0 flex-col gap-2 rounded-lg border p-4">
+                    <div className="rounded-brand-card bg-card flex min-w-0 flex-col gap-2 p-4 shadow-[var(--brand-card-shadow-elevated)]">
                         <h3 className="font-medium">Assets / CR</h3>
                         <FinancialPositionSectionRow label="Closing Stock" section={report.assets.closing_stock} showBreakdown={false} />
                         <FinancialPositionSectionRow label="Sundry Debtors" section={report.assets.sundry_debtors} />

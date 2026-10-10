@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers\Contacts;
 
+use App\Actions\Contact\ReceiveContactDiscountAction;
 use App\Actions\Contact\RecordContactPaymentAction;
+use App\Actions\Contact\WaiveContactDueAction;
 use App\Actions\Purchases\Purchase\AddPurchasePaymentAction;
 use App\Actions\Sales\Sale\AddSalePaymentAction;
 use App\Enums\PurchaseStatus;
@@ -14,6 +16,7 @@ use App\Models\Contact;
 use App\Models\Purchase;
 use App\Models\Sale;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\DB;
 
 class ContactPaymentController extends Controller
 {
@@ -31,44 +34,51 @@ class ContactPaymentController extends Controller
         RecordContactPaymentAction $recordPayment,
         AddSalePaymentAction $addSalePayment,
         AddPurchasePaymentAction $addPurchasePayment,
+        WaiveContactDueAction $waiveDue,
+        ReceiveContactDiscountAction $receiveDiscount,
     ): RedirectResponse {
         $data = $request->validated();
+        $amount = (float) ($data['amount'] ?? 0);
+        $discount = (float) ($data['discount_amount'] ?? 0);
 
-        if (! empty($data['sale_id'])) {
-            $sale = Sale::findOrFail($data['sale_id']);
-
-            if ($sale->status !== SaleStatus::Confirmed) {
-                return back()->withErrors(['sale_id' => 'Only a confirmed sale can take a payment.']);
-            }
-
-            $addSalePayment->execute($sale, [
-                ['account_id' => $data['account_id'], 'amount' => $data['amount']],
-            ]);
-
-            return back();
+        if (! empty($data['sale_id']) && Sale::findOrFail($data['sale_id'])->status !== SaleStatus::Confirmed) {
+            return back()->withErrors(['sale_id' => 'Only a confirmed sale can take a payment.']);
         }
 
-        if (! empty($data['purchase_id'])) {
-            $purchase = Purchase::findOrFail($data['purchase_id']);
-
-            if ($purchase->status !== PurchaseStatus::Received) {
-                return back()->withErrors(['purchase_id' => 'Only a received purchase can take a payment.']);
-            }
-
-            $addPurchasePayment->execute($purchase, [
-                ['account_id' => $data['account_id'], 'amount' => $data['amount']],
-            ]);
-
-            return back();
+        if (! empty($data['purchase_id']) && Purchase::findOrFail($data['purchase_id'])->status !== PurchaseStatus::Received) {
+            return back()->withErrors(['purchase_id' => 'Only a received purchase can take a payment.']);
         }
 
-        $recordPayment->execute(
-            $contact,
-            Account::findOrFail($data['account_id']),
-            (float) $data['amount'],
-            $data['direction'],
-            $data['note'] ?? null,
-        );
+        // Discount and payment settle together or not at all.
+        DB::transaction(function () use ($data, $contact, $amount, $discount, $recordPayment, $addSalePayment, $addPurchasePayment, $waiveDue, $receiveDiscount) {
+            if ($discount > 0) {
+                $data['direction'] === 'received'
+                    ? $waiveDue->execute($contact, $discount, $data['note'] ?? null, $data['sale_id'] ?? null)
+                    : $receiveDiscount->execute($contact, $discount, $data['note'] ?? null, $data['purchase_id'] ?? null);
+            }
+
+            if ($amount <= 0) {
+                return;
+            }
+
+            if (! empty($data['sale_id'])) {
+                $addSalePayment->execute(Sale::findOrFail($data['sale_id']), [
+                    ['account_id' => $data['account_id'], 'amount' => $amount],
+                ]);
+            } elseif (! empty($data['purchase_id'])) {
+                $addPurchasePayment->execute(Purchase::findOrFail($data['purchase_id']), [
+                    ['account_id' => $data['account_id'], 'amount' => $amount],
+                ]);
+            } else {
+                $recordPayment->execute(
+                    $contact,
+                    Account::findOrFail($data['account_id']),
+                    $amount,
+                    $data['direction'],
+                    $data['note'] ?? null,
+                );
+            }
+        });
 
         return back();
     }

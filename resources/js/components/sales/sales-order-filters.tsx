@@ -3,11 +3,14 @@ import SearchableSelect from '@/components/shared/searchable-select';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { type CustomerOption, type SalesOrderStatusValue } from '@/types/models';
 
+/** `open` (the default) = still waiting to be confirmed; `all` also shows confirmed and cancelled orders. */
+export type SalesOrderStatusFilter = SalesOrderStatusValue | 'open' | 'all';
+
 export interface SalesOrderFilterValues {
     from: string | null;
     to: string | null;
     customer_id: number | null;
-    status: SalesOrderStatusValue | null;
+    status: SalesOrderStatusFilter | null;
 }
 
 interface SalesOrderFiltersProps {
@@ -55,13 +58,14 @@ export function SalesOrderFilters({ filters, customer, onCustomerChange, onChang
             />
 
             <Select
-                value={filters.status ?? 'all'}
-                onValueChange={(value) => onChange({ status: value === 'all' ? null : (value as SalesOrderStatusValue) })}
+                value={filters.status ?? 'open'}
+                onValueChange={(value) => onChange({ status: value === 'open' ? null : (value as SalesOrderStatusFilter) })}
             >
                 <SelectTrigger className="w-40">
                     <SelectValue placeholder="Status" />
                 </SelectTrigger>
                 <SelectContent>
+                    <SelectItem value="open">Waiting to confirm</SelectItem>
                     <SelectItem value="all">All statuses</SelectItem>
                     <SelectItem value="pending">Pending</SelectItem>
                     <SelectItem value="partial">Partial</SelectItem>

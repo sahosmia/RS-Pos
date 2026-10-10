@@ -13,7 +13,7 @@ class SettingsSeeder extends Seeder
     public function run(): void
     {
         Settings::query()->firstOrCreate([], [
-            'shop_name' => 'আমার দোকান',
+            'shop_name' => 'RS Electronics',
             'currency_symbol' => '৳',
             'invoice_prefix' => 'INV-',
             'invoice_next_number' => 1,

@@ -31,10 +31,12 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         // Safe to run again: the login user is created once.
-        if (! User::query()->where('email', 'test@example.com')->exists()) {
+        if (! User::query()->where('email', 'demo@gmail.com')->exists()) {
             User::factory()->create([
-                'name' => 'Test User',
-                'email' => 'test@example.com',
+                'name' => 'Demo User',
+                'email' => 'demo@gmail.com',
+                'username' => 'demo',
+                'password' => bcrypt('12345678'),
             ]);
         }
 

@@ -25,7 +25,14 @@ return new class extends Migration
             $table->decimal('subtotal', 19, 4);
             $table->boolean('installation_required')->default(false);
             $table->decimal('installation_charge', 19, 4)->nullable();
+            // Which lines of an EMI sale go on installments (an AC financed, the wiring and pipe paid now). Defaults to all.
+            $table->boolean('emi_financed')->default(true);
+            // The warranty chosen on this line, defaulting to the product's. null = take the product's when the sale is
+            // confirmed; 0 = none. Once confirmed the resolved months are stored, so a later product edit never reaches the sale.
             $table->date('warranty_expires_at')->nullable();
+            $table->unsignedInteger('warranty_months')->nullable();
+            // Whether the product's service plan is copied onto this line.
+            $table->boolean('service_plan_included')->default(true);
             $table->text('note')->nullable();
             $table->timestamps();
 

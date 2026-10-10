@@ -1,9 +1,10 @@
+import { getAccountingPeriodActions } from '@/components/accounting/accounting-period-actions';
+import DataTableRowActions from '@/components/data-table/data-table-row-actions';
 import HeadingSmall from '@/components/heading-small';
 import ConfirmDialog from '@/components/shared/confirm-dialog';
-import DataTableRowActions from '@/components/data-table/data-table-row-actions';
-import { getAccountingPeriodActions } from '@/components/accounting/accounting-period-actions';
-import { Badge } from '@/components/ui/badge';
+import { StatusBadge } from '@/components/shared/status-badge';
 import AppLayout from '@/layouts/app-layout';
+import { pageContainer } from '@/lib/page-container';
 import { type BreadcrumbItem } from '@/types';
 import { type AccountingPeriodListItem } from '@/types/models';
 import { Head, router } from '@inertiajs/react';
@@ -36,33 +37,31 @@ export default function AccountingPeriodsIndex({ periods }: AccountingPeriodsInd
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Accounting Periods" />
 
-            <div className="space-y-6 px-4 py-6">
+            <div className={pageContainer.medium}>
                 <HeadingSmall
                     title="Accounting Periods"
                     description="একটা period close করলে সেই মাসের কোনো তারিখে আর নতুন journal entry post করা যাবে না"
                 />
 
-                <div className="overflow-x-auto rounded-lg border">
+                <div className="overflow-x-auto rounded-brand-card bg-card shadow-[var(--brand-card-shadow-elevated)]">
                     <table className="w-full text-sm">
-                        <thead className="bg-muted/50 text-muted-foreground">
+                        <thead className="bg-brand-table-header text-muted-foreground text-xs font-semibold">
                             <tr>
-                                <th className="px-4 py-2 text-left font-medium">Period</th>
-                                <th className="px-4 py-2 text-left font-medium">Status</th>
-                                <th className="px-4 py-2 text-left font-medium">Closed At</th>
-                                <th className="px-4 py-2 text-left font-medium">Closed By</th>
-                                <th className="px-4 py-2 text-right font-medium">Actions</th>
+                                <th className="px-4 py-2.5 text-left font-medium">Period</th>
+                                <th className="px-4 py-2.5 text-left font-medium">Status</th>
+                                <th className="px-4 py-2.5 text-left font-medium">Closed At</th>
+                                <th className="px-4 py-2.5 text-left font-medium">Closed By</th>
+                                <th className="px-4 py-2.5 text-right font-medium">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
                             {periods.map((period) => (
-                                <tr key={period.id} className="border-t">
+                                <tr key={period.id} className="border-brand-table-divider hover:bg-brand-table-row-hover motion-colors border-t">
                                     <td className="px-4 py-2 whitespace-nowrap">
                                         {period.start_date} – {period.end_date}
                                     </td>
                                     <td className="px-4 py-2">
-                                        <Badge variant={period.status === 'open' ? 'secondary' : 'outline'}>
-                                            {period.status === 'open' ? 'Open' : 'Closed'}
-                                        </Badge>
+                                        <StatusBadge status={period.status === 'open' ? 'open' : 'closed'} />
                                     </td>
                                     <td className="text-muted-foreground px-4 py-2">{period.closed_at ?? '—'}</td>
                                     <td className="text-muted-foreground px-4 py-2">{period.closed_by?.name ?? '—'}</td>

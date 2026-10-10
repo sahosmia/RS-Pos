@@ -4,7 +4,9 @@ namespace App\Actions\Sales\Sale;
 
 use App\Enums\AccountTransactionType;
 use App\Enums\ContactLedgerType;
+use App\Enums\EmiFrequency;
 use App\Enums\EmiInstallmentStatus;
+use App\Enums\EmiInterestMethod;
 use App\Enums\SalePaymentType;
 use App\Enums\SaleSource;
 use App\Enums\SaleStatus;
@@ -20,9 +22,11 @@ use App\Models\SaleItem;
 use App\Models\SerialNumber;
 use App\Services\AccountService;
 use App\Services\ChartOfAccountResolver;
+use App\Services\EmiCalculator;
 use App\Services\JournalService;
 use App\Services\LedgerService;
 use App\Services\StockService;
+use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -45,21 +49,28 @@ class ConfirmSaleAction
         private AccountService $accounts,
         private JournalService $journal,
         private ChartOfAccountResolver $chartOfAccounts,
+        private EmiCalculator $emiCalculator,
     ) {}
 
     /**
      * @param  array<int, array{account_id: int|string, amount: float|string}>  $payments
      * @param  array<int, array<int, string>>  $serialSelections  Keyed by sale_item_id — which in-stock unit(s) this line sells, required when the product tracks serials.
+     * @param  array<int, array{quantity: float, unit_cost: float}>  $keptCosts  Amending only: per product, how many units of the earlier version of this sale are being sold again and at what cost each. Those units keep their original cost (the sale's profit does not move because the average cost has since changed); any extra units take today's average.
      *
      * @throws InvalidSerialSelectionException
      */
-    public function execute(Sale $sale, array $payments = [], array $serialSelections = []): Sale
+    public function execute(Sale $sale, array $payments = [], array $serialSelections = [], array $keptCosts = []): Sale
     {
         if ($sale->status === SaleStatus::Confirmed) {
             return $sale;
         }
 
-        return DB::transaction(function () use ($sale, $payments, $serialSelections) {
+        return DB::transaction(function () use ($sale, $payments, $serialSelections, $keptCosts) {
+            // A double click or a retried request can reach here twice: lock the row and look again.
+            if (Sale::query()->whereKey($sale->id)->lockForUpdate()->value('status') === SaleStatus::Confirmed) {
+                return $sale->fresh(['items.product', 'customer']);
+            }
+
             $sale->load('items.product', 'customer');
 
             if ($sale->source === SaleSource::Imported) {
@@ -70,13 +81,18 @@ class ConfirmSaleAction
                     'payment_status' => 'paid',
                 ])->save();
 
+                // A line that names its own warranty keeps it, so an old invoice still shows when it ran out.
+                foreach ($sale->items->filter(fn (SaleItem $item) => (int) $item->warranty_months > 0) as $item) {
+                    $item->forceFill(['warranty_expires_at' => $sale->sale_date->copy()->addMonths($item->warranty_months)])->save();
+                }
+
                 return $sale->fresh(['items.product', 'customer']);
             }
 
             $costOfGoodsSold = 0.0;
 
             foreach ($sale->items as $item) {
-                $costOfGoodsSold += $this->sellItem($sale, $item, $serialSelections[$item->id] ?? []);
+                $costOfGoodsSold += $this->sellItem($sale, $item, $serialSelections[$item->id] ?? [], $keptCosts);
             }
 
             $paidViaAccounts = 0.0;
@@ -91,6 +107,17 @@ class ConfirmSaleAction
                 );
             }
 
+            // Interest joins the sale's total BEFORE the customer's due is worked out, so the ledger, receivable and
+            // payment status all see the amount the customer really owes.
+            $emiPlan = $this->planEmi($sale, $paidViaAccounts);
+
+            if ($emiPlan !== null && $emiPlan['interest_total'] > 0) {
+                $sale->forceFill([
+                    'total_amount' => round($sale->total_amount + $emiPlan['interest_total'], 2),
+                    'emi_interest_total' => $emiPlan['interest_total'],
+                ])->save();
+            }
+
             $dueAmount = round($sale->total_amount - $paidViaAccounts, 2);
 
             if ($dueAmount !== 0.0) {
@@ -101,7 +128,7 @@ class ConfirmSaleAction
             $sale->recalculatePaymentTotals();
 
             if ($sale->financing_type === SalePaymentType::Emi && $sale->installment_count) {
-                $this->generateEmiSchedule($sale);
+                $this->generateEmiSchedule($sale, $emiPlan);
             }
 
             $this->postJournal($sale, $payments, round($costOfGoodsSold, 2));
@@ -115,16 +142,21 @@ class ConfirmSaleAction
      *
      * @param  array<int, string>  $serialNumbers
      */
-    private function sellItem(Sale $sale, SaleItem $item, array $serialNumbers): float
+    private function sellItem(Sale $sale, SaleItem $item, array $serialNumbers, array &$keptCosts = []): float
     {
         /** @var Product $product */
         $product = $item->product;
 
+        // The line's own warranty wins; a line that never chose takes the product's as it is right now, and the result is
+        // recorded on the line so a later change to the product never reaches this sale.
+        $warrantyMonths = (int) ($item->warranty_months ?? $product->warranty_period_months ?? 0);
+
+        $unitCost = $this->unitCostFor($product, (float) $item->quantity, $keptCosts);
+
         $item->forceFill([
-            'cost_at_sale' => $product->avg_cost,
-            'warranty_expires_at' => $product->warranty_period_months
-                ? $sale->sale_date->copy()->addMonths($product->warranty_period_months)
-                : null,
+            'cost_at_sale' => $unitCost,
+            'warranty_months' => $warrantyMonths,
+            'warranty_expires_at' => $warrantyMonths > 0 ? $sale->sale_date->copy()->addMonths($warrantyMonths) : null,
         ])->save();
 
         $this->stock->decrease($product, $item->quantity, StockMovementType::Sale, 'sale', $sale->id, unitCost: $item->cost_at_sale);
@@ -133,13 +165,36 @@ class ConfirmSaleAction
             $this->assignSerials($product, $item, $serialNumbers);
         }
 
-        $this->snapshotServicePeriods($item, $product, $sale);
+        if ($item->service_plan_included) {
+            $this->snapshotServicePeriods($item, $product, $sale);
+        }
 
         if ($item->installation_required) {
             $this->createInstallationRequest($item, $sale);
         }
 
-        return $product->avg_cost * $item->quantity;
+        return $unitCost * $item->quantity;
+    }
+
+    /**
+     * The cost each unit of this line is sold at. Normally the product's average cost right now. When an earlier version of
+     * the sale is being amended, units that were already part of it keep the cost they were sold at (so the sale's profit and
+     * the Inventory value stay consistent), and only units added by the amendment take the current average.
+     *
+     * @param  array<int, array{quantity: float, unit_cost: float}>  $keptCosts
+     */
+    private function unitCostFor(Product $product, float $quantity, array &$keptCosts): float
+    {
+        $kept = $keptCosts[$product->id] ?? null;
+
+        if ($kept === null || $kept['quantity'] <= 0 || $quantity <= 0) {
+            return (float) $product->avg_cost;
+        }
+
+        $covered = min($quantity, $kept['quantity']);
+        $keptCosts[$product->id]['quantity'] = $kept['quantity'] - $covered;
+
+        return round((($covered * $kept['unit_cost']) + (($quantity - $covered) * (float) $product->avg_cost)) / $quantity, 4);
     }
 
     /**
@@ -168,6 +223,50 @@ class ConfirmSaleAction
     }
 
     /**
+     * The calculated schedule for a sale that carries EMI terms (a tenure), or null for one that doesn't — the
+     * older count-only sales keep the plain equal split below. The financed amount is what is left after the
+     * down payment paid now and any Sales Order advance already carried.
+     *
+     * @return array{periods: int, principal: float, interest_total: float, total_payable: float, installment_amount: float, schedule: list<array<string, mixed>>}|null
+     */
+    private function planEmi(Sale $sale, float $downPayment): ?array
+    {
+        if ($sale->financing_type !== SalePaymentType::Emi || ! $sale->emi_tenure_value || ! $sale->installment_count) {
+            return null;
+        }
+
+        // Only the products chosen for EMI are financed (e.g. the AC). The other lines (wiring, pipe, brackets…) and
+        // the installation charge are billed on the same invoice but are never part of the installments and never
+        // earn interest.
+        $installation = round((float) $sale->installation_amount, 2);
+        $received = round($downPayment + $this->salesOrderAdvance($sale), 2);
+        $goods = round($sale->total_amount - $installation, 2);
+        $financedGoods = $sale->emiFinancedGoods();
+        $cashGoods = round($goods - $financedGoods, 2);
+
+        // Money paid at confirm time covers the non-EMI products first — they are "paid now" — then the installation
+        // when the sale says it is collected up front (otherwise it stays an ordinary due, collected later with
+        // "Add Payment"). Only what is left over is a down payment on the EMI products.
+        $coveredFirst = $cashGoods + ($sale->emi_installation_upfront ? $installation : 0.0);
+        $financed = round($financedGoods - max(0.0, $received - $coveredFirst), 2);
+
+        if ($financed <= 0.0) {
+            return null;
+        }
+
+        $frequency = EmiFrequency::tryFrom((string) $sale->emi_frequency) ?? EmiFrequency::Monthly;
+
+        return $this->emiCalculator->calculate(
+            $financed,
+            EmiInterestMethod::tryFrom((string) $sale->emi_interest_method) ?? EmiInterestMethod::None,
+            (float) $sale->emi_annual_rate,
+            $sale->installment_count,
+            $frequency,
+            $frequency->dueDate(CarbonImmutable::parse($sale->sale_date->toDateString()), 1),
+        );
+    }
+
+    /**
      * Splits the sale's remaining due into `installment_count` monthly
      * installments, first due one month after the sale date — any down
      * payment collected at confirm time (via `$payments`) has already been
@@ -176,9 +275,25 @@ class ConfirmSaleAction
      * installment absorbs the rounding remainder so the schedule always
      * sums back to exactly `due_amount`.
      */
-    private function generateEmiSchedule(Sale $sale): void
+    private function generateEmiSchedule(Sale $sale, ?array $emiPlan = null): void
     {
         if ($sale->due_amount <= 0.0) {
+            return;
+        }
+
+        // Terms were chosen on the sale (interest method, tenure, frequency): lay out the calculated schedule.
+        if ($emiPlan !== null) {
+            foreach ($emiPlan['schedule'] as $row) {
+                $sale->emiInstallments()->create([
+                    'installment_number' => $row['number'],
+                    'due_date' => $row['due_date'],
+                    'amount' => $row['amount'],
+                    'principal_amount' => $row['principal'],
+                    'interest_amount' => $row['interest'],
+                    'status' => EmiInstallmentStatus::Pending,
+                ]);
+            }
+
             return;
         }
 
@@ -279,10 +394,19 @@ class ConfirmSaleAction
         $cogs = $this->chartOfAccounts->code('5100');
         $inventory = $this->chartOfAccounts->code('1200');
 
+        // EMI interest is part of what the customer owes (it is in total_amount) but it is not sales revenue.
+        $interest = round((float) $sale->emi_interest_total, 2);
+
         $lines = [
             ['chart_of_account_id' => $receivable->id, 'debit' => $sale->total_amount, 'credit' => 0],
-            ['chart_of_account_id' => $revenue->id, 'debit' => 0, 'credit' => $sale->total_amount],
+            ['chart_of_account_id' => $revenue->id, 'debit' => 0, 'credit' => round($sale->total_amount - $interest, 2)],
         ];
+
+        if ($interest > 0.0) {
+            // "Other Income": the closest existing account. A dedicated "EMI Interest Income" account is a
+            // chart-of-accounts decision for the accountant.
+            $lines[] = ['chart_of_account_id' => $this->chartOfAccounts->code('4400')->id, 'debit' => 0, 'credit' => $interest];
+        }
 
         if ($costOfGoodsSold > 0.0) {
             $lines[] = ['chart_of_account_id' => $cogs->id, 'debit' => $costOfGoodsSold, 'credit' => 0];

@@ -3,7 +3,7 @@ import DataTableRowActions from '@/components/data-table/data-table-row-actions'
 import { type DataTableColumnOption } from '@/components/data-table/types';
 import { getWarrantyClaimActions } from '@/components/products/warranty-claim-actions';
 import ContactLink from '@/components/shared/contact-link';
-import { Badge } from '@/components/ui/badge';
+import { StatusBadge } from '@/components/shared/status-badge';
 import { type ListPageState } from '@/hooks/table/use-list-page';
 import { useTranslation } from '@/hooks/use-translation';
 import { formatDate } from '@/lib/format-date';
@@ -40,13 +40,6 @@ export const WARRANTY_EXPORT_COLUMN_MAP: Record<string, string[]> = {
     product: ['product'],
     issue: ['issue_description'],
     status: ['status'],
-};
-
-export const warrantyStatusVariant: Record<WarrantyClaimStatusValue, 'secondary' | 'outline' | 'destructive'> = {
-    pending: 'outline',
-    in_progress: 'outline',
-    resolved: 'secondary',
-    rejected: 'destructive',
 };
 
 /** The translated name of each claim status, plus the same as `{ value, label }` options for a select. */
@@ -128,7 +121,7 @@ export function useWarrantyClaimColumns({ selection, onUpdate }: Options) {
             {
                 id: 'status',
                 header: t('warrantyClaims', 'status'),
-                cell: ({ row }) => <Badge variant={warrantyStatusVariant[row.original.status]}>{labels[row.original.status]}</Badge>,
+                cell: ({ row }) => <StatusBadge status={row.original.status} label={labels[row.original.status]} />,
             },
         ],
         [selection, onUpdate, t, labels],

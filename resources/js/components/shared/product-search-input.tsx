@@ -12,6 +12,9 @@ export interface ProductOption {
     current_stock: number;
     track_serial_number: boolean;
     has_installation_service: boolean;
+    /** The warranty the product carries by default; a sale line starts from it. */
+    warranty_period_months?: number | null;
+    service_plan_templates_count?: number;
     unit?: {
         id: number;
         name: string;

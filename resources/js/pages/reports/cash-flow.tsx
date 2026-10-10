@@ -1,7 +1,9 @@
 import HeadingSmall from '@/components/heading-small';
 import DateRangeFilter from '@/components/shared/date-range-filter';
+import { MetricCard } from '@/components/shared/metric-card';
 import { useMoneyFormat } from '@/hooks/use-money-format';
 import AppLayout from '@/layouts/app-layout';
+import { pageContainer } from '@/lib/page-container';
 import { type BreadcrumbItem } from '@/types';
 import { type CashFlowTypeRow, type DateRangePresetValue } from '@/types/models';
 import { Head, router } from '@inertiajs/react';
@@ -37,7 +39,7 @@ export default function CashFlow({ from, to, range, byType, moneyIn, moneyOut, n
                 from: next.from ?? undefined,
                 to: next.to ?? undefined,
             },
-            { preserveState: true, preserveScroll: true }
+            { preserveState: true, preserveScroll: true },
         );
     };
 
@@ -45,7 +47,7 @@ export default function CashFlow({ from, to, range, byType, moneyIn, moneyOut, n
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Cash Flow" />
 
-            <div className="space-y-6 px-4 py-6">
+            <div className={pageContainer.medium}>
                 <HeadingSmall title="Cash Flow" description="টাইপ অনুযায়ী টাকার আসা-যাওয়া" />
 
                 <div className="flex flex-wrap items-end gap-2">
@@ -53,31 +55,22 @@ export default function CashFlow({ from, to, range, byType, moneyIn, moneyOut, n
                 </div>
 
                 <div className="grid gap-4 sm:grid-cols-3">
-                    <div className="rounded-lg border p-4">
-                        <p className="text-muted-foreground text-sm">Money In</p>
-                        <p className="text-xl font-semibold tabular-nums">{money(moneyIn)}</p>
-                    </div>
-                    <div className="rounded-lg border p-4">
-                        <p className="text-muted-foreground text-sm">Money Out</p>
-                        <p className="text-xl font-semibold tabular-nums">{money(Math.abs(moneyOut))}</p>
-                    </div>
-                    <div className="rounded-lg border p-4">
-                        <p className="text-muted-foreground text-sm">Net</p>
-                        <p className={`text-xl font-semibold tabular-nums ${net < 0 ? 'text-destructive' : ''}`}>{money(net)}</p>
-                    </div>
+                    <MetricCard label="Money In" value={money(moneyIn)} />
+                    <MetricCard label="Money Out" value={money(Math.abs(moneyOut))} />
+                    <MetricCard label="Net" value={money(net)} accent={net < 0 ? 'danger' : 'neutral'} />
                 </div>
 
-                <div className="overflow-x-auto rounded-lg border">
+                <div className="rounded-brand-card bg-card overflow-x-auto shadow-[var(--brand-card-shadow-elevated)]">
                     <table className="w-full text-sm">
-                        <thead className="bg-muted/50 text-muted-foreground">
+                        <thead className="bg-brand-table-header text-muted-foreground text-xs font-semibold">
                             <tr>
-                                <th className="px-4 py-2 text-left font-medium">Type</th>
-                                <th className="px-4 py-2 text-right font-medium">Amount</th>
+                                <th className="px-4 py-2.5 text-left font-medium">Type</th>
+                                <th className="px-4 py-2.5 text-right font-medium">Amount</th>
                             </tr>
                         </thead>
                         <tbody>
                             {byType.map((row) => (
-                                <tr key={row.type} className="border-t">
+                                <tr key={row.type} className="border-brand-table-divider hover:bg-brand-table-row-hover motion-colors border-t">
                                     <td className="px-4 py-2">{humanize(row.type)}</td>
                                     <td className="px-4 py-2 text-right tabular-nums">{money(row.total)}</td>
                                 </tr>

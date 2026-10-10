@@ -19,7 +19,7 @@ interface SaleActionHandlers {
 export function getSaleActions(sale: SaleListItem, { onDelete, onAddPayment, onViewPayments }: SaleActionHandlers): RowAction[] {
     return [
         { label: 'View', icon: Eye, href: route('sales.show', sale.id) },
-        { label: 'Edit', icon: Pencil, href: route('sales.edit', sale.id), hidden: !sale.can_edit },
+        { label: 'Edit', icon: Pencil, href: route('sales.edit', sale.id), hidden: !(sale.can_edit || sale.can_amend) },
         {
             label: 'Print Invoice',
             icon: Printer,

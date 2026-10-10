@@ -4,10 +4,10 @@ import DataTableRowActions from '@/components/data-table/data-table-row-actions'
 import { type DataTableColumnOption } from '@/components/data-table/types';
 import { getEmiInstallmentActions } from '@/components/sales/emi-installment-actions';
 import ContactLink from '@/components/shared/contact-link';
-import { Badge } from '@/components/ui/badge';
+import { StatusBadge } from '@/components/shared/status-badge';
 import { type ListPageState } from '@/hooks/table/use-list-page';
 import { formatDate } from '@/lib/format-date';
-import { type EmiInstallmentListItem, type EmiInstallmentStatusValue } from '@/types/models';
+import { type EmiInstallmentListItem } from '@/types/models';
 import { type ColumnDef } from '@tanstack/react-table';
 import { useMemo } from 'react';
 
@@ -41,13 +41,6 @@ export const EMI_EXPORT_COLUMN_MAP: Record<string, string[]> = {
     amount: ['amount'],
     paid: ['paid_amount'],
     status: ['status'],
-};
-
-export const emiStatusVariant: Record<EmiInstallmentStatusValue, 'secondary' | 'outline' | 'destructive'> = {
-    pending: 'outline',
-    paid: 'secondary',
-    overdue: 'destructive',
-    cancelled: 'destructive',
 };
 
 export const humanize = (value: string) => value.replaceAll('_', ' ').replace(/\b\w/g, (character) => character.toUpperCase());
@@ -101,7 +94,14 @@ export function useEmiInstallmentColumns({ sort, direction = 'asc', onSort, sele
             {
                 id: 'customer',
                 header: 'Customer',
-                cell: ({ row }) => <ContactLink id={row.original.customer.id} name={row.original.customer.name} />,
+                cell: ({ row }) => (
+                    <div className="min-w-0">
+                        <ContactLink id={row.original.customer.id} name={row.original.customer.name} />
+                        {row.original.customer.phone && (
+                            <div className="text-muted-foreground text-xs tabular-nums">{row.original.customer.phone}</div>
+                        )}
+                    </div>
+                ),
             },
             {
                 id: 'number',
@@ -130,7 +130,7 @@ export function useEmiInstallmentColumns({ sort, direction = 'asc', onSort, sele
             {
                 id: 'status',
                 header: header('Status', 'status'),
-                cell: ({ row }) => <Badge variant={emiStatusVariant[row.original.status]}>{humanize(row.original.status)}</Badge>,
+                cell: ({ row }) => <StatusBadge status={row.original.status} />,
             },
         ];
     }, [money, selection, sort, direction, onSort, onPay]);

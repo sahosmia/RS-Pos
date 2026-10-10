@@ -24,7 +24,7 @@ export function ServiceWarrantySection({ form }: { form: ProductFormApi }) {
 
     return (
         <FormSection icon={ShieldCheck} title={t('nav', 'service_warranty')} description="Warranty, installation এবং serial tracking" accent="violet">
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-4">
                 <FormInput
                     id="warranty_period_months"
                     label={t('productForm', 'warranty_months')}
@@ -38,7 +38,7 @@ export function ServiceWarrantySection({ form }: { form: ProductFormApi }) {
                 />
             </div>
 
-            <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="mt-4 grid gap-3">
                 {switches.map(({ key, label }) => (
                     <ToggleRow key={key} id={key} label={label} checked={form.data[key]} onCheckedChange={(checked) => form.setData(key, checked)} />
                 ))}

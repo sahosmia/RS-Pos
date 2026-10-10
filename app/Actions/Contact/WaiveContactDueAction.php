@@ -28,12 +28,17 @@ class WaiveContactDueAction
         private ChartOfAccountResolver $chartOfAccounts,
     ) {}
 
-    public function execute(Contact $contact, float $amount, ?string $note = null): void
+    public function execute(Contact $contact, float $amount, ?string $note = null, ?int $saleId = null): void
     {
-        DB::transaction(function () use ($contact, $amount, $note) {
+        DB::transaction(function () use ($contact, $amount, $note, $saleId) {
             $remaining = round(abs($amount), 2);
 
-            $sales = Sale::query()->where('customer_id', $contact->id)->allocatableDue()->lockForUpdate()->get();
+            $sales = Sale::query()
+                ->where('customer_id', $contact->id)
+                ->when($saleId, fn ($query) => $query->where('id', $saleId))
+                ->allocatableDue()
+                ->lockForUpdate()
+                ->get();
 
             foreach ($sales as $sale) {
                 if ($remaining <= 0.0) {
@@ -49,7 +54,7 @@ class WaiveContactDueAction
                 $remaining = round($remaining - $portion, 2);
             }
 
-            if ($remaining > 0.0) {
+            if ($remaining > 0.0 && $saleId === null) {
                 $this->ledger->recordContact($contact, ContactLedgerType::DiscountWaived, -$remaining, null, null, $note);
                 $this->postJournal($contact, $remaining, 'contact', $contact->id);
             }

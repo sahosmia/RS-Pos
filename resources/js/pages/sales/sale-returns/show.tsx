@@ -48,39 +48,39 @@ export default function SaleReturnShow({ return: saleReturn, accounts }: SaleRet
                 </div>
 
                 <div className="grid gap-4 sm:grid-cols-4">
-                    <div className="rounded-lg border p-4">
+                    <div className="rounded-brand-card bg-card p-4 shadow-[var(--brand-card-shadow-elevated)]">
                         <p className="text-muted-foreground text-sm">Return Amount</p>
                         <p className="text-xl font-semibold tabular-nums">{money(saleReturn.total_amount)}</p>
                     </div>
-                    <div className="rounded-lg border p-4">
+                    <div className="rounded-brand-card bg-card p-4 shadow-[var(--brand-card-shadow-elevated)]">
                         <p className="text-muted-foreground text-sm">Refunded / Remaining</p>
                         <p className="text-xl font-semibold tabular-nums">
                             {money(saleReturn.refunded_amount)} / {money(saleReturn.remaining_refundable)}
                         </p>
                     </div>
-                    <div className="rounded-lg border p-4">
+                    <div className="rounded-brand-card bg-card p-4 shadow-[var(--brand-card-shadow-elevated)]">
                         <p className="text-muted-foreground text-sm">Customer Balance</p>
                         <p className="text-xl font-semibold tabular-nums">{money(saleReturn.customer.balance)}</p>
                     </div>
-                    <div className="rounded-lg border p-4">
+                    <div className="rounded-brand-card bg-card p-4 shadow-[var(--brand-card-shadow-elevated)]">
                         <p className="text-muted-foreground text-sm">Reason</p>
                         <p className="text-sm">{saleReturn.reason ?? '—'}</p>
                     </div>
                 </div>
 
-                <div className="overflow-x-auto rounded-lg border">
+                <div className="rounded-brand-card bg-card overflow-x-auto shadow-[var(--brand-card-shadow-elevated)]">
                     <table className="w-full text-sm">
-                        <thead className="bg-muted/50 text-muted-foreground">
+                        <thead className="bg-brand-table-header text-muted-foreground text-xs font-semibold">
                             <tr>
-                                <th className="px-4 py-2 text-left font-medium">Product</th>
-                                <th className="px-4 py-2 text-right font-medium">Quantity</th>
-                                <th className="px-4 py-2 text-right font-medium">Price</th>
-                                <th className="px-4 py-2 text-right font-medium">Subtotal</th>
+                                <th className="px-4 py-2.5 text-left font-medium">Product</th>
+                                <th className="px-4 py-2.5 text-right font-medium">Quantity</th>
+                                <th className="px-4 py-2.5 text-right font-medium">Price</th>
+                                <th className="px-4 py-2.5 text-right font-medium">Subtotal</th>
                             </tr>
                         </thead>
                         <tbody>
                             {saleReturn.items.map((item) => (
-                                <tr key={item.id} className="border-t">
+                                <tr key={item.id} className="border-brand-table-divider hover:bg-brand-table-row-hover motion-colors border-t">
                                     <td className="px-4 py-2">
                                         {item.product.name} <span className="text-muted-foreground">({item.product.sku})</span>
                                     </td>
@@ -91,7 +91,7 @@ export default function SaleReturnShow({ return: saleReturn, accounts }: SaleRet
                             ))}
                         </tbody>
                         <tfoot>
-                            <tr className="border-t font-medium">
+                            <tr className="border-brand-table-divider border-t font-medium">
                                 <td colSpan={3} className="px-4 py-2 text-right">
                                     Total
                                 </td>

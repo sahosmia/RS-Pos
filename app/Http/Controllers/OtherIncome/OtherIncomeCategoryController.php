@@ -32,7 +32,7 @@ class OtherIncomeCategoryController extends Controller
      */
     public function destroy(OtherIncomeCategory $category): RedirectResponse
     {
-        if ($category->incomes()->exists()) {
+        if ($category->incomes()->withTrashed()->exists()) {
             return back()->withErrors([
                 'category' => 'This category has income entries and cannot be deleted.',
             ]);

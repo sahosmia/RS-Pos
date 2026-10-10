@@ -1,6 +1,7 @@
 import { getAccountActions } from '@/components/accounting/account-actions';
 import DataTableRowActions from '@/components/data-table/data-table-row-actions';
 import EmptyState from '@/components/shared/empty-state';
+import { StatusBadge } from '@/components/shared/status-badge';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { TabsContent } from '@/components/ui/tabs';
@@ -42,20 +43,20 @@ export function AccountsTab({ accounts, totalBalance, onAdd, onTransfer, onEdit,
                     </Button>
                 </EmptyState>
             ) : (
-                <div className="overflow-x-auto rounded-lg border">
+                <div className="overflow-x-auto rounded-brand-card bg-card shadow-[var(--brand-card-shadow-elevated)]">
                     <table className="w-full text-sm">
-                        <thead className="bg-muted/50 text-muted-foreground">
+                        <thead className="bg-brand-table-header text-muted-foreground text-xs font-semibold">
                             <tr>
-                                <th className="px-4 py-2 text-left font-medium">Name</th>
-                                <th className="px-4 py-2 text-left font-medium">Type</th>
-                                <th className="px-4 py-2 text-right font-medium">Balance</th>
-                                <th className="px-4 py-2 text-left font-medium">Status</th>
-                                <th className="px-4 py-2 text-right font-medium">Actions</th>
+                                <th className="px-4 py-2.5 text-left font-medium">Name</th>
+                                <th className="px-4 py-2.5 text-left font-medium">Type</th>
+                                <th className="px-4 py-2.5 text-right font-medium">Balance</th>
+                                <th className="px-4 py-2.5 text-left font-medium">Status</th>
+                                <th className="px-4 py-2.5 text-right font-medium">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
                             {accounts.map((account) => (
-                                <tr key={account.id} className="border-t">
+                                <tr key={account.id} className="border-brand-table-divider hover:bg-brand-table-row-hover motion-colors border-t">
                                     <td className="px-4 py-2">
                                         <div className="font-medium">{account.name}</div>
                                         {account.account_sub_type && <div className="text-muted-foreground text-xs">{account.account_sub_type}</div>}
@@ -63,7 +64,10 @@ export function AccountsTab({ accounts, totalBalance, onAdd, onTransfer, onEdit,
                                     <td className="px-4 py-2">{account.account_type?.name ?? '—'}</td>
                                     <td className="px-4 py-2 text-right tabular-nums">{money(account.current_balance)}</td>
                                     <td className="px-4 py-2">
-                                        <Badge variant={account.is_active ? 'secondary' : 'outline'}>{account.is_active ? 'Active' : 'Closed'}</Badge>
+                                        <StatusBadge
+                                            status={account.is_active ? 'active' : 'closed'}
+                                            label={account.is_active ? 'Active' : 'Closed'}
+                                        />
                                     </td>
                                     <td className="px-4 py-2">
                                         <div className="flex justify-end">
@@ -96,18 +100,18 @@ export function AccountTypesTab({ accountTypes, onAdd, onEdit, onDelete }: Accou
                 <Button onClick={onAdd}>Add Type</Button>
             </div>
 
-            <div className="overflow-x-auto rounded-lg border">
+            <div className="overflow-x-auto rounded-brand-card bg-card shadow-[var(--brand-card-shadow-elevated)]">
                 <table className="w-full text-sm">
-                    <thead className="bg-muted/50 text-muted-foreground">
+                    <thead className="bg-brand-table-header text-muted-foreground text-xs font-semibold">
                         <tr>
-                            <th className="px-4 py-2 text-left font-medium">Name</th>
-                            <th className="px-4 py-2 text-right font-medium">Accounts</th>
-                            <th className="px-4 py-2 text-right font-medium">Actions</th>
+                            <th className="px-4 py-2.5 text-left font-medium">Name</th>
+                            <th className="px-4 py-2.5 text-right font-medium">Accounts</th>
+                            <th className="px-4 py-2.5 text-right font-medium">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
                         {accountTypes.map((type) => (
-                            <tr key={type.id} className="border-t">
+                            <tr key={type.id} className="border-brand-table-divider hover:bg-brand-table-row-hover motion-colors border-t">
                                 <td className="px-4 py-2 font-medium">
                                     {type.name}
                                     {type.is_protected && (

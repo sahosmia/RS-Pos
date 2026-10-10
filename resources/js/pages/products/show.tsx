@@ -1,4 +1,5 @@
 import DataTablePagination from '@/components/data-table/data-table-pagination';
+import { ProductImage } from '@/components/products/product-image';
 import ProductStatusBadge from '@/components/products/product-status-badge';
 import StockAdjustmentModal from '@/components/products/stock-adjustment-modal';
 import { MetricCard } from '@/components/shared/metric-card';
@@ -108,12 +109,12 @@ export default function ProductShow({ product, movements }: ProductShowProps) {
             is_for_sale: product.is_for_sale,
             is_active: product.is_active,
             can_set_opening_stock: false,
+            track_serial_number: product.track_serial_number,
             image_url: product.image_url,
         });
     };
 
     const isLowStock = product.manage_stock && product.current_stock <= product.minimum_stock_level;
-    const initials = product.name.slice(0, 2).toUpperCase();
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
@@ -125,17 +126,11 @@ export default function ProductShow({ product, movements }: ProductShowProps) {
                     <CardContent className="p-0">
                         <div className="flex flex-col gap-5 p-5 sm:flex-row sm:items-start sm:justify-between">
                             <div className="flex items-start gap-4">
-                                {product.image_url ? (
-                                    <img
-                                        src={product.image_url}
-                                        alt={product.name}
-                                        className="size-16 shrink-0 rounded-xl border object-cover shadow-xs"
-                                    />
-                                ) : (
-                                    <div className="flex size-16 shrink-0 items-center justify-center rounded-xl border bg-gradient-to-br from-violet-500/20 to-sky-500/20 text-lg font-bold text-violet-700 dark:text-violet-300">
-                                        {initials}
-                                    </div>
-                                )}
+                                <ProductImage
+                                    src={product.image_url}
+                                    alt={product.name}
+                                    className="size-16 shrink-0 rounded-xl border object-cover shadow-xs"
+                                />
                                 <div className="min-w-0">
                                     <div className="flex flex-wrap items-center gap-2">
                                         <h1 className="text-xl font-semibold tracking-tight">{product.name}</h1>
@@ -245,7 +240,7 @@ export default function ProductShow({ product, movements }: ProductShowProps) {
                 <div className="grid gap-6 lg:grid-cols-3">
                     {/* Info sidebar */}
                     <Card className="shadow-xs lg:col-span-1">
-                        <CardHeader className="bg-muted/30 border-b px-4 py-3">
+                        <CardHeader divided className="bg-muted/30 border-b px-4 py-3">
                             <CardTitle className="flex items-center gap-2 text-sm font-semibold">
                                 <Package className="text-muted-foreground size-4" />
                                 Product Details
@@ -267,7 +262,7 @@ export default function ProductShow({ product, movements }: ProductShowProps) {
 
                     {/* Movements table */}
                     <Card className="shadow-xs lg:col-span-2">
-                        <CardHeader className="bg-muted/30 flex flex-row items-center gap-3 space-y-0 border-b px-4 py-3">
+                        <CardHeader divided className="bg-muted/30 flex flex-row items-center gap-3 space-y-0 border-b px-4 py-3">
                             <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-sky-500/10 text-sky-600 ring-1 ring-sky-500/20 dark:text-sky-400">
                                 <History className="size-4" />
                             </div>
@@ -291,7 +286,7 @@ export default function ProductShow({ product, movements }: ProductShowProps) {
                             ) : (
                                 <div className="overflow-x-auto">
                                     <table className="w-full text-sm">
-                                        <thead className="text-muted-foreground bg-muted/40">
+                                        <thead className="bg-brand-table-header text-muted-foreground text-xs font-semibold">
                                             <tr>
                                                 <th className="px-4 py-2.5 text-left text-xs font-semibold tracking-wide whitespace-nowrap uppercase">
                                                     Date

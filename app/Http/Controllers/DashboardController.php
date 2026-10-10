@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Console\Commands\CheckReconciliation;
 use App\Enums\ContactType;
 use App\Enums\DateRangePreset;
 use App\Enums\PurchaseStatus;
@@ -16,11 +17,14 @@ use App\Models\Sale;
 use App\Models\SaleItem;
 use App\Models\SaleReturn;
 use App\Models\Settings;
+use App\Queries\Dashboard\FollowUps;
+use App\Queries\Dashboard\OpenSalesOrders;
 use App\Support\FiscalYear;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -175,10 +179,15 @@ class DashboardController extends Controller
                 'total_amount' => (float) $item->total_amount,
             ]);
 
+        // Shop-wide money figures (sales, purchases, expenses, cash and bank, what is owed) are for people who may read
+        // reports. A cashier still gets the low-stock list, their follow-ups and the shortcuts, but not the shop's totals.
+        $showFigures = (bool) $request->user()?->can('report.view');
+
         return Inertia::render('dashboard', [
-            'salesLast30Days' => $this->salesLast30Days(),
-            'salesCurrentFiscalYear' => $this->salesCurrentFiscalYear(),
-            'monthlyRevenueVsExpense' => $this->monthlyRevenueVsExpense(),
+            'showFigures' => $showFigures,
+            'salesLast30Days' => $showFigures ? $this->salesLast30Days() : [],
+            'salesCurrentFiscalYear' => $showFigures ? $this->salesCurrentFiscalYear() : [],
+            'monthlyRevenueVsExpense' => $showFigures ? $this->monthlyRevenueVsExpense() : [],
             'quickActions' => [
                 ['label' => __('dashboard.new_sale'), 'href' => route('sales.create')],
                 ['label' => __('dashboard.new_purchase'), 'href' => route('purchases.create')],
@@ -193,7 +202,7 @@ class DashboardController extends Controller
                 'to' => $to->toDateString(),
             ],
             'bestSellersPeriod' => $period,
-            'metrics' => [
+            'metrics' => ! $showFigures ? null : [
                 'totalSales' => round($totalSales, 2),
                 'netSales' => round($totalSales - $totalSellReturn, 2),
                 'invoiceDue' => round($invoiceDue, 2),
@@ -203,7 +212,7 @@ class DashboardController extends Controller
                 'totalPurchaseReturn' => round($totalPurchaseReturn, 2),
                 'totalExpense' => round($totalExpense, 2),
             ],
-            'balances' => [
+            'balances' => ! $showFigures ? null : [
                 'totalReceivable' => round($byCode('1100'), 2),
                 'totalPayable' => round($byCode('2100'), 2),
                 'cashAndBank' => round($cashAndBank, 2),
@@ -213,12 +222,18 @@ class DashboardController extends Controller
                 'totalSuppliers' => $totalSuppliers,
             ],
             'lowStockProducts' => $lowStockProducts,
-            'recentTransactions' => [
-                'sales' => $recentSales,
-                'purchases' => $recentPurchases,
-                'expenses' => $recentExpenses,
-            ],
-            'bestSellers' => $bestSellers,
+            // Sales data only for someone who may open sales (the lists link to the invoices).
+            'followUps' => $request->user()?->canAny(['sale.view_all', 'sale.view_own'])
+                ? FollowUps::get((bool) Settings::currentOrNull()?->emi_module_enabled)
+                : null,
+            // Orders booked but not yet confirmed — null (no card) when there are none.
+            'salesOrders' => $request->user()?->canAny(['sale.view_all', 'sale.view_own']) ? OpenSalesOrders::get() : null,
+            // The nightly books check's verdict; only people who may read reports see it.
+            'booksCheck' => $request->user()?->can('report.view') ? Cache::get(CheckReconciliation::LAST_RUN_CACHE_KEY) : null,
+            'recentTransactions' => $showFigures
+                ? ['sales' => $recentSales, 'purchases' => $recentPurchases, 'expenses' => $recentExpenses]
+                : ['sales' => [], 'purchases' => [], 'expenses' => []],
+            'bestSellers' => $showFigures ? $bestSellers : [],
         ]);
     }
 

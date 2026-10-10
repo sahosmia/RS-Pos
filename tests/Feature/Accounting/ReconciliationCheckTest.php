@@ -1,11 +1,13 @@
 <?php
 
+use App\Console\Commands\CheckReconciliation;
 use App\Enums\StockMovementType;
 use App\Models\Contact;
 use App\Models\ContactLedger;
 use App\Models\Product;
 use App\Models\Settings;
 use App\Models\StockMovement;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 
 beforeEach(function () {
@@ -69,4 +71,27 @@ test('reconciliation check finds nothing to report when there is no data at all'
     Log::shouldReceive('warning')->never();
 
     $this->artisan('reconciliation:check')->assertSuccessful();
+});
+
+test('the nightly check keeps its verdict for the dashboard: clean, then failing with the check named', function () {
+    Cache::forget(CheckReconciliation::LAST_RUN_CACHE_KEY);
+
+    $this->artisan('reconciliation:check')->assertSuccessful();
+    expect(Cache::get(CheckReconciliation::LAST_RUN_CACHE_KEY)['failed_checks'])->toBe([]);
+
+    Contact::factory()->create(['type' => 'customer', 'balance' => 1000]);
+    Log::spy();
+    $this->artisan('reconciliation:check')->assertSuccessful();
+
+    expect(Cache::get(CheckReconciliation::LAST_RUN_CACHE_KEY)['failed_checks'])->toContain('Accounts Receivable');
+});
+
+test('only people who may read reports see the books check on the dashboard', function () {
+    Cache::forever(CheckReconciliation::LAST_RUN_CACHE_KEY, ['checked_at' => now()->toIso8601String(), 'failed_checks' => ['Inventory']]);
+
+    $this->actingAs(userWithPermissions(['sale.view_own']));
+    $this->get('/dashboard')->assertInertia(fn ($page) => $page->where('booksCheck', null));
+
+    $this->actingAs(userWithPermissions(['report.view']));
+    $this->get('/dashboard')->assertInertia(fn ($page) => $page->where('booksCheck.failed_checks', ['Inventory']));
 });

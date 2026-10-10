@@ -12,5 +12,7 @@ declare module '@tanstack/react-table' {
         label?: string;
         /** Excluded from `window.print()` output — for columns meaningless on paper (row-select checkbox, row actions menu). */
         printHidden?: boolean;
+        /** Horizontal alignment of header and cells. Numbers/currency/actions → `right`; omit for text. */
+        align?: 'left' | 'center' | 'right';
     }
 }

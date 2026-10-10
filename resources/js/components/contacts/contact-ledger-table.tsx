@@ -34,17 +34,17 @@ export default function ContactLedgerTable({ rows }: ContactLedgerTableProps) {
     const money = useMoneyFormat();
 
     return (
-        <div className="overflow-x-auto rounded-lg border">
+        <div className="overflow-x-auto rounded-brand-card bg-card shadow-[var(--brand-card-shadow-elevated)]">
             <table className="w-full text-sm">
-                <thead className="bg-muted/50 text-muted-foreground">
+                <thead className="bg-brand-table-header text-muted-foreground text-xs font-semibold">
                     <tr>
-                        <th className="px-4 py-2 text-left font-medium">Date</th>
-                        <th className="px-4 py-2 text-left font-medium">Reference No</th>
-                        <th className="px-4 py-2 text-left font-medium">Type</th>
-                        <th className="px-4 py-2 text-right font-medium">Debit</th>
-                        <th className="px-4 py-2 text-right font-medium">Credit</th>
-                        <th className="px-4 py-2 text-right font-medium">Balance</th>
-                        <th className="px-4 py-2 text-left font-medium">Others</th>
+                        <th className="px-4 py-2.5 text-left font-medium">Date</th>
+                        <th className="px-4 py-2.5 text-left font-medium">Reference No</th>
+                        <th className="px-4 py-2.5 text-left font-medium">Type</th>
+                        <th className="px-4 py-2.5 text-right font-medium">Debit</th>
+                        <th className="px-4 py-2.5 text-right font-medium">Credit</th>
+                        <th className="px-4 py-2.5 text-right font-medium">Balance</th>
+                        <th className="px-4 py-2.5 text-left font-medium">Others</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -108,7 +108,7 @@ export default function ContactLedgerTable({ rows }: ContactLedgerTableProps) {
                                                     ))}
                                                 </tbody>
                                                 <tfoot>
-                                                    <tr className="border-t font-medium">
+                                                    <tr className="border-brand-table-divider border-t font-medium">
                                                         <td className="py-1" colSpan={4}>
                                                             Total
                                                         </td>

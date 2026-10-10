@@ -45,6 +45,20 @@ test('the sales list search matches by invoice number or customer name', functio
             ->where('sales.data.0.invoice_no', 'INV-0002'));
 });
 
+test('the sales list finds a sale by the customer phone number and sends the phone for display', function () {
+    $this->actingAs(userWithPermissions(['sale.view_all']));
+    $alice = Contact::factory()->create(['name' => 'Alice Traders', 'phone' => '01711223344']);
+    $bob = Contact::factory()->create(['name' => 'Bob Enterprises', 'phone' => '01899887766']);
+    Sale::factory()->create(['customer_id' => $alice->id, 'invoice_no' => 'INV-0001']);
+    Sale::factory()->create(['customer_id' => $bob->id, 'invoice_no' => 'INV-0002']);
+
+    $this->get('/sales?preset=all&search=0171122')
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->has('sales.data', 1)
+            ->where('sales.data.0.invoice_no', 'INV-0001')
+            ->where('sales.data.0.customer.phone', '01711223344'));
+});
 test('the add sale page renders', function () {
     $this->actingAs(User::factory()->create());
 
@@ -65,7 +79,7 @@ test('the add sale page auto-selects customer when customer_id query parameter i
             ->where('initialCustomer.name', 'Specific Customer'));
 });
 
-test('the sale detail page renders and flags a fresh confirm for the undo toast', function () {
+test('saving a new sale goes back to the list, and the detail page still renders', function () {
     $this->actingAs(User::factory()->create());
     $customer = Contact::factory()->create();
     $product = Product::factory()->create(['current_stock' => 5]);
@@ -75,20 +89,16 @@ test('the sale detail page renders and flags a fresh confirm for the undo toast'
         'sale_date' => '2026-03-01',
         'status' => 'confirmed',
         'items' => [['product_id' => $product->id, 'quantity' => 1, 'unit_price' => 100]],
-    ]);
+    ])->assertRedirect(route('sales.index'));
 
     $sale = Sale::query()->firstOrFail();
 
+    // The list page right after saving carries the figures "Save & WhatsApp" needs, once.
+    $this->get('/sales')->assertOk();
+
     $this->get("/sales/{$sale->id}")
         ->assertOk()
-        ->assertInertia(fn ($page) => $page
-            ->component('sales/show')
-            ->where('sale.invoice_no', $sale->invoice_no)
-            ->where('justConfirmed', true));
-
-    // A plain visit afterwards no longer carries the flag.
-    $this->get("/sales/{$sale->id}")
-        ->assertInertia(fn ($page) => $page->where('justConfirmed', false));
+        ->assertInertia(fn ($page) => $page->component('sales/show')->where('sale.invoice_no', $sale->invoice_no));
 });
 
 test('the edit sale page renders for a draft sale', function () {
@@ -100,9 +110,11 @@ test('the edit sale page renders for a draft sale', function () {
         ->assertInertia(fn ($page) => $page->component('sales/edit'));
 });
 
-test('the edit sale page is forbidden for a confirmed sale', function () {
+test('a confirmed sale is amended, not freely edited: its edit page is closed to a historical record', function () {
+    // A confirmed sale can be amended by someone who may edit sales (see AmendSaleTest); an imported historical record
+    // has no stock or money behind it, so it stays closed.
     $this->actingAs(User::factory()->create());
-    $sale = Sale::factory()->confirmed()->create(['customer_id' => Contact::factory()]);
+    $sale = Sale::factory()->confirmed()->create(['customer_id' => Contact::factory(), 'source' => 'imported']);
 
     $this->get("/sales/{$sale->id}/edit")->assertForbidden();
 });

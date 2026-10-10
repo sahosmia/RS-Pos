@@ -71,107 +71,88 @@ export default function BrandingImageUploader({
         });
     };
 
-return (
-    <div className="flex min-w-0 flex-col rounded-xl border bg-card p-4 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-md sm:p-5">
+    return (
+        <div className="bg-card flex min-w-0 flex-col rounded-xl border p-4 shadow-sm sm:p-5">
+            {/* Card header */}
+            <div className="mb-4 flex items-start justify-between gap-2">
+                <div className="min-w-0 space-y-1">
+                    <Label htmlFor={inputId} className="text-sm font-semibold">
+                        {label}
+                    </Label>
+                    <p className="text-muted-foreground text-xs leading-relaxed">{description}</p>
+                </div>
 
-        {/* Card header */}
-        <div className="mb-4 flex items-start justify-between gap-2">
-            <div className="min-w-0 space-y-1">
-                <Label htmlFor={inputId} className="text-sm font-semibold">
-                    {label}
-                </Label>
-                <p className="text-xs leading-relaxed text-muted-foreground">
-                    {description}
-                </p>
+                <span
+                    className={cn(
+                        'shrink-0 rounded-full px-2 py-1 text-[10px] font-medium sm:text-xs',
+                        imageUrl ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' : 'bg-muted text-muted-foreground',
+                    )}
+                >
+                    {imageUrl ? 'Uploaded' : 'Empty'}
+                </span>
             </div>
 
-            <span
-                className={cn(
-                    'shrink-0 rounded-full px-2 py-1 text-[10px] font-medium sm:text-xs',
-                    imageUrl
-                        ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
-                        : 'bg-muted text-muted-foreground',
-                )}
-            >
-                {imageUrl ? 'Uploaded' : 'Empty'}
-            </span>
-        </div>
-
-        {/* Hidden file input */}
-        <input
-            ref={inputRef}
-            id={inputId}
-            type="file"
-            accept={accept}
-            className="sr-only"
-            disabled={busy}
-            onChange={(e) => upload(e.target.files?.[0] ?? null)}
-        />
-
-        {/* Image preview */}
-        <div className="flex min-h-36 flex-1 flex-col items-center justify-center gap-3 rounded-lg border border-dashed bg-muted/30 p-4">
-            <div
-                className={cn(
-                    'flex shrink-0 items-center justify-center overflow-hidden rounded-lg border bg-background',
-                    previewClassName,
-                )}
-            >
-                {imageUrl ? (
-                    <img
-                        src={imageUrl}
-                        alt={label}
-                        className="max-h-full max-w-full object-contain p-2"
-                    />
-                ) : (
-                    <div className="flex flex-col items-center gap-2 text-muted-foreground">
-                        <ImagePlus className="size-7 opacity-40" />
-                        <span className="text-xs">No image</span>
-                    </div>
-                )}
-            </div>
-
-            <p className="text-center text-xs text-muted-foreground">
-                {imageUrl ? 'Current image preview' : 'Upload an image to preview'}
-            </p>
-        </div>
-
-        {/* Actions */}
-        <div className="mt-4 flex flex-wrap items-center gap-2">
-            <Button
-                type="button"
-                variant="default"
-                size="sm"
+            {/* Hidden file input */}
+            <input
+                ref={inputRef}
+                id={inputId}
+                type="file"
+                accept={accept}
+                className="sr-only"
                 disabled={busy}
-                onClick={() => inputRef.current?.click()}
-                className="flex-1 gap-1.5"
-            >
-                <ImagePlus className="size-4" />
-                {busy ? 'Uploading...' : imageUrl ? 'Replace' : 'Upload'}
-            </Button>
+                onChange={(e) => upload(e.target.files?.[0] ?? null)}
+            />
 
-            {imageUrl && (
+            {/* Image preview */}
+            <div className="bg-muted/30 flex min-h-36 flex-1 flex-col items-center justify-center gap-3 rounded-lg border border-dashed p-4">
+                <div className={cn('bg-background flex shrink-0 items-center justify-center overflow-hidden rounded-lg border', previewClassName)}>
+                    {imageUrl ? (
+                        <img src={imageUrl} alt={label} className="max-h-full max-w-full object-contain p-2" />
+                    ) : (
+                        <div className="text-muted-foreground flex flex-col items-center gap-2">
+                            <ImagePlus className="size-7 opacity-40" />
+                            <span className="text-xs">No image</span>
+                        </div>
+                    )}
+                </div>
+
+                <p className="text-muted-foreground text-center text-xs">{imageUrl ? 'Current image preview' : 'Upload an image to preview'}</p>
+            </div>
+
+            {/* Actions */}
+            <div className="mt-4 flex flex-wrap items-center gap-2">
                 <Button
                     type="button"
-                    variant="outline"
+                    variant="default"
                     size="sm"
                     disabled={busy}
-                    onClick={remove}
-                    className="flex-1 gap-1.5 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                    onClick={() => inputRef.current?.click()}
+                    className="flex-1 gap-1.5"
                 >
-                    <Trash2 className="size-4" />
-                    Remove
+                    <ImagePlus className="size-4" />
+                    {busy ? 'Uploading...' : imageUrl ? 'Replace' : 'Upload'}
                 </Button>
+
+                {imageUrl && (
+                    <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        disabled={busy}
+                        onClick={remove}
+                        className="text-destructive hover:bg-destructive/10 hover:text-destructive flex-1 gap-1.5"
+                    >
+                        <Trash2 className="size-4" />
+                        Remove
+                    </Button>
+                )}
+            </div>
+
+            {error && (
+                <p className="text-destructive mt-3 text-xs" role="alert">
+                    {error}
+                </p>
             )}
         </div>
-
-        {error && (
-            <p className="mt-3 text-xs text-destructive" role="alert">
-                {error}
-            </p>
-        )}
-    </div>
-);
-
-
-
+    );
 }

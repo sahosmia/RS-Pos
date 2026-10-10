@@ -13,6 +13,7 @@ use App\Models\Investor;
 use App\Models\OtherLiability;
 use App\Models\Product;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -45,6 +46,12 @@ class CheckReconciliation extends Command
 
     protected $description = 'Compare subsidiary ledger totals against their General Ledger counterparts and log any mismatch';
 
+    /** Where the last run's verdict is kept, for the dashboard's books-check line. */
+    public const LAST_RUN_CACHE_KEY = 'reconciliation.last_run';
+
+    /** @var list<string> The checks that found something wrong in this run. */
+    private array $failedChecks = [];
+
     private const TOLERANCE = 0.01;
 
     /** Stock is held to 4 decimals, so it is compared far more tightly than money. */
@@ -72,6 +79,11 @@ class CheckReconciliation extends Command
         $this->checkProductStocks();
         $this->checkAccountRegisterAgainstJournal();
         $this->checkAccountOpeningBalances();
+
+        Cache::forever(self::LAST_RUN_CACHE_KEY, [
+            'checked_at' => now()->toIso8601String(),
+            'failed_checks' => $this->failedChecks,
+        ]);
     }
 
     /**
@@ -277,6 +289,7 @@ class CheckReconciliation extends Command
         }
 
         Log::warning("Reconciliation mismatch: {$label}", ['problems' => $problems]);
+        $this->failedChecks[] = $label;
 
         $this->warn("{$label}: ".count($problems).' problem(s)');
         foreach ($problems as $problem) {
@@ -333,6 +346,7 @@ class CheckReconciliation extends Command
             ]);
 
             $this->warn("{$label} mismatch: subsidiary={$subsidiaryTotal}, GL={$glBalance}, diff={$difference}");
+            $this->failedChecks[] = $label;
 
             return;
         }

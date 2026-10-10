@@ -8,6 +8,8 @@ use App\Models\Settings;
 use App\Models\StockMovement;
 use App\Models\Unit;
 use App\Models\User;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 
 test('guests are redirected to the login page', function () {
     $this->get('/products')->assertRedirect('/login');
@@ -398,4 +400,32 @@ test('the product list has no date filter: an old product is always listed, and 
         ->missing('filters.preset')
         ->missing('filters.from')
         ->missing('filters.to'));
+});
+
+test('an uploaded product image is saved and its url is sent to the list and detail pages', function () {
+    Storage::fake('public');
+    $this->actingAs(User::factory()->create());
+
+    $this->post('/products', [
+        'name' => 'Split AC 1.5 Ton',
+        'sku' => 'AC-15',
+        'category_id' => Category::factory()->create()->id,
+        'unit_id' => Unit::factory()->create()->id,
+        'selling_price' => 45000,
+        'manage_stock' => true,
+        'is_for_sale' => true,
+        'is_active' => true,
+        'has_installation_service' => false,
+        'emi_available' => false,
+        'track_serial_number' => false,
+        'image' => UploadedFile::fake()->image('ac.jpg', 300, 300),
+    ])->assertSessionHasNoErrors()->assertRedirect('/products');
+
+    $product = Product::query()->firstOrFail();
+
+    expect($product->getMedia('images'))->toHaveCount(1)
+        ->and($product->imageUrl())->toStartWith('/storage/')->toContain('ac.jpg');
+
+    $this->get('/products')->assertInertia(fn ($page) => $page->where('products.data.0.image_url', $product->imageUrl()));
+    $this->get("/products/{$product->id}")->assertInertia(fn ($page) => $page->where('product.image_url', $product->imageUrl()));
 });

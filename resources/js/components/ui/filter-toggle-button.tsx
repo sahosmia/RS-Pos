@@ -18,15 +18,14 @@ interface FilterToggleButtonProps extends Omit<ButtonProps, 'children'> {
  */
 const FilterToggleButton = React.forwardRef<HTMLButtonElement, FilterToggleButtonProps>(({ open, activeCount = 0, className, ...props }, ref) => {
     return (
-        <Button ref={ref} type="button" variant="outline" className={cn('gap-2', className)} {...props}>
+        <Button ref={ref} type="button" variant={activeCount > 0 ? 'soft' : 'secondary'} title="Filters" aria-label="Filters" className={cn('gap-1.5', className)} {...props}>
             <Filter className="size-4" />
-            <span className="hidden sm:inline">Filters</span>
             {activeCount > 0 && (
                 <Badge variant="secondary" className="h-5 min-w-5 justify-center px-1 text-xs">
                     {activeCount}
                 </Badge>
             )}
-            <ChevronDown className={cn('size-4 transition-transform duration-200', open && 'rotate-180')} />
+            <ChevronDown className={cn('size-4 motion-transform', open && 'rotate-180')} />
         </Button>
     );
 });

@@ -4,6 +4,8 @@ import ProductFilters from '@/components/products/product-filters';
 import ProductGridCard from '@/components/products/product-grid-card';
 import ProductStatCards from '@/components/products/product-stat-cards';
 import StockAdjustmentModal from '@/components/products/stock-adjustment-modal';
+import { AddButton } from '@/components/shared/action-buttons';
+import BulkDeleteBar from '@/components/shared/bulk-delete-bar';
 import ConfirmDialog from '@/components/shared/confirm-dialog';
 import EmptyState from '@/components/shared/empty-state';
 import PageHeader from '@/components/shared/page-header';
@@ -14,8 +16,8 @@ import { useTranslation } from '@/hooks/use-translation';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { type ProductListItem } from '@/types/models';
-import { Head, Link } from '@inertiajs/react';
-import { Package, Plus } from 'lucide-react';
+import { Head } from '@inertiajs/react';
+import { Package } from 'lucide-react';
 import { useState } from 'react';
 import { getExportColumns, getVisibilityColumns, useProductColumns } from './table/columns';
 import { type ProductsIndexProps } from './types';
@@ -44,6 +46,8 @@ export default function ProductsIndex({ products, stats, categories, brands, fil
         emptyFilters: { category_id: null, brand_id: null, stock_status: null },
         rows: products.data,
         getId: (product) => product.id,
+        // Status only adds "Service"/"Inactive" tags, so it starts hidden; the Columns menu brings it back.
+        initialColumnVisibility: { status: false },
         export: {
             routeName: 'products.export',
             filterKeys: ['category_id', 'brand_id', 'stock_status'],
@@ -77,19 +81,15 @@ export default function ProductsIndex({ products, stats, categories, brands, fil
                     iconClassName="bg-violet-500/10 text-violet-600 ring-1 ring-violet-500/20 dark:text-violet-400"
                     title={t('productsPage', 'title')}
                     description={t('productsPage', 'description')}
-                    actions={
-                        <Button asChild className="gap-1.5">
-                            <Link href={route('products.create')}>
-                                <Plus className="size-4" />
-                                {t('productsPage', 'add_product')}
-                            </Link>
-                        </Button>
-                    }
+                    actions={<AddButton href={route('products.create')} title={t('productsPage', 'add_product')} />}
                 />
 
                 {stats && <ProductStatCards stats={stats} />}
 
                 <ListTable
+                    selectionSlot={
+                        <BulkDeleteBar selection={list.selection} routeName="products.bulk-delete" noun="products" permission="product.delete" />
+                    }
                     list={list}
                     data={products}
                     filters={filters}
@@ -119,12 +119,7 @@ export default function ProductsIndex({ products, stats, categories, brands, fil
                     }
                     emptyState={
                         <EmptyState title={t('productsPage', 'empty_title')} description={t('productsPage', 'empty_description')}>
-                            <Button className="mt-2 gap-1.5" asChild>
-                                <Link href={route('products.create')}>
-                                    <Plus className="size-4" />
-                                    {t('productsPage', 'add_product')}
-                                </Link>
-                            </Button>
+                            <AddButton href={route('products.create')} title={t('productsPage', 'add_product')} className="mt-2" />
                         </EmptyState>
                     }
                     filteredEmptyState={

@@ -5,12 +5,14 @@ namespace App\Http\Controllers\OtherIncome;
 use App\Actions\OtherIncome\CreateOtherIncomeAction;
 use App\Actions\OtherIncome\DeleteOtherIncomeAction;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Common\BulkDestroyRequest;
 use App\Http\Requests\OtherIncome\StoreOtherIncomeRequest;
 use App\Models\Account;
 use App\Models\OtherIncome;
 use App\Models\OtherIncomeCategory;
 use App\Models\Settings;
 use App\Queries\OtherIncome\OtherIncomeQuery;
+use App\Support\BulkDelete;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -78,5 +80,18 @@ class OtherIncomeController extends Controller
         $deleteIncome->execute($otherIncome);
 
         return back();
+    }
+
+    /**
+     * "Delete selected" — each record is checked by the same rule as the single delete.
+     */
+    public function bulkDestroy(BulkDestroyRequest $request, DeleteOtherIncomeAction $deleteIncome): RedirectResponse
+    {
+        return BulkDelete::respond(BulkDelete::run(
+            $request->validated('ids'),
+            OtherIncome::query()->whereIn('id', $request->validated('ids'))->get(),
+            fn (OtherIncome $income) => null,
+            fn (OtherIncome $income) => $deleteIncome->execute($income),
+        ));
     }
 }

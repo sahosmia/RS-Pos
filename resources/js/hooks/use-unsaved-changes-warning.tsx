@@ -30,7 +30,7 @@ export function UnsavedChangesModal({
                     <DialogTitle>{title}</DialogTitle>
                     <DialogDescription>{description}</DialogDescription>
                 </DialogHeader>
-                <DialogFooter className="gap-2 sm:gap-0">
+                <DialogFooter className="gap-2">
                     <Button type="button" variant="outline" onClick={onCancel}>
                         {cancelLabel}
                     </Button>
@@ -50,6 +50,9 @@ export function useUnsavedChangesWarning(isDirty: boolean, isProcessing: boolean
         options?: Record<string, unknown>;
     } | null>(null);
     const shouldBypassRef = useRef(false);
+    // The browser's Back button: Inertia handles it from the history itself (no efore event), so it needs its own guard.
+    const pendingBackRef = useRef(false);
+    const historyGuardedRef = useRef(false);
 
     const bypass = useCallback(() => {
         shouldBypassRef.current = true;
@@ -114,10 +117,46 @@ export function useUnsavedChangesWarning(isDirty: boolean, isProcessing: boolean
         };
     }, [isDirty, isProcessing]);
 
+    // Browser Back blocking: while the form is dirty, sit one history entry above the page. Back then only lands on
+    // the same URL, and we put the guard entry back and ask first.
+    useEffect(() => {
+        if (!isDirty || isProcessing) return;
+
+        if (!historyGuardedRef.current) {
+            window.history.pushState(window.history.state, '', window.location.href);
+            historyGuardedRef.current = true;
+        }
+
+        const handlePopState = (event: PopStateEvent) => {
+            if (shouldBypassRef.current) return;
+
+            // Inertia's own handler would re-render this page from history with a fresh mount (losing the form and this
+            // dialog), so it must never see the event: this listener runs first (capture) and stops it.
+            event.stopImmediatePropagation();
+
+            window.history.pushState(window.history.state, '', window.location.href);
+            pendingBackRef.current = true;
+            setShowModal(true);
+        };
+
+        window.addEventListener('popstate', handlePopState, true);
+
+        return () => {
+            window.removeEventListener('popstate', handlePopState, true);
+        };
+    }, [isDirty, isProcessing]);
+
     const confirmLeave = useCallback(() => {
         shouldBypassRef.current = true;
         setShowModal(false);
 
+        if (pendingBackRef.current) {
+            // Past the guard entry we re-pushed and the page's own entry, to wherever Back was heading.
+            pendingBackRef.current = false;
+            window.history.go(-2);
+
+            return;
+        }
         if (pendingVisitRef.current) {
             const { url, options } = pendingVisitRef.current;
             pendingVisitRef.current = null;
@@ -127,6 +166,7 @@ export function useUnsavedChangesWarning(isDirty: boolean, isProcessing: boolean
 
     const cancelLeave = useCallback(() => {
         pendingVisitRef.current = null;
+        pendingBackRef.current = false;
         setShowModal(false);
     }, []);
 

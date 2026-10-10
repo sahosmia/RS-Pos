@@ -254,3 +254,20 @@ test('a long account statement is paged with the balance carried across pages', 
             ->where('transactions.19.balance', 600)
             ->where('closingBalance', 600));
 });
+
+test('a crowded cash range steps past the Bank parent code instead of colliding', function () {
+    $this->actingAs(User::factory()->create());
+    $cash = AccountType::factory()->create(['name' => AccountType::CASH]);
+
+    foreach (range(1, 11) as $i) {
+        $this->post('/accounts', ['name' => "Cash {$i}", 'account_type_id' => $cash->id, 'opening_balance' => 0])
+            ->assertSessionHasNoErrors();
+    }
+
+    $codes = ChartOfAccount::query()->whereIn('name', array_map(fn ($i) => "Cash {$i}", range(1, 11)))->pluck('code');
+
+    expect($codes)->toHaveCount(11)
+        ->and($codes->unique())->toHaveCount(11)
+        ->and($codes->contains('1020'))->toBeFalse()
+        ->and(ChartOfAccount::query()->where('code', '1020')->value('name'))->toBe('Bank Accounts');
+});

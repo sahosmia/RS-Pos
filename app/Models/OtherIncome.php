@@ -8,6 +8,7 @@ use Database\Factories\OtherIncomeFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
  * Small income that isn't a sale — scrap/cartons sold, interest, commission... Money lands in
@@ -15,11 +16,13 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  */
 class OtherIncome extends Model
 {
+    use HasCreator;
+
     /** @use HasFactory<OtherIncomeFactory> */
     use HasFactory;
 
-    use HasCreator;
     use LogsActivityDefaults;
+    use SoftDeletes;
 
     /**
      * @var list<string>

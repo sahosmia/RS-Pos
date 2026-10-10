@@ -33,6 +33,7 @@ export function SaleItemsList({ items, productById, onEdit, onRemove, errors = {
                             {errors[`items.${index}.serial_numbers`] && (
                                 <div className="text-destructive text-xs">{errors[`items.${index}.serial_numbers`]}</div>
                             )}
+                            {item.warranty_months > 0 && <div className="text-muted-foreground text-xs">Warranty {item.warranty_months} months</div>}
                             {item.installation_required && (
                                 <div className="text-muted-foreground text-xs">+ Installation {money(item.installation_charge ?? 0)}</div>
                             )}

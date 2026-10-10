@@ -19,7 +19,7 @@ class DeleteContactAction
         return match (true) {
             $contact->ledgerEntries()->exists() => 'This contact has ledger history — mark it inactive instead of deleting it.',
             $contact->sales()->exists() => 'This contact has recorded sales — mark it inactive instead of deleting it.',
-            $contact->purchases()->exists() => 'This contact has recorded purchases — mark it inactive instead of deleting it.',
+            $contact->purchases()->withTrashed()->exists() => 'This contact has recorded purchases — mark it inactive instead of deleting it.',
             $contact->salesOrders()->exists() => 'This contact has sales orders — mark it inactive instead of deleting it.',
             default => null,
         };
@@ -40,7 +40,7 @@ class DeleteContactAction
             ->whereIn('id', $ids)
             ->whereDoesntHave('ledgerEntries')
             ->whereDoesntHave('sales')
-            ->whereDoesntHave('purchases')
+            ->whereDoesntHave('purchases', fn ($query) => $query->withTrashed())
             ->whereDoesntHave('salesOrders')
             ->pluck('id');
 

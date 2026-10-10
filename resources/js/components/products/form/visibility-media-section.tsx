@@ -17,7 +17,7 @@ export function VisibilityMediaSection({ form, savedImageUrl }: VisibilityMediaS
 
     return (
         <FormSection icon={Eye} title={t('productForm', 'visibility_media')} description="Product visibility, status এবং image" accent="amber">
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className="grid gap-3">
                 <ToggleRow
                     id="is_for_sale"
                     label={t('productForm', 'for_sale')}

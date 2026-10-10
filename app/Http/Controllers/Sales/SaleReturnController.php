@@ -60,6 +60,7 @@ class SaleReturnController extends Controller
         $sale = Sale::query()
             ->with(['items.product:id,name,sku', 'items.returnItems', 'customer:id,name'])
             ->where('status', SaleStatus::Confirmed)
+            ->visibleTo($request->user())
             ->findOrFail($request->integer('sale_id'));
 
         return Inertia::render('sales/sale-returns/create', [

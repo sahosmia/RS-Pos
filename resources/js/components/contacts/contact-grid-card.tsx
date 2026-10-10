@@ -1,10 +1,11 @@
 import DataTableRowActions, { type RowAction } from '@/components/data-table/data-table-row-actions';
+import { StatusBadge } from '@/components/shared/status-badge';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useMoneyFormat } from '@/hooks/use-money-format';
 import { useTranslation } from '@/hooks/use-translation';
 import { cn } from '@/lib/utils';
-import { activeColor, typeColor, useContactTypeLabel } from '@/pages/contacts/table/columns';
+import { typeVariant, useContactTypeLabel } from '@/pages/contacts/table/columns';
 import { type ContactListItem, type ContactType } from '@/types/models';
 import { Link } from '@inertiajs/react';
 
@@ -52,7 +53,7 @@ export function ContactGridCard({ contact, selected, onToggleSelected, actions }
     return (
         <div
             className={cn(
-                'group bg-card hover:border-primary/30 rounded-xl border border-l-4 p-4 transition-all hover:shadow-md',
+                'group bg-card hover:border-primary/30 motion-surface rounded-xl border border-l-4 p-4 hover:shadow-[var(--brand-card-shadow-elevated)]',
                 ACCENT_BORDER[contact.type],
                 selected && 'border-primary/40 bg-primary/5 ring-primary/20 ring-1',
             )}
@@ -81,12 +82,11 @@ export function ContactGridCard({ contact, selected, onToggleSelected, actions }
 
             <div className="mt-3 flex items-center justify-between gap-2 border-t pt-3">
                 <div className="flex flex-wrap items-center gap-1">
-                    <Badge variant="outline" className={typeColor[contact.type]}>
-                        {typeLabel[contact.type]}
-                    </Badge>
-                    <Badge variant="outline" className={activeColor(contact.is_active)}>
-                        {contact.is_active ? t('common', 'active') : t('common', 'inactive')}
-                    </Badge>
+                    <Badge variant={typeVariant[contact.type]}>{typeLabel[contact.type]}</Badge>
+                    <StatusBadge
+                        status={contact.is_active ? 'active' : 'inactive'}
+                        label={contact.is_active ? t('common', 'active') : t('common', 'inactive')}
+                    />
                 </div>
                 <span className={cn('shrink-0 text-sm font-semibold tabular-nums', balanceTone)}>{money(contact.balance)}</span>
             </div>

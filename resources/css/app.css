@@ -7,12 +7,30 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme {
+    --animate-collapsible-down: collapsible-down var(--motion-normal) var(--motion-ease);
+    --animate-collapsible-up: collapsible-up var(--motion-fast) var(--motion-ease-exit);
+
+    /* Sign-in pages: slow, endless, easy on the eye (see AuthSplitShell). */
+    --animate-auth-float-a: auth-float-a 22s ease-in-out infinite;
+    --animate-auth-float-b: auth-float-b 28s ease-in-out infinite;
+    --animate-auth-float-c: auth-float-c 19s ease-in-out infinite;
+    --animate-auth-bob: auth-bob 5.5s ease-in-out infinite;
+    --animate-auth-ring: auth-ring 6s ease-out infinite;
+    --animate-auth-sheen: auth-sheen 11s linear infinite;
+    --animate-auth-shimmer: auth-shimmer 2.4s ease-in-out 0.8s 1 both;
+
+    /* Easing curves usable as `ease-standard` / `ease-exit`. See the motion tokens in :root. */
+    --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+    --ease-exit: cubic-bezier(0.4, 0, 1, 1);
+
     --font-sans:
         'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
 
     --radius-lg: var(--radius);
     --radius-md: calc(var(--radius) - 2px);
     --radius-sm: calc(var(--radius) - 4px);
+    --radius-xl: 0.625rem;
+    --radius-2xl: 0.75rem;
 
     --color-background: var(--background);
     --color-foreground: var(--foreground);
@@ -48,6 +66,50 @@
     --color-chart-4: var(--chart-4);
     --color-chart-5: var(--chart-5);
 
+    --color-brand-primary: var(--brand-primary);
+    --color-brand-primary-hover: var(--brand-primary-hover);
+    --color-brand-primary-active: var(--brand-primary-active);
+    --color-brand-primary-foreground: var(--brand-primary-foreground);
+    --color-brand-secondary: var(--brand-secondary);
+    --color-brand-secondary-hover: var(--brand-secondary-hover);
+    --color-brand-secondary-active: var(--brand-secondary-active);
+    --color-brand-success: var(--brand-success);
+    --color-brand-success-hover: var(--brand-success-hover);
+    --color-brand-warning: var(--brand-warning);
+    --color-brand-warning-hover: var(--brand-warning-hover);
+    --color-brand-warning-foreground: var(--brand-warning-foreground);
+    --color-brand-danger: var(--brand-danger);
+    --color-brand-danger-hover: var(--brand-danger-hover);
+    --color-brand-border: var(--brand-border);
+    --color-brand-focus-ring: var(--brand-focus-ring);
+    --color-brand-danger-text: var(--brand-danger-text);
+    --color-brand-control-bg: var(--brand-control-bg);
+    --color-brand-control-border: var(--brand-control-border);
+    --color-brand-control-border-hover: var(--brand-control-border-hover);
+    --color-brand-control-disabled: var(--brand-control-disabled);
+    --color-brand-control-placeholder: var(--brand-control-placeholder);
+    --color-brand-info: var(--brand-info);
+    --color-brand-info-text: var(--brand-info-text);
+    --color-brand-primary-text: var(--brand-primary-text);
+    --color-brand-success-text: var(--brand-success-text);
+    --color-brand-warning-text: var(--brand-warning-text);
+    --color-brand-card-border: var(--brand-card-border);
+    --color-brand-popover-border: var(--brand-popover-border);
+    --color-brand-field-bg: var(--brand-field-bg);
+    --color-brand-field-bg-focus: var(--brand-field-bg-focus);
+    --color-brand-field-border: var(--brand-field-border);
+    --color-brand-field-border-hover: var(--brand-field-border-hover);
+    --color-brand-field-disabled: var(--brand-field-disabled);
+    --color-brand-card-footer: var(--brand-card-footer);
+    --color-brand-overlay: var(--brand-overlay);
+    --radius-brand-card: var(--brand-card-radius);
+    --color-brand-table-header: var(--brand-table-header);
+    --color-brand-table-divider: var(--brand-table-divider);
+    --color-brand-table-row-hover: var(--brand-table-row-hover);
+    --color-brand-table-row-selected: var(--brand-table-row-selected);
+
+    --radius-brand-control: var(--brand-control-radius);
+
     --color-sidebar: var(--sidebar-background);
     --color-sidebar-foreground: var(--sidebar-foreground);
     --color-sidebar-primary: var(--sidebar-primary);
@@ -78,10 +140,10 @@
 
 :root {
     color-scheme: light;
-    --background: hsl(0, 0%, 98%);
-    --foreground: hsl(0, 0%, 3.9%);
+    --background: hsl(220, 20%, 95%);
+    --foreground: hsl(222, 28%, 9%);
     --card: hsl(0, 0%, 100%);
-    --card-foreground: hsl(0, 0%, 3.9%);
+    --card-foreground: hsl(222, 28%, 9%);
     --popover: hsl(0, 0%, 100%);
     --popover-foreground: hsl(0, 0%, 3.9%);
     --primary: hsl(0, 0%, 9%);
@@ -89,7 +151,7 @@
     --secondary: hsl(0, 0%, 96.1%);
     --secondary-foreground: hsl(0, 0%, 9%);
     --muted: hsl(0, 0%, 96.1%);
-    --muted-foreground: hsl(0, 0%, 45.1%);
+    --muted-foreground: hsl(220, 9%, 42%);
     --accent: hsl(0, 0%, 96.1%);
     --accent-foreground: hsl(0, 0%, 9%);
     --destructive: hsl(0, 84.2%, 60.2%);
@@ -102,15 +164,84 @@
     --chart-3: hsl(197, 37%, 24%);
     --chart-4: hsl(43, 74%, 66%);
     --chart-5: hsl(27, 87%, 67%);
-    --radius: 0.5rem;
-    --sidebar-background: hsl(0, 0%, 98%);
+    --radius: 0.375rem;
+    --sidebar-background: hsl(222, 22%, 89%);
     --sidebar-foreground: hsl(240, 5.3%, 30%);
     --sidebar-primary: hsl(0, 0%, 10%);
     --sidebar-primary-foreground: hsl(0, 0%, 98%);
-    --sidebar-accent: hsl(0, 0%, 94%);
+    --sidebar-accent: hsl(222, 18%, 82%);
     --sidebar-accent-foreground: hsl(0, 0%, 30%);
-    --sidebar-border: hsl(0, 0%, 91%);
+    --sidebar-border: hsl(222, 16%, 80%);
     --sidebar-ring: hsl(217.2, 91.2%, 59.8%);
+
+    /* Brand control tokens (Button first; Input/Select/etc. should reuse these). */
+    --brand-control-radius: 0.375rem;
+    --brand-control-height: 2.25rem;
+    --brand-primary: hsl(231, 68%, 50%);
+    --brand-primary-hover: hsl(231, 68%, 44%);
+    --brand-primary-active: hsl(231, 68%, 39%);
+    --brand-primary-foreground: hsl(0, 0%, 100%);
+    --brand-secondary: hsl(220, 12.72%, 87.54%);
+    --brand-secondary-hover: hsl(220, 12.72%, 82.5%);
+    --brand-secondary-active: hsl(220, 12.72%, 77.5%);
+    --brand-border: hsl(220, 13%, 80%);
+    --brand-success: hsl(152, 62%, 30%);
+    --brand-success-hover: hsl(152, 62%, 25%);
+    --brand-warning: hsl(38, 92%, 50%);
+    --brand-warning-hover: hsl(38, 92%, 44%);
+    --brand-warning-foreground: hsl(30, 80%, 10%);
+    --brand-danger: hsl(358, 70%, 46%);
+    --brand-danger-hover: hsl(358, 70%, 40%);
+    --brand-focus-ring: hsl(231, 80%, 60%);
+    --brand-danger-text: hsl(358, 70%, 42%);
+
+    /* Form control surface tokens (Input, Textarea, Select, Checkbox, Radio, Switch). */
+    --brand-control-bg: hsl(0, 0%, 100%);
+    --brand-control-border: hsl(220, 13%, 82%);
+    --brand-control-border-hover: hsl(220, 11%, 66%);
+    --brand-control-disabled: hsl(220, 14%, 95%);
+    --brand-control-placeholder: hsl(220, 9%, 46%);
+
+    /* Text fields, selects, pickers: a soft filled surface, no outline. The border token equals the fill, so it only shows on hover/focus/error. */
+    --brand-field-bg: hsl(220, 18%, 94%);
+    --brand-field-bg-focus: hsl(0, 0%, 100%);
+    --brand-field-border: hsl(220, 14%, 80%);
+    --brand-field-border-hover: hsl(220, 12%, 64%);
+    --brand-field-disabled: hsl(220, 14%, 89%);
+
+    /*
+      Table surface tokens. Derived from the brand/card tokens so they follow light/dark and the accent
+      palette automatically. All opaque (mixed with --card) so a sticky header never shows rows through it.
+    */
+    --brand-table-header: color-mix(in oklab, var(--brand-secondary) 45%, var(--card));
+    --brand-table-divider: color-mix(in oklab, var(--brand-border) 38%, var(--card));
+    --brand-table-row-hover: color-mix(in oklab, var(--brand-primary) 5%, var(--card));
+    --brand-table-row-selected: color-mix(in oklab, var(--brand-primary) 11%, var(--card));
+
+    /* Card tokens. Radius sits one step above controls; depth is a hairline border plus a barely-there shadow. */
+    --brand-card-radius: 0.5rem;
+    --brand-card-padding: 1.25rem;
+    --brand-card-border: color-mix(in oklab, var(--brand-border) 85%, var(--card));
+    --brand-card-shadow: 0 1px 2px rgb(16 24 40 / 0.08), 0 0 0 1px rgb(16 24 40 / 0.04);
+    --brand-card-shadow-elevated: 0 0 0 1px rgb(16 24 40 / 0.06), 0 1px 3px rgb(16 24 40 / 0.1), 0 8px 22px rgb(16 24 40 / 0.1);
+    --brand-card-footer: color-mix(in oklab, var(--brand-secondary) 45%, var(--card));
+
+    /* Overlay surfaces (Dialog, Sheet): a calm scrim and a single soft shadow; no blur. */
+    --brand-overlay: hsl(220 25% 8% / 0.5);
+    --brand-dialog-shadow: 0 16px 40px -8px rgb(16 24 40 / 0.22), 0 2px 6px rgb(16 24 40 / 0.08);
+    /* Floating menus, select lists and tooltips share one surface shadow. */
+    --brand-popover-shadow: 0 8px 24px rgb(16 24 40 / 0.12), 0 1px 3px rgb(16 24 40 / 0.06);
+    --brand-popover-border: var(--brand-control-border);
+
+    /* Semantic text colors (readable as text on the card surface, unlike the solid button fills). */
+    --brand-success-text: hsl(152, 62%, 28%);
+    --brand-warning-text: hsl(30, 90%, 34%);
+
+    /* Info is a distinct hue from the (themeable) primary so "in progress" never reads as "brand". */
+    --brand-info: hsl(205, 85%, 42%);
+    --brand-info-text: hsl(205, 85%, 32%);
+    /* Primary-as-text: pulled toward the foreground so it stays legible in light and dark and follows the accent palette. */
+    --brand-primary-text: color-mix(in oklab, var(--brand-primary) 62%, var(--foreground));
 }
 
 .dark {
@@ -119,7 +250,7 @@
     --foreground: hsl(0, 0%, 98%);
     --card: hsl(0, 0%, 7%);
     --card-foreground: hsl(0, 0%, 98%);
-    --popover: hsl(0, 0%, 3.9%);
+    --popover: hsl(220, 10%, 11.5%);
     --popover-foreground: hsl(0, 0%, 98%);
     --primary: hsl(0, 0%, 98%);
     --primary-foreground: hsl(0, 0%, 9%);
@@ -147,6 +278,48 @@
     --sidebar-accent-foreground: hsl(240, 4.8%, 95.9%);
     --sidebar-border: hsl(0, 0%, 15.9%);
     --sidebar-ring: hsl(217.2, 91.2%, 59.8%);
+
+    --brand-primary: hsl(231, 70%, 60%);
+    --brand-primary-hover: hsl(231, 70%, 65%);
+    --brand-primary-active: hsl(231, 70%, 55%);
+    --brand-primary-foreground: hsl(0, 0%, 100%);
+    --brand-secondary: hsl(220, 10%, 17%);
+    --brand-secondary-hover: hsl(220, 10%, 22%);
+    --brand-secondary-active: hsl(220, 10%, 27%);
+    --brand-border: hsl(220, 9%, 28%);
+    --brand-success: hsl(152, 52%, 36%);
+    --brand-success-hover: hsl(152, 52%, 41%);
+    --brand-warning: hsl(38, 85%, 52%);
+    --brand-warning-hover: hsl(38, 85%, 58%);
+    --brand-warning-foreground: hsl(30, 80%, 10%);
+    --brand-danger: hsl(358, 66%, 52%);
+    --brand-danger-hover: hsl(358, 66%, 58%);
+    --brand-focus-ring: hsl(231, 90%, 72%);
+    --brand-danger-text: hsl(358, 85%, 72%);
+
+    --brand-control-bg: hsl(220, 10%, 10%);
+    --brand-control-border: hsl(220, 9%, 26%);
+    --brand-control-border-hover: hsl(220, 9%, 40%);
+    --brand-control-disabled: hsl(220, 10%, 14%);
+
+    /* Dark mode: fields and menus are filled surfaces, not outlined — the border is the same colour as the fill. */
+    --brand-field-bg: hsl(220, 10%, 14%);
+    --brand-field-bg-focus: hsl(220, 10%, 14%);
+    --brand-field-border: hsl(220, 10%, 14%);
+    --brand-field-border-hover: hsl(220, 10%, 20%);
+    --brand-field-disabled: hsl(220, 10%, 10%);
+    --brand-popover-border: hsl(220, 10%, 11.5%);
+    --brand-control-placeholder: hsl(220, 8%, 58%);
+
+    --brand-popover-shadow: 0 10px 28px rgb(0 0 0 / 0.55), 0 1px 3px rgb(0 0 0 / 0.4);
+    --brand-overlay: hsl(0 0% 0% / 0.65);
+    --brand-dialog-shadow: 0 20px 48px -8px rgb(0 0 0 / 0.65), 0 2px 8px rgb(0 0 0 / 0.4);
+    --brand-card-shadow: 0 1px 2px rgb(0 0 0 / 0.35);
+    --brand-card-shadow-elevated: 0 6px 16px rgb(0 0 0 / 0.45), 0 1px 2px rgb(0 0 0 / 0.35);
+    --brand-success-text: hsl(152, 55%, 58%);
+    --brand-warning-text: hsl(40, 90%, 62%);
+    --brand-info: hsl(205, 85%, 58%);
+    --brand-info-text: hsl(205, 90%, 72%);
 }
 
 /*
@@ -211,6 +384,19 @@
     --sidebar-ring: hsl(21, 90%, 48%);
 }
 
+/* A chosen accent palette drives the brand primary (neutral keeps the default indigo above). */
+[data-theme-color='blue'],
+[data-theme-color='green'],
+[data-theme-color='violet'],
+[data-theme-color='rose'],
+[data-theme-color='orange'] {
+    --brand-primary: var(--primary);
+    --brand-primary-hover: color-mix(in oklab, var(--primary) 88%, black);
+    --brand-primary-active: color-mix(in oklab, var(--primary) 76%, black);
+    --brand-primary-foreground: var(--primary-foreground);
+    --brand-focus-ring: var(--primary);
+}
+
 @layer base {
     * {
         @apply border-border;
@@ -259,7 +445,136 @@
     }
 }
 
+/*
+  Toast close button: Sonner floats it outside the corner as a bordered circle. Pull it inside the toast
+  as a quiet 24px icon button so it stays visible, reachable by keyboard, and consistent with other close buttons.
+*/
+[data-sonner-toast] .brand-toast-close,
+[data-sonner-toast] [data-close-button] {
+    inset: 8px 8px auto auto !important;
+    width: 1.5rem !important;
+    height: 1.5rem !important;
+    transform: none !important;
+    border: 0 !important;
+    border-radius: calc(var(--brand-control-radius) - 2px) !important;
+    background: transparent !important;
+    color: var(--muted-foreground) !important;
+}
+
+[data-sonner-toast] [data-close-button]:hover {
+    background: var(--brand-secondary) !important;
+    color: var(--foreground) !important;
+}
+
+[data-sonner-toast] [data-close-button]:focus-visible {
+    outline: 2px solid var(--brand-focus-ring);
+    outline-offset: 0;
+}
+
 /* Smooth open/close for Radix Collapsible (e.g. the "Filters" disclosure) using its own reported content height. */
+/*
+  ---------------------------------------------------------------------------------------------------
+  Motion system. One scale, one easing, a handful of purpose-named transitions — so the app feels
+  responsive rather than animated. Rules of thumb:
+
+    Level 0  static text / static badges / info cards ........ no motion
+    Level 1  feedback: buttons, inputs, rows, nav ............ motion-colors / motion-field / motion-control (fast)
+    Level 2  interactive surfaces: clickable cards, menus .... motion-surface (normal)
+    Level 3  structural: dialogs, sheets, sidebar, collapse .. enter/exit animations (normal/slow)
+
+  Never transition `all`, and never layout properties (width/height/margin/padding) outside Level 3.
+  Prefer transform + opacity; colour/border/shadow only where listed below.
+  ---------------------------------------------------------------------------------------------------
+*/
+:root {
+    --motion-fast: 120ms;
+    --motion-normal: 180ms;
+    --motion-slow: 240ms;
+    --motion-ease: cubic-bezier(0.2, 0, 0, 1); /* decelerate: entering, hover in */
+    --motion-ease-exit: cubic-bezier(0.4, 0, 1, 1); /* accelerate: leaving */
+}
+
+/* Colour-only feedback: nav items, links, table rows, icon buttons, menu rows. */
+@utility motion-colors {
+    transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, opacity;
+    transition-duration: var(--motion-fast);
+    transition-timing-function: var(--motion-ease);
+}
+
+/* Form controls: colour + focus ring (box-shadow). Never size. */
+@utility motion-field {
+    transition-property: color, background-color, border-color, box-shadow;
+    transition-duration: var(--motion-fast);
+    transition-timing-function: var(--motion-ease);
+}
+
+/* Buttons: colours, shadow and the pressed transform. */
+@utility motion-control {
+    transition-property: color, background-color, border-color, box-shadow, transform;
+    transition-duration: var(--motion-fast);
+    transition-timing-function: var(--motion-ease);
+}
+
+/* Clickable surfaces (interactive cards, tiles): a touch slower than controls, includes the 1px lift. */
+@utility motion-surface {
+    transition-property: color, background-color, border-color, box-shadow, transform;
+    transition-duration: var(--motion-normal);
+    transition-timing-function: var(--motion-ease);
+}
+
+@utility motion-transform {
+    transition-property: transform;
+    transition-duration: var(--motion-normal);
+    transition-timing-function: var(--motion-ease);
+}
+
+@utility motion-opacity {
+    transition-property: opacity;
+    transition-duration: var(--motion-fast);
+    transition-timing-function: var(--motion-ease);
+}
+
+/* Durations for the enter/exit animations from tailwindcss-animate (`animate-in`, `animate-out`). */
+@utility duration-fast {
+    --tw-duration: var(--motion-fast);
+    transition-duration: var(--motion-fast);
+    animation-duration: var(--motion-fast);
+}
+
+@utility duration-normal {
+    --tw-duration: var(--motion-normal);
+    transition-duration: var(--motion-normal);
+    animation-duration: var(--motion-normal);
+}
+
+@utility duration-slow {
+    --tw-duration: var(--motion-slow);
+    transition-duration: var(--motion-slow);
+    animation-duration: var(--motion-slow);
+}
+
+/*
+  prefers-reduced-motion: keep every state change, drop the movement. Transitions and enter/exit animations
+  collapse to an instant swap; the pressed/lift transforms are cancelled; the spinner keeps spinning because
+  it is the only signal that work is in progress.
+*/
+@media (prefers-reduced-motion: reduce) {
+    :root {
+        --motion-fast: 0.01ms;
+        --motion-normal: 0.01ms;
+        --motion-slow: 0.01ms;
+    }
+
+    *:not(.animate-spin),
+    *:not(.animate-spin)::before,
+    *:not(.animate-spin)::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}
+
 @keyframes collapsible-down {
     from {
         height: 0;
@@ -292,5 +607,78 @@
 
     body {
         padding: 12mm;
+    }
+}
+
+@keyframes auth-float-a {
+    0%,
+    100% {
+        transform: translate3d(0, 0, 0) scale(1);
+    }
+    50% {
+        transform: translate3d(70px, 48px, 0) scale(1.14);
+    }
+}
+
+@keyframes auth-float-b {
+    0%,
+    100% {
+        transform: translate3d(0, 0, 0) scale(1.05);
+    }
+    50% {
+        transform: translate3d(-64px, -40px, 0) scale(0.9);
+    }
+}
+
+@keyframes auth-float-c {
+    0%,
+    100% {
+        transform: translate3d(0, 0, 0) scale(0.95);
+    }
+    33% {
+        transform: translate3d(40px, -34px, 0) scale(1.1);
+    }
+    66% {
+        transform: translate3d(-30px, 28px, 0) scale(1);
+    }
+}
+
+@keyframes auth-bob {
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-6px);
+    }
+}
+
+@keyframes auth-ring {
+    0% {
+        transform: scale(0.45);
+        opacity: 0.55;
+    }
+    100% {
+        transform: scale(1.7);
+        opacity: 0;
+    }
+}
+
+@keyframes auth-sheen {
+    0% {
+        background-position: 130% 0;
+    }
+    100% {
+        background-position: -130% 0;
+    }
+}
+
+/* One light sweep across the headline. Both ends of the gradient are plain white, so it starts and rests as normal text. */
+@keyframes auth-shimmer {
+    from {
+        background-position: 100% 0;
+    }
+    to {
+        background-position: 0% 0;
     }
 }

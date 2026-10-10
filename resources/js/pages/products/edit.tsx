@@ -1,11 +1,11 @@
 import ProductForm from '@/components/products/product-form';
+import { BackButton } from '@/components/shared/action-buttons';
 import PageHeader from '@/components/shared/page-header';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { type Brand, type Category, type ProductDetail, type Unit } from '@/types/models';
-import { Head, Link } from '@inertiajs/react';
-import { ChevronLeft, Pencil } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Head } from '@inertiajs/react';
+import { Pencil } from 'lucide-react';
 
 interface ProductsEditProps {
     product: ProductDetail;
@@ -36,14 +36,7 @@ export default function ProductsEdit({ product, categories, brands, units }: Pro
                             {product.sku && <span className="ml-2 font-mono text-xs">· {product.sku}</span>}
                         </>
                     }
-                    actions={
-                        <Button variant="outline" asChild className="gap-1.5">
-                            <Link href={route('products.show', product.id)}>
-                                <ChevronLeft className="size-4" />
-                                Back to product
-                            </Link>
-                        </Button>
-                    }
+                    actions={<BackButton href={route('products.show', product.id)}>Back to product</BackButton>}
                 />
 
                 <ProductForm mode="edit" product={product} categories={categories} brands={brands} units={units} />

@@ -52,7 +52,18 @@ class Settings extends Model implements HasMedia
         'add_other_income',
         'add_sales_order',
         'add_asset',
+        'add_service',
+        'add_sale_return',
+        'add_purchase_return',
     ];
+
+    /**
+     * Secrets never leave the server: the settings page is given `sms_api_key_set` (yes/no) instead of the key, and the
+     * licence key is not part of the page's data at all.
+     *
+     * @var list<string>
+     */
+    protected $hidden = ['sms_api_key', 'license_key'];
 
     /**
      * @var list<string>
@@ -81,6 +92,19 @@ class Settings extends Model implements HasMedia
         'menu_order',
         'quick_actions',
         'invoice_settings',
+        'sms_enabled',
+        'sms_gateway_url',
+        'sms_http_method',
+        'sms_api_key',
+        'sms_auth_mode',
+        'sms_sender_id',
+        'sms_api_key_param',
+        'sms_sender_param',
+        'sms_phone_param',
+        'sms_message_param',
+        'sms_extra_params',
+        'sms_phone_format',
+        'sms_success_text',
         'license_key',
         'license_status',
         'license_last_verified_at',
@@ -108,6 +132,8 @@ class Settings extends Model implements HasMedia
             'menu_order' => 'array',
             'quick_actions' => 'array',
             'invoice_settings' => 'array',
+            'sms_enabled' => 'boolean',
+            'sms_api_key' => 'encrypted',
             'license_key' => 'encrypted',
             'license_last_verified_at' => 'datetime',
         ];

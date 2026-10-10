@@ -2,6 +2,7 @@ import HeadingSmall from '@/components/heading-small';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useMoneyFormat } from '@/hooks/use-money-format';
 import AppLayout from '@/layouts/app-layout';
+import { pageContainer } from '@/lib/page-container';
 import { type BreadcrumbItem } from '@/types';
 import { type FullFinancialPosition, type QuickBalanceSheet } from '@/types/models';
 import { Head } from '@inertiajs/react';
@@ -20,18 +21,18 @@ export default function BalanceSheet({ quick, full }: BalanceSheetProps) {
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Balance Sheet" />
 
-            <div className="space-y-6 px-4 py-6">
+            <div className={pageContainer.medium}>
                 <HeadingSmall title="Balance Sheet" description="আজকের হিসাব — Chart of Accounts থেকে সোর্স করা" />
 
                 <Tabs defaultValue="quick" className="w-full">
-                    <TabsList>
+                    <TabsList variant="underline">
                         <TabsTrigger value="quick">Quick</TabsTrigger>
                         <TabsTrigger value="full">Full Balance Sheet</TabsTrigger>
                     </TabsList>
 
                     <TabsContent value="quick" className="space-y-4">
                         <div className="grid gap-4 sm:grid-cols-2">
-                            <div className="space-y-2 rounded-lg border p-4">
+                            <div className="rounded-brand-card bg-card space-y-2 p-4 shadow-[var(--brand-card-shadow-elevated)]">
                                 <h3 className="font-medium">Assets</h3>
                                 <div className="flex justify-between text-sm">
                                     <span className="text-muted-foreground">Customer Due (Receivable)</span>
@@ -51,7 +52,7 @@ export default function BalanceSheet({ quick, full }: BalanceSheetProps) {
                                 </div>
                             </div>
 
-                            <div className="space-y-2 rounded-lg border p-4">
+                            <div className="rounded-brand-card bg-card space-y-2 p-4 shadow-[var(--brand-card-shadow-elevated)]">
                                 <h3 className="font-medium">Liabilities</h3>
                                 <div className="flex justify-between text-sm">
                                     <span className="text-muted-foreground">Supplier Due (Payable)</span>
@@ -67,7 +68,7 @@ export default function BalanceSheet({ quick, full }: BalanceSheetProps) {
 
                     <TabsContent value="full" className="space-y-4">
                         <div className="grid gap-4 lg:grid-cols-2">
-                            <div className="space-y-1 rounded-lg border p-4">
+                            <div className="rounded-brand-card bg-card space-y-1 p-4 shadow-[var(--brand-card-shadow-elevated)]">
                                 <h3 className="mb-2 font-medium">Assets / CR</h3>
                                 {full.assets.map((row) => (
                                     <div key={row.id} className="flex justify-between text-sm">
@@ -83,7 +84,7 @@ export default function BalanceSheet({ quick, full }: BalanceSheetProps) {
                                 </div>
                             </div>
 
-                            <div className="space-y-1 rounded-lg border p-4">
+                            <div className="rounded-brand-card bg-card space-y-1 p-4 shadow-[var(--brand-card-shadow-elevated)]">
                                 <h3 className="mb-2 font-medium">Liabilities &amp; Equity / DR</h3>
                                 {full.liabilities.map((row) => (
                                     <div key={row.id} className="flex justify-between text-sm">

@@ -1,6 +1,5 @@
 import ListTable from '@/components/data-table/list-table';
 import { FormInput } from '@/components/form/form-input';
-import HeadingSmall from '@/components/heading-small';
 import {
     SERVICE_REQUEST_EXPORT_COLUMN_MAP,
     SERVICE_REQUEST_EXPORT_COLUMNS,
@@ -8,7 +7,9 @@ import {
     useServiceRequestColumns,
 } from '@/components/service-requests/service-request-columns';
 import { ServiceRequestGridCard } from '@/components/service-requests/service-request-grid-card';
+import { UpdateServiceRequestModal } from '@/components/service-requests/update-service-request-modal';
 import EmptyState from '@/components/shared/empty-state';
+import PageHeader from '@/components/shared/page-header';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -18,8 +19,15 @@ import { useMoneyFormat } from '@/hooks/use-money-format';
 import { useTranslation } from '@/hooks/use-translation';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
-import { type Paginated, type ServiceRequestListItem, type ServiceRequestStatusValue, type ServiceRequestTypeValue } from '@/types/models';
+import {
+    type Paginated,
+    type ServiceRequestListItem,
+    type ServiceRequestStatusValue,
+    type ServiceRequestTypeValue,
+    type ServiceStaffOption,
+} from '@/types/models';
 import { Head, Link } from '@inertiajs/react';
+import { useCallback, useState } from 'react';
 
 interface ServiceRequestFilters extends TableFilterBase {
     status: ServiceRequestStatusValue | null;
@@ -31,10 +39,11 @@ interface ServiceRequestFilters extends TableFilterBase {
 
 interface ServiceRequestsIndexProps {
     requests: Paginated<ServiceRequestListItem>;
+    staff: ServiceStaffOption[];
     filters: ServiceRequestFilters;
 }
 
-export default function ServiceRequestsIndex({ requests, filters }: ServiceRequestsIndexProps) {
+export default function ServiceRequestsIndex({ requests, staff, filters }: ServiceRequestsIndexProps) {
     const money = useMoneyFormat();
     const { t } = useTranslation();
     const breadcrumbs: BreadcrumbItem[] = [{ title: t('serviceRequests', 'title'), href: '/service-requests' }];
@@ -52,7 +61,14 @@ export default function ServiceRequestsIndex({ requests, filters }: ServiceReque
         },
     });
 
-    const columns = useServiceRequestColumns({ selection: list.selection, money });
+    // The request being updated, and the step chosen from its menu.
+    const [updating, setUpdating] = useState<{ request: ServiceRequestListItem; preset: ServiceRequestStatusValue | null } | null>(null);
+    const openUpdate = useCallback(
+        (request: ServiceRequestListItem, preset: ServiceRequestStatusValue | null) => setUpdating({ request, preset }),
+        [],
+    );
+
+    const columns = useServiceRequestColumns({ selection: list.selection, money, onUpdate: openUpdate });
 
     const emptyState = (action: React.ReactNode) => (
         <EmptyState title={t('serviceRequests', 'empty_title')} description={t('serviceRequests', 'empty_description')}>
@@ -65,12 +81,17 @@ export default function ServiceRequestsIndex({ requests, filters }: ServiceReque
             <Head title={t('serviceRequests', 'title')} />
 
             <div className="space-y-6 px-4 py-6">
-                <div className="flex flex-wrap items-end justify-between gap-4">
-                    <HeadingSmall title={t('serviceRequests', 'title')} description={t('serviceRequests', 'description')} />
-                    <Button asChild>
-                        <Link href={route('service-requests.create')}>{t('serviceRequests', 'add')}</Link>
-                    </Button>
-                </div>
+                <PageHeader
+                    title={t('serviceRequests', 'title')}
+                    description={t('serviceRequests', 'description')}
+                    actions={
+                        <>
+                            <Button asChild>
+                                <Link href={route('service-requests.create')}>{t('serviceRequests', 'add')}</Link>
+                            </Button>
+                        </>
+                    }
+                />
 
                 <ListTable
                     list={list}
@@ -83,6 +104,7 @@ export default function ServiceRequestsIndex({ requests, filters }: ServiceReque
                             request={request}
                             selected={list.selection.isSelected(request.id)}
                             onToggleSelected={(checked) => list.selection.toggle(request.id, checked)}
+                            onUpdate={openUpdate}
                         />
                     )}
                     itemLabel="requests"
@@ -160,6 +182,13 @@ export default function ServiceRequestsIndex({ requests, filters }: ServiceReque
                     )}
                 />
             </div>
+
+            <UpdateServiceRequestModal
+                request={updating?.request ?? null}
+                preset={updating?.preset ?? null}
+                staff={staff}
+                onClose={() => setUpdating(null)}
+            />
         </AppLayout>
     );
 }

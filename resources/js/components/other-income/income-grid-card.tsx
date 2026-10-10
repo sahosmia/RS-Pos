@@ -14,7 +14,7 @@ export function IncomeGridCard({ income, selected, onToggleSelected }: IncomeGri
     const money = useMoneyFormat();
 
     return (
-        <div className="rounded-lg border p-3">
+        <div className="rounded-brand-card bg-card p-3 shadow-[var(--brand-card-shadow-elevated)]">
             <div className="flex items-start justify-between gap-2">
                 <div className="flex min-w-0 items-center gap-3">
                     <DataTableCheckbox checked={selected} onCheckedChange={onToggleSelected} />

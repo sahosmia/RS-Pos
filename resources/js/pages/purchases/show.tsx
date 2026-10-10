@@ -1,16 +1,18 @@
 import HeadingSmall from '@/components/heading-small';
 import AddPaymentModal from '@/components/purchases/add-payment-modal';
+import AdjustCostModal from '@/components/purchases/adjust-cost-modal';
 import ConfirmPurchaseModal from '@/components/purchases/confirm-purchase-modal';
 import ConfirmDialog from '@/components/shared/confirm-dialog';
 import ContactLink from '@/components/shared/contact-link';
-import { Badge } from '@/components/ui/badge';
+import { MetricCard } from '@/components/shared/metric-card';
+import { StatusBadge } from '@/components/shared/status-badge';
 import { Button } from '@/components/ui/button';
 import { useMoneyFormat } from '@/hooks/use-money-format';
 import AppLayout from '@/layouts/app-layout';
 import { formatDateTime } from '@/lib/format-date';
-import { type BreadcrumbItem } from '@/types';
+import { type BreadcrumbItem, type SharedData } from '@/types';
 import { type Account, type PurchaseDetail } from '@/types/models';
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
@@ -19,12 +21,13 @@ interface PurchaseShowProps {
     accounts: Account[];
 }
 
-const humanize = (value: string) => value.replaceAll('_', ' ').replace(/\b\w/g, (character) => character.toUpperCase());
-
 export default function PurchaseShow({ purchase, accounts }: PurchaseShowProps) {
     const money = useMoneyFormat();
     const [confirmOpen, setConfirmOpen] = useState(false);
     const [paymentOpen, setPaymentOpen] = useState(false);
+    const [costOpen, setCostOpen] = useState(false);
+    const { auth } = usePage<SharedData>().props;
+    const canCorrectPrice = purchase.can_adjust_cost === true && auth.permissions.includes('purchase.edit');
     const [deleting, setDeleting] = useState(false);
     const [cancelling, setCancelling] = useState(false);
 
@@ -71,18 +74,20 @@ export default function PurchaseShow({ purchase, accounts }: PurchaseShowProps) 
                     />
 
                     <div className="flex flex-wrap items-center gap-2">
-                        <Badge variant="outline">{humanize(purchase.status)}</Badge>
-                        <Badge variant="outline">{humanize(purchase.payment_status)}</Badge>
+                        <StatusBadge status={purchase.status} />
+                        <StatusBadge status={purchase.payment_status} />
 
                         <Button variant="outline" onClick={() => window.print()}>
                             Print
                         </Button>
 
+                        {(purchase.can_edit || purchase.can_amend) && (
+                            <Button variant="outline" asChild>
+                                <Link href={route('purchases.edit', purchase.id)}>Edit</Link>
+                            </Button>
+                        )}
                         {purchase.can_edit && (
                             <>
-                                <Button variant="outline" asChild>
-                                    <Link href={route('purchases.edit', purchase.id)}>Edit</Link>
-                                </Button>
                                 <Button variant="outline" onClick={() => setDeleting(true)}>
                                     Delete
                                 </Button>
@@ -101,6 +106,15 @@ export default function PurchaseShow({ purchase, accounts }: PurchaseShowProps) 
                                 <Button variant="outline" asChild>
                                     <Link href={`/purchase-returns/create?purchase_id=${purchase.id}`}>Return</Link>
                                 </Button>
+                                {canCorrectPrice && (
+                                    <Button
+                                        variant="outline"
+                                        onClick={() => setCostOpen(true)}
+                                        title="Correct only the price — units and stock stay as they are"
+                                    >
+                                        Correct Price
+                                    </Button>
+                                )}
                             </>
                         )}
 
@@ -111,37 +125,25 @@ export default function PurchaseShow({ purchase, accounts }: PurchaseShowProps) 
                 </div>
 
                 <div className="grid gap-4 sm:grid-cols-4">
-                    <div className="rounded-lg border p-4">
-                        <p className="text-muted-foreground text-sm">Total</p>
-                        <p className="text-xl font-semibold tabular-nums">{money(purchase.total_amount)}</p>
-                    </div>
-                    <div className="rounded-lg border p-4">
-                        <p className="text-muted-foreground text-sm">Paid</p>
-                        <p className="text-xl font-semibold tabular-nums">{money(purchase.paid_amount)}</p>
-                    </div>
-                    <div className="rounded-lg border p-4">
-                        <p className="text-muted-foreground text-sm">Due</p>
-                        <p className="text-xl font-semibold tabular-nums">{money(purchase.due_amount)}</p>
-                    </div>
-                    <div className="rounded-lg border p-4">
-                        <p className="text-muted-foreground text-sm">Supplier Balance</p>
-                        <p className="text-xl font-semibold tabular-nums">{money(purchase.supplier.balance)}</p>
-                    </div>
+                    <MetricCard label="Total" value={money(purchase.total_amount)} />
+                    <MetricCard label="Paid" value={money(purchase.paid_amount)} />
+                    <MetricCard label="Due" value={money(purchase.due_amount)} />
+                    <MetricCard label="Supplier Balance" value={money(purchase.supplier.balance)} />
                 </div>
 
-                <div className="overflow-x-auto rounded-lg border">
+                <div className="rounded-brand-card bg-card overflow-x-auto shadow-[var(--brand-card-shadow-elevated)]">
                     <table className="w-full text-sm">
-                        <thead className="bg-muted/50 text-muted-foreground">
+                        <thead className="bg-brand-table-header text-muted-foreground text-xs font-semibold">
                             <tr>
-                                <th className="px-4 py-2 text-left font-medium">Product</th>
-                                <th className="px-4 py-2 text-right font-medium">Quantity</th>
-                                <th className="px-4 py-2 text-right font-medium">Unit Cost</th>
-                                <th className="px-4 py-2 text-right font-medium">Subtotal</th>
+                                <th className="px-4 py-2.5 text-left font-medium">Product</th>
+                                <th className="px-4 py-2.5 text-right font-medium">Quantity</th>
+                                <th className="px-4 py-2.5 text-right font-medium">Unit Cost</th>
+                                <th className="px-4 py-2.5 text-right font-medium">Subtotal</th>
                             </tr>
                         </thead>
                         <tbody>
                             {purchase.items.map((item) => (
-                                <tr key={item.id} className="border-t">
+                                <tr key={item.id} className="border-brand-table-divider hover:bg-brand-table-row-hover motion-colors border-t">
                                     <td className="px-4 py-2">
                                         {item.product.name} <span className="text-muted-foreground">({item.product.sku})</span>
                                     </td>
@@ -162,7 +164,7 @@ export default function PurchaseShow({ purchase, accounts }: PurchaseShowProps) 
                         <tfoot>
                             {purchase.discount_amount !== undefined && purchase.discount_amount > 0 && (
                                 <>
-                                    <tr className="border-t font-medium">
+                                    <tr className="border-brand-table-divider border-t font-medium">
                                         <td colSpan={3} className="px-4 py-2 text-right">
                                             Subtotal
                                         </td>
@@ -176,7 +178,7 @@ export default function PurchaseShow({ purchase, accounts }: PurchaseShowProps) 
                                     </tr>
                                 </>
                             )}
-                            <tr className="border-t font-medium">
+                            <tr className="border-brand-table-divider border-t font-medium">
                                 <td colSpan={3} className="px-4 py-2 text-right">
                                     Total
                                 </td>
@@ -190,6 +192,8 @@ export default function PurchaseShow({ purchase, accounts }: PurchaseShowProps) 
             <ConfirmPurchaseModal open={confirmOpen} onOpenChange={setConfirmOpen} purchase={purchase} accounts={accounts} />
 
             <AddPaymentModal open={paymentOpen} onOpenChange={setPaymentOpen} purchase={purchase} accounts={accounts} />
+
+            {canCorrectPrice && <AdjustCostModal open={costOpen} onOpenChange={setCostOpen} purchase={purchase} />}
 
             <ConfirmDialog
                 open={deleting}

@@ -1,6 +1,9 @@
 import DataTableCheckbox from '@/components/data-table/data-table-checkbox';
+import DataTableRowActions from '@/components/data-table/data-table-row-actions';
 import { type DataTableColumnOption } from '@/components/data-table/types';
+import { getServiceRequestActions } from '@/components/service-requests/service-request-actions';
 import ContactLink from '@/components/shared/contact-link';
+import { StatusBadge } from '@/components/shared/status-badge';
 import { Badge } from '@/components/ui/badge';
 import { type ListPageState } from '@/hooks/table/use-list-page';
 import { useTranslation } from '@/hooks/use-translation';
@@ -15,6 +18,7 @@ export const SERVICE_REQUEST_VISIBILITY_COLUMNS: DataTableColumnOption[] = [
     { id: 'customer', label: 'Customer' },
     { id: 'product', label: 'Product' },
     { id: 'type', label: 'Type' },
+    { id: 'technician', label: 'Technician' },
     { id: 'charge', label: 'Charge' },
     { id: 'status', label: 'Status' },
 ];
@@ -38,15 +42,9 @@ export const SERVICE_REQUEST_EXPORT_COLUMN_MAP: Record<string, string[]> = {
     customer: ['customer'],
     product: ['product'],
     type: ['type'],
+    technician: ['staff'],
     charge: ['charge_amount'],
     status: ['status'],
-};
-
-export const serviceRequestStatusVariant: Record<ServiceRequestStatusValue, 'secondary' | 'outline' | 'destructive'> = {
-    pending: 'outline',
-    scheduled: 'outline',
-    completed: 'secondary',
-    cancelled: 'destructive',
 };
 
 /** The translated names of a request's status and type. */
@@ -73,9 +71,11 @@ export function useServiceRequestLabels() {
 interface Options {
     selection: ListPageState<never>['selection'];
     money: (amount: number) => string;
+    /** Opens the update dialog (see getServiceRequestActions). */
+    onUpdate: (request: ServiceRequestListItem, preset: ServiceRequestStatusValue | null) => void;
 }
 
-export function useServiceRequestColumns({ selection, money }: Options) {
+export function useServiceRequestColumns({ selection, money, onUpdate }: Options) {
     const { t } = useTranslation();
     const labels = useServiceRequestLabels();
 
@@ -96,6 +96,12 @@ export function useServiceRequestColumns({ selection, money }: Options) {
                         onCheckedChange={(checked) => selection.toggle(row.original.id, checked)}
                     />
                 ),
+            },
+            {
+                id: 'actions',
+                header: '',
+                meta: { headerClassName: 'w-10', cellClassName: 'w-10', printHidden: true },
+                cell: ({ row }) => <DataTableRowActions actions={getServiceRequestActions(row.original, { onUpdate })} />,
             },
             {
                 id: 'date',
@@ -120,6 +126,11 @@ export function useServiceRequestColumns({ selection, money }: Options) {
             },
             { id: 'type', header: t('serviceRequests', 'type'), cell: ({ row }) => labels.type[row.original.type] },
             {
+                id: 'technician',
+                header: t('serviceRequests', 'technician'),
+                cell: ({ row }) => row.original.staff?.name ?? <span className="text-muted-foreground">—</span>,
+            },
+            {
                 id: 'charge',
                 header: t('serviceRequests', 'charge'),
                 meta: { headerClassName: 'text-right', cellClassName: 'text-right tabular-nums' },
@@ -129,9 +140,9 @@ export function useServiceRequestColumns({ selection, money }: Options) {
             {
                 id: 'status',
                 header: t('serviceRequests', 'status'),
-                cell: ({ row }) => <Badge variant={serviceRequestStatusVariant[row.original.status]}>{labels.status[row.original.status]}</Badge>,
+                cell: ({ row }) => <StatusBadge status={row.original.status} label={labels.status[row.original.status]} />,
             },
         ],
-        [selection, money, t, labels],
+        [selection, money, t, labels, onUpdate],
     );
 }

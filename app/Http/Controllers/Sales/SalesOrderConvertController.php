@@ -24,8 +24,9 @@ class SalesOrderConvertController extends Controller
             $salesOrder,
             $request->validated('payments') ?? [],
             $request->validated('serial_numbers') ?? [],
+            $request->filled('items') ? $request->validated() : null,
         );
 
-        return to_route('sales.show', $sale);
+        return to_route('sales.index');
     }
 }

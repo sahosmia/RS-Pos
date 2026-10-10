@@ -1,14 +1,14 @@
 import { type BreadcrumbItem, type SharedData } from '@/types';
-import { Transition } from '@headlessui/react';
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { FormEventHandler } from 'react';
 
 import DeleteUser from '@/components/delete-user';
 import { FormInput } from '@/components/form/form-input';
-import HeadingSmall from '@/components/heading-small';
+import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/app-layout';
-import SettingsLayout from '@/layouts/settings/layout';
+import SettingsLayout, { SettingsSection } from '@/layouts/settings/layout';
+import { CircleCheck } from 'lucide-react';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -37,39 +37,52 @@ export default function Profile({ mustVerifyEmail, status }: { mustVerifyEmail: 
             <Head title="Profile settings" />
 
             <SettingsLayout>
-                <div className="space-y-6">
-                    <HeadingSmall title="Profile information" description="Update your name, username, and email address" />
+                <form onSubmit={submit}>
+                    <SettingsSection
+                        title="Profile information"
+                        description="Update your name, username, and email address"
+                        footer={
+                            <>
+                                <Button type="submit" variant="primary" loading={processing}>
+                                    Save changes
+                                </Button>
+                                {recentlySuccessful && (
+                                    <p className="text-brand-success-text flex items-center gap-1.5 text-sm" role="status">
+                                        <CircleCheck className="size-4" aria-hidden="true" />
+                                        Saved
+                                    </p>
+                                )}
+                            </>
+                        }
+                    >
+                        <div className="grid gap-5 sm:grid-cols-2">
+                            <FormInput
+                                id="name"
+                                label="Name"
+                                value={data.name}
+                                onChange={(e) => setData('name', e.target.value)}
+                                required
+                                autoComplete="name"
+                                placeholder="Full name"
+                                error={errors.name}
+                            />
 
-                    <form onSubmit={submit} className="space-y-6">
-                        <FormInput
-                            id="name"
-                            label="Name"
-                            className="mt-1 block w-full"
-                            value={data.name}
-                            onChange={(e) => setData('name', e.target.value)}
-                            required
-                            autoComplete="name"
-                            placeholder="Full name"
-                            error={errors.name}
-                        />
-
-                        <FormInput
-                            id="username"
-                            label="Username"
-                            className="mt-1 block w-full"
-                            value={data.username}
-                            onChange={(e) => setData('username', e.target.value)}
-                            required
-                            autoComplete="username"
-                            placeholder="Username"
-                            error={errors.username}
-                        />
+                            <FormInput
+                                id="username"
+                                label="Username"
+                                value={data.username}
+                                onChange={(e) => setData('username', e.target.value)}
+                                required
+                                autoComplete="username"
+                                placeholder="Username"
+                                error={errors.username}
+                            />
+                        </div>
 
                         <FormInput
                             id="email"
                             label="Email address"
                             type="email"
-                            className="mt-1 block w-full"
                             value={data.email}
                             onChange={(e) => setData('email', e.target.value)}
                             required
@@ -79,42 +92,26 @@ export default function Profile({ mustVerifyEmail, status }: { mustVerifyEmail: 
                         />
 
                         {mustVerifyEmail && auth.user.email_verified_at === null && (
-                            <div>
-                                <p className="text-foreground mt-2 text-sm">
-                                    Your email address is unverified.
-                                    <Link
-                                        href={route('verification.send')}
-                                        method="post"
-                                        as="button"
-                                        className="text-muted-foreground hover:text-foreground rounded-md text-sm underline focus:ring-2 focus:ring-offset-2 focus:outline-hidden"
-                                    >
-                                        Click here to re-send the verification email.
-                                    </Link>
-                                </p>
-
-                                {status === 'verification-link-sent' && (
-                                    <div className="mt-2 text-sm font-medium text-green-600 dark:text-green-400">
-                                        A new verification link has been sent to your email address.
-                                    </div>
-                                )}
-                            </div>
-                        )}
-
-                        <div className="flex items-center gap-4">
-                            <Button disabled={processing}>Save</Button>
-
-                            <Transition
-                                show={recentlySuccessful}
-                                enter="transition ease-in-out"
-                                enterFrom="opacity-0"
-                                leave="transition ease-in-out"
-                                leaveTo="opacity-0"
+                            <Alert
+                                variant="warning"
+                                title="Your email address is unverified"
+                                action={
+                                    <Button asChild variant="outline" size="sm">
+                                        <Link href={route('verification.send')} method="post" as="button">
+                                            Resend email
+                                        </Link>
+                                    </Button>
+                                }
                             >
-                                <p className="text-muted-foreground text-sm">Saved</p>
-                            </Transition>
-                        </div>
-                    </form>
-                </div>
+                                {status === 'verification-link-sent' && (
+                                    <p className="text-brand-success-text text-[0.8125rem] font-medium">
+                                        A new verification link has been sent to your email address.
+                                    </p>
+                                )}
+                            </Alert>
+                        )}
+                    </SettingsSection>
+                </form>
 
                 <DeleteUser />
             </SettingsLayout>

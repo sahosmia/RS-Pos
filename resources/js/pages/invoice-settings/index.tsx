@@ -20,14 +20,14 @@ const breadcrumbs: BreadcrumbItem[] = [{ title: 'Invoice Settings', href: '/invo
 interface InvoiceSettingsProps {
     settings: InvoiceSettingsConfig;
     logoUrl: string | null;
-    shop: InvoiceShopInfo;
+    invoiceShop: InvoiceShopInfo;
 }
 
 /**
  * Configure how invoices print. One form with a live preview beside it; each tab (general, branding, business,
  * customer, items, totals, terms, footer) is its own component under `components/invoice-settings/`.
  */
-export default function InvoiceSettingsIndex({ settings, logoUrl, shop }: InvoiceSettingsProps) {
+export default function InvoiceSettingsIndex({ settings, logoUrl, invoiceShop: shop }: InvoiceSettingsProps) {
     const form = useForm<InvoiceSettingsData>({ ...settings, logo: null });
     const { data, setData, isDirty, processing, recentlySuccessful } = form;
 

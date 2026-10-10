@@ -29,12 +29,12 @@ export default function ConfirmPassword() {
             <AuthSplitShell
                 heading="Confirm your password"
                 subheading="This is a secure area of the application. Please confirm your password before continuing."
-                badge={{ icon: Lock, label: 'High-Security Zone', tone: 'amber' }}
+                badge={{ icon: Lock, label: 'High-Security Zone' }}
                 heroTitle="Protected area of your terminal."
                 heroDescription="To access sensitive system settings, administrative controls, or financial records, please confirm your identity."
                 features={[
-                    { icon: ShieldCheck, label: 'End-to-End Encryption', iconClassName: 'h-4 w-4 text-indigo-400' },
-                    { icon: Zap, label: 'Session Security', iconClassName: 'h-4 w-4 text-emerald-400' },
+                    { icon: ShieldCheck, label: 'End-to-End Encryption' },
+                    { icon: Zap, label: 'Session Security' },
                 ]}
             >
                 <form className="flex flex-col gap-5" onSubmit={submit}>
@@ -53,7 +53,11 @@ export default function ConfirmPassword() {
                             <InputError message={errors.password} />
                         </div>
 
-                        <Button type="submit" className="h-11 w-full bg-indigo-600 hover:bg-indigo-700" disabled={processing}>
+                        <Button
+                            type="submit"
+                            className="hover:shadow-brand-primary/35 h-11 w-full transition-all hover:-translate-y-px hover:shadow-lg"
+                            disabled={processing}
+                        >
                             {processing && <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />}
                             Confirm password
                         </Button>
@@ -65,7 +69,7 @@ export default function ConfirmPassword() {
                         href={route('logout')}
                         method="post"
                         as="button"
-                        className="hover:text-foreground inline-flex items-center gap-1 transition-colors"
+                        className="hover:text-foreground text-brand-primary-text decoration-brand-primary/40 hover:decoration-brand-primary! inline-flex items-center gap-1 font-medium transition-colors"
                     >
                         <ArrowLeft className="h-3.5 w-3.5" /> Log out instead
                     </TextLink>

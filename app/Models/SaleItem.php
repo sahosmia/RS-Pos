@@ -31,7 +31,10 @@ class SaleItem extends Model
         'subtotal',
         'installation_required',
         'installation_charge',
+        'emi_financed',
         'warranty_expires_at',
+        'warranty_months',
+        'service_plan_included',
         'note',
     ];
 
@@ -51,7 +54,10 @@ class SaleItem extends Model
             'subtotal' => 'float',
             'installation_required' => 'boolean',
             'installation_charge' => 'float',
+            'emi_financed' => 'boolean',
             'warranty_expires_at' => 'date',
+            'warranty_months' => 'integer',
+            'service_plan_included' => 'boolean',
         ];
     }
 

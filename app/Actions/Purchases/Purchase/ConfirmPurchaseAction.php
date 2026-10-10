@@ -50,6 +50,11 @@ class ConfirmPurchaseAction
         }
 
         return DB::transaction(function () use ($purchase, $payments, $creditApplied, $serialSelections) {
+            // A double click or a retried request can reach here twice: lock the row and look again.
+            if (Purchase::query()->whereKey($purchase->id)->lockForUpdate()->value('status') === PurchaseStatus::Received) {
+                return $purchase->fresh(['items.product', 'supplier']);
+            }
+
             $purchase->load('items.product', 'supplier');
 
             foreach ($purchase->items as $item) {

@@ -8,6 +8,7 @@ import { SaveFooter } from '@/components/business-settings/save-footer';
 import { SettingsHeader } from '@/components/business-settings/settings-header';
 import { SettingsTabNav } from '@/components/business-settings/settings-tab-nav';
 import { ShopTab } from '@/components/business-settings/shop-tab';
+import { SmsTab } from '@/components/business-settings/sms-tab';
 import { SETTINGS_TABS, useSavedTab } from '@/components/business-settings/tab-definitions';
 import { type BusinessSettingsData } from '@/components/business-settings/types';
 import { buildEffectiveMenuOrder } from '@/components/menu-order-editor';
@@ -52,6 +53,19 @@ export default function BusinessSettingsIndex({ settings }: { settings: Settings
         pagination_default_per_page: settings.pagination_default_per_page,
         pagination_allow_all: settings.pagination_allow_all,
         activity_log_retention_months: settings.activity_log_retention_months,
+        sms_enabled: settings.sms_enabled,
+        sms_gateway_url: settings.sms_gateway_url ?? '',
+        sms_http_method: settings.sms_http_method,
+        sms_api_key: '',
+        sms_auth_mode: settings.sms_auth_mode,
+        sms_sender_id: settings.sms_sender_id ?? '',
+        sms_api_key_param: settings.sms_api_key_param ?? '',
+        sms_sender_param: settings.sms_sender_param ?? '',
+        sms_phone_param: settings.sms_phone_param,
+        sms_message_param: settings.sms_message_param,
+        sms_extra_params: settings.sms_extra_params ?? '',
+        sms_phone_format: settings.sms_phone_format,
+        sms_success_text: settings.sms_success_text ?? '',
         theme_color: settings.theme_color as ThemeColorValue,
         menu_order: buildEffectiveMenuOrder(navItems, settings.menu_order),
         quick_actions: buildEffectiveQuickActions(settings.quick_actions),
@@ -89,6 +103,7 @@ export default function BusinessSettingsIndex({ settings }: { settings: Settings
                             <NumberingTab form={form} />
                             <ModulesTab form={form} />
                             <PaginationTab form={form} />
+                            <SmsTab form={form} apiKeySet={settings.sms_api_key_set} />
                             <AuditTab form={form} />
                         </Tabs>
 

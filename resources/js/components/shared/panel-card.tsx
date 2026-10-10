@@ -1,3 +1,4 @@
+import { Card } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { type ReactNode } from 'react';
 
@@ -6,7 +7,7 @@ interface PanelCardProps {
     children: ReactNode;
 }
 
-/** The standard bordered surface for charts / widgets. Pass `h-full` when it should fill a grid cell. */
+/** The standard bordered surface for charts / widgets (a brand `Card` that clips its children). Pass `h-full` to fill a grid cell. */
 export function PanelCard({ className, children }: PanelCardProps) {
-    return <div className={cn('border-border/70 bg-card overflow-hidden rounded-xl border shadow-sm', className)}>{children}</div>;
+    return <Card className={cn('overflow-hidden', className)}>{children}</Card>;
 }

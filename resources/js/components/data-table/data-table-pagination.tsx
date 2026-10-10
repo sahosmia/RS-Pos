@@ -49,16 +49,11 @@ export default function DataTablePagination({
         <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="text-muted-foreground flex flex-wrap items-center gap-3 text-sm">
                 <span className="tabular-nums">
-                    {pagination.total === 0
-                        ? `No ${itemLabel}`
-                        : `Showing ${pagination.from}–${pagination.to} of ${pagination.total} ${itemLabel}`}
+                    {pagination.total === 0 ? `No ${itemLabel}` : `Showing ${pagination.from}–${pagination.to} of ${pagination.total} ${itemLabel}`}
                 </span>
                 {(perPageOptions.length > 1 || allowAll) && (
-                    <Select
-                        value={String(perPage)}
-                        onValueChange={(value) => onPerPageChange(value === 'all' ? 'all' : Number(value))}
-                    >
-                        <SelectTrigger className="h-8 w-[110px]">
+                    <Select value={String(perPage)} onValueChange={(value) => onPerPageChange(value === 'all' ? 'all' : Number(value))}>
+                        <SelectTrigger size="sm" className="w-[110px]">
                             <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -77,20 +72,24 @@ export default function DataTablePagination({
                 <nav className="flex items-center gap-1" aria-label="Pagination">
                     <Button
                         variant="outline"
-                        size="icon"
-                        className="size-8"
+                        size="icon-sm"
                         disabled={pagination.current_page === 1}
                         onClick={() => onPageChange(pagination.current_page - 1)}
                     >
-                        <ChevronLeft className="size-4" />
+                        <ChevronLeft />
                         <span className="sr-only">Previous page</span>
                     </Button>
+
+                    {/* Phones get a compact "Page x of y" instead of the numbered window. */}
+                    <span className="text-muted-foreground px-2 text-sm tabular-nums sm:hidden">
+                        {pagination.current_page} / {pagination.last_page}
+                    </span>
 
                     {pages.map((page, index) =>
                         page === 'ellipsis' ? (
                             <span
                                 key={`ellipsis-${index}`}
-                                className="text-muted-foreground flex size-8 items-center justify-center text-sm"
+                                className="text-muted-foreground hidden size-8 items-center justify-center text-sm sm:flex"
                                 aria-hidden="true"
                             >
                                 …
@@ -98,12 +97,9 @@ export default function DataTablePagination({
                         ) : (
                             <Button
                                 key={page}
-                                variant={page === pagination.current_page ? 'default' : 'ghost'}
-                                size="icon"
-                                className={cn(
-                                    'size-8 tabular-nums',
-                                    page !== pagination.current_page && 'text-muted-foreground hover:text-foreground',
-                                )}
+                                variant={page === pagination.current_page ? 'primary' : 'ghost'}
+                                size="icon-sm"
+                                className={cn('hidden tabular-nums sm:inline-flex', page !== pagination.current_page && 'text-muted-foreground')}
                                 onClick={() => onPageChange(page)}
                                 aria-current={page === pagination.current_page ? 'page' : undefined}
                             >
@@ -114,12 +110,11 @@ export default function DataTablePagination({
 
                     <Button
                         variant="outline"
-                        size="icon"
-                        className="size-8"
+                        size="icon-sm"
                         disabled={pagination.current_page === pagination.last_page}
                         onClick={() => onPageChange(pagination.current_page + 1)}
                     >
-                        <ChevronRight className="size-4" />
+                        <ChevronRight />
                         <span className="sr-only">Next page</span>
                     </Button>
                 </nav>

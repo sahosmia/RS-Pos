@@ -13,7 +13,7 @@ use Illuminate\View\View;
  * known server-side (DB-backed), so it's resolved here instead of in JS.
  *
  * Priority: signed-in user's personal override > shop's global default >
- * system default ('neutral', meaning "no override" — plain app.css colors).
+ * system default (blue).
  */
 class ThemeColorComposer
 {
@@ -24,7 +24,7 @@ class ThemeColorComposer
         // unwrap it the same way as the user's own (already-cast) attribute below.
         $themeColor = auth()->user()?->theme_color?->value
             ?? Settings::query()->value('theme_color')?->value
-            ?? ThemeColor::Neutral->value;
+            ?? ThemeColor::Blue->value;
 
         $view->with('themeColor', $themeColor);
     }

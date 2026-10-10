@@ -1,7 +1,7 @@
 import { FormInput } from '@/components/form/form-input';
 import HeadingSmall from '@/components/heading-small';
 import ConfirmDialog from '@/components/shared/confirm-dialog';
-import { Badge } from '@/components/ui/badge';
+import { StatusBadge } from '@/components/shared/status-badge';
 import { Button } from '@/components/ui/button';
 import { useMoneyFormat } from '@/hooks/use-money-format';
 import AppLayout from '@/layouts/app-layout';
@@ -50,9 +50,7 @@ export default function JournalEntryShow({ entry }: JournalEntryShowProps) {
                         description={`${entry.entry_date}${entry.reference_type ? ` • ${entry.reference_type} #${entry.reference_id}` : ''}`}
                     />
                     <div className="flex items-center gap-3">
-                        <Badge variant={entry.status === 'reversed' ? 'outline' : 'secondary'}>
-                            {entry.status === 'reversed' ? 'Reversed' : 'Posted'}
-                        </Badge>
+                        <StatusBadge status={entry.status} label={entry.status === 'reversed' ? 'Reversed' : 'Posted'} />
                         {entry.status === 'posted' && !entry.reversal_of && (
                             <Button variant="outline" size="sm" onClick={() => setReversing(true)}>
                                 Reverse
@@ -75,19 +73,19 @@ export default function JournalEntryShow({ entry }: JournalEntryShowProps) {
                     </p>
                 )}
 
-                <div className="overflow-x-auto rounded-lg border">
+                <div className="overflow-x-auto rounded-brand-card bg-card shadow-[var(--brand-card-shadow-elevated)]">
                     <table className="w-full text-sm">
-                        <thead className="bg-muted/50 text-muted-foreground">
+                        <thead className="bg-brand-table-header text-muted-foreground text-xs font-semibold">
                             <tr>
-                                <th className="px-4 py-2 text-left font-medium">Account</th>
-                                <th className="px-4 py-2 text-left font-medium">Note</th>
-                                <th className="px-4 py-2 text-right font-medium">Debit</th>
-                                <th className="px-4 py-2 text-right font-medium">Credit</th>
+                                <th className="px-4 py-2.5 text-left font-medium">Account</th>
+                                <th className="px-4 py-2.5 text-left font-medium">Note</th>
+                                <th className="px-4 py-2.5 text-right font-medium">Debit</th>
+                                <th className="px-4 py-2.5 text-right font-medium">Credit</th>
                             </tr>
                         </thead>
                         <tbody>
                             {entry.lines.map((line) => (
-                                <tr key={line.id} className="border-t">
+                                <tr key={line.id} className="border-brand-table-divider hover:bg-brand-table-row-hover motion-colors border-t">
                                     <td className="px-4 py-2">
                                         <Link
                                             href={route('chart-of-accounts.ledger', line.chart_of_account.id)}
@@ -103,7 +101,7 @@ export default function JournalEntryShow({ entry }: JournalEntryShowProps) {
                             ))}
                         </tbody>
                         <tfoot>
-                            <tr className="border-t font-medium">
+                            <tr className="border-brand-table-divider border-t font-medium">
                                 <td colSpan={2} className="px-4 py-2 text-right">
                                     Total
                                 </td>

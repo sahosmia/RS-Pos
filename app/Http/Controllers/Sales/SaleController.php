@@ -4,10 +4,14 @@ namespace App\Http\Controllers\Sales;
 
 use App\Actions\Sales\Sale\ConfirmSaleAction;
 use App\Actions\Sales\Sale\CreateSaleAction;
+use App\Actions\Sales\Sale\ReopenSaleForAmendmentAction;
 use App\Actions\Sales\Sale\UpdateSaleAction;
 use App\Enums\DateRangePreset;
+use App\Enums\EmiInstallmentStatus;
+use App\Enums\SalePaymentType;
 use App\Exceptions\InvalidSerialSelectionException;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Common\BulkDestroyRequest;
 use App\Http\Requests\Sales\Sale\StoreSaleRequest;
 use App\Http\Requests\Sales\Sale\UpdateSaleRequest;
 use App\Models\Contact;
@@ -16,6 +20,7 @@ use App\Models\SaleItem;
 use App\Models\Settings;
 use App\Queries\Sale\SaleQuery;
 use App\Queries\Sale\SalesFormOptions;
+use App\Support\BulkDelete;
 use App\Support\SalePaymentHistory;
 use App\Support\SerialSelections;
 use Illuminate\Database\Eloquent\Collection;
@@ -59,7 +64,7 @@ class SaleController extends Controller
         $sales->getCollection()->transform(fn (Sale $sale) => [
             'id' => $sale->id,
             'invoice_no' => $sale->invoice_no,
-            'customer' => $sale->customer->only(['id', 'name']),
+            'customer' => $sale->customer->only(['id', 'name', 'phone']),
             'sale_date' => $sale->sale_date->toDateString(),
             'created_at' => $sale->created_at?->toIso8601String(),
             'total_amount' => $sale->total_amount,
@@ -69,6 +74,7 @@ class SaleController extends Controller
             'source' => $sale->source,
             'added_by' => $sale->creator?->name,
             'can_edit' => $sale->canEdit(),
+            'can_amend' => $sale->amendBlockReason() === null,
         ]);
 
         $statsQuery = SaleQuery::filtered($validated, $request->user());
@@ -139,7 +145,8 @@ class SaleController extends Controller
             return $wantsConfirm ? $this->confirmFromForm($sale, $data, $confirmSale) : $sale;
         });
 
-        return to_route('sales.show', $sale)->with('justConfirmed', $wantsConfirm);
+        // A new sale goes back to the list. "Save & WhatsApp" still needs the figures of the sale it just made, so they ride along once.
+        return to_route('sales.index')->with('savedSale', $wantsConfirm ? $this->savedSaleFigures($sale) : null);
     }
 
     public function show(Sale $sale): Response
@@ -151,6 +158,7 @@ class SaleController extends Controller
             'items.product.unit:id,name',
             'items.serialNumbers',
             'items' => fn ($query) => $query->orderBy('id'),
+            'emiInstallments',
         ]);
 
         $settings = Settings::current();
@@ -161,7 +169,8 @@ class SaleController extends Controller
             'justConfirmed' => (bool) session('justConfirmed'),
             'invoiceSettings' => $settings->invoiceSettingsOrDefault(),
             'invoiceLogoUrl' => $settings->getFirstMediaUrl('invoice_logo') ?: null,
-            'shop' => [
+            // Not called `shop`: that name is the shared prop (modules, theme, menu order) the sidebar reads.
+            'invoiceShop' => [
                 'name' => $settings->shop_name,
                 'address' => $settings->shop_address,
                 'phone' => $settings->shop_phone,
@@ -169,11 +178,13 @@ class SaleController extends Controller
         ]);
     }
 
-    public function edit(Sale $sale): Response
+    public function edit(Request $request, Sale $sale): Response
     {
-        abort_unless($sale->canEdit(), 403);
+        // A Draft/Quotation is edited freely; a Confirmed sale is amended (reversed and recorded again) by whoever may edit sales.
+        $amending = ! $sale->canEdit();
+        abort_if($amending && (! $request->user()->can('sale.edit') || $sale->amendBlockReason() !== null), 403);
 
-        $sale->load(['items', 'customer:id,name,phone,business_name,balance']);
+        $sale->load(['items.product:id,warranty_period_months', 'items.serialNumbers', 'customer:id,name,phone,business_name,balance']);
 
         return Inertia::render('sales/edit', [
             'sale' => [
@@ -186,6 +197,15 @@ class SaleController extends Controller
                 'valid_until' => $sale->valid_until?->toDateString(),
                 'financing_type' => $sale->financing_type,
                 'installment_count' => $sale->installment_count,
+                'emi_interest_method' => $sale->emi_interest_method,
+                'emi_annual_rate' => $sale->emi_annual_rate,
+                'emi_frequency' => $sale->emi_frequency,
+                'emi_tenure_value' => $sale->emi_tenure_value,
+                'emi_tenure_unit' => $sale->emi_tenure_unit,
+                'emi_installation_upfront' => $sale->emi_installation_upfront,
+                'amending' => $amending,
+                // What was received, per account — the starting point of the corrected payment rows.
+                'payments' => $amending ? $sale->receivedPerAccount() : [],
                 'items' => $sale->items->map(fn ($item) => [
                     'product_id' => $item->product_id,
                     'quantity' => $item->quantity,
@@ -195,10 +215,13 @@ class SaleController extends Controller
                     'discount_value' => $item->discount_value,
                     'installation_required' => $item->installation_required,
                     'installation_charge' => $item->installation_charge,
+                    'emi_financed' => $item->emi_financed,
+                    // A draft that never chose shows the product's warranty as the default to keep or change.
+                    'warranty_months' => $item->warranty_months ?? $item->product?->warranty_period_months ?? 0,
+                    'service_plan_included' => $item->service_plan_included,
                     'note' => $item->note,
-                    // Serial numbers are picked at confirm time, not stored on
-                    // a Draft — nothing to re-populate here (see SaleTotals).
-                    'serial_numbers' => [],
+                    // A Draft has none (picked at confirm time, see SaleTotals); an amended sale starts from the units it sold.
+                    'serial_numbers' => $amending ? $item->serialNumbers->pluck('serial_number')->all() : [],
                 ]),
             ],
             'initialCustomer' => $sale->customer->only(['id', 'name', 'display_name', 'phone', 'business_name', 'balance']),
@@ -207,10 +230,15 @@ class SaleController extends Controller
         ]);
     }
 
-    public function update(UpdateSaleRequest $request, Sale $sale, UpdateSaleAction $updateSale, ConfirmSaleAction $confirmSale): RedirectResponse
-    {
+    public function update(
+        UpdateSaleRequest $request,
+        Sale $sale,
+        UpdateSaleAction $updateSale,
+        ConfirmSaleAction $confirmSale,
+        ReopenSaleForAmendmentAction $reopenSale,
+    ): RedirectResponse {
         if (! $sale->canEdit()) {
-            return back()->withErrors(['sale' => 'This sale has already been confirmed and can no longer be edited directly.']);
+            return $this->amend($request, $sale, $updateSale, $confirmSale, $reopenSale);
         }
 
         $data = $request->validated();
@@ -223,7 +251,45 @@ class SaleController extends Controller
             return $wantsConfirm ? $this->confirmFromForm($sale, $data, $confirmSale) : $sale;
         });
 
-        return to_route('sales.show', $sale)->with('justConfirmed', $wantsConfirm);
+        return to_route('sales.show', $sale)->with('justConfirmed', $wantsConfirm)->with('savedSale', $wantsConfirm ? $this->savedSaleFigures($sale) : null);
+    }
+
+    /**
+     * Editing a Confirmed sale: reverse it, save the corrected version on the same invoice and confirm it again — all in
+     * one transaction, so a failure (not enough stock, a bad serial, a closed period) leaves the original sale untouched.
+     */
+    private function amend(UpdateSaleRequest $request, Sale $sale, UpdateSaleAction $updateSale, ConfirmSaleAction $confirmSale, ReopenSaleForAmendmentAction $reopenSale): RedirectResponse
+    {
+        $data = $request->validated();
+        $reason = (string) $data['amend_reason'];
+        $data['status'] = 'draft';
+
+        $sale = DB::transaction(function () use ($sale, $data, $reason, $updateSale, $confirmSale, $reopenSale) {
+            // Taken before the sale is reopened: units sold again keep the cost they were first sold at.
+            $keptCosts = $reopenSale->costsToKeep($sale);
+
+            $sale = $reopenSale->execute($sale, $reason);
+            $sale = $updateSale->execute($sale, $data);
+
+            return $this->confirmFromForm($sale, $data, $confirmSale, $keptCosts);
+        });
+
+        return to_route('sales.show', $sale)->with('savedSale', $this->savedSaleFigures($sale));
+    }
+
+    /**
+     * What "Save & WhatsApp" needs to word its message — flashed for the one page that follows a save.
+     *
+     * @return array{invoice_no: string, total_amount: float, due_amount: float, customer_balance: float}
+     */
+    private function savedSaleFigures(Sale $sale): array
+    {
+        return [
+            'invoice_no' => $sale->invoice_no,
+            'total_amount' => $sale->total_amount,
+            'due_amount' => $sale->due_amount,
+            'customer_balance' => $sale->customer->fresh()->balance,
+        ];
     }
 
     /**
@@ -234,12 +300,12 @@ class SaleController extends Controller
      *
      * @throws ValidationException
      */
-    private function confirmFromForm(Sale $sale, array $data, ConfirmSaleAction $confirmSale): Sale
+    private function confirmFromForm(Sale $sale, array $data, ConfirmSaleAction $confirmSale, array $keptCosts = []): Sale
     {
         $lineItems = $sale->items()->orderBy('id')->get();
 
         try {
-            return $confirmSale->execute($sale, $data['payments'] ?? [], SerialSelections::extract($lineItems, $data['items']));
+            return $confirmSale->execute($sale, $data['payments'] ?? [], SerialSelections::extract($lineItems, $data['items']), $keptCosts);
         } catch (InvalidSerialSelectionException $e) {
             throw $this->serialValidationError($e, $lineItems);
         }
@@ -262,8 +328,8 @@ class SaleController extends Controller
      */
     public function destroy(Sale $sale): RedirectResponse
     {
-        if (! $sale->canEdit()) {
-            return back()->withErrors(['sale' => 'This sale has already been confirmed and cannot be deleted.']);
+        if ($reason = $sale->deletionBlockReason()) {
+            return back()->withErrors(['sale' => $reason]);
         }
 
         $sale->delete();
@@ -274,6 +340,51 @@ class SaleController extends Controller
     /**
      * @return array<string, mixed>
      */
+    /**
+     * The sale's installment plan for the invoice page: the terms, the schedule and which installment is next.
+     * Null for a sale that isn't on EMI (or whose schedule hasn't been created yet, i.e. a draft).
+     *
+     * @return array<string, mixed>|null
+     */
+    private function presentEmi(Sale $sale): ?array
+    {
+        if ($sale->financing_type !== SalePaymentType::Emi || $sale->emiInstallments->isEmpty()) {
+            return null;
+        }
+
+        $installments = $sale->emiInstallments->sortBy('installment_number')->values();
+        $open = $installments->filter(fn ($i) => in_array($i->status, [EmiInstallmentStatus::Pending, EmiInstallmentStatus::Overdue], true));
+        $next = $open->sortBy('due_date')->first();
+
+        return [
+            'interest_method' => $sale->emi_interest_method,
+            'annual_rate' => $sale->emi_annual_rate,
+            'frequency' => $sale->emi_frequency,
+            'interest_total' => $sale->emi_interest_total,
+            // What was financed vs. paid now, so the invoice can show "AC on EMI, the rest paid".
+            'financed_goods' => $sale->emiFinancedGoods(),
+            'installments_total' => $installments->count(),
+            'installments_open' => $open->count(),
+            'next' => $next ? [
+                'id' => $next->id,
+                'number' => $next->installment_number,
+                'due_date' => $next->due_date->toDateString(),
+                'remaining' => round($next->amount - $next->paid_amount, 2),
+                'overdue' => $next->due_date->isBefore(today()),
+            ] : null,
+            'installments' => $installments->map(fn ($i) => [
+                'id' => $i->id,
+                'number' => $i->installment_number,
+                'due_date' => $i->due_date->toDateString(),
+                'amount' => $i->amount,
+                'principal' => $i->principal_amount,
+                'interest' => $i->interest_amount,
+                'paid_amount' => $i->paid_amount,
+                'status' => $i->status,
+            ])->all(),
+        ];
+    }
+
     private function present(Sale $sale): array
     {
         return [
@@ -295,7 +406,9 @@ class SaleController extends Controller
             'status' => $sale->status,
             'source' => $sale->source,
             'can_edit' => $sale->canEdit(),
+            'can_amend' => $sale->amendBlockReason() === null,
             'payment_history' => SalePaymentHistory::forSale($sale),
+            'emi' => $this->presentEmi($sale),
             'items' => $sale->items->map(fn ($item) => [
                 'id' => $item->id,
                 'product' => [
@@ -311,9 +424,33 @@ class SaleController extends Controller
                 'subtotal' => $item->subtotal,
                 'installation_required' => $item->installation_required,
                 'installation_charge' => $item->installation_charge,
+                'emi_financed' => $item->emi_financed,
+                'warranty_months' => $item->warranty_months,
                 'warranty_expires_at' => $item->warranty_expires_at?->toDateString(),
                 'serial_numbers' => $item->serialNumbers->pluck('serial_number')->all(),
+                'serials' => $item->serialNumbers->map(fn ($serial) => [
+                    'serial_number' => $serial->serial_number,
+                    'status' => $serial->status->value,
+                ])->values()->all(),
             ]),
         ];
+    }
+
+    /**
+     * "Delete selected" — each record is checked by the same rule as the single delete.
+     */
+    public function bulkDestroy(BulkDestroyRequest $request): RedirectResponse
+    {
+        $user = $request->user();
+
+        return BulkDelete::respond(BulkDelete::run(
+            $request->validated('ids'),
+            Sale::query()
+                ->whereIn('id', $request->validated('ids'))
+                ->when(! $user->can('sale.view_all'), fn ($query) => $query->where('created_by', $user->id))
+                ->get(),
+            fn (Sale $sale) => $sale->deletionBlockReason(),
+            fn (Sale $sale) => $sale->delete(),
+        ));
     }
 }

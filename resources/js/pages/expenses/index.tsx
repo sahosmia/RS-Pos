@@ -8,10 +8,12 @@ import {
 import { ExpenseGridCard } from '@/components/expenses/expense-grid-card';
 import ExpenseModal from '@/components/expenses/expense-modal';
 import { FormInput } from '@/components/form/form-input';
-import HeadingSmall from '@/components/heading-small';
 import LookupManagerModal from '@/components/products/lookup-manager-modal';
+import { AddButton } from '@/components/shared/action-buttons';
+import BulkDeleteBar from '@/components/shared/bulk-delete-bar';
 import ConfirmDialog from '@/components/shared/confirm-dialog';
 import EmptyState from '@/components/shared/empty-state';
+import PageHeader from '@/components/shared/page-header';
 import StatCards from '@/components/shared/stat-cards';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -102,18 +104,20 @@ export default function ExpensesIndex({ expenses, stats, categories, accounts, f
             <Head title="Expenses" />
 
             <div className="space-y-6 px-4 py-6">
-                <div className="flex flex-wrap items-end justify-between gap-4">
-                    <HeadingSmall
-                        title="Expenses"
-                        description="Rent, Utility, Salary, Transport — যে account থেকে দেওয়া হয়েছে সেখান থেকে সরাসরি কাটা হয়"
-                    />
-                    <div className="flex gap-2">
-                        <Button variant="outline" onClick={() => setCategoriesOpen(true)}>
-                            Manage Categories
-                        </Button>
-                        <Button onClick={() => setAddOpen(true)}>Add Expense</Button>
-                    </div>
-                </div>
+                <PageHeader
+                    title="Expenses"
+                    description="Rent, Utility, Salary, Transport — যে account থেকে দেওয়া হয়েছে সেখান থেকে সরাসরি কাটা হয়"
+                    actions={
+                        <>
+                            <div className="flex gap-2">
+                                <Button variant="outline" onClick={() => setCategoriesOpen(true)}>
+                                    Manage Categories
+                                </Button>
+                                <AddButton onClick={() => setAddOpen(true)} title="Add Expense" />
+                            </div>
+                        </>
+                    }
+                />
 
                 {stats && (
                     <StatCards
@@ -122,19 +126,21 @@ export default function ExpensesIndex({ expenses, stats, categories, accounts, f
                                 label: 'Total Expenses',
                                 value: stats.total_expenses.toLocaleString(),
                                 icon: Receipt,
-                                tone: 'text-sky-600 bg-sky-100 dark:text-sky-400 dark:bg-sky-500/15',
                             },
                             {
                                 label: 'Total Amount',
                                 value: money(stats.total_amount),
                                 icon: DollarSign,
-                                tone: 'text-violet-600 bg-violet-100 dark:text-violet-400 dark:bg-violet-500/15',
+                                accent: 'info',
                             },
                         ]}
                     />
                 )}
 
                 <ListTable
+                    selectionSlot={
+                        <BulkDeleteBar selection={list.selection} routeName="expenses.bulk-delete" noun="expenses" permission="expense.delete" />
+                    }
                     list={list}
                     data={expenses}
                     filters={filters}
@@ -191,9 +197,7 @@ export default function ExpensesIndex({ expenses, stats, categories, accounts, f
                     }
                     emptyState={
                         <EmptyState title="No expenses yet" description="প্রথম expense যোগ করুন">
-                            <Button className="mt-2" onClick={() => setAddOpen(true)}>
-                                Add Expense
-                            </Button>
+                            <AddButton onClick={() => setAddOpen(true)} title="Add Expense" className="mt-2" />
                         </EmptyState>
                     }
                     filteredEmptyState={

@@ -2,8 +2,10 @@
 
 namespace App\Actions\Sales\SalesOrder;
 
+use App\Actions\Sales\Sale\SaleTotals;
 use App\Enums\AccountTransactionType;
 use App\Enums\ContactLedgerType;
+use App\Enums\DiscountType;
 use App\Enums\SalesOrderStatus;
 use App\Models\Account;
 use App\Models\SalesOrder;
@@ -12,6 +14,7 @@ use App\Services\AccountService;
 use App\Services\ChartOfAccountResolver;
 use App\Services\JournalService;
 use App\Services\LedgerService;
+use App\Support\EmiTerms;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
@@ -37,33 +40,35 @@ class CreateSalesOrderAction
     public function execute(array $data): SalesOrder
     {
         return DB::transaction(function () use ($data) {
+            $discountType = isset($data['discount_type']) ? DiscountType::from($data['discount_type']) : null;
+
             $order = SalesOrder::create([
                 'customer_id' => $data['customer_id'],
                 'order_no' => Settings::current()->generateSalesOrderNumber(),
                 'order_date' => $data['order_date'],
                 'expected_delivery_date' => $data['expected_delivery_date'] ?? null,
                 'status' => SalesOrderStatus::Pending,
+                'discount_type' => $discountType,
+                'discount_value' => $discountType !== null ? ($data['discount_value'] ?? 0) : 0,
+                ...EmiTerms::columns($data),
                 'created_by' => Auth::id(),
             ]);
 
-            $totalAmount = 0.0;
+            // Same pricing as a Sale: per-line discount, installation charges, then the invoice discount on top.
+            $priced = SaleTotals::priceLines($data['items']);
 
-            foreach ($data['items'] as $item) {
-                $quantity = round((float) $item['quantity'], 2);
-                $unitPrice = round((float) $item['unit_price'], 2);
-                $subtotal = round($quantity * $unitPrice, 2);
-
-                $order->items()->create([
-                    'product_id' => $item['product_id'],
-                    'quantity' => $quantity,
-                    'unit_price' => $unitPrice,
-                    'subtotal' => $subtotal,
-                ]);
-
-                $totalAmount += $subtotal;
+            foreach ($priced['rows'] as $index => $row) {
+                $order->items()->create([...$row, 'serial_numbers' => $this->serials($data['items'][$index] ?? [])]);
             }
 
-            $order->forceFill(['total_amount' => round($totalAmount, 2)])->save();
+            $totals = SaleTotals::totalsFor($priced['subtotal'], $priced['installation'], $discountType, (float) $order->discount_value);
+
+            $order->forceFill([
+                'subtotal' => $totals->subtotal,
+                'discount_amount' => $totals->discountAmount,
+                'installation_amount' => $totals->installationAmount,
+                'total_amount' => $totals->totalAmount,
+            ])->save();
 
             $payments = $data['payments'] ?? [];
 
@@ -92,6 +97,19 @@ class CreateSalesOrderAction
 
             return $order->fresh(['items.product', 'customer']);
         });
+    }
+
+    /**
+     * The serial numbers planned for a line (checked against real stock when the order is converted to a sale).
+     *
+     * @param  array<string, mixed>  $item
+     * @return list<string>|null
+     */
+    private function serials(array $item): ?array
+    {
+        $serials = array_values(array_filter(array_map(fn ($serial) => trim((string) $serial), $item['serial_numbers'] ?? []), fn (string $serial) => $serial !== ''));
+
+        return $serials === [] ? null : $serials;
     }
 
     /**

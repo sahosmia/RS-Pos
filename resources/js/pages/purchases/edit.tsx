@@ -17,7 +17,7 @@ interface PurchasesEditProps {
 export default function PurchasesEdit({ purchase, initialSupplier, initialProducts, accounts }: PurchasesEditProps) {
     const breadcrumbs: BreadcrumbItem[] = [
         { title: 'Purchases', href: '/purchases' },
-        { title: purchase.reference_no ?? 'Purchase', href: route('purchases.show', purchase.id) },
+        { title: purchase.invoice_no, href: route('purchases.show', purchase.id) },
         { title: 'Edit', href: '#' },
     ];
 
@@ -32,8 +32,12 @@ export default function PurchasesEdit({ purchase, initialSupplier, initialProduc
                     title="Edit Purchase"
                     description={
                         <>
-                            {purchase.reference_no ?? `Purchase #${purchase.id}`}
-                            <span className="ml-2 font-medium">· Draft/Ordered অবস্থায় স্বাধীনভাবে সম্পাদনা করা যায়</span>
+                            {purchase.invoice_no}
+                            <span className="ml-2 font-medium">
+                                {purchase.amending
+                                    ? '· Received purchase: সেভ করলে আগের receipt তুলে একই invoice-এ নতুনটা receive হবে (stock, avg cost, supplier due, payment, হিসাব সব মিলে যাবে)'
+                                    : '· Draft/Ordered অবস্থায় স্বাধীনভাবে সম্পাদনা করা যায়'}
+                            </span>
                         </>
                     }
                     actions={
@@ -46,7 +50,13 @@ export default function PurchasesEdit({ purchase, initialSupplier, initialProduc
                     }
                 />
 
-                <PurchaseForm mode="edit" purchase={purchase} initialSupplier={initialSupplier} initialProducts={initialProducts} accounts={accounts} />
+                <PurchaseForm
+                    mode="edit"
+                    purchase={purchase}
+                    initialSupplier={initialSupplier}
+                    initialProducts={initialProducts}
+                    accounts={accounts}
+                />
             </div>
         </AppLayout>
     );

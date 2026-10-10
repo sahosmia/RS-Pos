@@ -1,4 +1,15 @@
-import { Activity, ArrowDownUp, CreditCard, LayoutDashboard, Palette, ShoppingBag, SlidersHorizontal, Zap, type LucideIcon } from 'lucide-react';
+import {
+    Activity,
+    ArrowDownUp,
+    CreditCard,
+    LayoutDashboard,
+    MessageSquare,
+    Palette,
+    ShoppingBag,
+    SlidersHorizontal,
+    Zap,
+    type LucideIcon,
+} from 'lucide-react';
 import { useState } from 'react';
 
 export const SETTINGS_TABS: { value: string; label: string; icon: LucideIcon }[] = [
@@ -9,12 +20,20 @@ export const SETTINGS_TABS: { value: string; label: string; icon: LucideIcon }[]
     { value: 'invoice', label: 'Invoice', icon: CreditCard },
     { value: 'modules', label: 'Modules', icon: SlidersHorizontal },
     { value: 'pagination', label: 'Pagination', icon: LayoutDashboard },
+    { value: 'sms', label: 'SMS', icon: MessageSquare },
     { value: 'audit', label: 'Audit Log', icon: Activity },
 ];
 
 const STORAGE_KEY = 'business-settings-tab';
 
 function readSavedTab(): string {
+    // A link such as /business-settings?tab=audit opens that tab first.
+    const requested = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('tab') : null;
+
+    if (requested && SETTINGS_TABS.some((tab) => tab.value === requested)) {
+        return requested;
+    }
+
     try {
         const saved = window.sessionStorage.getItem(STORAGE_KEY);
         return saved && SETTINGS_TABS.some((tab) => tab.value === saved) ? saved : 'business';

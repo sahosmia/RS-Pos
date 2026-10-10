@@ -29,8 +29,9 @@ class ProductListResource extends JsonResource
             'manage_stock' => $product->manage_stock,
             'is_for_sale' => $product->is_for_sale,
             'is_active' => $product->is_active,
+            'track_serial_number' => $product->track_serial_number,
             'can_set_opening_stock' => ! $product->has_stock_movements, // from withExists(), no per-row query
-            'image_url' => $product->getFirstMediaUrl('images') ?: null,
+            'image_url' => $product->imageUrl(),
         ];
     }
 }

@@ -6,6 +6,7 @@ use App\Rules\ReturnQuantityWithinSoldRule;
 use App\Rules\SaleMustBeConfirmedRule;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StoreSaleReturnRequest extends FormRequest
 {
@@ -20,7 +21,8 @@ class StoreSaleReturnRequest extends FormRequest
     public function rules(): array
     {
         $rules = [
-            'sale_id' => ['required', 'integer', 'exists:sales,id', new SaleMustBeConfirmedRule],
+            // Only a sale the user may see: view_own cannot raise a return against someone else's invoice.
+            'sale_id' => ['required', 'integer', Rule::exists('sales', 'id')->when(! $this->user()?->can('sale.view_all'), fn ($rule) => $rule->where('created_by', $this->user()?->id)), new SaleMustBeConfirmedRule],
             'return_date' => ['required', 'date'],
             'reason' => ['nullable', 'string', 'max:1000'],
             'items' => ['required', 'array', 'min:1'],

@@ -60,6 +60,7 @@ class PurchaseReturnController extends Controller
         $purchase = Purchase::query()
             ->with(['items.product:id,name,sku', 'items.returnItems', 'supplier:id,name'])
             ->where('status', PurchaseStatus::Received)
+            ->visibleTo($request->user())
             ->findOrFail($request->integer('purchase_id'));
 
         return Inertia::render('purchases/purchase-returns/create', [

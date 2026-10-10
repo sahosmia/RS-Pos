@@ -1,15 +1,15 @@
+import DataTableRowActions from '@/components/data-table/data-table-row-actions';
 import { FormInput } from '@/components/form/form-input';
 import { FormSelect } from '@/components/form/form-select';
-import HeadingSmall from '@/components/heading-small';
 import InputError from '@/components/input-error';
+import { AddButton } from '@/components/shared/action-buttons';
 import ConfirmDialog from '@/components/shared/confirm-dialog';
 import EmptyState from '@/components/shared/empty-state';
 import FormModal from '@/components/shared/form-modal';
 import MoneyInput from '@/components/shared/money-input';
-import DataTableRowActions from '@/components/data-table/data-table-row-actions';
+import PageHeader from '@/components/shared/page-header';
+import { StatusBadge } from '@/components/shared/status-badge';
 import { getStaffActions } from '@/components/staff/staff-actions';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { useMoneyFormat } from '@/hooks/use-money-format';
 import AppLayout from '@/layouts/app-layout';
@@ -110,37 +110,38 @@ export default function StaffIndex({ staff, investors }: StaffIndexProps) {
             <Head title="Staff" />
 
             <div className="space-y-6 px-4 py-6">
-                <div className="flex flex-wrap items-end justify-between gap-4">
-                    <HeadingSmall title="Staff" description="দোকানের কর্মচারী — বেতন, অগ্রিম, লোনের হিসাব" />
-                    <Button onClick={openCreate}>Add Staff</Button>
-                </div>
+                <PageHeader
+                    title="Staff"
+                    description="দোকানের কর্মচারী — বেতন, অগ্রিম, লোনের হিসাব"
+                    actions={
+                        <>
+                            <AddButton onClick={openCreate} title="Add Staff" />
+                        </>
+                    }
+                />
 
                 {staff.length === 0 ? (
                     <EmptyState title="No staff yet" description="প্রথম staff যোগ করুন">
-                        <Button className="mt-2" onClick={openCreate}>
-                            Add Staff
-                        </Button>
+                        <AddButton onClick={openCreate} title="Add Staff" className="mt-2" />
                     </EmptyState>
                 ) : (
-                    <div className="overflow-x-auto rounded-lg border">
+                    <div className="overflow-x-auto rounded-brand-card bg-card shadow-[var(--brand-card-shadow-elevated)]">
                         <table className="w-full text-sm">
-                            <thead className="bg-muted/50 text-muted-foreground">
+                            <thead className="bg-brand-table-header text-muted-foreground text-xs font-semibold">
                                 <tr>
                                     <th className="w-10 px-4 py-2"></th>
-                                    <th className="px-4 py-2 text-left font-medium">Name</th>
-                                    <th className="px-4 py-2 text-left font-medium">Designation</th>
-                                    <th className="px-4 py-2 text-right font-medium">Salary</th>
-                                    <th className="px-4 py-2 text-right font-medium">Balance</th>
-                                    <th className="px-4 py-2 text-left font-medium">Status</th>
+                                    <th className="px-4 py-2.5 text-left font-medium">Name</th>
+                                    <th className="px-4 py-2.5 text-left font-medium">Designation</th>
+                                    <th className="px-4 py-2.5 text-right font-medium">Salary</th>
+                                    <th className="px-4 py-2.5 text-right font-medium">Balance</th>
+                                    <th className="px-4 py-2.5 text-left font-medium">Status</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {staff.map((member) => (
-                                    <tr key={member.id} className="border-t">
+                                    <tr key={member.id} className="border-brand-table-divider hover:bg-brand-table-row-hover motion-colors border-t">
                                         <td className="w-10 px-4 py-2">
-                                            <DataTableRowActions
-                                                actions={getStaffActions(member, { onEdit: openEdit, onDelete: setDeleting })}
-                                            />
+                                            <DataTableRowActions actions={getStaffActions(member, { onEdit: openEdit, onDelete: setDeleting })} />
                                         </td>
                                         <td className="px-4 py-2">
                                             <Link href={route('staff.show', member.id)} className="font-medium underline-offset-2 hover:underline">
@@ -152,9 +153,7 @@ export default function StaffIndex({ staff, investors }: StaffIndexProps) {
                                         <td className="px-4 py-2 text-right tabular-nums">{money(member.salary_amount)}</td>
                                         <td className="px-4 py-2 text-right tabular-nums">{money(member.balance)}</td>
                                         <td className="px-4 py-2">
-                                            <Badge variant={member.status === 'active' ? 'secondary' : 'outline'}>
-                                                {member.status === 'active' ? 'Active' : 'Inactive'}
-                                            </Badge>
+                                            <StatusBadge status={member.status === 'active' ? 'active' : 'inactive'} />
                                         </td>
                                     </tr>
                                 ))}

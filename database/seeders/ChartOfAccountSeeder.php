@@ -48,6 +48,8 @@ class ChartOfAccountSeeder extends Seeder
             // whichever direction the sale price vs. book value falls.
             ['4300', 'Gain on Asset Disposal', ChartOfAccountType::Income, NormalBalance::Credit],
             ['5100', 'Cost of Goods Sold', ChartOfAccountType::Expense, NormalBalance::Debit],
+            // Stock adjustments: units lost / found (and counts that differ from the books) at average cost.
+            ['5110', 'Stock Adjustment Loss/Gain', ChartOfAccountType::Expense, NormalBalance::Debit],
             // Phase 11 (Staff) - StaffTransactionNature::Expense (Salary Charge).
             ['5210', 'Salary Expense', ChartOfAccountType::Expense, NormalBalance::Debit],
             // V2 (Phase 35 par 11).

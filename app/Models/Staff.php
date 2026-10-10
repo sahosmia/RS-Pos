@@ -21,10 +21,11 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  */
 class Staff extends Model
 {
+    use HasCreator;
+
     /** @use HasFactory<StaffFactory> */
     use HasFactory;
 
-    use HasCreator;
     use LogsActivityDefaults;
 
     /**

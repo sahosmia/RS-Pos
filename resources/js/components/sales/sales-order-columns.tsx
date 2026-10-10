@@ -4,10 +4,10 @@ import DataTableRowActions from '@/components/data-table/data-table-row-actions'
 import { type DataTableColumnOption } from '@/components/data-table/types';
 import { getSalesOrderActions } from '@/components/sales/sales-order-actions';
 import ContactLink from '@/components/shared/contact-link';
-import { Badge } from '@/components/ui/badge';
+import { StatusBadge } from '@/components/shared/status-badge';
 import { type ListPageState } from '@/hooks/table/use-list-page';
 import { formatDate } from '@/lib/format-date';
-import { type SalesOrderListItem, type SalesOrderStatusValue } from '@/types/models';
+import { type SalesOrderListItem } from '@/types/models';
 import { Link } from '@inertiajs/react';
 import { type ColumnDef } from '@tanstack/react-table';
 import { useMemo } from 'react';
@@ -46,13 +46,6 @@ export const SALES_ORDER_EXPORT_COLUMN_MAP: Record<string, string[]> = {
     advance: ['advance_paid'],
     due: ['due_amount'],
     status: ['status'],
-};
-
-export const salesOrderStatusVariant: Record<SalesOrderStatusValue, 'secondary' | 'outline' | 'destructive'> = {
-    pending: 'outline',
-    partial: 'outline',
-    completed: 'secondary',
-    cancelled: 'destructive',
 };
 
 export const humanize = (value: string) => value.replaceAll('_', ' ').replace(/\b\w/g, (character) => character.toUpperCase());
@@ -148,7 +141,7 @@ export function useSalesOrderColumns({ sort, direction = 'desc', onSort, selecti
             {
                 id: 'status',
                 header: header('Status', 'status'),
-                cell: ({ row }) => <Badge variant={salesOrderStatusVariant[row.original.status]}>{humanize(row.original.status)}</Badge>,
+                cell: ({ row }) => <StatusBadge status={row.original.status} />,
             },
             { id: 'added_by', header: 'Added by', cell: ({ row }) => <span className="text-muted-foreground">{row.original.added_by ?? '—'}</span> },
         ];

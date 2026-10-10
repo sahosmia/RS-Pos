@@ -1,13 +1,14 @@
+import DataTableRowActions from '@/components/data-table/data-table-row-actions';
+import { getExpenseCategoryActions } from '@/components/expenses/expense-category-actions';
 import { FormInput } from '@/components/form/form-input';
 import { FormSelect } from '@/components/form/form-select';
-import HeadingSmall from '@/components/heading-small';
 import ConfirmDialog from '@/components/shared/confirm-dialog';
 import EmptyState from '@/components/shared/empty-state';
 import FormModal from '@/components/shared/form-modal';
-import DataTableRowActions from '@/components/data-table/data-table-row-actions';
-import { getExpenseCategoryActions } from '@/components/expenses/expense-category-actions';
+import PageHeader from '@/components/shared/page-header';
 import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/app-layout';
+import { pageContainer } from '@/lib/page-container';
 import { type BreadcrumbItem } from '@/types';
 import { type ExpenseCategoryListItem } from '@/types/models';
 import { Head, router, useForm } from '@inertiajs/react';
@@ -86,11 +87,16 @@ export default function ExpenseCategoriesIndex({ categories, allCategories }: Ex
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Expense Categories" />
 
-            <div className="space-y-6 px-4 py-6">
-                <div className="flex flex-wrap items-end justify-between gap-4">
-                    <HeadingSmall title="Expense Categories" description="Rent, Utility, Salary, Transport — subcategory-সহ" />
-                    <Button onClick={openCreate}>Add Category</Button>
-                </div>
+            <div className={pageContainer.medium}>
+                <PageHeader
+                    title="Expense Categories"
+                    description="Rent, Utility, Salary, Transport — subcategory-সহ"
+                    actions={
+                        <>
+                            <Button onClick={openCreate}>Add Category</Button>
+                        </>
+                    }
+                />
 
                 {categories.length === 0 ? (
                     <EmptyState title="No categories yet" description="প্রথম expense category যোগ করুন">
@@ -99,19 +105,19 @@ export default function ExpenseCategoriesIndex({ categories, allCategories }: Ex
                         </Button>
                     </EmptyState>
                 ) : (
-                    <div className="overflow-x-auto rounded-lg border">
+                    <div className="overflow-x-auto rounded-brand-card bg-card shadow-[var(--brand-card-shadow-elevated)]">
                         <table className="w-full text-sm">
-                            <thead className="bg-muted/50 text-muted-foreground">
+                            <thead className="bg-brand-table-header text-muted-foreground text-xs font-semibold">
                                 <tr>
-                                    <th className="px-4 py-2 text-left font-medium">Name</th>
-                                    <th className="px-4 py-2 text-left font-medium">Parent</th>
-                                    <th className="px-4 py-2 text-right font-medium">Expenses</th>
-                                    <th className="px-4 py-2 text-right font-medium">Actions</th>
+                                    <th className="px-4 py-2.5 text-left font-medium">Name</th>
+                                    <th className="px-4 py-2.5 text-left font-medium">Parent</th>
+                                    <th className="px-4 py-2.5 text-right font-medium">Expenses</th>
+                                    <th className="px-4 py-2.5 text-right font-medium">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {categories.map((category) => (
-                                    <tr key={category.id} className="border-t">
+                                    <tr key={category.id} className="border-brand-table-divider hover:bg-brand-table-row-hover motion-colors border-t">
                                         <td className="px-4 py-2 font-medium">{category.name}</td>
                                         <td className="text-muted-foreground px-4 py-2">{category.parent?.name ?? '—'}</td>
                                         <td className="px-4 py-2 text-right tabular-nums">{category.expenses_count}</td>

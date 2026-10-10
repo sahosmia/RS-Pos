@@ -4,8 +4,6 @@ import {
     Banknote,
     BarChart3,
     BookText,
-    DatabaseBackup,
-    History,
     HandCoins,
     IdCard,
     KeyRound,
@@ -16,9 +14,9 @@ import {
     Settings,
     ShieldCheck,
     ShoppingCart,
-    Upload,
     Users,
     Wallet,
+    Wrench,
 } from 'lucide-react';
 
 /**
@@ -46,11 +44,23 @@ export function buildMainNavItems(emiModuleEnabled: boolean, t: ReturnType<typeo
             permission: 'sale.view_own',
             items: [
                 { key: 'sales', title: t('nav', 'sales'), url: '/sales' },
-                { key: 'draft_sales', title: t('nav', 'draft_sales'), url: '/sales?status=draft', permission: 'sale.view_own' },
                 { key: 'add_sale', title: t('nav', 'add_sale'), url: '/sales/create', permission: 'sale.create' },
+                { key: 'draft_sales', title: t('nav', 'draft_sales'), url: '/sales?status=draft', permission: 'sale.view_own' },
                 { key: 'sale_returns', title: t('nav', 'sale_returns'), url: '/sale-returns' },
                 { key: 'sales_order', title: t('nav', 'sales_order'), url: '/sales-orders' },
                 ...(emiModuleEnabled ? [{ key: 'emi_installments', title: t('nav', 'emi_installments'), url: '/emi-installments' }] : []),
+            ],
+        },
+        {
+            key: 'purchases',
+            title: t('nav', 'purchases'),
+            url: '/purchases',
+            icon: ShoppingCart,
+            permission: 'purchase.view_own',
+            items: [
+                { key: 'purchases', title: t('nav', 'purchases'), url: '/purchases' },
+                { key: 'add_purchase', title: t('nav', 'add_purchase'), url: '/purchases/create', permission: 'purchase.create' },
+                { key: 'purchase_returns', title: t('nav', 'purchase_returns'), url: '/purchase-returns' },
             ],
         },
         {
@@ -62,8 +72,6 @@ export function buildMainNavItems(emiModuleEnabled: boolean, t: ReturnType<typeo
             items: [
                 { key: 'products', title: t('nav', 'products'), url: '/products' },
                 { key: 'add_product', title: t('nav', 'add_product'), url: '/products/create', permission: 'product.create' },
-                { key: 'low_stock', title: t('nav', 'low_stock'), url: '/products?stock_status=low_stock' },
-                { key: 'out_of_stock', title: t('nav', 'out_of_stock'), url: '/products?stock_status=out_of_stock' },
                 { key: 'category', title: t('nav', 'category'), url: '/categories' },
                 { key: 'unit', title: t('nav', 'unit'), url: '/units' },
                 { key: 'brand', title: t('nav', 'brand'), url: '/brands' },
@@ -94,18 +102,6 @@ export function buildMainNavItems(emiModuleEnabled: boolean, t: ReturnType<typeo
             ],
         },
         {
-            key: 'purchases',
-            title: t('nav', 'purchases'),
-            url: '/purchases',
-            icon: ShoppingCart,
-            permission: 'purchase.view_own',
-            items: [
-                { key: 'purchases', title: t('nav', 'purchases'), url: '/purchases' },
-                { key: 'add_purchase', title: t('nav', 'add_purchase'), url: '/purchases/create', permission: 'purchase.create' },
-                { key: 'purchase_returns', title: t('nav', 'purchase_returns'), url: '/purchase-returns' },
-            ],
-        },
-        {
             key: 'expenses',
             title: t('nav', 'expenses'),
             url: '/expenses',
@@ -131,9 +127,6 @@ export function buildMainNavItems(emiModuleEnabled: boolean, t: ReturnType<typeo
                     url: '/reports/financial-position',
                     permission: 'financial_position.view',
                 },
-                { key: 'balance_sheet', title: t('nav', 'balance_sheet'), url: '/reports/balance-sheet' },
-                { key: 'cash_flow', title: t('nav', 'cash_flow'), url: '/reports/cash-flow' },
-                { key: 'trial_balance', title: t('nav', 'trial_balance'), url: '/reports/trial-balance' },
             ],
         },
         {
@@ -153,21 +146,11 @@ export function buildMainNavItems(emiModuleEnabled: boolean, t: ReturnType<typeo
             title: t('nav', 'assets_liabilities'),
             url: '/assets',
             icon: Landmark,
-            permission: 'asset.view',
             items: [
-                { key: 'assets', title: t('nav', 'assets'), url: '/assets' },
-                { key: 'other_liabilities', title: t('nav', 'other_liabilities'), url: '/other-liabilities' },
-            ],
-        },
-        {
-            key: 'investor_menu',
-            title: t('nav', 'investors'),
-            url: '/investors',
-            icon: Wallet,
-            permission: 'finance.view',
-            items: [
-                { key: 'investors', title: t('nav', 'investors'), url: '/investors' },
-                { key: 'company_loans', title: t('nav', 'company_loans'), url: '/company-loans' },
+                { key: 'assets', title: t('nav', 'assets'), url: '/assets', permission: 'asset.view' },
+                { key: 'other_liabilities', title: t('nav', 'other_liabilities'), url: '/other-liabilities', permission: 'asset.view' },
+                { key: 'investors', title: t('nav', 'investors'), url: '/investors', permission: 'finance.view' },
+                { key: 'company_loans', title: t('nav', 'company_loans'), url: '/company-loans', permission: 'finance.view' },
             ],
         },
         {
@@ -196,31 +179,12 @@ export function buildMainNavItems(emiModuleEnabled: boolean, t: ReturnType<typeo
             permission: 'report.view',
             items: [
                 { key: 'profit_loss', title: t('nav', 'profit_loss'), url: '/reports/profit-loss' },
-                { key: 'stock_report', title: t('nav', 'stock_report'), url: '/reports/stock' },
+                { key: 'balance_sheet', title: t('nav', 'balance_sheet'), url: '/reports/balance-sheet' },
+                { key: 'cash_flow', title: t('nav', 'cash_flow'), url: '/reports/cash-flow' },
+                { key: 'trial_balance', title: t('nav', 'trial_balance'), url: '/reports/trial-balance' },
                 { key: 'due_report', title: t('nav', 'due_report'), url: '/reports/due' },
                 { key: 'trending_products', title: t('nav', 'trending_products'), url: '/reports/trending-products' },
             ],
-        },
-        {
-            key: 'import_tools',
-            title: t('nav', 'import_tools'),
-            url: '/imports',
-            icon: Upload,
-            permission: 'import.view',
-        },
-        {
-            key: 'backups',
-            title: t('nav', 'backups'),
-            url: '/backups',
-            icon: DatabaseBackup,
-            permission: 'backup.manage',
-        },
-        {
-            key: 'activity_log',
-            title: t('nav', 'activity_log'),
-            url: '/activity-log',
-            icon: History,
-            permission: 'activity_log.view',
         },
         {
             key: 'user_management',
@@ -242,6 +206,20 @@ export function buildMainNavItems(emiModuleEnabled: boolean, t: ReturnType<typeo
             items: [
                 { key: 'business_settings', title: t('nav', 'business_settings'), url: '/business-settings' },
                 { key: 'invoice_settings', title: t('nav', 'invoice_settings'), url: '/invoice-settings' },
+            ],
+        },
+        {
+            // One parent for the admin utilities. No permission of its own: `filterNavByPermission` shows it
+            // only while at least one child is allowed (and hides it otherwise).
+            key: 'system_tools',
+            title: t('nav', 'system_tools'),
+            url: '/imports',
+            icon: Wrench,
+            items: [
+                { key: 'import_tools', title: t('nav', 'import_tools'), url: '/imports', permission: 'import.view' },
+                { key: 'backups', title: t('nav', 'backups'), url: '/backups', permission: 'backup.manage' },
+                { key: 'system_guide', title: t('nav', 'system_guide'), url: '/system-guide' },
+                { key: 'activity_log', title: t('nav', 'activity_log'), url: '/activity-log', permission: 'activity_log.view' },
             ],
         },
     ];

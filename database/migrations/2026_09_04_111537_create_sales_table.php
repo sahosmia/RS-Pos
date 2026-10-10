@@ -34,6 +34,15 @@ return new class extends Migration
             // which is handled separately via account selection/split payment.
             $table->string('financing_type')->default('one_time');
             $table->unsignedInteger('installment_count')->nullable();
+            // EMI terms: how interest is charged, the rate, how long and how often. The interest is added to the total at confirm.
+            $table->string('emi_interest_method')->nullable();
+            $table->decimal('emi_annual_rate', 7, 4)->default(0);
+            $table->string('emi_frequency')->nullable();
+            $table->unsignedSmallInteger('emi_tenure_value')->nullable();
+            $table->string('emi_tenure_unit')->nullable();
+            // Collect the installation charge together with the down payment (it is never financed either way).
+            $table->boolean('emi_installation_upfront')->default(false);
+            $table->decimal('emi_interest_total', 19, 4)->default(0);
             $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
             $table->foreignId('updated_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();

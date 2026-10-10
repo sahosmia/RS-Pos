@@ -59,19 +59,19 @@ export default function PurchaseReturnShow({ return: purchaseReturn, accounts }:
                     <MetricCard label="Reason" value={purchaseReturn.reason ?? '—'} />
                 </MetricGrid>
 
-                <div className="overflow-x-auto rounded-lg border">
+                <div className="overflow-x-auto rounded-brand-card bg-card shadow-[var(--brand-card-shadow-elevated)]">
                     <table className="w-full text-sm">
-                        <thead className="bg-muted/50 text-muted-foreground">
+                        <thead className="bg-brand-table-header text-muted-foreground text-xs font-semibold">
                             <tr>
-                                <th className="px-4 py-2 text-left font-medium">Product</th>
-                                <th className="px-4 py-2 text-right font-medium">Quantity</th>
-                                <th className="px-4 py-2 text-right font-medium">Unit Cost</th>
-                                <th className="px-4 py-2 text-right font-medium">Subtotal</th>
+                                <th className="px-4 py-2.5 text-left font-medium">Product</th>
+                                <th className="px-4 py-2.5 text-right font-medium">Quantity</th>
+                                <th className="px-4 py-2.5 text-right font-medium">Unit Cost</th>
+                                <th className="px-4 py-2.5 text-right font-medium">Subtotal</th>
                             </tr>
                         </thead>
                         <tbody>
                             {purchaseReturn.items.map((item) => (
-                                <tr key={item.id} className="border-t">
+                                <tr key={item.id} className="border-brand-table-divider hover:bg-brand-table-row-hover motion-colors border-t">
                                     <td className="px-4 py-2">
                                         {item.product.name} <span className="text-muted-foreground">({item.product.sku})</span>
                                     </td>
@@ -82,7 +82,7 @@ export default function PurchaseReturnShow({ return: purchaseReturn, accounts }:
                             ))}
                         </tbody>
                         <tfoot>
-                            <tr className="border-t font-medium">
+                            <tr className="border-brand-table-divider border-t font-medium">
                                 <td colSpan={3} className="px-4 py-2 text-right">
                                     Total
                                 </td>

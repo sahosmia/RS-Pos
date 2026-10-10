@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { FormEventHandler, ReactNode } from 'react';
+import { Dialog, DialogBody, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { type ComponentProps, FormEventHandler, ReactNode } from 'react';
 
 interface FormModalProps {
     open: boolean;
@@ -8,28 +8,47 @@ interface FormModalProps {
     title: string;
     description?: string;
     submitLabel?: string;
+    cancelLabel?: string;
     processing?: boolean;
     onSubmit: FormEventHandler;
     children: ReactNode;
-    /** Overrides the dialog's default `max-w-lg` — e.g. `sm:max-w-4xl` for a content-heavy form (doc/corrections2.md #5). */
+    /** Dialog width: `sm` / `default` / `lg` / `xl` / `full`. Prefer this over `contentClassName`. */
+    size?: ComponentProps<typeof DialogContent>['size'];
+    /** Overrides the dialog's width classes — e.g. `sm:max-w-4xl` for a content-heavy form (doc/corrections2.md #5). */
     contentClassName?: string;
+    /** Header icon chip, e.g. `<Pencil />`. */
+    icon?: ReactNode;
+    /** Extra content on the left of the footer (a hint, a secondary link, a total). */
+    footerStart?: ReactNode;
+    /** Phones: `fullscreen` for long forms. Default keeps the inset modal. */
+    mobile?: ComponentProps<typeof DialogContent>['mobile'];
 }
 
+/**
+ * Form in a dialog: fixed header, scrolling body (put Label/Input/Select/... fields in `children`),
+ * pinned Cancel/Submit footer. While `processing` the dialog can't be closed and Submit shows a spinner
+ * at its normal width, so nothing jumps and double-submits are impossible.
+ */
 export default function FormModal({
     open,
     onOpenChange,
     title,
     description,
     submitLabel = 'Save',
+    cancelLabel = 'Cancel',
     processing = false,
     onSubmit,
     children,
+    size,
     contentClassName,
+    icon,
+    footerStart,
+    mobile,
 }: FormModalProps) {
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className={contentClassName}>
-                <DialogHeader>
+            <DialogContent structured busy={processing} size={size} mobile={mobile} className={contentClassName}>
+                <DialogHeader icon={icon} iconTone="primary">
                     <DialogTitle>{title}</DialogTitle>
                     {description && <DialogDescription>{description}</DialogDescription>}
                 </DialogHeader>
@@ -48,17 +67,20 @@ export default function FormModal({
                         e.stopPropagation();
                         onSubmit(e);
                     }}
-                    className="space-y-4"
+                    className="flex min-h-0 flex-1 flex-col"
                 >
-                    {children}
+                    <DialogBody className="space-y-4">{children}</DialogBody>
 
-                    <DialogFooter className="gap-2">
-                        <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-                            Cancel
-                        </Button>
-                        <Button type="submit" disabled={processing}>
-                            {processing ? 'Saving...' : submitLabel}
-                        </Button>
+                    <DialogFooter className={footerStart ? 'sm:justify-between' : undefined}>
+                        {footerStart && <div className="text-muted-foreground text-sm max-sm:hidden">{footerStart}</div>}
+                        <div className="flex items-center gap-2 max-sm:flex-col-reverse max-sm:items-stretch">
+                            <Button type="button" variant="secondary" onClick={() => onOpenChange(false)} disabled={processing}>
+                                {cancelLabel}
+                            </Button>
+                            <Button type="submit" variant="primary" loading={processing}>
+                                {submitLabel}
+                            </Button>
+                        </div>
                     </DialogFooter>
                 </form>
             </DialogContent>

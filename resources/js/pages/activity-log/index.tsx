@@ -10,9 +10,9 @@ import { useListPage } from '@/hooks/table/use-list-page';
 import { type TableFilterBase } from '@/hooks/table/use-table-filters';
 import AppLayout from '@/layouts/app-layout';
 import { formatDateTime } from '@/lib/format-date';
-import { type BreadcrumbItem } from '@/types';
+import { type BreadcrumbItem, type SharedData } from '@/types';
 import { type ActivityLogEntry, type Paginated } from '@/types/models';
-import { Head } from '@inertiajs/react';
+import { Head, Link, usePage } from '@inertiajs/react';
 
 const breadcrumbs: BreadcrumbItem[] = [{ title: 'Activity Log', href: '/activity-log' }];
 
@@ -30,17 +30,21 @@ interface ActivityLogProps {
     users: { id: number; name: string }[];
     recordTypes: { value: string; label: string }[];
     filters: ActivityLogFilters;
+    /** The window the log opens on — what "Reset" returns to. Clear a date to look further back. */
+    defaultRange: { from: string; to: string };
 }
 
 const EVENTS = [
     { value: 'created', label: 'Created' },
     { value: 'updated', label: 'Updated' },
     { value: 'deleted', label: 'Deleted' },
+    { value: 'login', label: 'Login' },
+    { value: 'logout', label: 'Logout' },
 ];
 
 function GridCard({ entry }: { entry: ActivityLogEntry }) {
     return (
-        <div className="space-y-2 rounded-lg border p-3">
+        <div className="rounded-brand-card bg-card space-y-2 p-3 shadow-[var(--brand-card-shadow-elevated)]">
             <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
                     <div className="font-medium">{entry.record}</div>
@@ -58,11 +62,15 @@ function GridCard({ entry }: { entry: ActivityLogEntry }) {
 }
 
 /** Who created, changed or deleted what, and when — newest first. */
-export default function ActivityLogIndex({ activities, users, recordTypes, filters }: ActivityLogProps) {
+export default function ActivityLogIndex({ activities, users, recordTypes, filters, defaultRange }: ActivityLogProps) {
+    const { auth } = usePage<SharedData>().props;
+    const canOpenSettings = auth.permissions.includes('settings.manage');
+
     const list = useListPage({
         routeName: 'activity-log.index',
         filters,
-        emptyFilters: { from: null, to: null, causer_id: null, subject_type: null, event: null },
+        // "Reset" goes back to the default window (the last few days), not to every entry ever logged.
+        emptyFilters: { from: defaultRange.from, to: defaultRange.to, causer_id: null, subject_type: null, event: null },
         rows: activities.data,
         getId: (entry) => entry.id,
     });
@@ -74,7 +82,23 @@ export default function ActivityLogIndex({ activities, users, recordTypes, filte
             <div className="space-y-6 px-4 py-6">
                 <HeadingSmall
                     title="Activity Log"
-                    description="কে, কখন, কোন রেকর্ড তৈরি / বদল / মুছেছে — পুরনো এন্ট্রি Business Settings-এর retention অনুযায়ী মুছে যায়"
+                    description={
+                        <>
+                            কে, কখন, কোন রেকর্ড তৈরি / বদল / মুছেছে এবং কে কখন login / logout করেছে — শুরুতে শেষ ৭ দিন দেখায়; আগের দিন দেখতে From /
+                            To বদলান। পুরনো এন্ট্রি Business Settings-এর{' '}
+                            {canOpenSettings ? (
+                                <Link
+                                    href={route('business-settings.edit', { tab: 'audit' })}
+                                    className="text-brand-primary-text font-medium underline underline-offset-2"
+                                >
+                                    retention
+                                </Link>
+                            ) : (
+                                'retention'
+                            )}{' '}
+                            অনুযায়ী মুছে যায়
+                        </>
+                    }
                 />
 
                 <ListTable

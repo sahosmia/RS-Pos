@@ -1,7 +1,9 @@
 import { FormInput } from '@/components/form/form-input';
 import HeadingSmall from '@/components/heading-small';
+import { MetricCard } from '@/components/shared/metric-card';
 import { useMoneyFormat } from '@/hooks/use-money-format';
 import AppLayout from '@/layouts/app-layout';
+import { pageContainer } from '@/lib/page-container';
 import { type BreadcrumbItem } from '@/types';
 import { type ChartOfAccountLine } from '@/types/models';
 import { Head, router } from '@inertiajs/react';
@@ -43,7 +45,7 @@ export default function ProfitLoss({ from, to, income, expense, totalIncome, tot
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Profit & Loss" />
 
-            <div className="space-y-6 px-4 py-6">
+            <div className={pageContainer.medium}>
                 <HeadingSmall title="Profit & Loss" description="Accrual ভিত্তিতে — Journal থেকে সোর্স করা" />
 
                 <div className="flex flex-wrap items-end gap-2">
@@ -52,32 +54,23 @@ export default function ProfitLoss({ from, to, income, expense, totalIncome, tot
                 </div>
 
                 <div className="grid gap-4 sm:grid-cols-3">
-                    <div className="rounded-lg border p-4">
-                        <p className="text-muted-foreground text-sm">Total Income</p>
-                        <p className="text-xl font-semibold tabular-nums">{money(totalIncome)}</p>
-                    </div>
-                    <div className="rounded-lg border p-4">
-                        <p className="text-muted-foreground text-sm">Total Expense</p>
-                        <p className="text-xl font-semibold tabular-nums">{money(totalExpense)}</p>
-                    </div>
-                    <div className="rounded-lg border p-4">
-                        <p className="text-muted-foreground text-sm">Net Profit</p>
-                        <p className={`text-xl font-semibold tabular-nums ${netProfit < 0 ? 'text-destructive' : ''}`}>{money(netProfit)}</p>
-                    </div>
+                    <MetricCard label="Total Income" value={money(totalIncome)} />
+                    <MetricCard label="Total Expense" value={money(totalExpense)} />
+                    <MetricCard label="Net Profit" value={money(netProfit)} accent={netProfit < 0 ? 'danger' : 'neutral'} />
                 </div>
 
                 <div className="grid gap-4 lg:grid-cols-2">
-                    <div className="overflow-x-auto rounded-lg border">
+                    <div className="rounded-brand-card bg-card overflow-x-auto shadow-[var(--brand-card-shadow-elevated)]">
                         <table className="w-full text-sm">
-                            <thead className="bg-muted/50 text-muted-foreground">
+                            <thead className="bg-brand-table-header text-muted-foreground text-xs font-semibold">
                                 <tr>
-                                    <th className="px-4 py-2 text-left font-medium">Income Account</th>
-                                    <th className="px-4 py-2 text-right font-medium">Amount</th>
+                                    <th className="px-4 py-2.5 text-left font-medium">Income Account</th>
+                                    <th className="px-4 py-2.5 text-right font-medium">Amount</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {income.map((line) => (
-                                    <tr key={line.id} className="border-t">
+                                    <tr key={line.id} className="border-brand-table-divider hover:bg-brand-table-row-hover motion-colors border-t">
                                         <td className="px-4 py-2">
                                             {line.code} — {line.name}
                                         </td>
@@ -95,17 +88,17 @@ export default function ProfitLoss({ from, to, income, expense, totalIncome, tot
                         </table>
                     </div>
 
-                    <div className="overflow-x-auto rounded-lg border">
+                    <div className="rounded-brand-card bg-card overflow-x-auto shadow-[var(--brand-card-shadow-elevated)]">
                         <table className="w-full text-sm">
-                            <thead className="bg-muted/50 text-muted-foreground">
+                            <thead className="bg-brand-table-header text-muted-foreground text-xs font-semibold">
                                 <tr>
-                                    <th className="px-4 py-2 text-left font-medium">Expense Account</th>
-                                    <th className="px-4 py-2 text-right font-medium">Amount</th>
+                                    <th className="px-4 py-2.5 text-left font-medium">Expense Account</th>
+                                    <th className="px-4 py-2.5 text-right font-medium">Amount</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {expense.map((line) => (
-                                    <tr key={line.id} className="border-t">
+                                    <tr key={line.id} className="border-brand-table-divider hover:bg-brand-table-row-hover motion-colors border-t">
                                         <td className="px-4 py-2">
                                             {line.code} — {line.name}
                                         </td>

@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import AppLayout from '@/layouts/app-layout';
+import { pageContainer } from '@/lib/page-container';
 import { type BreadcrumbItem } from '@/types';
 import { type SaleReturnCreateSale } from '@/types/models';
 import { Head, useForm } from '@inertiajs/react';
@@ -53,7 +54,7 @@ export default function SaleReturnsCreate({ sale }: SaleReturnsCreateProps) {
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Create Sale Return" />
 
-            <div className="space-y-6 px-4 py-6">
+            <div className={pageContainer.medium}>
                 <HeadingSmall title="Create Sale Return" description={`${sale.invoice_no} — ${sale.customer.name}`} />
 
                 <form onSubmit={submit} className="space-y-4">
@@ -69,15 +70,15 @@ export default function SaleReturnsCreate({ sale }: SaleReturnsCreateProps) {
                         />
                     </div>
 
-                    <div className="overflow-x-auto rounded-lg border">
+                    <div className="rounded-brand-card bg-card overflow-x-auto shadow-[var(--brand-card-shadow-elevated)]">
                         <table className="w-full text-sm">
-                            <thead className="bg-muted/50 text-muted-foreground">
+                            <thead className="bg-brand-table-header text-muted-foreground text-xs font-semibold">
                                 <tr>
-                                    <th className="px-4 py-2 text-left font-medium">Product</th>
-                                    <th className="px-4 py-2 text-right font-medium">Sold</th>
-                                    <th className="px-4 py-2 text-right font-medium">Already Returned</th>
-                                    <th className="px-4 py-2 text-right font-medium">Remaining</th>
-                                    <th className="px-4 py-2 text-right font-medium">Return Qty</th>
+                                    <th className="px-4 py-2.5 text-left font-medium">Product</th>
+                                    <th className="px-4 py-2.5 text-right font-medium">Sold</th>
+                                    <th className="px-4 py-2.5 text-right font-medium">Already Returned</th>
+                                    <th className="px-4 py-2.5 text-right font-medium">Remaining</th>
+                                    <th className="px-4 py-2.5 text-right font-medium">Return Qty</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -85,7 +86,10 @@ export default function SaleReturnsCreate({ sale }: SaleReturnsCreateProps) {
                                     const remaining = item.quantity - item.already_returned;
 
                                     return (
-                                        <tr key={item.id} className="border-t">
+                                        <tr
+                                            key={item.id}
+                                            className="border-brand-table-divider hover:bg-brand-table-row-hover motion-colors border-t"
+                                        >
                                             <td className="px-4 py-2">
                                                 {item.product.name} <span className="text-muted-foreground">({item.product.sku})</span>
                                             </td>

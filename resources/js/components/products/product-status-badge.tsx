@@ -1,13 +1,7 @@
+import { StatusBadge } from '@/components/shared/status-badge';
 import { Badge } from '@/components/ui/badge';
 import { useTranslation } from '@/hooks/use-translation';
-import { statusTone } from '@/lib/status-tones';
 import { type StockStatus } from '@/types/models';
-
-const stockStatusColor: Record<StockStatus, string> = {
-    in_stock: statusTone.success,
-    low_stock: statusTone.warning,
-    out_of_stock: statusTone.danger,
-};
 
 interface ProductStatusBadgeProps {
     product: {
@@ -32,15 +26,11 @@ export default function ProductStatusBadge({ product, hideStockStatus = false }:
     return (
         <span className="inline-flex items-center gap-1">
             {product.manage_stock ? (
-                !hideStockStatus && (
-                    <Badge variant="outline" className={stockStatusColor[product.stock_status]}>
-                        {stockStatusLabel[product.stock_status]}
-                    </Badge>
-                )
+                !hideStockStatus && <StatusBadge status={product.stock_status} label={stockStatusLabel[product.stock_status]} />
             ) : (
                 <Badge variant="outline">{t('productList', 'service_item')}</Badge>
             )}
-            {!product.is_active && <Badge variant="outline">{t('productList', 'inactive')}</Badge>}
+            {!product.is_active && <StatusBadge status="inactive" label={t('productList', 'inactive')} />}
         </span>
     );
 }

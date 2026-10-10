@@ -12,10 +12,10 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class JournalEntry extends Model
 {
+    use HasCreator;
+
     /** @use HasFactory<JournalEntryFactory> */
     use HasFactory;
-
-    use HasCreator;
 
     /**
      * @var list<string>

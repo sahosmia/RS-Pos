@@ -1,4 +1,4 @@
-import { Input } from '@/components/ui/input';
+import { Input, type InputProps } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { Eye, EyeOff } from 'lucide-react';
 import * as React from 'react';
@@ -8,7 +8,7 @@ import * as React from 'react';
  * the whole app (corrections.md #1), so every form gets identical
  * behavior instead of each page hand-rolling its own eye icon.
  */
-const PasswordInput = React.forwardRef<HTMLInputElement, Omit<React.ComponentProps<'input'>, 'type'>>(({ className, ...props }, ref) => {
+const PasswordInput = React.forwardRef<HTMLInputElement, Omit<InputProps, 'type' | 'leadingIcon' | 'trailingIcon' | 'prefixText' | 'suffixText' | 'onClear'>>(({ className, ...props }, ref) => {
     const [visible, setVisible] = React.useState(false);
 
     return (

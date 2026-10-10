@@ -1,8 +1,8 @@
 import SaleForm from '@/components/sales/sale-form';
 import PageHeader from '@/components/shared/page-header';
 import { type ProductOption } from '@/components/shared/product-search-input';
-import AppLayout from '@/layouts/app-layout';
 import { Button } from '@/components/ui/button';
+import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { type Account, type CustomerOption } from '@/types/models';
 import { Head, Link } from '@inertiajs/react';
@@ -41,7 +41,13 @@ export default function SalesCreate({ initialCustomer, products, accounts, initi
                     }
                 />
 
-                <SaleForm mode="create" initialCustomer={initialCustomer} products={products} accounts={accounts} initialProductId={initialProductId} />
+                <SaleForm
+                    mode="create"
+                    initialCustomer={initialCustomer}
+                    products={products}
+                    accounts={accounts}
+                    initialProductId={initialProductId}
+                />
             </div>
         </AppLayout>
     );

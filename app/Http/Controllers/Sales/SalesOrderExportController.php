@@ -46,10 +46,13 @@ class SalesOrderExportController extends Controller
             'from' => ['nullable', 'date'],
             'to' => ['nullable', 'date', 'after_or_equal:from'],
             'customer_id' => ['nullable', 'integer', 'exists:contacts,id'],
-            'status' => ['nullable', 'in:pending,partial,completed,cancelled'],
+            'status' => ['nullable', 'in:open,pending,partial,completed,cancelled,all'],
             'page' => ['nullable', 'integer', 'min:1'],
             'per_page' => ['nullable', 'string', 'max:10'],
         ]);
+
+        // Same default as the list: only orders still waiting to be confirmed.
+        $validated['status'] ??= 'open';
 
         $query = SalesOrderQuery::filtered($validated);
 

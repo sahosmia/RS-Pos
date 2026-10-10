@@ -2,8 +2,7 @@ import DataTable from '@/components/data-table/data-table';
 import DataTablePagination from '@/components/data-table/data-table-pagination';
 import DataTableToolbar from '@/components/data-table/data-table-toolbar';
 import { type DataTableColumnOption, type DataTablePaginationMeta } from '@/components/data-table/types';
-import EmptyState from '@/components/shared/empty-state';
-import { Button } from '@/components/ui/button';
+import { NoResultsState } from '@/components/shared/empty-state';
 import { type ListPageState } from '@/hooks/table/use-list-page';
 import { type TableFilterBase } from '@/hooks/table/use-table-filters';
 import { type SharedData } from '@/types';
@@ -25,6 +24,8 @@ interface ListTableProps<TRow, TFilters extends TableFilterBase & { per_page: nu
     searchPlaceholder?: string;
     /** The filter controls inside the toolbar's collapsible panel. */
     filterSlot?: ReactNode;
+    /** Bulk-action chip shown in the toolbar row while rows are ticked (renders nothing when none are). */
+    selectionSlot?: ReactNode;
     /** Columns the "Columns" menu can show / hide. */
     visibilityColumns?: DataTableColumnOption[];
     /** Columns the export dialog offers; omit for pages without export. */
@@ -49,6 +50,7 @@ export default function ListTable<TRow, TFilters extends TableFilterBase & { per
     itemLabel,
     searchPlaceholder,
     filterSlot,
+    selectionSlot,
     visibilityColumns,
     exportColumns,
     emptyState,
@@ -84,6 +86,7 @@ export default function ListTable<TRow, TFilters extends TableFilterBase & { per
                     onExport: list.handleExport,
                 })}
                 filterSlot={filterSlot}
+                selectionSlot={selectionSlot}
             />
 
             <DataTable
@@ -98,11 +101,12 @@ export default function ListTable<TRow, TFilters extends TableFilterBase & { per
                 emptyState={emptyState}
                 filteredEmptyState={
                     filteredEmptyState ?? (
-                        <EmptyState title="No results match your filters" description="অন্য filter/date range দিয়ে আবার চেষ্টা করুন">
-                            <Button className="mt-2" variant="outline" onClick={list.resetFilters}>
-                                Clear filters
-                            </Button>
-                        </EmptyState>
+                        <NoResultsState
+                            title="No results match your filters"
+                            description="Try a different filter or date range."
+                            onReset={list.resetFilters}
+                            resetLabel="Clear filters"
+                        />
                     )
                 }
                 footer={

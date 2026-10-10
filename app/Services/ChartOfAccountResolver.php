@@ -26,7 +26,8 @@ class ChartOfAccountResolver
     /**
      * The next sequential sub-account code under a parent (e.g. 1010's
      * first child is 1011) — shared by every "auto-create a sub-account
-     * for this new row" flow (Account → 1010/1020, ExpenseCategory → 5200).
+     * for this new row" flow (Account → 1010/1020, ExpenseCategory → 5200). Skips any code another account
+     * already holds, so a crowded range never collides with a neighbouring parent.
      */
     public function nextChildCode(ChartOfAccount $parent): string
     {
@@ -35,6 +36,14 @@ class ChartOfAccountResolver
             ->orderByDesc('code')
             ->value('code');
 
-        return (string) ((int) ($lastChildCode ?? $parent->code) + 1);
+        $next = (int) ($lastChildCode ?? $parent->code) + 1;
+
+        // Codes are unique across the whole chart: when the next number already belongs to another account
+        // (the 10th cash account would land on 1020, the Bank parent), step past it instead of failing.
+        while (ChartOfAccount::query()->where('code', (string) $next)->exists()) {
+            $next++;
+        }
+
+        return (string) $next;
     }
 }

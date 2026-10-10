@@ -7,10 +7,13 @@ use App\Enums\StockMovementType;
 use App\Imports\Concerns\BindsCellsAsStrings;
 use App\Models\Product;
 use App\Services\StockService;
+use App\Support\ImportCell;
 use App\Support\ImportResult;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use InvalidArgumentException;
 use Maatwebsite\Excel\Concerns\ToCollection;
 use Maatwebsite\Excel\Concerns\WithCustomValueBinder;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
@@ -27,6 +30,9 @@ class OpeningStockImport implements ToCollection, WithCustomValueBinder, WithHea
 {
     use BindsCellsAsStrings;
 
+    /** The fields shown next to each row in the preview and the result. */
+    private const SHOWN = ['sku', 'quantity', 'unit_cost'];
+
     public ImportResult $result;
 
     public function __construct(
@@ -41,6 +47,16 @@ class OpeningStockImport implements ToCollection, WithCustomValueBinder, WithHea
         foreach ($rows as $index => $row) {
             $rowNumber = $index + 2;
             $data = $row->toArray();
+            $this->result->row($rowNumber, Arr::only($data, self::SHOWN));
+
+            try {
+                $data = ImportCell::normalise($data, ['sku'], []);
+                $this->result->row($rowNumber, Arr::only($data, self::SHOWN));
+            } catch (InvalidArgumentException $e) {
+                $this->result->addSkipped("Row {$rowNumber}: ".$e->getMessage());
+
+                continue;
+            }
 
             $validator = Validator::make($data, [
                 'sku' => ['required', 'string'],

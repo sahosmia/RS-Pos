@@ -18,10 +18,11 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  */
 class Investor extends Model
 {
+    use HasCreator;
+
     /** @use HasFactory<InvestorFactory> */
     use HasFactory;
 
-    use HasCreator;
     use HasLedger;
     use LogsActivityDefaults;
 
@@ -76,5 +77,13 @@ class Investor extends Model
     protected function ledgerBalanceColumn(): string
     {
         return 'total_invested';
+    }
+
+    /**
+     * Why this record can't be deleted, or null when it can — one rule for the single and the bulk delete.
+     */
+    public function deletionBlockReason(): ?string
+    {
+        return $this->transactions()->exists() ? 'This investor has recorded transactions and cannot be deleted.' : null;
     }
 }

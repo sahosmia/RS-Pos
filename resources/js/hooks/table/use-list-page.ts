@@ -29,6 +29,8 @@ interface Options<TFilters extends TableFilterBase, TRow> {
     getId: (row: TRow) => number;
     /** Omit on pages without an export endpoint. */
     export?: ListPageExport<TFilters>;
+    /** Columns hidden until the user turns them on in the Columns menu, e.g. `{ status: false }`. */
+    initialColumnVisibility?: VisibilityState;
 }
 
 export interface ListPageState<TFilters extends TableFilterBase> {
@@ -63,9 +65,10 @@ export function useListPage<TFilters extends TableFilterBase, TRow>({
     rows,
     getId,
     export: exportConfig,
+    initialColumnVisibility,
 }: Options<TFilters, TRow>): ListPageState<TFilters> {
     const [viewMode, setViewMode] = useTableViewMode();
-    const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
+    const [columnVisibility, setColumnVisibility] = useState<VisibilityState>(initialColumnVisibility ?? {});
 
     const tableFilters = useTableFilters({ routeName, filters, emptyFilters });
     const selection = useTableSelection({ rows, getId });

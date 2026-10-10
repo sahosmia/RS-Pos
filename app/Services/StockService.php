@@ -64,11 +64,14 @@ class StockService
         ?int $referenceId = null,
         ?string $note = null,
         ?float $unitCost = null,
+        bool $allowShortfall = false,
     ): StockMovement {
-        return DB::transaction(function () use ($product, $qty, $type, $referenceType, $referenceId, $note, $unitCost) {
+        return DB::transaction(function () use ($product, $qty, $type, $referenceType, $referenceId, $note, $unitCost, $allowShortfall) {
             $locked = Product::query()->lockForUpdate()->findOrFail($product->id);
 
-            if ($locked->manage_stock && $locked->current_stock < $qty) {
+            // $allowShortfall: an amendment takes the old receipt out first and puts the corrected one back inside the
+            // same transaction; the caller checks the final stock is not negative before it commits.
+            if ($locked->manage_stock && ! $allowShortfall && $locked->current_stock < $qty) {
                 throw new InsufficientStockException($locked, $qty);
             }
 

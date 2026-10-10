@@ -3,9 +3,12 @@
 namespace App\Http\Controllers\Purchases;
 
 use App\Actions\Purchases\Purchase\CreatePurchaseAction;
+use App\Actions\Purchases\Purchase\ReopenPurchaseForAmendmentAction;
 use App\Actions\Purchases\Purchase\SettlePurchaseOnSaveAction;
 use App\Actions\Purchases\Purchase\UpdatePurchaseAction;
+use App\Enums\PurchaseStatus;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Common\BulkDestroyRequest;
 use App\Http\Requests\Purchases\Purchase\StorePurchaseRequest;
 use App\Http\Requests\Purchases\Purchase\UpdatePurchaseRequest;
 use App\Models\Account;
@@ -14,9 +17,12 @@ use App\Models\Product;
 use App\Models\Purchase;
 use App\Models\Settings;
 use App\Queries\Purchase\PurchaseQuery;
+use App\Support\BulkDelete;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -58,6 +64,7 @@ class PurchaseController extends Controller
             'status' => $purchase->status,
             'added_by' => $purchase->creator?->name,
             'can_edit' => $purchase->canEdit(),
+            'can_amend' => $purchase->amendBlockReason() === null,
         ]);
 
         $statsQuery = PurchaseQuery::filtered($validated, $request->user());
@@ -131,7 +138,7 @@ class PurchaseController extends Controller
             return $settle->execute($purchase, $data, $receiveNow);
         });
 
-        return to_route('purchases.show', $purchase);
+        return to_route('purchases.index');
     }
 
     public function show(Purchase $purchase): Response
@@ -144,11 +151,13 @@ class PurchaseController extends Controller
         ]);
     }
 
-    public function edit(Purchase $purchase): Response
+    public function edit(Request $request, Purchase $purchase): Response
     {
-        abort_unless($purchase->canEdit(), 403);
+        // A Draft/Ordered purchase is edited freely; a Received one is amended (taken out and received again) by whoever may edit purchases.
+        $amending = ! $purchase->canEdit();
+        abort_if($amending && (! $request->user()->can('purchase.edit') || $purchase->amendBlockReason() !== null), 403);
 
-        $purchase->load(['items', 'supplier:id,name,phone,business_name,balance']);
+        $purchase->load(['items.serialNumbers', 'supplier:id,name,phone,business_name,balance']);
 
         // The async Product picker (doc/corrections2.md #8) only knows about whatever's been searched —
         // an edit form needs its already-picked supplier/products' labels up front too, in the same shape
@@ -160,10 +169,17 @@ class PurchaseController extends Controller
         return Inertia::render('purchases/edit', [
             'purchase' => [
                 'id' => $purchase->id,
+                'invoice_no' => $purchase->invoice_no,
                 'supplier_id' => $purchase->supplier_id,
                 'purchase_date' => $purchase->purchase_date->toDateString(),
                 'status' => $purchase->status,
-                'paid_amount' => $purchase->paid_amount,
+                // An amendment takes the old payments back out first, so it starts from nothing paid and the rows below.
+                'paid_amount' => $amending ? 0 : $purchase->paid_amount,
+                'amending' => $amending,
+                'payments' => $amending ? $purchase->paidPerAccount() : [],
+                'serial_numbers' => $amending
+                    ? $purchase->items->values()->mapWithKeys(fn ($item, $index) => [$index => $item->serialNumbers->pluck('serial_number')->all()])->all()
+                    : (object) [],
                 'discount_type' => $purchase->discount_type?->value,
                 'discount_value' => $purchase->discount_value,
                 'items' => $purchase->items->map(fn ($item) => [
@@ -181,10 +197,15 @@ class PurchaseController extends Controller
         ]);
     }
 
-    public function update(UpdatePurchaseRequest $request, Purchase $purchase, UpdatePurchaseAction $updatePurchase, SettlePurchaseOnSaveAction $settle): RedirectResponse
-    {
+    public function update(
+        UpdatePurchaseRequest $request,
+        Purchase $purchase,
+        UpdatePurchaseAction $updatePurchase,
+        SettlePurchaseOnSaveAction $settle,
+        ReopenPurchaseForAmendmentAction $reopenPurchase,
+    ): RedirectResponse {
         if (! $purchase->canEdit()) {
-            return back()->withErrors(['purchase' => 'This purchase has already been received and can no longer be edited directly.']);
+            return $this->amend($request, $purchase, $updatePurchase, $settle, $reopenPurchase);
         }
 
         $data = $request->validated();
@@ -200,16 +221,62 @@ class PurchaseController extends Controller
     }
 
     /**
+     * Editing a Received purchase: take the receipt out, save the corrected version on the same invoice and receive it
+     * again — all in one transaction, so a failure (a serial already sold, stock that cannot cover what was sold since,
+     * a closed period) leaves the original purchase untouched.
+     */
+    private function amend(UpdatePurchaseRequest $request, Purchase $purchase, UpdatePurchaseAction $updatePurchase, SettlePurchaseOnSaveAction $settle, ReopenPurchaseForAmendmentAction $reopenPurchase): RedirectResponse
+    {
+        $data = $request->validated();
+        $reason = (string) $data['amend_reason'];
+
+        DB::transaction(function () use ($purchase, $data, $reason, $updatePurchase, $settle, $reopenPurchase) {
+            $before = $purchase->items()->pluck('product_id');
+            $valuesBefore = $reopenPurchase->snapshotValues($purchase);
+
+            $purchase = $reopenPurchase->execute($purchase, $reason);
+            $updatePurchase->execute($purchase, [...$data, 'status' => 'draft']);
+            $purchase = $settle->execute($purchase->refresh(), $data, true);
+
+            // Units of the old receipt that were already sold now cost what the corrected receipt says; keep the books in step.
+            $reopenPurchase->settleValueDrift($purchase, $valuesBefore);
+
+            $this->assertStockIsWhole($before->merge($purchase->items()->pluck('product_id'))->unique());
+        });
+
+        return to_route('purchases.show', $purchase);
+    }
+
+    /**
+     * Taking the old receipt out may leave the stock below what was already sold from it; the corrected receipt has to
+     * bring it back to at least zero, otherwise the amendment would invent units that were sold but never bought.
+     *
+     * @param  Collection<int, int>  $productIds
+     *
+     * @throws ValidationException
+     */
+    private function assertStockIsWhole(Collection $productIds): void
+    {
+        $short = Product::query()
+            ->whereIn('id', $productIds)
+            ->where('manage_stock', true)
+            ->where('current_stock', '<', 0)
+            ->pluck('name');
+
+        if ($short->isNotEmpty()) {
+            throw ValidationException::withMessages([
+                'items' => 'Part of this purchase was already sold, so the quantity cannot go below what has been sold: '.$short->implode(', ').'.',
+            ]);
+        }
+    }
+
+    /**
      * Only Draft/Ordered purchases (no stock movement yet) can be deleted.
      */
     public function destroy(Purchase $purchase): RedirectResponse
     {
-        if (! $purchase->canEdit()) {
-            return back()->withErrors(['purchase' => 'This purchase has already been received and cannot be deleted.']);
-        }
-
-        if ($purchase->paid_amount > 0) {
-            return back()->withErrors(['purchase' => 'This purchase already has a payment recorded — cancel it instead, so the payment is reversed properly.']);
+        if ($reason = $purchase->deletionBlockReason()) {
+            return back()->withErrors(['purchase' => $reason]);
         }
 
         $purchase->delete();
@@ -238,6 +305,9 @@ class PurchaseController extends Controller
             'payment_status' => $purchase->payment_status,
             'status' => $purchase->status,
             'can_edit' => $purchase->canEdit(),
+            'can_amend' => $purchase->amendBlockReason() === null,
+            // The price alone can be corrected on any received purchase without a return, even when goods are sold.
+            'can_adjust_cost' => $purchase->status === PurchaseStatus::Received && ! $purchase->returns()->exists(),
             'items' => $purchase->items->map(fn ($item) => [
                 'id' => $item->id,
                 'product' => $item->product->only(['id', 'name', 'sku', 'track_serial_number']),
@@ -250,5 +320,23 @@ class PurchaseController extends Controller
                 'subtotal' => $item->subtotal,
             ]),
         ];
+    }
+
+    /**
+     * "Delete selected" — each record is checked by the same rule as the single delete.
+     */
+    public function bulkDestroy(BulkDestroyRequest $request): RedirectResponse
+    {
+        $user = $request->user();
+
+        return BulkDelete::respond(BulkDelete::run(
+            $request->validated('ids'),
+            Purchase::query()
+                ->whereIn('id', $request->validated('ids'))
+                ->when(! $user->can('purchase.view_all'), fn ($query) => $query->where('created_by', $user->id))
+                ->get(),
+            fn (Purchase $purchase) => $purchase->deletionBlockReason(),
+            fn (Purchase $purchase) => $purchase->delete(),
+        ));
     }
 }

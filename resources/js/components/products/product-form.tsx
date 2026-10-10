@@ -91,8 +91,10 @@ export default function ProductForm({ mode, product, categories, brands, units }
             <form onSubmit={submit} className="space-y-5 pb-24 sm:pb-0">
                 <BasicInfoSection form={form} categories={categories} brands={brands} units={units} onAddLookup={lookup.open} />
                 <PricingStockSection form={form} mode={mode} product={product} canSetOpeningStock={product ? product.can_set_opening_stock : true} />
-                <ServiceWarrantySection form={form} />
-                <VisibilityMediaSection form={form} savedImageUrl={product?.image_url ?? null} />
+                <div className="grid items-start gap-5 lg:grid-cols-2">
+                    <ServiceWarrantySection form={form} />
+                    <VisibilityMediaSection form={form} savedImageUrl={product?.image_url ?? null} />
+                </div>
 
                 <DesktopActionBar mode={mode} processing={form.processing} />
             </form>

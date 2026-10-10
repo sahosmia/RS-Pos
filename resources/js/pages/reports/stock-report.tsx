@@ -1,5 +1,6 @@
 import HeadingSmall from '@/components/heading-small';
-import { Badge } from '@/components/ui/badge';
+import { MetricCard } from '@/components/shared/metric-card';
+import { StatusBadge } from '@/components/shared/status-badge';
 import { useMoneyFormat } from '@/hooks/use-money-format';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
@@ -13,12 +14,6 @@ interface StockReportProps {
     totalValue: number;
     lowStockCount: number;
 }
-
-const statusVariant: Record<StockReportRow['stock_status'], 'secondary' | 'outline' | 'destructive'> = {
-    in_stock: 'secondary',
-    low_stock: 'outline',
-    out_of_stock: 'destructive',
-};
 
 const statusLabel: Record<StockReportRow['stock_status'], string> = {
     in_stock: 'In Stock',
@@ -37,30 +32,24 @@ export default function StockReport({ rows, totalValue, lowStockCount }: StockRe
                 <HeadingSmall title="Stock Report" description="বর্তমান স্টক ও মূল্য" />
 
                 <div className="grid gap-4 sm:grid-cols-2">
-                    <div className="rounded-lg border p-4">
-                        <p className="text-muted-foreground text-sm">Total Stock Value</p>
-                        <p className="text-xl font-semibold tabular-nums">{money(totalValue)}</p>
-                    </div>
-                    <div className="rounded-lg border p-4">
-                        <p className="text-muted-foreground text-sm">Low/Out of Stock Products</p>
-                        <p className="text-xl font-semibold tabular-nums">{lowStockCount}</p>
-                    </div>
+                    <MetricCard label="Total Stock Value" value={money(totalValue)} />
+                    <MetricCard label="Low/Out of Stock Products" value={lowStockCount} />
                 </div>
 
-                <div className="overflow-x-auto rounded-lg border">
+                <div className="rounded-brand-card bg-card overflow-x-auto shadow-[var(--brand-card-shadow-elevated)]">
                     <table className="w-full text-sm">
-                        <thead className="bg-muted/50 text-muted-foreground">
+                        <thead className="bg-brand-table-header text-muted-foreground text-xs font-semibold">
                             <tr>
-                                <th className="px-4 py-2 text-left font-medium">Product</th>
-                                <th className="px-4 py-2 text-right font-medium">Stock</th>
-                                <th className="px-4 py-2 text-right font-medium">Avg Cost</th>
-                                <th className="px-4 py-2 text-right font-medium">Value</th>
-                                <th className="px-4 py-2 text-left font-medium">Status</th>
+                                <th className="px-4 py-2.5 text-left font-medium">Product</th>
+                                <th className="px-4 py-2.5 text-right font-medium">Stock</th>
+                                <th className="px-4 py-2.5 text-right font-medium">Avg Cost</th>
+                                <th className="px-4 py-2.5 text-right font-medium">Value</th>
+                                <th className="px-4 py-2.5 text-left font-medium">Status</th>
                             </tr>
                         </thead>
                         <tbody>
                             {rows.map((row) => (
-                                <tr key={row.id} className="border-t">
+                                <tr key={row.id} className="border-brand-table-divider hover:bg-brand-table-row-hover motion-colors border-t">
                                     <td className="px-4 py-2">
                                         {row.name} <span className="text-muted-foreground">({row.sku})</span>
                                     </td>
@@ -68,7 +57,7 @@ export default function StockReport({ rows, totalValue, lowStockCount }: StockRe
                                     <td className="px-4 py-2 text-right tabular-nums">{money(row.avg_cost)}</td>
                                     <td className="px-4 py-2 text-right tabular-nums">{money(row.stock_value)}</td>
                                     <td className="px-4 py-2">
-                                        <Badge variant={statusVariant[row.stock_status]}>{statusLabel[row.stock_status]}</Badge>
+                                        <StatusBadge status={row.stock_status} label={statusLabel[row.stock_status]} />
                                     </td>
                                 </tr>
                             ))}

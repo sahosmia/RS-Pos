@@ -3,8 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\BusinessSettings\StoreBrandingImageRequest;
+use App\Http\Requests\BusinessSettings\TestSmsRequest;
 use App\Http\Requests\BusinessSettings\UpdateBusinessSettingsRequest;
 use App\Models\Settings;
+use App\Services\SmsGateway;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -21,6 +23,8 @@ class BusinessSettingsController extends Controller
                 // Nullable until an admin saves their own list — resolve to the
                 // fallback here so the "Rows per page" editor always has an array to render.
                 'pagination_per_page_options' => $settings->paginationOptions(),
+                // The key itself is never sent to the browser; the form only needs to know whether one is saved.
+                'sms_api_key_set' => filled($settings->sms_api_key),
                 ...$this->brandingProps($settings),
             ],
         ]);
@@ -55,11 +59,28 @@ class BusinessSettingsController extends Controller
         ];
     }
 
+    /**
+     * "Send a test SMS" — uses the settings as saved, so save first. Says plainly whether the SMS company accepted it.
+     */
+    public function testSms(TestSmsRequest $request, SmsGateway $sms): RedirectResponse
+    {
+        $result = $sms->send($request->validated('phone'), 'Test message from '.(Settings::current()->shop_name ?: 'your shop').': SMS is working.');
+
+        return $result['ok'] ? back() : back()->withErrors(['sms' => $result['detail']]);
+    }
+
     public function update(UpdateBusinessSettingsRequest $request): RedirectResponse
     {
         $settings = Settings::current();
 
-        $settings->fill($request->validated());
+        $data = $request->validated();
+
+        // A blank key box means "keep the saved key" (it is never sent back to the page to fill in).
+        if (blank($data['sms_api_key'] ?? null)) {
+            unset($data['sms_api_key']);
+        }
+
+        $settings->fill($data);
         $settings->updated_by = $request->user()->id;
         $settings->save();
 

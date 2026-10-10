@@ -1,5 +1,7 @@
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { Button } from '@/components/ui/button';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandLoading } from '@/components/ui/command';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
+import { Tip } from '@/components/ui/tooltip';
 import { useMoneyFormat } from '@/hooks/use-money-format';
 import { router } from '@inertiajs/react';
 import { Search } from 'lucide-react';
@@ -100,14 +102,18 @@ export default function GlobalSearchDialog() {
 
     return (
         <>
-            <button
-                type="button"
-                onClick={() => setOpen(true)}
-                className="text-muted-foreground hover:bg-accent hover:text-accent-foreground flex h-9 w-9 items-center justify-center rounded-md border transition-colors"
-                aria-label="Search"
-            >
-                <Search className="h-4 w-4" />
-            </button>
+            <Tip label="Search" shortcut="Ctrl K">
+                <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    onClick={() => setOpen(true)}
+                    aria-label="Search"
+                    aria-keyshortcuts="Control+K Meta+K"
+                >
+                    <Search />
+                </Button>
+            </Tip>
 
             <Dialog open={open} onOpenChange={setOpen}>
                 <DialogTitle className="sr-only">Global Search</DialogTitle>
@@ -120,6 +126,7 @@ export default function GlobalSearchDialog() {
                         <CommandInput placeholder="Search products, contacts, sales, purchases, expenses..." value={query} onValueChange={setQuery} />
                         <CommandList>
                             {query.trim() === '' && <CommandEmpty>Type to search across the whole system.</CommandEmpty>}
+                            {query.trim() !== '' && loading && !hasResults && <CommandLoading />}
                             {query.trim() !== '' && !loading && !hasResults && <CommandEmpty>No results found.</CommandEmpty>}
 
                             {groups.map(

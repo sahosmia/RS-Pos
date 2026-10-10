@@ -3,6 +3,7 @@
 namespace App\Actions\Sales\Sale;
 
 use App\Models\Sale;
+use App\Support\EmiTerms;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -13,7 +14,7 @@ use Illuminate\Support\Facades\DB;
 class UpdateSaleAction
 {
     /**
-     * @param  array{customer_id: int, sale_date: string, status: string, discount_type?: string|null, discount_value?: float|string|null, valid_until?: string|null, financing_type?: string, installment_count?: int|string|null, items: array<int, array{product_id: int, quantity: float|string, unit_price: float|string, installation_required?: bool, installation_charge?: float|string|null, note?: string|null, serial_numbers?: array<int, string>}>}  $data
+     * @param  array{customer_id: int, sale_date: string, status: string, discount_type?: string|null, discount_value?: float|string|null, valid_until?: string|null, financing_type?: string, installment_count?: int|string|null, emi_interest_method?: string|null, emi_annual_rate?: float|string|null, emi_frequency?: string|null, emi_tenure_value?: int|string|null, emi_tenure_unit?: string|null, items: array<int, array{product_id: int, quantity: float|string, unit_price: float|string, installation_required?: bool, installation_charge?: float|string|null, note?: string|null, serial_numbers?: array<int, string>}>}  $data
      */
     public function execute(Sale $sale, array $data): Sale
     {
@@ -25,8 +26,7 @@ class UpdateSaleAction
                 'discount_type' => $data['discount_type'] ?? null,
                 'discount_value' => $data['discount_value'] ?? 0,
                 'valid_until' => $data['valid_until'] ?? null,
-                'financing_type' => $data['financing_type'] ?? 'one_time',
-                'installment_count' => $data['installment_count'] ?? null,
+                ...EmiTerms::columns($data),
             ]);
 
             SaleTotals::sync($sale, $data['items'])->applyTo($sale);

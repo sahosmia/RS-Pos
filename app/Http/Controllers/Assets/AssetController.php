@@ -7,11 +7,13 @@ use App\Actions\Asset\UpdateAssetAction;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Asset\StoreAssetRequest;
 use App\Http\Requests\Asset\UpdateAssetRequest;
+use App\Http\Requests\Common\BulkDestroyRequest;
 use App\Models\Account;
 use App\Models\Asset;
 use App\Models\AssetTransaction;
 use App\Models\Settings;
 use App\Queries\Asset\AssetQuery;
+use App\Support\BulkDelete;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -114,14 +116,25 @@ class AssetController extends Controller
      */
     public function destroy(Asset $asset): RedirectResponse
     {
-        if ($asset->transactions()->exists()) {
-            return back()->withErrors([
-                'asset' => 'This asset has recorded transactions and cannot be deleted.',
-            ]);
+        if ($reason = $asset->deletionBlockReason()) {
+            return back()->withErrors(['asset' => $reason]);
         }
 
         $asset->delete();
 
         return to_route('assets.index');
+    }
+
+    /**
+     * "Delete selected" — each record is checked by the same rule as the single delete.
+     */
+    public function bulkDestroy(BulkDestroyRequest $request): RedirectResponse
+    {
+        return BulkDelete::respond(BulkDelete::run(
+            $request->validated('ids'),
+            Asset::query()->whereIn('id', $request->validated('ids'))->get(),
+            fn (Asset $asset) => $asset->deletionBlockReason(),
+            fn (Asset $asset) => $asset->delete(),
+        ));
     }
 }

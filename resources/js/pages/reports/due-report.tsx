@@ -1,6 +1,8 @@
 import HeadingSmall from '@/components/heading-small';
+import { MetricCard } from '@/components/shared/metric-card';
 import { useMoneyFormat } from '@/hooks/use-money-format';
 import AppLayout from '@/layouts/app-layout';
+import { pageContainer } from '@/lib/page-container';
 import { type BreadcrumbItem } from '@/types';
 import { type DueRow } from '@/types/models';
 import { Head } from '@inertiajs/react';
@@ -18,31 +20,21 @@ interface DueReportProps {
     totalPayable: number;
 }
 
-function DueTable({
-    title,
-    rows,
-    totalCount,
-    money,
-}: {
-    title: string;
-    rows: DueRow[];
-    totalCount: number;
-    money: (amount: number) => string;
-}) {
+function DueTable({ title, rows, totalCount, money }: { title: string; rows: DueRow[]; totalCount: number; money: (amount: number) => string }) {
     return (
         <div className="space-y-1">
-            <div className="overflow-x-auto rounded-lg border">
+            <div className="rounded-brand-card bg-card overflow-x-auto shadow-[var(--brand-card-shadow-elevated)]">
                 <table className="w-full text-sm">
-                    <thead className="bg-muted/50 text-muted-foreground">
+                    <thead className="bg-brand-table-header text-muted-foreground text-xs font-semibold">
                         <tr>
-                            <th className="px-4 py-2 text-left font-medium">{title}</th>
-                            {rows.some((row) => row.phone) && <th className="px-4 py-2 text-left font-medium">Phone</th>}
-                            <th className="px-4 py-2 text-right font-medium">Due</th>
+                            <th className="px-4 py-2.5 text-left font-medium">{title}</th>
+                            {rows.some((row) => row.phone) && <th className="px-4 py-2.5 text-left font-medium">Phone</th>}
+                            <th className="px-4 py-2.5 text-right font-medium">Due</th>
                         </tr>
                     </thead>
                     <tbody>
                         {rows.map((row) => (
-                            <tr key={row.id} className="border-t">
+                            <tr key={row.id} className="border-brand-table-divider hover:bg-brand-table-row-hover motion-colors border-t">
                                 <td className="px-4 py-2">{row.name}</td>
                                 {rows.some((r) => r.phone) && <td className="px-4 py-2">{row.phone}</td>}
                                 <td className="px-4 py-2 text-right tabular-nums">{money(row.balance)}</td>
@@ -83,18 +75,12 @@ export default function DueReport({
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Due Report" />
 
-            <div className="space-y-6 px-4 py-6">
+            <div className={pageContainer.wide}>
                 <HeadingSmall title="Due Report" description="Customer/Supplier/Staff-এর বকেয়া" />
 
                 <div className="grid gap-4 sm:grid-cols-2">
-                    <div className="rounded-lg border p-4">
-                        <p className="text-muted-foreground text-sm">Total Receivable</p>
-                        <p className="text-xl font-semibold tabular-nums">{money(totalReceivable)}</p>
-                    </div>
-                    <div className="rounded-lg border p-4">
-                        <p className="text-muted-foreground text-sm">Total Payable</p>
-                        <p className="text-xl font-semibold tabular-nums">{money(totalPayable)}</p>
-                    </div>
+                    <MetricCard label="Total Receivable" value={money(totalReceivable)} />
+                    <MetricCard label="Total Payable" value={money(totalPayable)} />
                 </div>
 
                 <div className="grid gap-4 lg:grid-cols-3">

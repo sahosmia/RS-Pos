@@ -16,10 +16,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  */
 class StockMovement extends Model
 {
+    use HasCreator;
+
     /** @use HasFactory<StockMovementFactory> */
     use HasFactory;
-
-    use HasCreator;
 
     /**
      * @var list<string>

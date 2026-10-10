@@ -4,6 +4,8 @@ use App\Enums\ThemeColor;
 use App\Models\Settings;
 use App\Models\User;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 
 test('guests are redirected to the login page', function () {
@@ -278,4 +280,54 @@ test('the login page shares the branding with guests', function () {
     $this->get('/login')->assertInertia(fn ($page) => $page
         ->where('shop.shop_name', 'My Fridge Shop')
         ->where('shop.shop_logo_url', fn ($url) => is_string($url) && $url !== ''));
+});
+
+test('sms settings are saved, the api key is encrypted and never sent to the page, and a blank key keeps the saved one', function () {
+    $settings = Settings::factory()->create();
+    $this->actingAs(User::factory()->create());
+
+    $payload = fn (string $key) => [
+        'shop_name' => 'Shop', 'currency_symbol' => '৳', 'invoice_prefix' => 'INV-', 'invoice_next_number' => 1,
+        'purchase_prefix' => 'PUR-', 'purchase_next_number' => 1, 'fiscal_year_start_month' => 1,
+        'thermal_printer_enabled' => false, 'emi_module_enabled' => false, 'serial_number_module_enabled' => false,
+        'pagination_per_page_options' => [20], 'pagination_default_per_page' => 20, 'pagination_allow_all' => true,
+        'activity_log_retention_months' => 12, 'theme_color' => 'blue',
+        'sms_enabled' => true, 'sms_gateway_url' => 'https://sms.test/send', 'sms_api_key' => $key,
+    ];
+
+    $this->patch('/business-settings', $payload('secret-123'))->assertRedirect('/business-settings');
+
+    expect($settings->fresh()->sms_api_key)->toBe('secret-123')
+        ->and(DB::table('settings')->value('sms_api_key'))->not->toContain('secret-123');
+
+    $this->patch('/business-settings', $payload(''))->assertRedirect('/business-settings');
+    expect($settings->fresh()->sms_api_key)->toBe('secret-123');
+
+    $this->get('/business-settings')->assertInertia(fn ($page) => $page
+        ->where('settings.sms_api_key_set', true)
+        ->missing('settings.sms_api_key'));
+});
+
+test('a gateway url is required once sms is switched on', function () {
+    Settings::factory()->create();
+    $this->actingAs(User::factory()->create());
+
+    $this->patch('/business-settings', [
+        'shop_name' => 'Shop', 'currency_symbol' => '৳', 'invoice_prefix' => 'INV-', 'invoice_next_number' => 1,
+        'purchase_prefix' => 'PUR-', 'purchase_next_number' => 1, 'fiscal_year_start_month' => 1,
+        'thermal_printer_enabled' => false, 'emi_module_enabled' => false, 'serial_number_module_enabled' => false,
+        'pagination_per_page_options' => [20], 'pagination_default_per_page' => 20, 'pagination_allow_all' => true,
+        'activity_log_retention_months' => 12, 'theme_color' => 'blue', 'sms_enabled' => true,
+    ])->assertSessionHasErrors('sms_gateway_url');
+});
+
+test('a test sms is sent with the saved settings and a refusal is shown', function () {
+    Settings::factory()->create(['sms_enabled' => true, 'sms_gateway_url' => 'https://sms.test/send', 'sms_api_key' => 'k', 'sms_api_key_param' => 'api_key']);
+    $this->actingAs(User::factory()->create());
+
+    Http::fake(['sms.test/*' => Http::sequence()->push('OK', 200)->push('Low balance', 402)]);
+    $this->post('/business-settings/sms/test', ['phone' => '01712345678'])->assertSessionHasNoErrors();
+    Http::assertSent(fn ($request) => $request['number'] === '8801712345678' && $request['api_key'] === 'k');
+
+    $this->post('/business-settings/sms/test', ['phone' => '01712345678'])->assertSessionHasErrors('sms');
 });

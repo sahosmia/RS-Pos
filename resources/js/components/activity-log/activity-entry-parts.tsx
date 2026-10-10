@@ -5,9 +5,11 @@ const EVENT_TONE: Record<string, string> = {
     created: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400',
     updated: 'bg-sky-100 text-sky-700 dark:bg-sky-500/15 dark:text-sky-400',
     deleted: 'bg-red-100 text-red-700 dark:bg-red-500/15 dark:text-red-400',
+    login: 'bg-brand-primary/12 text-brand-primary-text',
+    logout: 'bg-brand-secondary text-muted-foreground',
 };
 
-/** Created / Updated / Deleted pill. */
+/** Created / Updated / Deleted / Login / Logout pill. */
 export function EventBadge({ event }: { event: string }) {
     return (
         <span

@@ -3,7 +3,7 @@ import DataTableCheckbox from '@/components/data-table/data-table-checkbox';
 import DataTableColumnHeader from '@/components/data-table/data-table-column-header';
 import DataTableRowActions from '@/components/data-table/data-table-row-actions';
 import { type DataTableColumnOption } from '@/components/data-table/types';
-import { Badge } from '@/components/ui/badge';
+import { StatusBadge } from '@/components/shared/status-badge';
 import { type ListPageState } from '@/hooks/table/use-list-page';
 import { formatDateTime } from '@/lib/format-date';
 import { type JournalEntryListItem } from '@/types/models';
@@ -43,7 +43,7 @@ export const JOURNAL_EXPORT_COLUMN_MAP: Record<string, string[]> = {
 export const referenceLabel = (entry: JournalEntryListItem) => (entry.reference_type ? `${entry.reference_type} #${entry.reference_id}` : '—');
 
 export function JournalStatusBadge({ status }: { status: JournalEntryListItem['status'] }) {
-    return <Badge variant={status === 'reversed' ? 'outline' : 'secondary'}>{status === 'reversed' ? 'Reversed' : 'Posted'}</Badge>;
+    return <StatusBadge status={status} label={status === 'reversed' ? 'Reversed' : 'Posted'} />;
 }
 
 interface Options {

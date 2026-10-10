@@ -1,5 +1,6 @@
 import ListTable from '@/components/data-table/list-table';
 import HeadingSmall from '@/components/heading-small';
+import { EmiCollectionPanel, type CollectionGroup, type EmiCollection, type EmiHeadline } from '@/components/sales/emi-collection-panel';
 import {
     EMI_EXPORT_COLUMN_MAP,
     EMI_EXPORT_COLUMNS,
@@ -26,15 +27,20 @@ interface EmiInstallmentFilters extends TableFilterBase {
     status: EmiInstallmentStatusValue | null;
     search: string | null;
     per_page: number | 'all';
+    /** Grouping of the collection breakdown. Lives with the table filters so it survives searching/paging. */
+    group: CollectionGroup;
+    year: number;
 }
 
 interface EmiInstallmentsIndexProps {
     installments: Paginated<EmiInstallmentListItem>;
     accounts: Account[];
     filters: EmiInstallmentFilters;
+    headline: EmiHeadline;
+    collection: EmiCollection;
 }
 
-export default function EmiInstallmentsIndex({ installments, accounts, filters }: EmiInstallmentsIndexProps) {
+export default function EmiInstallmentsIndex({ installments, accounts, filters, headline, collection }: EmiInstallmentsIndexProps) {
     const money = useMoneyFormat();
     const [paying, setPaying] = useState<EmiInstallmentListItem | null>(null);
 
@@ -63,6 +69,8 @@ export default function EmiInstallmentsIndex({ installments, accounts, filters }
             <div className="space-y-6 px-4 py-6">
                 <HeadingSmall title="EMI Installments" description="সব বিক্রির কিস্তির সময়সূচি ও পেমেন্ট" />
 
+                <EmiCollectionPanel headline={headline} collection={collection} onChange={(next) => list.applyFilters({ ...next, page: 1 })} />
+
                 <ListTable
                     list={list}
                     data={installments}
@@ -78,7 +86,7 @@ export default function EmiInstallmentsIndex({ installments, accounts, filters }
                         />
                     )}
                     itemLabel="installments"
-                    searchPlaceholder="Invoice no বা customer name..."
+                    searchPlaceholder="Invoice, customer name or phone..."
                     visibilityColumns={EMI_VISIBILITY_COLUMNS}
                     exportColumns={EMI_EXPORT_COLUMNS}
                     filterSlot={

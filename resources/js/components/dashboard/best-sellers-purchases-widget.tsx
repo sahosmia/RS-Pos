@@ -51,7 +51,7 @@ export default function BestSellersPurchasesWidget({ bestSellers, purchases, per
     };
 
     return (
-        <div className="rounded-xl border bg-card p-4 shadow-xs">
+        <div className="p-4">
             <div className="mb-4 flex flex-wrap items-center justify-between gap-3 border-b pb-3">
                 <div className="flex items-center gap-3">
                     <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-amber-100 text-amber-600 dark:bg-amber-950 dark:text-amber-300">
@@ -73,23 +73,23 @@ export default function BestSellersPurchasesWidget({ bestSellers, purchases, per
 
             <div className={`grid gap-6 transition-opacity lg:grid-cols-2 ${loading ? 'opacity-60' : ''}`}>
                 <div>
-                    <h4 className="mb-2 flex items-center gap-1.5 text-sm font-semibold text-muted-foreground">
+                    <h4 className="text-muted-foreground mb-2 flex items-center gap-1.5 text-sm font-semibold">
                         <Award className="size-4" />
                         Best Sellers
                     </h4>
                     {bestSellers.length === 0 ? (
-                        <p className="py-6 text-center text-sm text-muted-foreground">No sales in this period.</p>
+                        <p className="text-muted-foreground py-6 text-center text-sm">No sales in this period.</p>
                     ) : (
                         <ul className="divide-y">
                             {bestSellers.map((item) => (
                                 <li key={item.id} className="flex items-center justify-between gap-3 py-2.5 text-sm">
                                     <div className="min-w-0">
                                         <p className="truncate font-medium text-slate-800 dark:text-slate-100">{item.name}</p>
-                                        <p className="truncate text-xs text-muted-foreground">{item.sku}</p>
+                                        <p className="text-muted-foreground truncate text-xs">{item.sku}</p>
                                     </div>
                                     <div className="shrink-0 text-right">
                                         <p className="font-semibold tabular-nums">{item.quantity} sold</p>
-                                        <p className="text-xs tabular-nums text-muted-foreground">{money(item.total_amount)}</p>
+                                        <p className="text-muted-foreground text-xs tabular-nums">{money(item.total_amount)}</p>
                                     </div>
                                 </li>
                             ))}
@@ -98,12 +98,12 @@ export default function BestSellersPurchasesWidget({ bestSellers, purchases, per
                 </div>
 
                 <div>
-                    <h4 className="mb-2 flex items-center gap-1.5 text-sm font-semibold text-muted-foreground">
+                    <h4 className="text-muted-foreground mb-2 flex items-center gap-1.5 text-sm font-semibold">
                         <ShoppingBag className="size-4" />
                         Purchases
                     </h4>
                     {purchases.length === 0 ? (
-                        <p className="py-6 text-center text-sm text-muted-foreground">No purchases in this period.</p>
+                        <p className="text-muted-foreground py-6 text-center text-sm">No purchases in this period.</p>
                     ) : (
                         <ul className="divide-y">
                             {purchases.map((purchase) => (
@@ -115,7 +115,7 @@ export default function BestSellersPurchasesWidget({ bestSellers, purchases, per
                                         >
                                             {purchase.invoice_no}
                                         </Link>
-                                        <p className="truncate text-xs text-muted-foreground">{purchase.party_name}</p>
+                                        <p className="text-muted-foreground truncate text-xs">{purchase.party_name}</p>
                                     </div>
                                     <div className="shrink-0 text-right">
                                         <p className="font-semibold tabular-nums">{money(purchase.amount)}</p>

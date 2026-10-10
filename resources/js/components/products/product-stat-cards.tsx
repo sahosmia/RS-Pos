@@ -23,25 +23,23 @@ export default function ProductStatCards({ stats }: ProductStatCardsProps) {
             label: t('productsPage', 'total_products'),
             value: stats.total_products.toLocaleString(),
             icon: Package,
-            tone: 'text-sky-600 bg-sky-100 dark:text-sky-400 dark:bg-sky-500/15',
         },
         {
             label: t('productsPage', 'total_stock'),
             value: stats.total_stock.toLocaleString(),
             icon: Boxes,
-            tone: 'text-violet-600 bg-violet-100 dark:text-violet-400 dark:bg-violet-500/15',
         },
         {
             label: t('productsPage', 'total_stock_value'),
             value: money(stats.total_stock_value),
             icon: Coins,
-            tone: 'text-emerald-600 bg-emerald-100 dark:text-emerald-400 dark:bg-emerald-500/15',
+            accent: 'info',
         },
         {
             label: t('productsPage', 'low_stock_products'),
             value: stats.low_stock_count.toLocaleString(),
             icon: AlertTriangle,
-            tone: 'text-amber-600 bg-amber-100 dark:text-amber-400 dark:bg-amber-500/15',
+            accent: stats.low_stock_count > 0 ? 'warning' : 'neutral',
         },
     ];
 

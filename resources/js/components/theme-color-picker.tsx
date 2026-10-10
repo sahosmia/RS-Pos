@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
 import { THEME_COLORS, type ThemeColorValue } from '@/lib/theme-colors';
+import { cn } from '@/lib/utils';
 import { Check } from 'lucide-react';
 
 interface ThemeColorPickerProps {
@@ -12,22 +12,23 @@ interface ThemeColorPickerProps {
 
 export default function ThemeColorPicker({ value, onChange, onReset }: ThemeColorPickerProps) {
     return (
-        <div className="flex flex-wrap items-center gap-3">
+        <div role="group" aria-label="Panel color" className="flex flex-wrap items-center gap-3">
             {THEME_COLORS.map((color) => (
                 <button
                     key={color.value}
                     type="button"
                     onClick={() => onChange(color.value)}
                     className={cn(
-                        'flex h-9 w-9 items-center justify-center rounded-full border-2 transition-colors',
-                        value === color.value ? 'border-foreground' : 'border-transparent hover:border-border',
+                        'motion-colors flex size-9 items-center justify-center rounded-full border-2 outline-hidden',
+                        'focus-visible:ring-brand-focus-ring ring-offset-background focus-visible:ring-2 focus-visible:ring-offset-2',
+                        value === color.value ? 'border-foreground' : 'hover:border-brand-control-border-hover border-transparent',
                     )}
                     style={{ backgroundColor: color.swatch }}
                     aria-label={color.label}
                     aria-pressed={value === color.value}
                     title={color.label}
                 >
-                    {value === color.value && <Check className="h-4 w-4 text-white drop-shadow" />}
+                    {value === color.value && <Check className="size-4 text-white drop-shadow" />}
                 </button>
             ))}
 

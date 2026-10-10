@@ -1,12 +1,14 @@
 import ListTable from '@/components/data-table/list-table';
-import HeadingSmall from '@/components/heading-small';
 import AddSalePaymentModal from '@/components/sales/add-sale-payment-modal';
 import { SaleFilters, type SaleFilterValues } from '@/components/sales/sale-filters';
 import { SaleGridCard } from '@/components/sales/sale-grid-card';
 import ViewSalePaymentsModal from '@/components/sales/view-sale-payments-modal';
+import { AddButton } from '@/components/shared/action-buttons';
+import BulkDeleteBar from '@/components/shared/bulk-delete-bar';
 import ConfirmDialog from '@/components/shared/confirm-dialog';
 import { DocumentStatCards } from '@/components/shared/document-stat-cards';
 import EmptyState from '@/components/shared/empty-state';
+import PageHeader from '@/components/shared/page-header';
 import { Button } from '@/components/ui/button';
 import { useListPage } from '@/hooks/table/use-list-page';
 import { type TableFilterBase } from '@/hooks/table/use-table-filters';
@@ -15,7 +17,7 @@ import { useMoneyFormat } from '@/hooks/use-money-format';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { type Account, type CustomerOption, type Paginated, type PaymentStatusValue, type SaleListItem, type SaleStatusValue } from '@/types/models';
-import { Head, Link } from '@inertiajs/react';
+import { Head } from '@inertiajs/react';
 import { ShoppingCart } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { getExportColumns, getVisibilityColumns, useSaleColumns } from './table/columns';
@@ -107,12 +109,15 @@ export default function SalesIndex({ sales, stats, accounts, initialCustomer, fi
             <Head title="Sales" />
 
             <div className="space-y-6 px-4 py-6">
-                <div className="flex flex-wrap items-end justify-between gap-4">
-                    <HeadingSmall title="Sales" description="Draft, Quotation ও Confirmed — একই তালিকা, filter করে দেখুন" />
-                    <Button asChild>
-                        <Link href={addSaleHref}>Add Sale</Link>
-                    </Button>
-                </div>
+                <PageHeader
+                    title="Sales"
+                    description="Draft, Quotation ও Confirmed — একই তালিকা, filter করে দেখুন"
+                    actions={
+                        <>
+                            <AddButton href={addSaleHref} title="Add Sale" />
+                        </>
+                    }
+                />
 
                 {stats && (
                     <DocumentStatCards
@@ -126,6 +131,7 @@ export default function SalesIndex({ sales, stats, accounts, initialCustomer, fi
                 )}
 
                 <ListTable
+                    selectionSlot={<BulkDeleteBar selection={list.selection} routeName="sales.bulk-delete" noun="sales" permission="sale.delete" />}
                     list={list}
                     data={sales}
                     filters={filters}
@@ -140,15 +146,13 @@ export default function SalesIndex({ sales, stats, accounts, initialCustomer, fi
                         />
                     )}
                     itemLabel="sales"
-                    searchPlaceholder="Invoice or customer name"
+                    searchPlaceholder="Invoice, customer name or phone"
                     visibilityColumns={getVisibilityColumns()}
                     exportColumns={getExportColumns()}
                     filterSlot={<SaleFilters filters={filters} customer={customer} onCustomerChange={setCustomer} onChange={list.applyFilters} />}
                     emptyState={
                         <EmptyState title="No sales yet" description="প্রথম sale যোগ করুন">
-                            <Button className="mt-2" asChild>
-                                <Link href={addSaleHref}>Add Sale</Link>
-                            </Button>
+                            <AddButton href={addSaleHref} title="Add Sale" className="mt-2" />
                         </EmptyState>
                     }
                     filteredEmptyState={

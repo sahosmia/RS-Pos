@@ -1,12 +1,14 @@
 import { FormInput } from '@/components/form/form-input';
 import InputError from '@/components/input-error';
 import FormModal from '@/components/shared/form-modal';
+import { Alert } from '@/components/ui/alert';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { useTranslation } from '@/hooks/use-translation';
+import { type SharedData } from '@/types';
 import { type MessageChannel } from '@/types/models';
-import { useForm } from '@inertiajs/react';
+import { useForm, usePage } from '@inertiajs/react';
 import { FormEventHandler, useEffect, useMemo } from 'react';
 import { toast } from 'sonner';
 
@@ -19,7 +21,8 @@ interface SendNotificationModalProps {
 }
 
 export default function SendNotificationModal({ open, onOpenChange, recipients, onSuccess }: SendNotificationModalProps) {
-    const { t } = useTranslation();
+    const { t, locale } = useTranslation();
+    const smsReady = usePage<SharedData>().props.shop.sms_ready;
 
     const form = useForm({
         ids: [] as number[],
@@ -79,6 +82,28 @@ export default function SendNotificationModal({ open, onOpenChange, recipients, 
             processing={form.processing}
             onSubmit={submit}
         >
+            {/* Honest about what happens: nothing is delivered until an SMS / WhatsApp / email gateway is connected. */}
+            <Alert
+                variant="warning"
+                title={
+                    smsReady
+                        ? locale === 'bn'
+                            ? 'SMS সত্যিই পাঠানো হবে'
+                            : 'SMS will be really sent'
+                        : locale === 'bn'
+                          ? 'SMS এখনো সেট করা নেই'
+                          : 'SMS is not set up yet'
+                }
+            >
+                {smsReady
+                    ? locale === 'bn'
+                        ? 'SMS আপনার সেট করা কোম্পানির মাধ্যমে যাবে। WhatsApp / ইমেইল এখনো শুধু রেকর্ড হয়, পাঠানো হয় না।'
+                        : 'SMS goes out through the company set up in Business Settings. WhatsApp and email are only recorded, not delivered.'
+                    : locale === 'bn'
+                      ? 'Business Settings → SMS-এ গিয়ে SMS চালু করুন। WhatsApp / ইমেইল এখনো শুধু রেকর্ড হয়।'
+                      : 'Turn SMS on in Business Settings → SMS first. WhatsApp and email are only recorded, not delivered.'}
+            </Alert>
+
             <div className="grid min-w-0 content-start gap-2">
                 <Label htmlFor="channel" required>
                     {t('contactNotification', 'channel')}

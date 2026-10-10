@@ -10,10 +10,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class StaffLedger extends Model
 {
+    use HasCreator;
+
     /** @use HasFactory<StaffLedgerFactory> */
     use HasFactory;
-
-    use HasCreator;
 
     /**
      * The design doc names this table `staff_ledger` (singular, matching

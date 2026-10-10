@@ -1,14 +1,14 @@
 import { FormInput } from '@/components/form/form-input';
-import HeadingSmall from '@/components/heading-small';
 import ConfirmDialog from '@/components/shared/confirm-dialog';
 import EmptyState from '@/components/shared/empty-state';
+import PageHeader from '@/components/shared/page-header';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import AppLayout from '@/layouts/app-layout';
+import { pageContainer } from '@/lib/page-container';
 import { type BreadcrumbItem } from '@/types';
 import { type BackupListItem } from '@/types/models';
-import { Head, router, useForm } from '@inertiajs/react';
-import { FormEventHandler, useState } from 'react';
+import { Head, router } from '@inertiajs/react';
+import { useState } from 'react';
 
 const breadcrumbs: BreadcrumbItem[] = [{ title: 'Backups', href: '/backups' }];
 
@@ -29,11 +29,6 @@ export default function BackupsIndex({ backups }: BackupsIndexProps) {
     const [deleting, setDeleting] = useState<BackupListItem | null>(null);
     const [restoreConfirmation, setRestoreConfirmation] = useState('');
     const [processing, setProcessing] = useState(false);
-
-    const uploadForm = useForm<{ file: File | null; confirmation: string }>({
-        file: null,
-        confirmation: '',
-    });
 
     const runBackupNow = () => {
         setRunningBackup(true);
@@ -70,47 +65,42 @@ export default function BackupsIndex({ backups }: BackupsIndexProps) {
         });
     };
 
-    const submitUpload: FormEventHandler = (e) => {
-        e.preventDefault();
-
-        uploadForm.post(route('backups.upload-restore'), {
-            preserveScroll: true,
-            forceFormData: true,
-            onSuccess: () => uploadForm.reset(),
-        });
-    };
-
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Backups" />
 
-            <div className="space-y-6 px-4 py-6">
-                <div className="flex flex-wrap items-end justify-between gap-4">
-                    <HeadingSmall
-                        title="Backups"
-                        description="প্রতিদিন রাতে automatic backup হয় — এখান থেকে এখনই backup নেওয়া, ডাউনলোড, বা restore করা যায়"
-                    />
-                    <Button onClick={runBackupNow} disabled={runningBackup}>
-                        {runningBackup ? 'Backing up...' : 'Backup Now'}
-                    </Button>
-                </div>
+            <div className={pageContainer.medium}>
+                <PageHeader
+                    title="Backups"
+                    description="প্রতিদিন রাতে automatic backup হয় (শেষ ৩ দিনেরটা থাকে) — Backup & Download চাপলে এখনই backup হয়ে সরাসরি ডাউনলোড হবে (প্রতিটি zip-এ database ও storage-এর ছবি/ফাইল দুটোই থাকে)"
+                    actions={
+                        <>
+                            <Button onClick={runBackupNow} disabled={runningBackup}>
+                                {runningBackup ? 'Backing up...' : 'Backup & Download'}
+                            </Button>
+                        </>
+                    }
+                />
 
                 {backups.length === 0 ? (
-                    <EmptyState title="No backups yet" description="“Backup Now” চাপুন, অথবা রাতের scheduled backup-এর জন্য অপেক্ষা করুন" />
+                    <EmptyState title="No backups yet" description="“Backup & Download” চাপুন, অথবা রাতের scheduled backup-এর জন্য অপেক্ষা করুন" />
                 ) : (
-                    <div className="overflow-x-auto rounded-lg border">
+                    <div className="rounded-brand-card bg-card overflow-x-auto shadow-[var(--brand-card-shadow-elevated)]">
                         <table className="w-full text-sm">
-                            <thead className="bg-muted/50 text-muted-foreground">
+                            <thead className="bg-brand-table-header text-muted-foreground text-xs font-semibold">
                                 <tr>
-                                    <th className="px-4 py-2 text-left font-medium">File</th>
-                                    <th className="px-4 py-2 text-left font-medium">Date</th>
-                                    <th className="px-4 py-2 text-right font-medium">Size</th>
-                                    <th className="px-4 py-2 text-right font-medium">Actions</th>
+                                    <th className="px-4 py-2.5 text-left font-medium">File</th>
+                                    <th className="px-4 py-2.5 text-left font-medium">Date</th>
+                                    <th className="px-4 py-2.5 text-right font-medium">Size</th>
+                                    <th className="px-4 py-2.5 text-right font-medium">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {backups.map((backup) => (
-                                    <tr key={backup.filename} className="border-t">
+                                    <tr
+                                        key={backup.filename}
+                                        className="border-brand-table-divider hover:bg-brand-table-row-hover motion-colors border-t"
+                                    >
                                         <td className="px-4 py-2 font-mono">{backup.filename}</td>
                                         <td className="px-4 py-2 whitespace-nowrap">{backup.date}</td>
                                         <td className="px-4 py-2 text-right tabular-nums">{formatSize(backup.size_in_bytes)}</td>
@@ -133,27 +123,6 @@ export default function BackupsIndex({ backups }: BackupsIndexProps) {
                         </table>
                     </div>
                 )}
-
-                <div className="max-w-md space-y-3 rounded-lg border p-4">
-                    <HeadingSmall
-                        title="Upload & Restore"
-                        description="নতুন হোস্টিং-এ migrate করার সময় — অন্য জায়গার backup zip আপলোড করে সরাসরি restore করুন"
-                    />
-                    <form onSubmit={submitUpload} className="space-y-3">
-                        <Input type="file" accept=".zip" onChange={(e) => uploadForm.setData('file', e.target.files?.[0] ?? null)} required />
-                        <FormInput
-                            id="upload_confirmation"
-                            label="Type RESTORE to confirm"
-                            value={uploadForm.data.confirmation}
-                            onChange={(e) => uploadForm.setData('confirmation', e.target.value)}
-                            placeholder="RESTORE"
-                            required
-                        />
-                        <Button type="submit" variant="destructive" disabled={uploadForm.processing || uploadForm.data.confirmation !== 'RESTORE'}>
-                            {uploadForm.processing ? 'Uploading...' : 'Upload & Restore'}
-                        </Button>
-                    </form>
-                </div>
             </div>
 
             <ConfirmDialog

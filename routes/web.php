@@ -23,6 +23,7 @@ require __DIR__.'/business-settings.php';
 require __DIR__.'/invoice-settings.php';
 require __DIR__.'/backups.php';
 require __DIR__.'/activity-log.php';
+require __DIR__.'/system-guide.php';
 require __DIR__.'/accounts.php';
 require __DIR__.'/chart-of-accounts.php';
 require __DIR__.'/inventory.php';

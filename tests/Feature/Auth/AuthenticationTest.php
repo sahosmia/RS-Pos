@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Settings;
 use App\Models\User;
 
 test('login screen can be rendered', function () {
@@ -60,4 +61,18 @@ test('the dashboard flags exactly the one page render right after login as a fre
 
     // A later, ordinary navigation in the same session is not a fresh login anymore.
     $this->get('/dashboard')->assertInertia(fn ($page) => $page->where('freshLogin', false));
+});
+
+test('the login page carries the shops theme colour for a visitor who is not signed in', function () {
+    Settings::factory()->create(['theme_color' => 'green']);
+
+    $this->get('/login')->assertOk()->assertSee('data-theme-color="green"', false);
+});
+
+test('blue is the default theme colour: for a new shop and for a shop that has no settings row yet', function () {
+    expect(Settings::factory()->create()->fresh()->theme_color->value)->toBe('blue');
+
+    Settings::query()->delete();
+
+    $this->get('/login')->assertOk()->assertSee('data-theme-color="blue"', false);
 });

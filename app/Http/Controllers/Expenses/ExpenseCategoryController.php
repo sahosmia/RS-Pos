@@ -55,7 +55,7 @@ class ExpenseCategoryController extends Controller
      */
     public function destroy(ExpenseCategory $expenseCategory): RedirectResponse
     {
-        if ($expenseCategory->expenses()->exists() || $expenseCategory->children()->exists()) {
+        if ($expenseCategory->expenses()->withTrashed()->exists() || $expenseCategory->children()->exists()) {
             return back()->withErrors([
                 'expense_category' => 'This category is in use by an expense or sub-category and cannot be deleted.',
             ]);

@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Contact;
+use App\Models\Settings;
 use App\Models\User;
 
 /*
@@ -52,4 +53,22 @@ test('guests are still redirected to login', function () {
 
 test('factory users can reach gated pages by default', function () {
     $this->actingAs(User::factory()->create())->get('/expenses')->assertOk();
+});
+
+test('the dashboard keeps the shops money figures from someone who cannot read reports', function () {
+    Settings::factory()->create();
+
+    $this->actingAs(userWithPermissions(['sale.create', 'sale.view_own', 'product.view']))
+        ->get('/dashboard')
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('showFigures', false)
+            ->where('metrics', null)
+            ->where('balances', null)
+            ->where('salesLast30Days', [])
+            ->where('bestSellers', []));
+
+    $this->actingAs(userWithPermissions(['report.view']))
+        ->get('/dashboard')
+        ->assertInertia(fn ($page) => $page->where('showFigures', true)->has('metrics.totalSales'));
 });

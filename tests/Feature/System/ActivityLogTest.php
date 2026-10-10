@@ -88,3 +88,55 @@ test('it filters by user, record type, action and date', function () {
 
     expect($expense)->not->toBeNull();
 });
+
+test('signing in and out is recorded in the activity log with the address it came from', function () {
+    $user = User::factory()->create(['email' => 'cashier@example.com', 'password' => 'secret-pass']);
+
+    $this->post('/login', ['email' => 'cashier@example.com', 'password' => 'secret-pass'])->assertRedirect();
+    $this->post('/logout');
+
+    $entries = Activity::query()->where('causer_id', $user->id)->whereIn('event', ['login', 'logout'])->orderBy('id')->get();
+
+    expect($entries->pluck('event')->all())->toBe(['login', 'logout'])
+        ->and($entries->first()->subject_id)->toBe($user->id)
+        ->and($entries->first()->properties->get('ip_address'))->not->toBeNull();
+});
+
+test('the log opens on the last few days and a cleared date reaches further back', function () {
+    $user = User::factory()->create(['name' => 'Rahim']);
+    $this->actingAs($user);
+
+    $recent = Product::factory()->create(['name' => 'Recent item']);
+    $old = Product::factory()->create(['name' => 'Old item']);
+    Activity::query()->where('subject_id', $old->id)->update(['created_at' => now()->subDays(40)]);
+
+    $viewer = userWithPermissions(['activity_log.view']);
+
+    $product = '&subject_type='.urlencode(Product::class);
+
+    // No dates: only the default window.
+    $this->actingAs($viewer)->get('/activity-log?'.ltrim($product, '&'))
+        ->assertInertia(fn ($page) => $page
+            ->where('filters.from', now()->subDays(6)->toDateString())
+            ->where('filters.to', now()->toDateString())
+            ->where('defaultRange.from', now()->subDays(6)->toDateString())
+            ->where('activities.total', 1)
+            ->where('activities.data.0.record', 'Recent item'));
+
+    // A date range that reaches back shows the old entry too.
+    $this->actingAs($viewer)->get('/activity-log?'.http_build_query(['from' => now()->subDays(60)->toDateString(), 'to' => now()->toDateString()]).$product)
+        ->assertInertia(fn ($page) => $page->where('activities.total', 2));
+
+    // Clearing both dates on purpose means "everything".
+    $this->actingAs($viewer)->get('/activity-log?from=&to='.$product)
+        ->assertInertia(fn ($page) => $page->where('filters.from', null)->where('activities.total', 2));
+});
+
+test('the log can be filtered to logins', function () {
+    $user = User::factory()->create(['email' => 'a@example.com', 'password' => 'secret-pass']);
+    $this->post('/login', ['email' => 'a@example.com', 'password' => 'secret-pass']);
+
+    $this->actingAs(userWithPermissions(['activity_log.view']))->get('/activity-log?event=login')
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page->where('activities.total', 1)->where('activities.data.0.event', 'login')->where('activities.data.0.user', $user->name));
+});

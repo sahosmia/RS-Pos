@@ -20,6 +20,19 @@ export interface Settings {
     pagination_default_per_page: number;
     pagination_allow_all: boolean;
     activity_log_retention_months: number;
+    sms_enabled: boolean;
+    sms_gateway_url: string | null;
+    sms_http_method: string;
+    sms_api_key_set: boolean;
+    sms_auth_mode: string;
+    sms_sender_id: string | null;
+    sms_api_key_param: string | null;
+    sms_sender_param: string | null;
+    sms_phone_param: string;
+    sms_message_param: string;
+    sms_extra_params: string | null;
+    sms_phone_format: string;
+    sms_success_text: string | null;
     theme_color: string;
     menu_order: { top: string[]; sub: Record<string, string[]> } | null;
     quick_actions: { key: string; enabled: boolean }[] | null;
@@ -184,6 +197,8 @@ export interface ProductListItem {
     is_for_sale: boolean;
     is_active: boolean;
     can_set_opening_stock: boolean;
+    /** Adjusted unit by unit (serials gone / found) instead of by a counted quantity. */
+    track_serial_number: boolean;
     image_url: string | null;
 }
 
@@ -338,6 +353,8 @@ export interface PurchaseListItem {
     payment_status: PaymentStatusValue;
     status: PurchaseStatusValue;
     can_edit: boolean;
+    /** A received purchase that can still be edited (taken out and received again). */
+    can_amend: boolean;
 }
 
 /** Index signature needed so this array satisfies Inertia's FormDataConvertible constraint in useForm(). */
@@ -353,6 +370,7 @@ export interface PurchaseFormItem {
 
 export interface PurchaseFormDetail {
     id: number;
+    invoice_no: string;
     supplier_id: number;
     purchase_date: string;
     status: PurchaseStatusValue;
@@ -361,6 +379,12 @@ export interface PurchaseFormDetail {
     discount_type?: 'flat' | 'percentage' | null;
     discount_value?: number;
     items: PurchaseFormItem[];
+    /** True when a Received purchase is being amended: the receipt is taken out and the corrected one received on save. */
+    amending?: boolean;
+    /** Amending only: what was paid out, per account — the starting payment rows. */
+    payments?: { account_id: number; amount: number }[];
+    /** Amending only: the serials of each line (keyed by line position). */
+    serial_numbers?: Record<number, string[]>;
 }
 
 /** Matches `ProductSearchController`'s response shape (doc/corrections2.md #8) — same for a search result or an edit form's already-picked product. */
@@ -401,6 +425,7 @@ export interface PurchaseItemDetail {
 export interface PurchaseDetail {
     id: number;
     invoice_no: string;
+    created_at?: string | null;
     supplier: { id: number; name: string; phone: string; balance: number };
     creator?: { id: number; name: string } | null;
     purchase_date: string;
@@ -414,6 +439,9 @@ export interface PurchaseDetail {
     payment_status: PaymentStatusValue;
     status: PurchaseStatusValue;
     can_edit: boolean;
+    can_amend: boolean;
+    /** The price alone can be corrected (units untouched), even when some of the goods are sold. */
+    can_adjust_cost?: boolean;
     items: PurchaseItemDetail[];
 }
 
@@ -425,7 +453,7 @@ export interface SaleListItem {
     added_by: string | null;
     id: number;
     invoice_no: string;
-    customer: { id: number; name: string };
+    customer: { id: number; name: string; phone?: string | null };
     sale_date: string;
     created_at?: string;
     total_amount: number;
@@ -434,6 +462,8 @@ export interface SaleListItem {
     status: SaleStatusValue;
     source: SaleSourceValue;
     can_edit: boolean;
+    /** A confirmed sale that can still be edited (reversed and recorded again). */
+    can_amend: boolean;
 }
 
 /** Index signature needed so this array satisfies Inertia's FormDataConvertible constraint in useForm(). */
@@ -448,12 +478,22 @@ export interface SaleFormItem {
     discount_value: number;
     installation_required: boolean;
     installation_charge: number | null;
+    /** Whether this line is paid in installments (true) or paid now with the rest of the invoice (false). */
+    emi_financed: boolean;
+    /** Warranty on this line in months (0 = none); starts as the product's own and is fixed once the sale is confirmed. */
+    warranty_months: number;
+    /** Whether the product's service plan is copied onto this line. */
+    service_plan_included: boolean;
     note: string | null;
     serial_numbers: string[];
 }
 
 export interface SaleFormDetail {
     id: number;
+    /** True when a Confirmed sale is being amended: it is reversed and recorded again on save. */
+    amending?: boolean;
+    /** Amending only: what was received, per account — the starting payment rows. */
+    payments?: { account_id: number; amount: number }[];
     invoice_no: string;
     customer_id: number;
     sale_date: string;
@@ -463,6 +503,12 @@ export interface SaleFormDetail {
     valid_until: string | null;
     financing_type: 'one_time' | 'emi';
     installment_count: number | null;
+    emi_interest_method: 'none' | 'flat' | 'reducing' | null;
+    emi_annual_rate: number | null;
+    emi_tenure_value: number | null;
+    emi_tenure_unit: 'days' | 'weeks' | 'months' | 'years' | null;
+    emi_frequency: 'weekly' | 'monthly' | 'quarterly' | null;
+    emi_installation_upfront: boolean;
     items: SaleFormItem[];
 }
 
@@ -471,7 +517,7 @@ export type EmiInstallmentStatusValue = 'pending' | 'paid' | 'overdue' | 'cancel
 export interface EmiInstallmentListItem {
     id: number;
     invoice_no: string;
-    customer: { id: number; name: string };
+    customer: { id: number; name: string; phone?: string | null };
     installment_number: number;
     due_date: string;
     amount: number;
@@ -491,8 +537,12 @@ export interface SaleItemDetail {
     subtotal: number;
     installation_required: boolean;
     installation_charge: number | null;
+    emi_financed: boolean;
+    warranty_months: number | null;
     warranty_expires_at: string | null;
     serial_numbers: string[];
+    /** Each serial of the line with its current status (sold, returned, …). */
+    serials: { serial_number: string; status: string }[];
 }
 
 export interface SaleDetail {
@@ -515,8 +565,36 @@ export interface SaleDetail {
     status: SaleStatusValue;
     source: SaleSourceValue;
     can_edit: boolean;
+    /** A confirmed sale that can still be edited (reversed and recorded again). */
+    can_amend: boolean;
     payment_history: SalePaymentHistoryEntry[];
+    /** The installment plan, for a sale on EMI that has been confirmed; null otherwise. */
+    emi: SaleEmiDetail | null;
     items: SaleItemDetail[];
+}
+
+export interface SaleEmiInstallment {
+    id: number;
+    number: number;
+    due_date: string;
+    amount: number;
+    principal: number;
+    interest: number;
+    paid_amount: number;
+    status: EmiInstallmentStatusValue;
+}
+
+export interface SaleEmiDetail {
+    interest_method: 'none' | 'flat' | 'reducing' | null;
+    annual_rate: number;
+    frequency: 'weekly' | 'monthly' | 'quarterly' | null;
+    interest_total: number;
+    /** The goods (after discount) on the products chosen for EMI. */
+    financed_goods: number;
+    installments_total: number;
+    installments_open: number;
+    next: { id: number; number: number; due_date: string; remaining: number; overdue: boolean } | null;
+    installments: SaleEmiInstallment[];
 }
 
 export interface SalePaymentHistoryEntry {
@@ -684,10 +762,19 @@ export interface SaleReturnCreateSale {
 
 export interface SaleReturnItemDetail {
     id: number;
-    product: { id: number; name: string; sku: string };
+    product: { id: number; name: string; sku: string; track_serial_number: boolean };
     quantity: number;
+    original_price: number;
     unit_price: number;
+    discount_amount: number;
     subtotal: number;
+    installation_required: boolean;
+    installation_charge: number | null;
+    emi_financed: boolean;
+    warranty_months: number | null;
+    service_plan_included: boolean;
+    /** Planned at booking; checked against real stock when the order becomes a sale. */
+    serial_numbers: string[];
 }
 
 export type SalesOrderStatusValue = 'pending' | 'partial' | 'completed' | 'cancelled';
@@ -709,10 +796,19 @@ export interface SalesOrderListItem {
 
 export interface SalesOrderItemDetail {
     id: number;
-    product: { id: number; name: string; sku: string };
+    product: { id: number; name: string; sku: string; track_serial_number: boolean };
     quantity: number;
+    original_price: number;
     unit_price: number;
+    discount_amount: number;
     subtotal: number;
+    installation_required: boolean;
+    installation_charge: number | null;
+    emi_financed: boolean;
+    warranty_months: number | null;
+    service_plan_included: boolean;
+    /** Planned at booking; checked against real stock when the order becomes a sale. */
+    serial_numbers: string[];
 }
 
 export interface ExpenseCategoryOption {
@@ -757,6 +853,16 @@ export interface SalesOrderDetail {
     total_amount: number;
     advance_paid: number;
     due_amount: number;
+    subtotal: number;
+    discount_amount: number;
+    installation_amount: number;
+    financing_type: 'one_time' | 'emi';
+    installment_count: number | null;
+    emi_interest_method: string | null;
+    emi_annual_rate: number;
+    emi_frequency: string | null;
+    emi_tenure_value: number | null;
+    emi_tenure_unit: string | null;
     status: SalesOrderStatusValue;
     can_convert: boolean;
     sale: { id: number; invoice_no: string } | null;
@@ -967,15 +1073,39 @@ export interface ServiceRequestListItem {
     charge_amount: number;
     staff: { id: number; name: string } | null;
     status: ServiceRequestStatusValue;
+    /** Where the request can go from here; empty once it is completed or cancelled. */
+    next_statuses: ServiceRequestStatusValue[];
     request_date: string;
+    service_date: string | null;
+    note: string | null;
 }
 
-export interface ServiceableSaleItem {
+/** A person who can be assigned a job: only working staff, with their role shown. */
+export interface ServiceStaffOption {
+    id: number;
+    name: string;
+    designation: string | null;
+}
+
+/** One item on an invoice found by the service-request lookup, with what its next visit would cost. */
+export interface ServiceLookupItem {
     id: number;
     product: { id: number; name: string; sku: string };
-    invoice_no: string;
-    customer: { id: number; name: string };
+    quantity: number;
     is_next_free: boolean;
+    free_left: number;
+    has_service_plan: boolean;
+    has_installation_service: boolean;
+    warranty_expires_at: string | null;
+    in_warranty: boolean;
+}
+
+export interface ServiceLookupInvoice {
+    id: number;
+    invoice_no: string;
+    sale_date: string;
+    customer: { id: number; name: string; phone: string | null };
+    items: ServiceLookupItem[];
 }
 
 export interface WarrantyableSaleItem {
@@ -1233,3 +1363,40 @@ export interface OtherIncomeCategoryRow {
     incomes_count: number;
     can_delete: boolean;
 }
+
+export interface DashboardSalesOrders {
+    count: number;
+    total: number;
+    advance: number;
+    items: { id: number; order_no: string; customer: string; expected_delivery_date: string | null; total_amount: number; due_amount: number }[];
+}
+
+export interface DashboardFollowUps {
+    emi: {
+        overdue_count: number;
+        overdue_amount: number;
+        due_soon_count: number;
+        due_soon_amount: number;
+        items: {
+            id: number;
+            sale_id: number;
+            invoice_no: string;
+            customer: string;
+            phone: string | null;
+            number: number;
+            due_date: string;
+            remaining: number;
+            overdue: boolean;
+        }[];
+    } | null;
+    warranties: {
+        count: number;
+        items: { id: number; sale_id: number; invoice_no: string; product: string; customer: string; phone: string | null; expires_on: string }[];
+    };
+}
+
+export interface DashboardBooksCheck {
+    checked_at: string;
+    failed_checks: string[];
+}
+

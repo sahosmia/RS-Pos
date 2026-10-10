@@ -1,9 +1,8 @@
 import DataTableCheckbox from '@/components/data-table/data-table-checkbox';
 import DataTableRowActions from '@/components/data-table/data-table-row-actions';
 import { getPurchaseActions } from '@/components/purchases/purchase-actions';
-import { humanize, purchasePaymentVariant, purchaseStatusVariant } from '@/components/purchases/purchase-columns';
 import ContactLink from '@/components/shared/contact-link';
-import { Badge } from '@/components/ui/badge';
+import { StatusBadge } from '@/components/shared/status-badge';
 import { useMoneyFormat } from '@/hooks/use-money-format';
 import { formatDateTime } from '@/lib/format-date';
 import { cn } from '@/lib/utils';
@@ -29,7 +28,7 @@ export function PurchaseGridCard({ purchase, selected, onToggleSelected, onDelet
     return (
         <div
             className={cn(
-                'group bg-card hover:border-primary/30 rounded-xl border border-l-4 p-4 transition-all hover:shadow-md',
+                'group bg-card hover:border-primary/30 motion-surface rounded-xl border border-l-4 p-4 hover:shadow-[var(--brand-card-shadow-elevated)]',
                 accentBorder,
                 selected && 'border-primary/40 bg-primary/5 ring-primary/20 ring-1',
             )}
@@ -58,8 +57,8 @@ export function PurchaseGridCard({ purchase, selected, onToggleSelected, onDelet
 
             <div className="mt-3 flex items-center justify-between gap-2 border-t pt-3">
                 <div className="flex flex-wrap items-center gap-1">
-                    <Badge variant={purchasePaymentVariant[purchase.payment_status]}>{humanize(purchase.payment_status)}</Badge>
-                    <Badge variant={purchaseStatusVariant[purchase.status]}>{humanize(purchase.status)}</Badge>
+                    <StatusBadge status={purchase.payment_status} />
+                    <StatusBadge status={purchase.status} />
                 </div>
                 <div className="text-right">
                     <div className="text-foreground font-semibold tabular-nums">{money(purchase.total_amount)}</div>

@@ -2,10 +2,12 @@ import { ASSET_EXPORT_COLUMN_MAP, ASSET_EXPORT_COLUMNS, ASSET_VISIBILITY_COLUMNS
 import { AssetFormModal } from '@/components/assets/asset-form-modal';
 import { AssetGridCard } from '@/components/assets/asset-grid-card';
 import ListTable from '@/components/data-table/list-table';
-import HeadingSmall from '@/components/heading-small';
+import { AddButton } from '@/components/shared/action-buttons';
+import BulkDeleteBar from '@/components/shared/bulk-delete-bar';
 import ConfirmDialog from '@/components/shared/confirm-dialog';
 import EmptyState from '@/components/shared/empty-state';
-import { Button } from '@/components/ui/button';
+import { MetricCard } from '@/components/shared/metric-card';
+import PageHeader from '@/components/shared/page-header';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useListPage } from '@/hooks/table/use-list-page';
 import { type TableFilterBase } from '@/hooks/table/use-table-filters';
@@ -88,17 +90,24 @@ export default function AssetsIndex({ assets, totalValue, accounts, filters }: A
                     </TabsList>
                 </Tabs>
 
-                <div className="flex flex-wrap items-end justify-between gap-4">
-                    <HeadingSmall title="Assets" description="দোকানের নিজস্ব সম্পদ — ফার্নিচার, গাড়ি, ইকুইপমেন্ট" />
-                    <Button onClick={() => openForm(null)}>Add Asset</Button>
-                </div>
+                <PageHeader
+                    title="Assets"
+                    description="দোকানের নিজস্ব সম্পদ — ফার্নিচার, গাড়ি, ইকুইপমেন্ট"
+                    actions={
+                        <>
+                            <AddButton onClick={() => openForm(null)} title="Add Asset" />
+                        </>
+                    }
+                />
 
-                <div className="rounded-lg border p-4">
-                    <p className="text-muted-foreground text-sm">Total current value</p>
-                    <p className="text-2xl font-semibold tabular-nums">{money(totalValue)}</p>
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                    <MetricCard label="Total current value" value={money(totalValue)} />
                 </div>
 
                 <ListTable
+                    selectionSlot={
+                        <BulkDeleteBar selection={list.selection} routeName="assets.bulk-delete" noun="assets" permission="asset.delete" />
+                    }
                     list={list}
                     data={assets}
                     filters={filters}
@@ -118,9 +127,7 @@ export default function AssetsIndex({ assets, totalValue, accounts, filters }: A
                     exportColumns={ASSET_EXPORT_COLUMNS}
                     emptyState={
                         <EmptyState title="No assets yet" description="প্রথম asset যোগ করুন">
-                            <Button className="mt-2" onClick={() => openForm(null)}>
-                                Add Asset
-                            </Button>
+                            <AddButton onClick={() => openForm(null)} title="Add Asset" className="mt-2" />
                         </EmptyState>
                     }
                 />

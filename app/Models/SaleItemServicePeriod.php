@@ -69,6 +69,8 @@ class SaleItemServicePeriod extends Model
         return $this->saleItem->serviceRequests()
             ->where('type', 'service')
             ->where('is_free', true)
+            // A called-off visit gives its free visit back.
+            ->where('status', '!=', 'cancelled')
             ->whereBetween('service_date', [$this->period_start_date, $this->period_end_date])
             ->count();
     }

@@ -11,6 +11,7 @@ use App\Services\ChartOfAccountResolver;
 use App\Services\JournalService;
 use App\Services\LedgerService;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 /**
  * Settles more of an already-Confirmed sale's due — separate from
@@ -31,6 +32,16 @@ class AddSalePaymentAction
     public function execute(Sale $sale, array $payments): Sale
     {
         return DB::transaction(function () use ($sale, $payments) {
+            // Two payments submitted together must not both pass the "within the due" check made before the lock.
+            Sale::query()->whereKey($sale->id)->lockForUpdate()->first();
+            $sale->refresh();
+
+            $requested = round(array_sum(array_map(fn (array $payment) => (float) $payment['amount'], $payments)), 2);
+
+            if ($requested > round((float) $sale->due_amount, 2) + 0.0001) {
+                throw ValidationException::withMessages(['payments' => ['Payment amount cannot exceed the remaining due amount of ৳'.number_format((float) $sale->due_amount, 2).'.']]);
+            }
+
             $sale->loadMissing('customer');
 
             $paidViaAccounts = $this->accounts->recordSplitPayment(

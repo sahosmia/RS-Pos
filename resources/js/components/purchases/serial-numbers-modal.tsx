@@ -28,7 +28,8 @@ export default function SerialNumbersModal({ open, onOpenChange, productName, qu
                 onOpenChange(false);
             }}
         >
-            <div className="max-h-[60vh] space-y-3 overflow-y-auto pr-1">
+            {/* Fixed-width fields that wrap into as many columns as fit (one per row on a phone), not one full-width input per unit. */}
+            <div className="grid max-h-[60vh] grid-cols-[repeat(auto-fill,12rem)] gap-3 overflow-y-auto pr-1 max-sm:grid-cols-1">
                 {Array.from({ length: units }, (_, unitIndex) => (
                     <FormInput
                         key={unitIndex}

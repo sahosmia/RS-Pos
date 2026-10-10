@@ -142,3 +142,22 @@ test('the expenses list shows the note and the account, with no vendor or due', 
             ->where('stats.total_amount', 750)
             ->missing('stats.total_due'));
 });
+
+test('a deleted expense is hidden but kept on record, so the audit trail survives', function () {
+    $this->actingAs(User::factory()->create());
+    $category = app(CreateExpenseCategoryAction::class)->execute(['name' => 'Tips']);
+    $account = expenseAccount(1000);
+    $expense = app(CreateExpenseAction::class)->execute([
+        'expense_category_id' => $category->id, 'account_id' => $account->id, 'total_amount' => 300, 'expense_date' => '2026-03-05',
+    ]);
+
+    $this->delete("/expenses/{$expense->id}")->assertSessionHasNoErrors();
+
+    expect(Expense::count())->toBe(0)
+        ->and(Expense::withTrashed()->count())->toBe(1)
+        ->and(Expense::withTrashed()->first()->deleted_at)->not->toBeNull()
+        // A category that has any expense on record, even a removed one, cannot be deleted.
+        ->and($category->expenses()->withTrashed()->exists())->toBeTrue();
+
+    $this->delete(route('expense-categories.destroy', $category))->assertSessionHasErrors('expense_category');
+});

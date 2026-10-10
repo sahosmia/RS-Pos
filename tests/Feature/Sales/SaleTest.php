@@ -285,7 +285,7 @@ test('confirming a sale with a serial-tracked product claims the in-stock unit',
         ->and($serial->fresh()->sale_item_id)->toBe($sale->items()->first()->id);
 });
 
-test('confirming a sale rejects a serial that is not currently in stock', function () {
+test('confirming a sale with a serial that is not in stock fails and leaves no half-made draft behind', function () {
     $this->actingAs(User::factory()->create());
     $customer = Contact::factory()->create();
     $product = Product::factory()->create(['track_serial_number' => true, 'current_stock' => 1]);
@@ -297,9 +297,11 @@ test('confirming a sale rejects a serial that is not currently in stock', functi
         'items' => [
             ['product_id' => $product->id, 'quantity' => 1, 'unit_price' => 100, 'serial_numbers' => ['SN-DOES-NOT-EXIST']],
         ],
-    ]);
+    ])->assertSessionHasErrors();
 
-    expect(Sale::query()->firstOrFail()->status)->toBe(SaleStatus::Draft);
+    // The controller wraps create + confirm in one transaction, so a failed confirm saves nothing.
+    expect(Sale::query()->count())->toBe(0)
+        ->and($product->fresh()->current_stock)->toBe(1.0);
 });
 
 test('a confirmed sale cannot be edited or deleted', function () {
@@ -355,4 +357,52 @@ test('waiving a contact due records a discount_waived ledger entry', function ()
 
     expect($customer->fresh()->balance)->toBe(800.0)
         ->and(ContactLedger::query()->where('type', ContactLedgerType::DiscountWaived)->count())->toBe(1);
+});
+
+test('a normal sale saves when the form also sends the leftover EMI defaults and a stale interest method', function () {
+    $this->actingAs(User::factory()->create());
+    $product = Product::factory()->create(['selling_price' => 50000, 'current_stock' => 4]);
+    $account = Account::factory()->create(['account_type_id' => AccountType::factory(), 'current_balance' => 0]);
+
+    // Exactly what the Add Sale form posts for a cash sale: a unit and frequency with no duration, and a method the
+    // cashier once tried in the payment-plan dialog and then switched back from.
+    $this->post('/sales', [
+        'customer_id' => Contact::factory()->create()->id,
+        'sale_date' => '2026-10-07',
+        'financing_type' => 'one_time',
+        'installment_count' => null,
+        'emi_interest_method' => 'flat',
+        'emi_annual_rate' => 0,
+        'emi_tenure_value' => null,
+        'emi_tenure_unit' => 'months',
+        'emi_frequency' => 'monthly',
+        'emi_installation_upfront' => false,
+        'status' => 'confirmed',
+        'payments' => [['account_id' => $account->id, 'amount' => 50500]],
+        'items' => [[
+            'product_id' => $product->id, 'quantity' => 1, 'original_price' => 50000, 'unit_price' => 50000,
+            'installation_required' => true, 'installation_charge' => 500, 'emi_financed' => true,
+            'warranty_months' => 24, 'service_plan_included' => true, 'serial_numbers' => [],
+        ]],
+    ])->assertSessionHasNoErrors()->assertRedirect();
+
+    $sale = Sale::query()->firstOrFail();
+
+    expect($sale->status)->toBe(SaleStatus::Confirmed)
+        ->and($sale->total_amount)->toBe(50500.0)
+        ->and($sale->financing_type->value)->toBe('one_time')
+        ->and($sale->emi_tenure_unit)->toBeNull();
+});
+
+test('an EMI sale with no duration is still refused, with the duration named', function () {
+    $this->actingAs(User::factory()->create());
+    $product = Product::factory()->create(['selling_price' => 1000, 'current_stock' => 4]);
+
+    $this->post('/sales', [
+        'customer_id' => Contact::factory()->create()->id, 'sale_date' => '2026-10-07', 'status' => 'confirmed',
+        'financing_type' => 'emi', 'emi_interest_method' => 'none', 'emi_tenure_unit' => 'months', 'emi_frequency' => 'monthly',
+        'items' => [['product_id' => $product->id, 'quantity' => 1, 'unit_price' => 1000]],
+    ])->assertSessionHasErrors(['emi_tenure_value']);
+
+    expect(Sale::query()->count())->toBe(0);
 });

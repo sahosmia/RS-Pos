@@ -13,7 +13,9 @@ use App\Models\CustomerGroup;
 use App\Models\MessageLog;
 use App\Models\Purchase;
 use App\Models\Sale;
+use App\Models\Settings;
 use App\Models\User;
+use Illuminate\Support\Facades\Http;
 
 test('guests are redirected to the login page', function () {
     $this->get('/contacts')->assertRedirect('/login');
@@ -310,6 +312,8 @@ test('export downloads a csv of the selected contacts', function () {
 });
 
 test('bulk sending a notification creates a campaign, recipients, and message logs', function () {
+    Http::fake(['sms.test/*' => Http::response('OK', 200)]);
+    Settings::factory()->create(['sms_enabled' => true, 'sms_gateway_url' => 'https://sms.test/send']);
     $user = User::factory()->create();
     $one = Contact::factory()->create();
     $two = Contact::factory()->create();
@@ -349,7 +353,7 @@ test('sending twice to the same contact within one call does not violate the rec
 
     $this->post('/contacts/send-notification', [
         'ids' => [$contact->id, $contact->id],
-        'channel' => 'sms',
+        'channel' => 'whatsapp',
         'message' => 'Reminder',
     ])->assertRedirect();
 
@@ -405,4 +409,33 @@ test('the sale form\'s quick-add customer posts first/middle/last name and gets 
     // The old payload — a single `name` — is what used to fail with "first name field is required".
     $this->postJson('/contacts', ['name' => 'Only Name', 'phone' => '01799999999', 'type' => 'customer', 'entity_type' => 'individual', 'is_active' => true])
         ->assertUnprocessable()->assertJsonValidationErrors(['first_name', 'last_name']);
+});
+
+test('sms is really sent and a refusal is recorded as failed with its reason', function () {
+    Http::fake(['sms.test/*' => Http::response('Invalid key', 401)]);
+    Settings::factory()->create(['sms_enabled' => true, 'sms_gateway_url' => 'https://sms.test/send']);
+    $this->actingAs(User::factory()->create());
+    $contact = Contact::factory()->create(['phone' => '01712345678']);
+
+    $this->post('/contacts/send-notification', ['ids' => [$contact->id], 'channel' => 'sms', 'message' => 'Hello'])
+        ->assertSessionHasErrors('sms');
+
+    $log = MessageLog::first();
+    expect($log->status->value)->toBe('failed')
+        ->and($log->error)->toContain('Invalid key')
+        ->and(Campaign::first()->status)->toBe(CampaignStatus::Failed);
+    Http::assertSentCount(1);
+});
+
+test('sending sms is refused when no sms company is set up', function () {
+    Http::fake();
+    Settings::factory()->create(['sms_enabled' => false]);
+    $this->actingAs(User::factory()->create());
+    $contact = Contact::factory()->create();
+
+    $this->post('/contacts/send-notification', ['ids' => [$contact->id], 'channel' => 'sms', 'message' => 'Hello'])
+        ->assertSessionHasErrors('channel');
+
+    expect(Campaign::count())->toBe(0);
+    Http::assertNothingSent();
 });

@@ -1,5 +1,4 @@
 import ListTable from '@/components/data-table/list-table';
-import HeadingSmall from '@/components/heading-small';
 import {
     INVESTOR_EXPORT_COLUMN_MAP,
     INVESTOR_EXPORT_COLUMNS,
@@ -8,8 +7,12 @@ import {
 } from '@/components/investors/investor-columns';
 import { InvestorFormModal } from '@/components/investors/investor-form-modal';
 import { InvestorGridCard } from '@/components/investors/investor-grid-card';
+import { AddButton } from '@/components/shared/action-buttons';
+import BulkDeleteBar from '@/components/shared/bulk-delete-bar';
 import ConfirmDialog from '@/components/shared/confirm-dialog';
 import EmptyState from '@/components/shared/empty-state';
+import { MetricCard } from '@/components/shared/metric-card';
+import PageHeader from '@/components/shared/page-header';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useListPage } from '@/hooks/table/use-list-page';
@@ -84,17 +87,24 @@ export default function InvestorsIndex({ investors, totalInvested, filters }: In
                     </TabsList>
                 </Tabs>
 
-                <div className="flex flex-wrap items-end justify-between gap-4">
-                    <HeadingSmall title="Investors" description="দোকানে যারা মূলধন বিনিয়োগ করেছেন" />
-                    <Button onClick={() => openForm(null)}>Add Investor</Button>
-                </div>
+                <PageHeader
+                    title="Investors"
+                    description="দোকানে যারা মূলধন বিনিয়োগ করেছেন"
+                    actions={
+                        <>
+                            <AddButton onClick={() => openForm(null)} title="Add Investor" />
+                        </>
+                    }
+                />
 
-                <div className="rounded-lg border p-4">
-                    <p className="text-muted-foreground text-sm">Total invested</p>
-                    <p className="text-2xl font-semibold tabular-nums">{money(totalInvested)}</p>
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                    <MetricCard label="Total invested" value={money(totalInvested)} />
                 </div>
 
                 <ListTable
+                    selectionSlot={
+                        <BulkDeleteBar selection={list.selection} routeName="investors.bulk-delete" noun="investors" permission="finance.delete" />
+                    }
                     list={list}
                     data={investors}
                     filters={filters}
@@ -114,9 +124,7 @@ export default function InvestorsIndex({ investors, totalInvested, filters }: In
                     exportColumns={INVESTOR_EXPORT_COLUMNS}
                     emptyState={
                         <EmptyState title="No investors yet" description="প্রথম investor যোগ করুন">
-                            <Button className="mt-2" onClick={() => openForm(null)}>
-                                Add Investor
-                            </Button>
+                            <AddButton onClick={() => openForm(null)} title="Add Investor" className="mt-2" />
                         </EmptyState>
                     }
                     filteredEmptyState={

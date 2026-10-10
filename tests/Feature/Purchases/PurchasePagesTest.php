@@ -3,6 +3,7 @@
 use App\Models\Contact;
 use App\Models\Product;
 use App\Models\Purchase;
+use App\Models\PurchaseReturn;
 use App\Models\Settings;
 use App\Models\User;
 
@@ -102,9 +103,12 @@ test('the edit purchase page renders with the already-picked supplier/products, 
             ->where('initialProducts.0.name', 'Existing Product'));
 });
 
-test('the edit purchase page is forbidden for a received purchase', function () {
+test('a received purchase is amended, not freely edited: its edit page is closed once it has a return', function () {
+    // A received purchase can be amended by someone who may edit purchases (see AmendPurchaseTest); one that already has
+    // a return built on it cannot, because the return would be counted twice.
     $this->actingAs(User::factory()->create());
     $purchase = Purchase::factory()->received()->create(['supplier_id' => Contact::factory()->supplier()]);
+    PurchaseReturn::factory()->create(['purchase_id' => $purchase->id]);
 
     $this->get("/purchases/{$purchase->id}/edit")->assertForbidden();
 });
@@ -122,4 +126,17 @@ test('the add purchase page can be opened with a product already picked', functi
 
     $this->get('/purchases/create')
         ->assertInertia(fn ($page) => $page->has('initialProducts', 0));
+});
+
+test('saving a new purchase goes back to the purchases list', function () {
+    $this->actingAs(User::factory()->create());
+    $supplier = Contact::factory()->supplier()->create();
+    $product = Product::factory()->create();
+
+    $this->post('/purchases', [
+        'supplier_id' => $supplier->id,
+        'purchase_date' => '2026-03-01',
+        'status' => 'draft',
+        'items' => [['product_id' => $product->id, 'quantity' => 1, 'unit_price' => 50]],
+    ])->assertRedirect(route('purchases.index'));
 });

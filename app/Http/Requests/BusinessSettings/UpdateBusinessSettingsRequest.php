@@ -48,6 +48,21 @@ class UpdateBusinessSettingsRequest extends FormRequest
             // Audit — how long activity_logs rows are kept before the monthly retention job prunes them
             'activity_log_retention_months' => ['required', 'integer', Rule::in(Settings::ACTIVITY_LOG_RETENTION_OPTIONS)],
 
+            // SMS — the company's HTTP API, set here instead of in code. The key is optional on save: blank keeps the saved one.
+            'sms_enabled' => ['sometimes', 'required', 'boolean'],
+            'sms_gateway_url' => ['nullable', 'url:http,https', 'max:500', 'required_if:sms_enabled,true'],
+            'sms_http_method' => ['sometimes', 'required', Rule::in(['GET', 'POST'])],
+            'sms_api_key' => ['nullable', 'string', 'max:500'],
+            'sms_auth_mode' => ['sometimes', 'required', Rule::in(['param', 'bearer'])],
+            'sms_sender_id' => ['nullable', 'string', 'max:64'],
+            'sms_api_key_param' => ['nullable', 'string', 'max:64', 'regex:/^[A-Za-z0-9_.\-\[\]]+$/'],
+            'sms_sender_param' => ['nullable', 'string', 'max:64', 'regex:/^[A-Za-z0-9_.\-\[\]]+$/'],
+            'sms_phone_param' => ['sometimes', 'required', 'string', 'max:64', 'regex:/^[A-Za-z0-9_.\-\[\]]+$/'],
+            'sms_message_param' => ['sometimes', 'required', 'string', 'max:64', 'regex:/^[A-Za-z0-9_.\-\[\]]+$/'],
+            'sms_extra_params' => ['nullable', 'string', 'max:1000'],
+            'sms_phone_format' => ['sometimes', 'required', Rule::in(['international', 'local'])],
+            'sms_success_text' => ['nullable', 'string', 'max:255'],
+
             // Branding — the shop-wide default accent color (users may override their own, see ThemeColorController)
             'theme_color' => ['required', Rule::enum(ThemeColor::class)],
 

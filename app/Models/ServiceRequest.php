@@ -13,10 +13,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class ServiceRequest extends Model
 {
+    use HasCreator;
+
     /** @use HasFactory<ServiceRequestFactory> */
     use HasFactory;
 
-    use HasCreator;
     use LogsActivityDefaults;
 
     /**

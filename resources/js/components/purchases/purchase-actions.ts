@@ -10,7 +10,7 @@ interface PurchaseActionHandlers {
 export function getPurchaseActions(purchase: PurchaseListItem, { onDelete }: PurchaseActionHandlers): RowAction[] {
     return [
         { label: 'View', icon: Eye, href: route('purchases.show', purchase.id) },
-        { label: 'Edit', icon: Pencil, href: route('purchases.edit', purchase.id), hidden: !purchase.can_edit },
+        { label: 'Edit', icon: Pencil, href: route('purchases.edit', purchase.id), hidden: !(purchase.can_edit || purchase.can_amend) },
         {
             label: 'Delete',
             icon: Trash2,

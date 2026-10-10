@@ -1,6 +1,5 @@
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { cn } from '@/lib/utils';
 import { Link } from '@inertiajs/react';
 import { MoreHorizontal, type LucideIcon } from 'lucide-react';
 import { Fragment } from 'react';
@@ -9,6 +8,10 @@ interface RowActionBase {
     label: string;
     icon?: LucideIcon;
     variant?: 'default' | 'destructive';
+    /** Greyed-out and not selectable (e.g. "Delete" on a record that can't be deleted). */
+    disabled?: boolean;
+    /** Muted second line under the label. */
+    description?: string;
     /** Omit this action entirely — lets a page drop Edit/Delete when they don't apply. */
     hidden?: boolean;
     /** Draws a separator above this item, e.g. before a destructive action. */
@@ -37,8 +40,8 @@ export default function DataTableRowActions({ actions }: DataTableRowActionsProp
     return (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="size-8">
-                    <MoreHorizontal className="size-4" />
+                <Button variant="ghost" size="icon-sm" onClick={(event) => event.stopPropagation()}>
+                    <MoreHorizontal />
                     <span className="sr-only">Open actions menu</span>
                 </Button>
             </DropdownMenuTrigger>
@@ -58,9 +61,11 @@ export default function DataTableRowActions({ actions }: DataTableRowActionsProp
                             <DropdownMenuItem
                                 asChild={!!action.href}
                                 onClick={action.onClick}
-                                className={cn(action.variant === 'destructive' && 'text-destructive focus:text-destructive')}
+                                variant={action.variant}
+                                disabled={action.disabled}
+                                {...(!action.href && { icon: Icon && <Icon />, description: action.description })}
                             >
-                                {action.href ? <Link href={action.href}>{content}</Link> : content}
+                                {action.href ? <Link href={action.href}>{content}</Link> : action.label}
                             </DropdownMenuItem>
                         </Fragment>
                     );

@@ -1,65 +1,51 @@
 import Heading from '@/components/heading';
-import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
+import { PageTabs, type PageTab } from '@/components/shared/page-tabs';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
-import { type NavItem } from '@/types';
-import { Link } from '@inertiajs/react';
+import { KeyRound, Palette, UserRound } from 'lucide-react';
+import { type ReactNode } from 'react';
 
-const sidebarNavItems: NavItem[] = [
-    {
-        key: 'profile',
-        title: 'Profile',
-        url: '/settings/profile',
-        icon: null,
-    },
-    {
-        key: 'password',
-        title: 'Password',
-        url: '/settings/password',
-        icon: null,
-    },
-    {
-        key: 'appearance',
-        title: 'Appearance',
-        url: '/settings/appearance',
-        icon: null,
-    },
+const TABS: PageTab[] = [
+    { href: '/settings/profile', label: 'Profile', icon: <UserRound /> },
+    { href: '/settings/password', label: 'Password', icon: <KeyRound /> },
+    { href: '/settings/appearance', label: 'Appearance', icon: <Palette /> },
 ];
 
-export default function SettingsLayout({ children }: { children: React.ReactNode }) {
-    const currentPath = window.location.pathname;
-
+/**
+ * Account settings shell: a heading, link-tabs between the settings pages, and a centred, narrow column
+ * for the page's `SettingsSection` cards.
+ */
+export default function SettingsLayout({ children }: { children: ReactNode }) {
     return (
-        <div className="px-4 py-6">
+        <div className="mx-auto w-full max-w-3xl space-y-6 px-4 py-6">
             <Heading title="Settings" description="Manage your profile and account settings" />
-
-            <div className="flex flex-col space-y-8 lg:flex-row lg:space-y-0 lg:space-x-12">
-                <aside className="w-full max-w-xl lg:w-48">
-                    <nav className="flex flex-col space-y-1 space-x-0">
-                        {sidebarNavItems.map((item) => (
-                            <Button
-                                key={item.url}
-                                size="sm"
-                                variant="ghost"
-                                asChild
-                                className={cn('w-full justify-start', {
-                                    'bg-muted': currentPath === item.url,
-                                })}
-                            >
-                                <Link href={item.url}>
-                                    {item.title}
-                                </Link>
-                            </Button>
-                        ))}
-                    </nav>
-                </aside>
-
-                <Separator className="my-6 md:hidden" />
-
-                <div className="flex-1 md:max-w-2xl">
-                    <section className="max-w-xl space-y-12">{children}</section>
-                </div>
-            </div>
+            <PageTabs tabs={TABS} currentPath={window.location.pathname} label="Settings" />
+            <div className="space-y-6">{children}</div>
         </div>
+    );
+}
+
+interface SettingsSectionProps {
+    title: ReactNode;
+    description?: ReactNode;
+    /** Buttons / status on the footer strip (e.g. Save + "Saved"). Omit for sections with no form. */
+    footer?: ReactNode;
+    /** Draws the card with a red-tinted border — for destructive sections like deleting the account. */
+    danger?: boolean;
+    children: ReactNode;
+    className?: string;
+}
+
+/** One titled card in a settings page: header, body, optional action footer. */
+export function SettingsSection({ title, description, footer, danger = false, children, className }: SettingsSectionProps) {
+    return (
+        <Card className={cn(danger && 'border-brand-danger/30', className)}>
+            <CardHeader divided>
+                <CardTitle>{title}</CardTitle>
+                {description && <CardDescription>{description}</CardDescription>}
+            </CardHeader>
+            <CardContent className="space-y-5">{children}</CardContent>
+            {footer && <CardFooter className="justify-start gap-3">{footer}</CardFooter>}
+        </Card>
     );
 }

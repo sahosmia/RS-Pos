@@ -6,6 +6,7 @@ use App\Actions\Expenses\Expense\CreateExpenseAction;
 use App\Actions\Expenses\Expense\DeleteExpenseAction;
 use App\Actions\Expenses\Expense\UpdateExpenseAction;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Common\BulkDestroyRequest;
 use App\Http\Requests\Expenses\Expense\StoreExpenseRequest;
 use App\Http\Requests\Expenses\Expense\UpdateExpenseRequest;
 use App\Models\Account;
@@ -13,6 +14,7 @@ use App\Models\Expense;
 use App\Models\ExpenseCategory;
 use App\Models\Settings;
 use App\Queries\Expenses\ExpenseQuery;
+use App\Support\BulkDelete;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -115,5 +117,18 @@ class ExpenseController extends Controller
         }
 
         return ['url' => $media->getUrl(), 'name' => $media->file_name];
+    }
+
+    /**
+     * "Delete selected" — each record is checked by the same rule as the single delete.
+     */
+    public function bulkDestroy(BulkDestroyRequest $request, DeleteExpenseAction $deleteExpense): RedirectResponse
+    {
+        return BulkDelete::respond(BulkDelete::run(
+            $request->validated('ids'),
+            Expense::query()->whereIn('id', $request->validated('ids'))->get(),
+            fn (Expense $expense) => null,
+            fn (Expense $expense) => $deleteExpense->execute($expense),
+        ));
     }
 }

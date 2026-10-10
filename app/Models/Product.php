@@ -20,6 +20,7 @@ class Product extends Model implements HasMedia
 
     /** @use HasFactory<ProductFactory> */
     use HasFactory;
+
     use InteractsWithMedia;
     use LogsActivityDefaults;
 
@@ -206,6 +207,17 @@ class Product extends Model implements HasMedia
         $this->forceFill([
             'current_stock' => round($total, 4),
         ])->save();
+    }
+
+    /**
+     * The photo's URL as a path on this site ("/storage/…"), not an absolute one built from APP_URL — so it still loads
+     * when the app is opened on a different host or port than APP_URL says (localhost vs 127.0.0.1, a vhost, a LAN IP).
+     */
+    public function imageUrl(): ?string
+    {
+        $url = $this->getFirstMediaUrl('images');
+
+        return $url === '' ? null : (parse_url($url, PHP_URL_PATH) ?: null);
     }
 
     /**

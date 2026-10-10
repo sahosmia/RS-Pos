@@ -8,6 +8,7 @@ use Database\Factories\ExpenseFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 
@@ -16,12 +17,14 @@ use Spatie\MediaLibrary\InteractsWithMedia;
  */
 class Expense extends Model implements HasMedia
 {
+    use HasCreator;
+
     /** @use HasFactory<ExpenseFactory> */
     use HasFactory;
 
-    use HasCreator;
     use InteractsWithMedia;
     use LogsActivityDefaults;
+    use SoftDeletes;
 
     /**
      * @var list<string>

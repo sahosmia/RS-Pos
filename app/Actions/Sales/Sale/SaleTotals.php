@@ -28,12 +28,33 @@ class SaleTotals
      * read `$sale->discount_type`/`discount_value` before calling this, and
      * only while the sale is still Draft/Quotation.
      *
-     * @param  array<int, array{product_id: int, quantity: float|string, original_price?: float|string|null, unit_price: float|string, discount_type?: string|null, discount_value?: float|string|null, installation_required?: bool, installation_charge?: float|string|null, note?: string|null, serial_numbers?: array<int, string>}>  $items
+     * @param  array<int, array{product_id: int, quantity: float|string, original_price?: float|string|null, unit_price: float|string, discount_type?: string|null, discount_value?: float|string|null, installation_required?: bool, installation_charge?: float|string|null, warranty_months?: int|null, service_plan_included?: bool, note?: string|null, serial_numbers?: array<int, string>}>  $items
      */
     public static function sync(Sale $sale, array $items): self
     {
         $sale->items()->delete();
 
+        // Which specific serial-tracked unit each item sells is picked at confirm time (see SerialSelections/
+        // ConfirmSaleAction), not here — a Draft is fully reversible and shouldn't reserve inventory.
+        $priced = self::priceLines($items);
+
+        foreach ($priced['rows'] as $row) {
+            $sale->items()->create($row);
+        }
+
+        return self::totalsFor($priced['subtotal'], $priced['installation'], $sale->discount_type, (float) $sale->discount_value);
+    }
+
+    /**
+     * Prices the cart lines — the part shared by a Sale and a Sales Order, so both work out the same figures from the same
+     * input. Returns each line as the attributes to store, plus the lines' subtotal and installation charges.
+     *
+     * @param  array<int, array{product_id: int, quantity: float|string, original_price?: float|string|null, unit_price: float|string, discount_type?: string|null, discount_value?: float|string|null, installation_required?: bool, installation_charge?: float|string|null, emi_financed?: bool, warranty_months?: int|null, service_plan_included?: bool, note?: string|null}>  $items
+     * @return array{rows: list<array<string, mixed>>, subtotal: float, installation: float}
+     */
+    public static function priceLines(array $items): array
+    {
+        $rows = [];
         $subtotal = 0.0;
         $installation = 0.0;
 
@@ -43,9 +64,8 @@ class SaleTotals
 
             // The Sale form lets a line's base price be edited away from the
             // product's current catalog price (a negotiated price for this
-            // sale) — trust it when sent. Callers that don't send one (e.g.
-            // ConvertSalesOrderToSaleAction, which has no discount UI of its
-            // own) keep the old behavior of pinning it to the catalog price.
+            // sale) — trust it when sent. Callers that don't send one keep
+            // the old behavior of pinning it to the catalog price.
             $originalPrice = isset($item['original_price']) ? round((float) $item['original_price'], 4) : $product->selling_price;
 
             $itemDiscountType = isset($item['discount_type']) ? DiscountType::from($item['discount_type']) : null;
@@ -62,10 +82,7 @@ class SaleTotals
 
             $itemSubtotal = round($quantity * $unitPrice, 2);
 
-            // Which specific serial-tracked unit each item sells is picked at
-            // confirm time (see SerialSelections/ConfirmSaleAction), not here
-            // — a Draft is fully reversible and shouldn't reserve inventory.
-            $sale->items()->create([
+            $rows[] = [
                 'product_id' => $item['product_id'],
                 'quantity' => $quantity,
                 'original_price' => $originalPrice,
@@ -76,8 +93,11 @@ class SaleTotals
                 'subtotal' => $itemSubtotal,
                 'installation_required' => $item['installation_required'] ?? false,
                 'installation_charge' => $item['installation_charge'] ?? null,
+                'emi_financed' => $item['emi_financed'] ?? true,
+                'warranty_months' => $item['warranty_months'] ?? null,
+                'service_plan_included' => $item['service_plan_included'] ?? true,
                 'note' => $item['note'] ?? null,
-            ]);
+            ];
 
             $subtotal += $itemSubtotal;
 
@@ -86,11 +106,15 @@ class SaleTotals
             }
         }
 
-        $subtotal = round($subtotal, 2);
+        return ['rows' => $rows, 'subtotal' => round($subtotal, 2), 'installation' => round($installation, 2)];
+    }
 
-        $discountAmount = self::applyDiscount($subtotal, $sale->discount_type, (float) $sale->discount_value);
-
-        $installation = round($installation, 2);
+    /**
+     * The invoice-level discount and the grand total on top of already-priced lines.
+     */
+    public static function totalsFor(float $subtotal, float $installation, ?DiscountType $discountType, float $discountValue): self
+    {
+        $discountAmount = self::applyDiscount($subtotal, $discountType, $discountValue);
 
         return new self($subtotal, $discountAmount, round($subtotal - $discountAmount + $installation, 2), $installation);
     }

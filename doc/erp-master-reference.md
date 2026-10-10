@@ -148,7 +148,8 @@ stock_movements
 - Purchase confirm → `purchase_bill` (−due, payable বাড়ে)
 - Payment → `payment_received` / `payment_made`
 - Return → `sale_return` / `purchase_return`
-- Discount মাফ → `discount_waived`
+- Discount মাফ (customer-এর বকেয়া) → `discount_waived`
+- Supplier discount দিলে (আমাদের payable কমে, cash নড়ে না) → `discount_received`
 
 ## Database
 

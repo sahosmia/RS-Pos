@@ -17,7 +17,8 @@ class InvoiceSettingsController extends Controller
         return Inertia::render('invoice-settings/index', [
             'settings' => $settings->invoiceSettingsOrDefault(),
             'logoUrl' => $settings->getFirstMediaUrl('invoice_logo') ?: null,
-            'shop' => [
+            // Not called `shop`: that name is the shared prop (modules, theme, menu order) the sidebar reads.
+            'invoiceShop' => [
                 'name' => $settings->shop_name,
                 'address' => $settings->shop_address,
                 'phone' => $settings->shop_phone,

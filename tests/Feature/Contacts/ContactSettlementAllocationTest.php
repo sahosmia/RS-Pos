@@ -260,3 +260,112 @@ test('cancelling a sale that had a discount waived leaves the ledger and account
         ->and(ChartOfAccount::where('code', '1100')->firstOrFail()->balance)->toBe(0.0)
         ->and(ChartOfAccount::where('code', '4150')->firstOrFail()->balance)->toBe(0.0);
 });
+
+// ---- payment + discount settled together from "Pay Due" --------------------------------------------------
+
+function duePurchase(Contact $supplier, float $total, string $date): Purchase
+{
+    $purchase = Purchase::factory()->create(['supplier_id' => $supplier->id, 'purchase_date' => $date]);
+    $purchase->forceFill(['total_amount' => $total, 'due_amount' => $total, 'status' => PurchaseStatus::Received])->save();
+
+    return $purchase;
+}
+
+test('a customer can pay part and be given a discount for the rest in one go', function () {
+    $customer = Contact::factory()->create(['balance' => 15000]);
+    $sale = dueSale($customer, 15000, '2026-09-01');
+    $account = settlementAccount();
+
+    $this->post("/contacts/{$customer->id}/payments", [
+        'account_id' => $account->id, 'amount' => 10000, 'discount_amount' => 5000, 'direction' => 'received',
+    ])->assertSessionHasNoErrors();
+
+    expect($sale->fresh()->due_amount)->toBe(0.0)
+        ->and($sale->fresh()->paid_amount)->toBe(10000.0)
+        ->and($sale->fresh()->waivedAmount())->toBe(5000.0)
+        ->and($sale->fresh()->payment_status)->toBe(PaymentStatus::Paid)
+        ->and($customer->fresh()->balance)->toBe(0.0)
+        ->and($account->fresh()->current_balance)->toBe(10000.0)
+        ->and(ChartOfAccount::where('code', '4150')->firstOrFail()->balance)->toBe(5000.0);
+});
+
+test('a supplier discount settles what we owe with no cash: pay 10,000 and get 5,000 off a 15,000 bill', function () {
+    $supplier = Contact::factory()->supplier()->create(['balance' => -15000]);
+    $purchase = duePurchase($supplier, 15000, '2026-09-01');
+    $account = settlementAccount(20000);
+
+    $this->post("/contacts/{$supplier->id}/payments", [
+        'account_id' => $account->id, 'amount' => 10000, 'discount_amount' => 5000, 'direction' => 'made',
+    ])->assertSessionHasNoErrors();
+
+    expect($purchase->fresh()->due_amount)->toBe(0.0)
+        ->and($purchase->fresh()->paid_amount)->toBe(10000.0)
+        ->and($purchase->fresh()->discountReceivedAmount())->toBe(5000.0)
+        ->and($purchase->fresh()->payment_status)->toBe(PaymentStatus::Paid)
+        ->and($supplier->fresh()->balance)->toBe(0.0)
+        ->and($account->fresh()->current_balance)->toBe(10000.0);
+});
+
+test('a supplier can waive the whole payable with a discount and no payment at all', function () {
+    $supplier = Contact::factory()->supplier()->create(['balance' => -5000]);
+    $purchase = duePurchase($supplier, 5000, '2026-09-01');
+
+    $this->post("/contacts/{$supplier->id}/payments", ['discount_amount' => 5000, 'direction' => 'made'])->assertSessionHasNoErrors();
+
+    $entry = JournalEntry::query()->with('lines')->where('reference_type', 'purchase')->where('reference_id', $purchase->id)->firstOrFail();
+
+    expect($purchase->fresh()->due_amount)->toBe(0.0)
+        ->and($purchase->fresh()->paid_amount)->toBe(0.0)
+        ->and($purchase->fresh()->payment_status)->toBe(PaymentStatus::Paid)
+        ->and($supplier->fresh()->balance)->toBe(0.0)
+        ->and($entry->lines->sum('debit'))->toBe($entry->lines->sum('credit'))
+        ->and(ChartOfAccount::where('code', '2100')->firstOrFail()->balance)->toBe(-5000.0)   // Payable down by 5,000
+        ->and(ChartOfAccount::where('code', '4400')->firstOrFail()->balance)->toBe(5000.0);   // booked as other income
+});
+
+test('a supplier discount beyond the purchases comes off the general balance', function () {
+    $supplier = Contact::factory()->supplier()->create(['balance' => -5000]);
+    $purchase = duePurchase($supplier, 2000, '2026-09-01');
+
+    $this->post("/contacts/{$supplier->id}/payments", ['discount_amount' => 3000, 'direction' => 'made'])->assertSessionHasNoErrors();
+
+    expect($purchase->fresh()->due_amount)->toBe(0.0)
+        ->and($supplier->fresh()->balance)->toBe(-2000.0);
+});
+
+test('a discount cannot be larger than what is owed in that direction', function () {
+    $supplier = Contact::factory()->supplier()->create(['balance' => -1000]);
+    $customer = Contact::factory()->create(['balance' => 1000]);
+
+    $this->post("/contacts/{$supplier->id}/payments", ['discount_amount' => 1500, 'direction' => 'made'])->assertSessionHasErrors('discount_amount');
+    // The customer owes us, so a supplier-style discount ("we owe them") has nothing to act on.
+    $this->post("/contacts/{$customer->id}/payments", ['discount_amount' => 10, 'direction' => 'made'])->assertSessionHasErrors('discount_amount');
+
+    expect($supplier->fresh()->balance)->toBe(-1000.0)
+        ->and($customer->fresh()->balance)->toBe(1000.0);
+});
+
+test('payment and discount together cannot exceed the picked invoice due, and one of them is required', function () {
+    $customer = Contact::factory()->create(['balance' => 1000]);
+    $sale = dueSale($customer, 1000, '2026-09-01');
+    $account = settlementAccount();
+
+    $this->post("/contacts/{$customer->id}/payments", [
+        'account_id' => $account->id, 'amount' => 800, 'discount_amount' => 300, 'direction' => 'received', 'sale_id' => $sale->id,
+    ])->assertSessionHasErrors('amount');
+    $this->post("/contacts/{$customer->id}/payments", ['direction' => 'received'])->assertSessionHasErrors('amount');
+
+    expect($sale->fresh()->due_amount)->toBe(1000.0);
+});
+
+test('a discount aimed at one invoice only reduces that invoice', function () {
+    $customer = Contact::factory()->create(['balance' => 3000]);
+    $older = dueSale($customer, 1000, '2026-08-01');
+    $newer = dueSale($customer, 2000, '2026-09-01');
+
+    $this->post("/contacts/{$customer->id}/payments", ['discount_amount' => 500, 'direction' => 'received', 'sale_id' => $newer->id])->assertSessionHasNoErrors();
+
+    expect($older->fresh()->due_amount)->toBe(1000.0)
+        ->and($newer->fresh()->due_amount)->toBe(1500.0)
+        ->and($customer->fresh()->balance)->toBe(2500.0);
+});

@@ -21,6 +21,8 @@ class EmiInstallment extends Model
         'installment_number',
         'due_date',
         'amount',
+        'principal_amount',
+        'interest_amount',
         'paid_amount',
         'status',
         'paid_at',
@@ -35,6 +37,8 @@ class EmiInstallment extends Model
         return [
             'due_date' => 'date',
             'amount' => 'float',
+            'principal_amount' => 'float',
+            'interest_amount' => 'float',
             'paid_amount' => 'float',
             'status' => EmiInstallmentStatus::class,
             'paid_at' => 'datetime',

@@ -18,6 +18,9 @@ class ActivityLogController extends Controller
     /** Columns tried, in order, to name the record an entry is about ("INV-0012", "Split AC"). */
     private const LABEL_FIELDS = ['invoice_no', 'purchase_no', 'order_no', 'expense_no', 'display_name', 'name', 'title', 'code'];
 
+    /** The log opens on this many days (today included): the table can hold years of rows, and the page should stay quick. */
+    private const DEFAULT_DAYS = 7;
+
     /** Most field changes shown per entry — the rest collapse into "+N more". */
     private const MAX_CHANGES = 8;
 
@@ -28,11 +31,22 @@ class ActivityLogController extends Controller
             'to' => ['nullable', 'date', 'after_or_equal:from'],
             'causer_id' => ['nullable', 'integer'],
             'subject_type' => ['nullable', 'string', 'max:255'],
-            'event' => ['nullable', 'in:created,updated,deleted'],
+            'event' => ['nullable', 'in:created,updated,deleted,login,logout'],
             'per_page' => ['nullable', 'string', 'max:10'],
         ]);
 
         $perPage = Settings::resolveRequestedPerPage($validated['per_page'] ?? null);
+
+        // Opening the page with no dates shows the last few days. Clearing a date on purpose (the field is sent empty) is a
+        // choice to look further back, so that is respected.
+        $defaults = [
+            'from' => now()->subDays(self::DEFAULT_DAYS - 1)->toDateString(),
+            'to' => now()->toDateString(),
+        ];
+
+        if (! $request->has('from') && ! $request->has('to')) {
+            $validated = [...$validated, ...$defaults];
+        }
 
         $activities = ActivityLogQuery::filtered($validated)
             ->paginate($perPage ?? Settings::MAX_UNPAGINATED_ROWS)
@@ -44,6 +58,7 @@ class ActivityLogController extends Controller
             'activities' => $activities,
             'users' => User::query()->orderBy('name')->get(['id', 'name']),
             'recordTypes' => $this->recordTypes(),
+            'defaultRange' => $defaults,
             'filters' => [
                 'from' => $validated['from'] ?? null,
                 'to' => $validated['to'] ?? null,

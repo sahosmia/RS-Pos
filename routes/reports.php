@@ -5,7 +5,6 @@ use App\Http\Controllers\Reports\CashFlowController;
 use App\Http\Controllers\Reports\DueReportController;
 use App\Http\Controllers\Reports\FinancialPositionController;
 use App\Http\Controllers\Reports\ProfitLossController;
-use App\Http\Controllers\Reports\StockReportController;
 use App\Http\Controllers\Reports\TrendingProductsController;
 use App\Http\Controllers\Reports\TrialBalanceController;
 use Illuminate\Support\Facades\Route;
@@ -15,7 +14,8 @@ Route::middleware(['auth', 'module:report'])->prefix('reports')->name('reports.'
     Route::get('balance-sheet', BalanceSheetController::class)->name('balance-sheet');
     Route::get('trial-balance', TrialBalanceController::class)->name('trial-balance');
     Route::get('cash-flow', CashFlowController::class)->name('cash-flow');
-    Route::get('stock', StockReportController::class)->name('stock');
+    // The Stock Report was folded into the Products page (stock value, low/out-of-stock filters, export).
+    Route::redirect('stock', '/products', 301)->name('stock');
     Route::get('due', DueReportController::class)->name('due');
     Route::get('trending-products', TrendingProductsController::class)->name('trending-products');
 });

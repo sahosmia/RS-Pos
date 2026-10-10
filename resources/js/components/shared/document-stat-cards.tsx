@@ -23,25 +23,24 @@ export function DocumentStatCards({ noun, icon, count, totalAmount, totalPaid, t
                     label: `Total ${noun}`,
                     value: count.toLocaleString(),
                     icon,
-                    tone: 'text-sky-600 bg-sky-100 dark:text-sky-400 dark:bg-sky-500/15',
                 },
                 {
                     label: 'Total Amount',
                     value: money(totalAmount),
                     icon: DollarSign,
-                    tone: 'text-violet-600 bg-violet-100 dark:text-violet-400 dark:bg-violet-500/15',
+                    accent: 'info',
                 },
                 {
                     label: 'Total Paid',
                     value: money(totalPaid),
                     icon: ArrowDownCircle,
-                    tone: 'text-emerald-600 bg-emerald-100 dark:text-emerald-400 dark:bg-emerald-500/15',
+                    accent: 'success',
                 },
                 {
                     label: 'Total Due',
                     value: money(totalDue),
                     icon: ArrowUpCircle,
-                    tone: 'text-rose-600 bg-rose-100 dark:text-rose-400 dark:bg-rose-500/15',
+                    accent: 'danger',
                 },
             ]}
         />

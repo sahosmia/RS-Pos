@@ -2,10 +2,12 @@
 
 namespace App\Http\Requests\Purchases\Purchase;
 
+use App\Enums\PurchaseStatus;
 use App\Http\Requests\Purchases\Purchase\Concerns\HasReceiptRules;
 use App\Rules\ContactMustBeTypeRule;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class UpdatePurchaseRequest extends FormRequest
 {
@@ -26,6 +28,8 @@ class UpdatePurchaseRequest extends FormRequest
             'supplier_id' => ['required', 'integer', 'exists:contacts,id', new ContactMustBeTypeRule('supplier')],
             'purchase_date' => ['required', 'date'],
             'status' => ['required', 'in:draft,ordered,received'],
+            // Editing a purchase that is already received needs a reason; it is kept in the Activity Log.
+            'amend_reason' => [Rule::requiredIf(fn () => $this->route('purchase')?->status === PurchaseStatus::Received), 'nullable', 'string', 'max:255'],
             'discount_type' => ['nullable', 'in:flat,percentage'],
             'discount_value' => ['nullable', 'numeric', 'min:0'],
             'items' => ['required', 'array', 'min:1'],

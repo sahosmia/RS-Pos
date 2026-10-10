@@ -17,6 +17,9 @@ return new class extends Migration
             $table->unsignedInteger('installment_number');
             $table->date('due_date');
             $table->decimal('amount', 19, 4);
+            // `amount` is the whole installment; these show what it is made of.
+            $table->decimal('principal_amount', 19, 4)->default(0);
+            $table->decimal('interest_amount', 19, 4)->default(0);
             $table->decimal('paid_amount', 19, 4)->default(0);
             $table->string('status')->default('pending');
             $table->dateTime('paid_at')->nullable();

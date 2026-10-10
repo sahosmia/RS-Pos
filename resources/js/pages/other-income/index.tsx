@@ -1,5 +1,4 @@
 import ListTable from '@/components/data-table/list-table';
-import HeadingSmall from '@/components/heading-small';
 import OtherIncomeCategoryManager from '@/components/other-income/category-manager';
 import {
     INCOME_EXPORT_COLUMN_MAP,
@@ -9,9 +8,11 @@ import {
 } from '@/components/other-income/income-columns';
 import { IncomeFormModal } from '@/components/other-income/income-form-modal';
 import { IncomeGridCard } from '@/components/other-income/income-grid-card';
+import BulkDeleteBar from '@/components/shared/bulk-delete-bar';
 import ConfirmDialog from '@/components/shared/confirm-dialog';
 import EmptyState from '@/components/shared/empty-state';
 import { MetricCard } from '@/components/shared/metric-card';
+import PageHeader from '@/components/shared/page-header';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -87,10 +88,11 @@ export default function OtherIncomeIndex({ incomes, totalIncome, categories, acc
             <Head title="Other Income" />
 
             <div className="space-y-6 px-4 py-6">
-                <div className="flex flex-wrap items-end justify-between gap-4">
-                    <HeadingSmall title="Other Income" description="বিক্রি ছাড়া ছোট আয় — যেমন কার্টন/স্ক্র্যাপ বিক্রি, সুদ, কমিশন" />
-                    {tab === 'income' && <Button onClick={() => setModalOpen(true)}>Add Income</Button>}
-                </div>
+                <PageHeader
+                    title="Other Income"
+                    description="বিক্রি ছাড়া ছোট আয় — যেমন কার্টন/স্ক্র্যাপ বিক্রি, সুদ, কমিশন"
+                    actions={<>{tab === 'income' && <Button onClick={() => setModalOpen(true)}>Add Income</Button>}</>}
+                />
 
                 <Tabs value={tab} onValueChange={(value) => setTab(value === 'categories' ? 'categories' : 'income')}>
                     <TabsList>
@@ -109,6 +111,14 @@ export default function OtherIncomeIndex({ incomes, totalIncome, categories, acc
                         />
 
                         <ListTable
+                            selectionSlot={
+                                <BulkDeleteBar
+                                    selection={list.selection}
+                                    routeName="other-income.bulk-delete"
+                                    noun="income records"
+                                    permission="expense.delete"
+                                />
+                            }
                             list={list}
                             data={incomes}
                             filters={filters}

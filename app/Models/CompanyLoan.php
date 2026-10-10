@@ -18,10 +18,11 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  */
 class CompanyLoan extends Model
 {
+    use HasCreator;
+
     /** @use HasFactory<CompanyLoanFactory> */
     use HasFactory;
 
-    use HasCreator;
     use HasLedger;
     use LogsActivityDefaults;
 
@@ -60,5 +61,13 @@ class CompanyLoan extends Model
     protected function ledgerBalanceColumn(): string
     {
         return 'outstanding_balance';
+    }
+
+    /**
+     * Why this record can't be deleted, or null when it can — one rule for the single and the bulk delete.
+     */
+    public function deletionBlockReason(): ?string
+    {
+        return $this->transactions()->exists() ? 'This loan has recorded transactions and cannot be deleted.' : null;
     }
 }

@@ -38,23 +38,23 @@ class DummyDataSeeder extends Seeder
             SupplierSeeder::class,
 
             // Demo transactions
-            PurchaseSeeder::class,
-            SaleSeeder::class,
-            SalesOrderSeeder::class,
-            ExpenseSeeder::class,
-            FundTransferSeeder::class,
-            OtherIncomeSeeder::class,
-            AssetSeeder::class,
-            CompanyLoanSeeder::class,
-            InvestorSeeder::class,
-            OtherLiabilitySeeder::class,
-            StaffSeeder::class,
+            // PurchaseSeeder::class,
+            // SaleSeeder::class,
+            // SalesOrderSeeder::class,
+            // ExpenseSeeder::class,
+            // FundTransferSeeder::class,
+            // OtherIncomeSeeder::class,
+            // AssetSeeder::class,
+            // CompanyLoanSeeder::class,
+            // InvestorSeeder::class,
+            // OtherLiabilitySeeder::class,
+            // StaffSeeder::class,
 
             // After-sale and housekeeping — these build on the sales and staff above
-            ServiceRequestSeeder::class,
-            WarrantyClaimSeeder::class,
-            CampaignSeeder::class,
-            NotificationSeeder::class,
+            // ServiceRequestSeeder::class,
+            // WarrantyClaimSeeder::class,
+            // CampaignSeeder::class,
+            // NotificationSeeder::class,
         ]);
     }
 }

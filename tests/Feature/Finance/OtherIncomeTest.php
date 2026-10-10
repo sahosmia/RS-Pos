@@ -75,7 +75,12 @@ test('a category can be added, renamed and deleted — but not while it has inco
     $this->delete(route('other-income-categories.destroy', $category))->assertSessionHasErrors('category');
     expect(OtherIncomeCategory::find($category->id))->not->toBeNull();
 
+    // Removed entries stay on record (soft-deleted), so their category is still kept for the label.
     OtherIncome::query()->delete();
+    $this->delete(route('other-income-categories.destroy', $category))->assertSessionHasErrors('category');
+    expect(OtherIncomeCategory::find($category->id))->not->toBeNull();
+
+    OtherIncome::withTrashed()->forceDelete();
     $this->delete(route('other-income-categories.destroy', $category))->assertSessionHasNoErrors();
     expect(OtherIncomeCategory::find($category->id))->toBeNull();
 });

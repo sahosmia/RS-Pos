@@ -46,6 +46,11 @@ class CancelSaleAction
         }
 
         return DB::transaction(function () use ($sale) {
+            // Lock first: a second Undo arriving together with the first must not reverse the sale twice.
+            if (Sale::query()->whereKey($sale->id)->lockForUpdate()->value('status') !== SaleStatus::Confirmed) {
+                return $sale->fresh(['items.product', 'customer']);
+            }
+
             $sale->load('items.product', 'customer');
 
             if ($sale->source !== SaleSource::Imported) {

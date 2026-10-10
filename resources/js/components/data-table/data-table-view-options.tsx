@@ -1,4 +1,3 @@
-
 import { type DataTableColumnOption } from '@/components/data-table/types';
 import { Button } from '@/components/ui/button';
 import {
@@ -17,14 +16,8 @@ interface DataTableViewOptionsProps {
     onVisibilityChange: (id: string, visible: boolean) => void;
 }
 
-export default function DataTableViewOptions({
-    columns,
-    visibility,
-    onVisibilityChange,
-}: DataTableViewOptionsProps) {
-    const visibleCount = columns.filter(
-        (column) => visibility[column.id] !== false,
-    ).length;
+export default function DataTableViewOptions({ columns, visibility, onVisibilityChange }: DataTableViewOptionsProps) {
+    const visibleCount = columns.filter((column) => visibility[column.id] !== false).length;
 
     const totalCount = columns.length;
     const allVisible = visibleCount === totalCount;
@@ -51,31 +44,22 @@ export default function DataTableViewOptions({
             <DropdownMenuTrigger asChild>
                 <Button
                     type="button"
-                    variant="outline"
-                    size="sm"
+                    variant="secondary"
                     disabled={totalCount === 0}
-                    className="h-9 gap-2"
+                    title="Columns"
                     aria-label={`Column visibility: ${visibleCount} of ${totalCount} visible`}
                 >
-                    <Columns3 className="size-4" />
-                    <span className="hidden sm:inline">Columns</span>
-
-                    <span className="rounded-md bg-muted px-1.5 py-0.5 text-xs font-medium tabular-nums text-muted-foreground">
+                    <Columns3 />
+                    <span className="bg-brand-secondary text-muted-foreground rounded-sm px-1.5 text-xs leading-5 font-medium tabular-nums">
                         {visibleCount}/{totalCount}
                     </span>
                 </Button>
             </DropdownMenuTrigger>
 
-            <DropdownMenuContent
-                align="end"
-                className="w-60"
-                onCloseAutoFocus={(event) => event.preventDefault()}
-            >
-                <DropdownMenuLabel className="flex items-center justify-between gap-2">
-                    <span className="text-sm font-semibold">
-                        Column visibility
-                    </span>
-                    <span className="text-xs font-normal tabular-nums text-muted-foreground">
+            <DropdownMenuContent align="end" className="w-60" onCloseAutoFocus={(event) => event.preventDefault()}>
+                <DropdownMenuLabel className="text-foreground flex items-center justify-between gap-2">
+                    <span className="text-sm font-semibold">Column visibility</span>
+                    <span className="text-muted-foreground text-xs font-normal tabular-nums">
                         {visibleCount} of {totalCount}
                     </span>
                 </DropdownMenuLabel>
@@ -99,7 +83,7 @@ export default function DataTableViewOptions({
                         type="button"
                         variant="ghost"
                         size="sm"
-                        className="h-7 gap-1.5 px-2 text-xs text-muted-foreground"
+                        className="text-muted-foreground h-7 gap-1.5 px-2 text-xs"
                         onClick={hideAllColumns}
                         disabled={noneVisible}
                     >
@@ -118,22 +102,16 @@ export default function DataTableViewOptions({
                             <DropdownMenuCheckboxItem
                                 key={column.id}
                                 checked={isVisible}
-                                onCheckedChange={(checked) =>
-                                    onVisibilityChange(column.id, checked)
-                                }
+                                onCheckedChange={(checked) => onVisibilityChange(column.id, checked)}
                                 onSelect={(event) => event.preventDefault()}
                                 className="cursor-pointer capitalize"
                             >
-                                <span className="truncate">
-                                    {column.label}
-                                </span>
+                                <span className="truncate">{column.label}</span>
                             </DropdownMenuCheckboxItem>
                         );
                     })
                 ) : (
-                    <p className="px-2 py-4 text-center text-sm text-muted-foreground">
-                        No columns available
-                    </p>
+                    <p className="text-muted-foreground px-2 py-4 text-center text-sm">No columns available</p>
                 )}
             </DropdownMenuContent>
         </DropdownMenu>

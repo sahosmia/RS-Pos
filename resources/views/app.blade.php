@@ -21,9 +21,7 @@
             </script>
         @endif
 
-        @if ($favicon = \App\Models\Settings::currentOrNull()?->brandingUrls()['favicon'])
-            <link rel="icon" href="{{ $favicon }}">
-        @endif
+        <link rel="icon" href="{{ \App\Models\Settings::currentOrNull()?->brandingUrls()['favicon'] ?: asset('images/favicon-48.png') }}">
 
         <link rel="preconnect" href="https://fonts.bunny.net">
         <link href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600" rel="stylesheet" />

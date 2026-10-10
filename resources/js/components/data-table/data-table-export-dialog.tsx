@@ -1,25 +1,12 @@
-
 import DataTableCheckbox from '@/components/data-table/data-table-checkbox';
 import { type DataTableColumnOption } from '@/components/data-table/types';
 import { Button } from '@/components/ui/button';
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-} from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-import { type SharedData } from '@/types';
 import { cn } from '@/lib/utils';
+import { type SharedData } from '@/types';
 import { usePage } from '@inertiajs/react';
-import {
-    FileSpreadsheet,
-    FileText,
-    FileType2,
-    type LucideIcon,
-} from 'lucide-react';
+import { FileSpreadsheet, FileText, FileType2, type LucideIcon } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 
 export type DataTableExportFormat = 'csv' | 'xlsx' | 'pdf';
@@ -84,8 +71,7 @@ export default function DataTableExportDialog({
     const exportCount = scope === 'selected' ? selectedCount : totalCount;
 
     // Excel/PDF are built in memory server-side, so they have a row cap; CSV streams and has none.
-    const limitOf = (value: DataTableExportFormat): number | null =>
-        value === 'csv' ? null : exportLimits[value];
+    const limitOf = (value: DataTableExportFormat): number | null => (value === 'csv' ? null : exportLimits[value]);
     const overLimit = (value: DataTableExportFormat): boolean => {
         const limit = limitOf(value);
         return limit !== null && exportCount > limit;
@@ -99,41 +85,24 @@ export default function DataTableExportDialog({
     useEffect(() => {
         if (!open) return;
 
-        setCheckedColumns(
-            Object.fromEntries(
-                columns.map((column) => [
-                    column.id,
-                    defaultVisibleColumns.includes(column.id),
-                ]),
-            ),
-        );
+        setCheckedColumns(Object.fromEntries(columns.map((column) => [column.id, defaultVisibleColumns.includes(column.id)])));
 
         setScope(selectedCount > 0 ? 'selected' : 'all');
     }, [open, columns, defaultVisibleColumns, selectedCount]);
 
     const selectedColumnIds = useMemo(
-        () =>
-            columns
-                .filter((column) => checkedColumns[column.id] === true)
-                .map((column) => column.id),
+        () => columns.filter((column) => checkedColumns[column.id] === true).map((column) => column.id),
         [columns, checkedColumns],
     );
 
-    const allChecked =
-        columns.length > 0 &&
-        selectedColumnIds.length === columns.length;
+    const allChecked = columns.length > 0 && selectedColumnIds.length === columns.length;
 
-    const someChecked =
-        selectedColumnIds.length > 0 && !allChecked;
+    const someChecked = selectedColumnIds.length > 0 && !allChecked;
 
     const toggleAll = () => {
         const next = !allChecked;
 
-        setCheckedColumns(
-            Object.fromEntries(
-                columns.map((column) => [column.id, next]),
-            ),
-        );
+        setCheckedColumns(Object.fromEntries(columns.map((column) => [column.id, next])));
     };
 
     const toggleColumn = (id: string, checked: boolean | 'indeterminate') => {
@@ -160,17 +129,13 @@ export default function DataTableExportDialog({
             <DialogContent className="sm:max-w-md">
                 <DialogHeader>
                     <DialogTitle>Export data</DialogTitle>
-                    <DialogDescription>
-                        Choose a format, rows, and columns to include in your export.
-                    </DialogDescription>
+                    <DialogDescription>Choose a format, rows, and columns to include in your export.</DialogDescription>
                 </DialogHeader>
 
                 <div className="space-y-5">
                     {/* Format */}
                     <section className="grid min-w-0 gap-2">
-                        <Label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                            Format
-                        </Label>
+                        <Label className="text-muted-foreground text-xs font-medium tracking-wide uppercase">Format</Label>
 
                         <div className="grid grid-cols-3 gap-2">
                             {FORMATS.map(({ value, label, description, icon: Icon }) => {
@@ -186,31 +151,25 @@ export default function DataTableExportDialog({
                                         disabled={blocked}
                                         onClick={() => setFormat(value)}
                                         className={cn(
-                                            'flex min-w-0 flex-col items-center gap-1.5 rounded-lg border p-3 text-center transition-colors disabled:cursor-not-allowed disabled:opacity-50',
+                                            'motion-colors flex min-w-0 flex-col items-center gap-1.5 rounded-lg border p-3 text-center disabled:cursor-not-allowed disabled:opacity-50',
                                             active
-                                                ? 'border-primary/50 bg-primary/5 ring-1 ring-primary/20'
+                                                ? 'border-primary/50 bg-primary/5 ring-primary/20 ring-1'
                                                 : 'hover:border-primary/30 hover:bg-muted/40',
                                         )}
                                     >
                                         <span
                                             className={cn(
                                                 'flex size-8 items-center justify-center rounded-md',
-                                                active
-                                                    ? 'bg-primary/10 text-primary'
-                                                    : 'bg-muted text-muted-foreground',
+                                                active ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground',
                                             )}
                                         >
                                             <Icon className="size-4" aria-hidden="true" />
                                         </span>
 
-                                        <span className="text-sm font-medium">
-                                            {label}
-                                        </span>
+                                        <span className="text-sm font-medium">{label}</span>
 
-                                        <span className="text-[10px] leading-tight text-muted-foreground">
-                                            {blocked && limit !== null
-                                                ? `Max ${limit.toLocaleString()} rows`
-                                                : description}
+                                        <span className="text-muted-foreground text-[10px] leading-tight">
+                                            {blocked && limit !== null ? `Max ${limit.toLocaleString()} rows` : description}
                                         </span>
                                     </button>
                                 );
@@ -220,19 +179,15 @@ export default function DataTableExportDialog({
                         {(overLimit('xlsx') || overLimit('pdf')) && (
                             <p className="text-xs text-amber-600 dark:text-amber-500">
                                 {exportCount.toLocaleString()} rows is too many for{' '}
-                                {[overLimit('xlsx') && 'Excel', overLimit('pdf') && 'PDF']
-                                    .filter(Boolean)
-                                    .join(' and ')}
-                                . Use CSV, or narrow the filters first.
+                                {[overLimit('xlsx') && 'Excel', overLimit('pdf') && 'PDF'].filter(Boolean).join(' and ')}. Use CSV, or narrow the
+                                filters first.
                             </p>
                         )}
                     </section>
 
                     {/* Export scope */}
                     <section className="grid gap-2">
-                        <Label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                            Rows
-                        </Label>
+                        <Label className="text-muted-foreground text-xs font-medium tracking-wide uppercase">Rows</Label>
 
                         <div className="grid grid-cols-2 gap-2">
                             <button
@@ -240,16 +195,12 @@ export default function DataTableExportDialog({
                                 aria-pressed={scope === 'all'}
                                 onClick={() => setScope('all')}
                                 className={cn(
-                                    'rounded-lg border p-3 text-left text-sm transition-colors',
-                                    scope === 'all'
-                                        ? 'border-primary/50 bg-primary/5 ring-1 ring-primary/20'
-                                        : 'hover:bg-muted/40',
+                                    'motion-colors rounded-lg border p-3 text-left text-sm',
+                                    scope === 'all' ? 'border-primary/50 bg-primary/5 ring-primary/20 ring-1' : 'hover:bg-muted/40',
                                 )}
                             >
                                 <span className="block font-medium">All rows</span>
-                                <span className="text-xs text-muted-foreground">
-                                    {totalCount.toLocaleString()} available
-                                </span>
+                                <span className="text-muted-foreground text-xs">{totalCount.toLocaleString()} available</span>
                             </button>
 
                             <button
@@ -258,20 +209,16 @@ export default function DataTableExportDialog({
                                 disabled={selectedCount === 0}
                                 onClick={() => setScope('selected')}
                                 className={cn(
-                                    'rounded-lg border p-3 text-left text-sm transition-colors disabled:cursor-not-allowed disabled:opacity-50',
-                                    scope === 'selected'
-                                        ? 'border-primary/50 bg-primary/5 ring-1 ring-primary/20'
-                                        : 'hover:bg-muted/40',
+                                    'motion-colors rounded-lg border p-3 text-left text-sm disabled:cursor-not-allowed disabled:opacity-50',
+                                    scope === 'selected' ? 'border-primary/50 bg-primary/5 ring-primary/20 ring-1' : 'hover:bg-muted/40',
                                 )}
                             >
                                 <span className="block font-medium">Selected rows</span>
-                                <span className="text-xs text-muted-foreground">
-                                    {selectedCount} selected
-                                </span>
+                                <span className="text-muted-foreground text-xs">{selectedCount} selected</span>
                             </button>
                         </div>
 
-                        <p className="rounded-lg border bg-muted/40 p-3 text-xs text-muted-foreground">
+                        <p className="bg-muted/40 text-muted-foreground rounded-lg border p-3 text-xs">
                             {scope === 'selected'
                                 ? `${selectedCount} selected row${selectedCount === 1 ? '' : 's'} will be exported.`
                                 : `All ${totalCount.toLocaleString()} row${totalCount === 1 ? '' : 's'} matching the current filters will be exported.`}
@@ -281,7 +228,7 @@ export default function DataTableExportDialog({
                     {/* Columns */}
                     <section className="grid min-w-0 gap-2">
                         <div className="flex items-center justify-between gap-2">
-                            <Label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                            <Label className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
                                 Columns ({selectedColumnIds.length} of {columns.length})
                             </Label>
 
@@ -289,7 +236,7 @@ export default function DataTableExportDialog({
                                 type="button"
                                 onClick={toggleAll}
                                 disabled={columns.length === 0}
-                                className="text-xs font-medium text-primary hover:underline disabled:cursor-not-allowed disabled:opacity-50"
+                                className="text-primary text-xs font-medium hover:underline disabled:cursor-not-allowed disabled:opacity-50"
                             >
                                 {allChecked ? 'Deselect all' : 'Select all'}
                             </button>
@@ -304,50 +251,28 @@ export default function DataTableExportDialog({
                         <div className="grid max-h-56 grid-cols-2 gap-x-4 gap-y-2 overflow-y-auto rounded-lg border p-3">
                             {columns.length > 0 ? (
                                 columns.map((column) => (
-                                    <label
-                                        key={column.id}
-                                        className="flex min-w-0 cursor-pointer items-center gap-2 text-sm hover:text-foreground"
-                                    >
+                                    <label key={column.id} className="hover:text-foreground flex min-w-0 cursor-pointer items-center gap-2 text-sm">
                                         <DataTableCheckbox
                                             checked={checkedColumns[column.id] ?? false}
-                                            onCheckedChange={(checked) =>
-                                                toggleColumn(column.id, checked)
-                                            }
+                                            onCheckedChange={(checked) => toggleColumn(column.id, checked)}
                                         />
-                                        <span className="truncate">
-                                            {column.label}
-                                        </span>
+                                        <span className="truncate">{column.label}</span>
                                     </label>
                                 ))
                             ) : (
-                                <p className="col-span-2 py-3 text-center text-sm text-muted-foreground">
-                                    No exportable columns available.
-                                </p>
+                                <p className="text-muted-foreground col-span-2 py-3 text-center text-sm">No exportable columns available.</p>
                             )}
                         </div>
                     </section>
                 </div>
 
                 <DialogFooter>
-                    <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => onOpenChange(false)}
-                    >
+                    <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                         Cancel
                     </Button>
 
-                    <Button
-                        type="button"
-                        onClick={handleExport}
-                        disabled={
-                            selectedColumnIds.length === 0 ||
-                            exportCount === 0
-                        }
-                    >
-                        {exportCount > 0
-                            ? `Export ${exportCount.toLocaleString()} ${exportCount === 1 ? 'row' : 'rows'}`
-                            : 'Nothing to export'}
+                    <Button type="button" onClick={handleExport} disabled={selectedColumnIds.length === 0 || exportCount === 0}>
+                        {exportCount > 0 ? `Export ${exportCount.toLocaleString()} ${exportCount === 1 ? 'row' : 'rows'}` : 'Nothing to export'}
                     </Button>
                 </DialogFooter>
             </DialogContent>

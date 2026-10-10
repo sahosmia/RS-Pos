@@ -1,4 +1,17 @@
-import { type LucideIcon, Boxes, ClipboardList, HandCoins, Package, Receipt, ShoppingBag, UserPlus, Wallet } from 'lucide-react';
+import {
+    type LucideIcon,
+    Boxes,
+    ClipboardList,
+    HandCoins,
+    Package,
+    Receipt,
+    RotateCcw,
+    ShoppingBag,
+    Undo2,
+    UserPlus,
+    Wallet,
+    Wrench,
+} from 'lucide-react';
 
 export interface QuickActionDefinition {
     key: string;
@@ -39,7 +52,13 @@ export const QUICK_ACTIONS: QuickActionDefinition[] = [
         permission: 'expense.create',
         href: () => route('expenses.index', { quick_create: '1' }),
     },
-    { key: 'add_other_income', label: 'Add Other Income', icon: HandCoins, permission: 'expense.create', href: () => route('other-income.index', { quick_create: '1' }) },
+    {
+        key: 'add_other_income',
+        label: 'Add Other Income',
+        icon: HandCoins,
+        permission: 'expense.create',
+        href: () => route('other-income.index', { quick_create: '1' }),
+    },
     { key: 'add_sales_order', label: 'Add Sales Order', icon: ClipboardList, permission: 'sale.create', href: () => route('sales-orders.create') },
     {
         key: 'add_asset',
@@ -47,6 +66,15 @@ export const QUICK_ACTIONS: QuickActionDefinition[] = [
         icon: Boxes,
         permission: 'asset.create',
         href: () => route('assets.index', { quick_create: '1' }),
+    },
+    { key: 'add_service', label: 'Add Service', icon: Wrench, permission: 'service.create', href: () => route('service-requests.create') },
+    { key: 'add_sale_return', label: 'Add Sale Return', icon: RotateCcw, permission: 'sale.create', href: () => route('sale-returns.create') },
+    {
+        key: 'add_purchase_return',
+        label: 'Add Purchase Return',
+        icon: Undo2,
+        permission: 'purchase.create',
+        href: () => route('purchase-returns.create'),
     },
 ];
 

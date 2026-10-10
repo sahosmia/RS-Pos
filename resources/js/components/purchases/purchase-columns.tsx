@@ -4,10 +4,10 @@ import DataTableRowActions from '@/components/data-table/data-table-row-actions'
 import { type DataTableColumnOption } from '@/components/data-table/types';
 import { getPurchaseActions } from '@/components/purchases/purchase-actions';
 import ContactLink from '@/components/shared/contact-link';
-import { Badge } from '@/components/ui/badge';
+import { StatusBadge } from '@/components/shared/status-badge';
 import { type ListPageState } from '@/hooks/table/use-list-page';
 import { formatDateTime } from '@/lib/format-date';
-import { type PaymentStatusValue, type PurchaseListItem, type PurchaseStatusValue } from '@/types/models';
+import { type PurchaseListItem } from '@/types/models';
 import { Link } from '@inertiajs/react';
 import { type ColumnDef } from '@tanstack/react-table';
 import { useMemo } from 'react';
@@ -43,19 +43,6 @@ export const PURCHASE_EXPORT_COLUMN_MAP: Record<string, string[]> = {
     due: ['due_amount'],
     payment_status: ['payment_status'],
     status: ['status'],
-};
-
-export const purchaseStatusVariant: Record<PurchaseStatusValue, 'secondary' | 'outline' | 'default' | 'destructive'> = {
-    draft: 'outline',
-    ordered: 'outline',
-    received: 'secondary',
-    cancelled: 'destructive',
-};
-
-export const purchasePaymentVariant: Record<PaymentStatusValue, 'secondary' | 'outline' | 'destructive'> = {
-    due: 'destructive',
-    partial: 'outline',
-    paid: 'secondary',
 };
 
 export const humanize = (value: string) => value.replaceAll('_', ' ').replace(/\b\w/g, (character) => character.toUpperCase());
@@ -140,14 +127,12 @@ export function usePurchaseColumns({ sort, direction = 'desc', onSort, selection
             {
                 id: 'payment_status',
                 header: header('Payment', 'payment_status'),
-                cell: ({ row }) => (
-                    <Badge variant={purchasePaymentVariant[row.original.payment_status]}>{humanize(row.original.payment_status)}</Badge>
-                ),
+                cell: ({ row }) => <StatusBadge status={row.original.payment_status} />,
             },
             {
                 id: 'status',
                 header: header('Status', 'status'),
-                cell: ({ row }) => <Badge variant={purchaseStatusVariant[row.original.status]}>{humanize(row.original.status)}</Badge>,
+                cell: ({ row }) => <StatusBadge status={row.original.status} />,
             },
             { id: 'added_by', header: 'Added by', cell: ({ row }) => <span className="text-muted-foreground">{row.original.added_by ?? '—'}</span> },
         ];

@@ -10,10 +10,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class FundTransfer extends Model
 {
+    use HasCreator;
+
     /** @use HasFactory<FundTransferFactory> */
     use HasFactory;
-
-    use HasCreator;
 
     /**
      * @var list<string>

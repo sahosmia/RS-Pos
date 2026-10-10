@@ -1,9 +1,8 @@
 import DataTableCheckbox from '@/components/data-table/data-table-checkbox';
 import DataTableRowActions from '@/components/data-table/data-table-row-actions';
 import { getEmiInstallmentActions } from '@/components/sales/emi-installment-actions';
-import { emiStatusVariant, humanize } from '@/components/sales/emi-installment-columns';
 import ContactLink from '@/components/shared/contact-link';
-import { Badge } from '@/components/ui/badge';
+import { StatusBadge } from '@/components/shared/status-badge';
 import { useMoneyFormat } from '@/hooks/use-money-format';
 import { formatDate } from '@/lib/format-date';
 import { type EmiInstallmentListItem } from '@/types/models';
@@ -20,7 +19,7 @@ export function EmiInstallmentGridCard({ installment, selected, onToggleSelected
     const money = useMoneyFormat();
 
     return (
-        <div className="rounded-lg border p-3">
+        <div className="rounded-brand-card bg-card p-3 shadow-[var(--brand-card-shadow-elevated)]">
             <div className="flex items-start justify-between gap-2">
                 <div className="flex min-w-0 items-center gap-3">
                     <DataTableCheckbox checked={selected} onCheckedChange={onToggleSelected} />
@@ -30,6 +29,7 @@ export function EmiInstallmentGridCard({ installment, selected, onToggleSelected
                         </p>
                         <div className="text-muted-foreground text-xs">
                             <ContactLink id={installment.customer.id} name={installment.customer.name} />
+                            {installment.customer.phone && <span className="ml-1.5 tabular-nums">· {installment.customer.phone}</span>}
                         </div>
                     </div>
                 </div>
@@ -44,7 +44,7 @@ export function EmiInstallmentGridCard({ installment, selected, onToggleSelected
                     {formatDate(installment.due_date)}
                     {installment.paid_amount > 0 && ` · Paid ${money(installment.paid_amount)}`}
                 </span>
-                <Badge variant={emiStatusVariant[installment.status]}>{humanize(installment.status)}</Badge>
+                <StatusBadge status={installment.status} />
             </div>
         </div>
     );

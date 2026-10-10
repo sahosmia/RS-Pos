@@ -2,11 +2,11 @@ import DataTableCheckbox from '@/components/data-table/data-table-checkbox';
 import DataTableRowActions from '@/components/data-table/data-table-row-actions';
 import { getSaleActions } from '@/components/sales/sale-actions';
 import ContactLink from '@/components/shared/contact-link';
+import { StatusBadge } from '@/components/shared/status-badge';
 import { Badge } from '@/components/ui/badge';
 import { useMoneyFormat } from '@/hooks/use-money-format';
 import { formatDateTime } from '@/lib/format-date';
 import { cn } from '@/lib/utils';
-import { humanize, paymentStatusColor, statusColor } from '@/pages/sales/table/columns';
 import { type SaleListItem } from '@/types/models';
 import { Link } from '@inertiajs/react';
 import { ShoppingCart } from 'lucide-react';
@@ -29,7 +29,7 @@ export function SaleGridCard({ sale, selected, onToggleSelected, handlers }: Sal
     return (
         <div
             className={cn(
-                'group bg-card hover:border-primary/30 rounded-xl border border-l-4 p-4 transition-all hover:shadow-md',
+                'group bg-card hover:border-primary/30 motion-surface rounded-xl border border-l-4 p-4 hover:shadow-[var(--brand-card-shadow-elevated)]',
                 accentBorder,
                 selected && 'border-primary/40 bg-primary/5 ring-primary/20 ring-1',
             )}
@@ -49,13 +49,14 @@ export function SaleGridCard({ sale, selected, onToggleSelected, handlers }: Sal
                                 {sale.invoice_no}
                             </Link>
                             {sale.source === 'imported' && (
-                                <Badge variant="outline" className="px-1 py-0 text-[10px]">
+                                <Badge variant="neutral" size="xs">
                                     Historical
                                 </Badge>
                             )}
                         </div>
                         <div className="text-muted-foreground truncate text-xs">
                             <ContactLink id={sale.customer.id} name={sale.customer.name} />
+                            {sale.customer.phone && <span className="ml-1.5 tabular-nums">· {sale.customer.phone}</span>}
                         </div>
                         <div className="text-muted-foreground truncate text-xs">{formatDateTime(sale.created_at ?? sale.sale_date)}</div>
                     </div>
@@ -65,12 +66,8 @@ export function SaleGridCard({ sale, selected, onToggleSelected, handlers }: Sal
 
             <div className="mt-3 flex items-center justify-between gap-2 border-t pt-3">
                 <div className="flex flex-wrap items-center gap-1">
-                    <Badge variant="outline" className={paymentStatusColor[sale.payment_status]}>
-                        {humanize(sale.payment_status)}
-                    </Badge>
-                    <Badge variant="outline" className={statusColor[sale.status]}>
-                        {humanize(sale.status)}
-                    </Badge>
+                    <StatusBadge status={sale.payment_status} />
+                    <StatusBadge status={sale.status} />
                 </div>
                 <div className="text-right">
                     <div className="text-foreground font-semibold tabular-nums">{money(sale.total_amount)}</div>

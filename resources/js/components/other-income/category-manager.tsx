@@ -90,12 +90,12 @@ export default function OtherIncomeCategoryManager({ categories }: CategoryManag
                     </Button>
                 </EmptyState>
             ) : (
-                <div className="overflow-x-auto rounded-lg border">
+                <div className="overflow-x-auto rounded-brand-card bg-card shadow-[var(--brand-card-shadow-elevated)]">
                     <table className="w-full text-sm">
                         <thead className="bg-muted/40 text-left">
                             <tr>
-                                <th className="px-4 py-2 font-medium">Name</th>
-                                <th className="px-4 py-2 text-right font-medium">Entries</th>
+                                <th className="px-4 py-2.5 font-medium">Name</th>
+                                <th className="px-4 py-2.5 text-right font-medium">Entries</th>
                                 <th className="w-24 px-4 py-2" />
                             </tr>
                         </thead>

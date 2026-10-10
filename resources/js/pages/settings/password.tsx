@@ -1,15 +1,13 @@
-import InputError from '@/components/input-error';
 import AppLayout from '@/layouts/app-layout';
-import SettingsLayout from '@/layouts/settings/layout';
+import SettingsLayout, { SettingsSection } from '@/layouts/settings/layout';
 import { type BreadcrumbItem } from '@/types';
-import { Transition } from '@headlessui/react';
 import { Head, useForm } from '@inertiajs/react';
 import { FormEventHandler, useRef } from 'react';
 
-import HeadingSmall from '@/components/heading-small';
+import { FormField, fieldAriaProps } from '@/components/form/form-field';
 import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
 import { PasswordInput } from '@/components/ui/password-input';
+import { CircleCheck } from 'lucide-react';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -50,75 +48,65 @@ export default function Password() {
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title="Profile settings" />
+            <Head title="Password settings" />
 
             <SettingsLayout>
-                <div className="space-y-6">
-                    <HeadingSmall title="Update password" description="Ensure your account is using a long, random password to stay secure" />
-
-                    <form onSubmit={updatePassword} className="space-y-6">
-                        <div className="grid min-w-0 content-start gap-2">
-                            <Label htmlFor="current_password">Current password</Label>
-
+                <form onSubmit={updatePassword}>
+                    <SettingsSection
+                        title="Update password"
+                        description="Ensure your account is using a long, random password to stay secure"
+                        footer={
+                            <>
+                                <Button type="submit" variant="primary" loading={processing}>
+                                    Save password
+                                </Button>
+                                {recentlySuccessful && (
+                                    <p className="text-brand-success-text flex items-center gap-1.5 text-sm" role="status">
+                                        <CircleCheck className="size-4" aria-hidden="true" />
+                                        Saved
+                                    </p>
+                                )}
+                            </>
+                        }
+                    >
+                        <FormField id="current_password" label="Current password" required error={errors.current_password}>
                             <PasswordInput
                                 id="current_password"
                                 ref={currentPasswordInput}
                                 value={data.current_password}
                                 onChange={(e) => setData('current_password', e.target.value)}
-                                className="mt-1 block w-full"
                                 autoComplete="current-password"
                                 placeholder="Current password"
+                                {...fieldAriaProps('current_password', errors.current_password)}
                             />
+                        </FormField>
 
-                            <InputError message={errors.current_password} />
+                        <div className="grid gap-5 sm:grid-cols-2">
+                            <FormField id="password" label="New password" required error={errors.password}>
+                                <PasswordInput
+                                    id="password"
+                                    ref={passwordInput}
+                                    value={data.password}
+                                    onChange={(e) => setData('password', e.target.value)}
+                                    autoComplete="new-password"
+                                    placeholder="New password"
+                                    {...fieldAriaProps('password', errors.password)}
+                                />
+                            </FormField>
+
+                            <FormField id="password_confirmation" label="Confirm password" required error={errors.password_confirmation}>
+                                <PasswordInput
+                                    id="password_confirmation"
+                                    value={data.password_confirmation}
+                                    onChange={(e) => setData('password_confirmation', e.target.value)}
+                                    autoComplete="new-password"
+                                    placeholder="Confirm password"
+                                    {...fieldAriaProps('password_confirmation', errors.password_confirmation)}
+                                />
+                            </FormField>
                         </div>
-
-                        <div className="grid min-w-0 content-start gap-2">
-                            <Label htmlFor="password">New password</Label>
-
-                            <PasswordInput
-                                id="password"
-                                ref={passwordInput}
-                                value={data.password}
-                                onChange={(e) => setData('password', e.target.value)}
-                                className="mt-1 block w-full"
-                                autoComplete="new-password"
-                                placeholder="New password"
-                            />
-
-                            <InputError message={errors.password} />
-                        </div>
-
-                        <div className="grid min-w-0 content-start gap-2">
-                            <Label htmlFor="password_confirmation">Confirm password</Label>
-
-                            <PasswordInput
-                                id="password_confirmation"
-                                value={data.password_confirmation}
-                                onChange={(e) => setData('password_confirmation', e.target.value)}
-                                className="mt-1 block w-full"
-                                autoComplete="new-password"
-                                placeholder="Confirm password"
-                            />
-
-                            <InputError message={errors.password_confirmation} />
-                        </div>
-
-                        <div className="flex items-center gap-4">
-                            <Button disabled={processing}>Save password</Button>
-
-                            <Transition
-                                show={recentlySuccessful}
-                                enter="transition ease-in-out"
-                                enterFrom="opacity-0"
-                                leave="transition ease-in-out"
-                                leaveTo="opacity-0"
-                            >
-                                <p className="text-sm text-muted-foreground">Saved</p>
-                            </Transition>
-                        </div>
-                    </form>
-                </div>
+                    </SettingsSection>
+                </form>
             </SettingsLayout>
         </AppLayout>
     );

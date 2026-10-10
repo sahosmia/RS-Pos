@@ -1,11 +1,11 @@
 import { FormField, fieldAriaProps } from '@/components/form/form-field';
-import { Input } from '@/components/ui/input';
+import { Input, type InputProps } from '@/components/ui/input';
 import { useTranslation } from '@/hooks/use-translation';
 import { cn } from '@/lib/utils';
 import { type LucideIcon } from 'lucide-react';
 import React from 'react';
 
-interface FormInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
+interface FormInputProps extends Omit<InputProps, 'leadingIcon'> {
     id: string;
     label?: React.ReactNode;
     tooltip?: React.ReactNode;

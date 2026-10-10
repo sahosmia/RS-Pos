@@ -4,6 +4,7 @@ namespace App\Http\Controllers\CompanyLoans;
 
 use App\Actions\CompanyLoan\CreateCompanyLoanAction;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Common\BulkDestroyRequest;
 use App\Http\Requests\CompanyLoan\StoreCompanyLoanRequest;
 use App\Http\Requests\CompanyLoan\UpdateCompanyLoanRequest;
 use App\Models\Account;
@@ -11,6 +12,7 @@ use App\Models\CompanyLoan;
 use App\Models\LoanTransaction;
 use App\Models\Settings;
 use App\Queries\CompanyLoan\CompanyLoanQuery;
+use App\Support\BulkDelete;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -117,14 +119,25 @@ class CompanyLoanController extends Controller
      */
     public function destroy(CompanyLoan $companyLoan): RedirectResponse
     {
-        if ($companyLoan->transactions()->exists()) {
-            return back()->withErrors([
-                'company_loan' => 'This loan has recorded transactions and cannot be deleted.',
-            ]);
+        if ($reason = $companyLoan->deletionBlockReason()) {
+            return back()->withErrors(['company_loan' => $reason]);
         }
 
         $companyLoan->delete();
 
         return to_route('company-loans.index');
+    }
+
+    /**
+     * "Delete selected" — each record is checked by the same rule as the single delete.
+     */
+    public function bulkDestroy(BulkDestroyRequest $request): RedirectResponse
+    {
+        return BulkDelete::respond(BulkDelete::run(
+            $request->validated('ids'),
+            CompanyLoan::query()->whereIn('id', $request->validated('ids'))->get(),
+            fn (CompanyLoan $companyLoan) => $companyLoan->deletionBlockReason(),
+            fn (CompanyLoan $companyLoan) => $companyLoan->delete(),
+        ));
     }
 }
